@@ -23,7 +23,7 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
     Input.link_as_button
       ~style:`Success
       ~icon:Component.Icon.Add
-      ~control:(language, Message.(Add (Some Field.Permission)))
+      ~control:(language, Pool_message.(Control.Add (Some Field.Permission)))
       (actor_permission_path ~suffix:"new" ())
   in
   let cols =
@@ -36,21 +36,18 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
   in
   let th_class = [ "w-3"; "w-3"; "w-3"; "w-3" ] in
   let row
-    (( ({ Guard.ActorPermission.actor_uuid; permission; target } as
-        actor_permission)
-     , actor_name
-     , target_model
-     , target_name ) :
-      Guard.ActorPermission.t * string * Role.Target.t option * string option)
+        (( ({ Guard.ActorPermission.actor_uuid; permission; target } as actor_permission)
+         , actor_name
+         , target_model
+         , target_name ) :
+          Guard.ActorPermission.t * string * Role.Target.t option * string option)
     =
     let open Component.Role in
     let button_form target name submit_type confirm_text actor_permission =
       form
         ~a:
           [ a_method `Post
-          ; a_action
-              (actor_permission_path ~suffix:target ()
-               |> Sihl.Web.externalize_path)
+          ; a_action (actor_permission_path ~suffix:target () |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
               (Pool_common.Utils.confirmable_to_string language confirm_text)
@@ -69,7 +66,8 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
     in
     let create_link text =
       let default = txt text in
-      CCOption.map_or ~default (fun uri -> a ~a:[ a_href uri ] [ default ])
+      CCOption.map_or ~default (fun uri ->
+        a ~a:[ a_href (Sihl.Web.externalize_path uri) ] [ default ])
     in
     let actor_link =
       create_target_path
@@ -88,8 +86,7 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
         create_target_path ~uuid target_model |> create_link name
       | Guard.TargetEntity.Model model ->
         create_target_path (Some model)
-        |> create_link
-             (CCOption.value ~default:(Role.Target.show model) target_name)
+        |> create_link (CCOption.value ~default:(Role.Target.show model) target_name)
     in
     [ actor_link
     ; txt (Guard.Permission.show permission)
@@ -100,7 +97,7 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
            ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
            [ button_form
                "remove"
-               Message.delete
+               Pool_message.Control.delete
                `Error
                I18n.RemovePermission
                actor_permission
@@ -119,34 +116,39 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
     actor_permissions
 ;;
 
-let read_hint =
-  CCOption.map_or
-    ~default:[]
-    (I18n.content_to_string %> Unsafe.data %> CCList.return)
+let hint_to_html =
+  CCOption.map_or ~default:(txt "") (I18n.content_to_string %> Unsafe.data)
 ;;
 
 let index ?hint (Pool_context.{ language; _ } as context) rules query =
   let open Pool_common in
-  [ h1
-      ~a:[ a_class [ "heading-1" ] ]
-      [ txt (Utils.nav_link_to_string language I18n.ActorPermissions) ]
-  ]
-  @ read_hint hint
-  @ [ list context rules query ]
-  |> div ~a:[ a_class [ "trim"; "safety-margin" ] ]
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
+        [ txt (Utils.nav_link_to_string language I18n.ActorPermissions) ]
+    ; div
+        ~a:[ a_class [ "stack" ] ]
+        [ hint |> hint_to_html
+        ; Component.Role.explanation_modal language
+        ; list context rules query
+        ]
+    ]
 ;;
 
 let create ?hint Pool_context.{ language; _ } children =
   let open Pool_common in
-  [ h1
-      ~a:[ a_class [ "heading-1" ] ]
-      [ txt
-          (Utils.control_to_string
-             language
-             Message.(Create (Some Field.Permission)))
-      ]
-  ]
-  @ read_hint hint
-  @ children
-  |> div ~a:[ a_class [ "trim"; "safety-margin" ] ]
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
+        [ txt
+            (Utils.control_to_string
+               language
+               Pool_message.(Control.Create (Some Field.Permission)))
+        ]
+    ; div
+        ~a:[ a_class [ "stack" ] ]
+        [ hint |> hint_to_html; Component.Role.explanation_modal language; children ]
+    ]
 ;;

@@ -6,11 +6,11 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun { Entity.id; _ } ->
-        Guard.Target.create
-          `MessageTemplate
-          (id |> Entity.Id.value |> Guard.Uuid.Target.of_string_exn))
+         Guard.Target.create
+           `MessageTemplate
+           (id |> Entity.Id.value |> Guard.Uuid.Target.of_string_exn))
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 
@@ -20,8 +20,7 @@ module Access = struct
   open Permission
 
   let message_template action uuid =
-    one_of_tuple
-      (action, `MessageTemplate, Some (uuid |> Uuid.target_of Entity.Id.value))
+    one_of_tuple (action, `MessageTemplate, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
   let index = one_of_tuple (Read, `MessageTemplate, None)

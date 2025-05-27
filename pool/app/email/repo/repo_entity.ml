@@ -1,37 +1,34 @@
 open Entity
 module SmtpAuth = Repo_entity_smtp_auth
-module User = Pool_user
 
 module Token = struct
-  include Entity.Token
+  include Token
 
-  let t = Caqti_type.(string)
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.string
+      CCFun.(create %> CCResult.return)
+      value
+  ;;
 end
 
 module VerifiedAt = struct
-  include Entity.VerifiedAt
+  include VerifiedAt
 
-  let t = Caqti_type.(ptime)
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.ptime
+      CCFun.(create %> CCResult.return)
+      value
+  ;;
 end
 
 let unverified_t =
   let open CCResult in
   let encode (Unverified m) =
-    Ok
-      ( m.address
-      , ( m.user
-        , ( m.token |> Token.value
-          , ( m.created_at |> Pool_common.CreatedAt.value
-            , m.updated_at |> Pool_common.UpdatedAt.value ) ) ) )
+    Ok (m.address, (m.user, (m.token, (m.created_at, m.updated_at))))
   in
   let decode (address, (user, (token, (created_at, updated_at)))) =
-    map_err (fun _ ->
-      let open Pool_common in
-      Utils.error_to_string
-        Language.En
-        Message.(Decode Field.EmailAddressUnverified))
-    @@
-    let token = token |> Token.create in
     Ok (Unverified { address; user; token; created_at; updated_at })
   in
   Caqti_type.(
@@ -41,10 +38,8 @@ let unverified_t =
       (t2
          User.Repo.EmailAddress.t
          (t2
-            Pool_user.Repo.user_caqti
-            (t2
-               Token.t
-               (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))))
+            Pool_user.Repo.t
+            (t2 Token.t (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))))
 ;;
 
 let verified_t =
@@ -57,19 +52,17 @@ let verified_t =
       let open Pool_common in
       Utils.error_to_string
         Language.En
-        Message.(Decode Field.EmailAddressVerified))
-    @@
-    let verified_at = verified_at |> VerifiedAt.create in
-    Ok (Verified { address; user; verified_at; created_at; updated_at })
+        Pool_message.(Error.Decode Field.EmailAddressVerified))
+    @@ Ok (Verified { address; user; verified_at; created_at; updated_at })
   in
   Caqti_type.(
     custom
       ~encode
       ~decode
       (t2
-         User.Repo.EmailAddress.t
+         Pool_user.Repo.EmailAddress.t
          (t2
-            Pool_user.Repo.user_caqti
+            Pool_user.Repo.t
             (t2
                VerifiedAt.t
                (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))))

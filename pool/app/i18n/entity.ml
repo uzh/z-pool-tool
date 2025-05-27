@@ -1,11 +1,10 @@
 module Common = Pool_common
-module PoolError = Common.Message
 
 let print = Utils.ppx_printer
 
 module Key = struct
   module Core = struct
-    let field = Pool_common.Message.Field.Key
+    let field = Pool_message.Field.Key
 
     type t =
       | ActorPermissionCreateHint [@name "actor_permission_create_hint"]
@@ -15,6 +14,18 @@ module Key = struct
       | AssistantRoleHint [@name "assistant_role_hint"]
       [@printer print "assistant_role_hint"]
       | CreditsText [@name "credits_text"] [@printer print "credits_text"]
+      | DashboardUpcomingSessions [@name "dashboard_upcoming_sessions"]
+      [@printer print "dashboard_upcoming_sessions"]
+      | DashboardOnlineStudies [@name "dashboard_online_studies"]
+      [@printer print "dashboard_online_studies"]
+      | DashboardExperimentRegistration [@name "dashboard_experiment_registration"]
+      [@printer print "dashboard_experiment_registration"]
+      | DashboardExperimentHistory [@name "dashboard_experiment_history"]
+      [@printer print "dashboard_experiment_history"]
+      | DashboardWaitinglist [@name "dashboard_waiting_list"]
+      [@printer print "dashboard_waiting_list"]
+      | ExperimentNavigationTitle [@name "experiment_navigation_title"]
+      [@printer print "experiment_navigation_title"]
       | ExperimenterRoleHint [@name "experimenter_role_hint"]
       [@printer print "experimenter_role_hint"]
       | GreetingsText [@name "greetings_text"] [@printer print "greetings_text"]
@@ -28,10 +39,10 @@ module Key = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 
-  let is_rich_text = function
+  let input_type = function
     | ActorPermissionCreateHint
     | ActorPermissionHint
     | AssistantRoleHint
@@ -41,15 +52,21 @@ module Key = struct
     | PrivacyPolicy
     | SignUpCTA
     | TermsAndConditions
-    | WelcomeText -> true
-    | PasswordPolicyText -> false
+    | WelcomeText -> `RichText
+    | PasswordPolicyText -> `TextArea
+    | DashboardUpcomingSessions
+    | DashboardOnlineStudies
+    | DashboardExperimentRegistration
+    | DashboardExperimentHistory
+    | ExperimentNavigationTitle
+    | DashboardWaitinglist -> `TextInput
   ;;
 end
 
 module Content = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Common.Message.Field.Translation
+  let field = Pool_message.Field.Translation
   let schema () = schema field ()
 end
 
@@ -61,10 +78,7 @@ type t =
   }
 [@@deriving eq, show]
 
-let create key language content =
-  { id = Common.Id.create (); key; language; content }
-;;
-
+let create key language content = { id = Common.Id.create (); key; language; content }
 let compare (one : t) (two : t) = CCString.compare (one |> show) (two |> show)
 let id m = m.id
 let key m = m.key

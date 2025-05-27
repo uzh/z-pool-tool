@@ -1,10 +1,12 @@
+open Utils.Lwt_result.Infix
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
+module Response = Http_response
 module View = Page.Admin.OrganisationalUnit
 
 let field = Field.OrganisationalUnit
-let base_path = "/admin/organisational-unit"
+let ou_path = HttpUtils.Url.Admin.organisational_unit_path
 let src = Logs.Src.create "handler.admin.organisational_units"
 let create_layout req = General.create_tenant_layout req
 
@@ -19,11 +21,9 @@ let database_label_of_req req =
 ;;
 
 let index req =
-  let active_navigation = base_path in
-  let error_path = "/admin/dashboard" in
-  HttpUtils.Htmx.handler
+  let active_navigation = ou_path () in
+  Response.Htmx.index_handler
     ~active_navigation
-    ~error_path
     ~create_layout
     ~query:(module Organisational_unit)
     req
@@ -38,78 +38,82 @@ let index req =
   |> Lwt_result.return
 ;;
 
-let write action req =
-  let open Utils.Lwt_result.Infix in
-  let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
-  in
-  let redirect, success =
-    let open Pool_common in
-    match action with
-    | `Create -> base_path, Message.Created field
-    | `Update id ->
-      ( Format.asprintf "%s/%s/edit" base_path (Organisational_unit.Id.value id)
-      , Message.Updated field )
-  in
-  let result { Pool_context.database_label; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, redirect, [ HttpUtils.urlencoded_to_flash urlencoded ])
-    @@
-    let tags = Pool_context.Logger.Tags.req req in
-    let events =
-      let open Cqrs_command.Organisational_unit_command in
-      match action with
-      | `Create ->
-        Create.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags)
-      | `Update id ->
-        let* ou = Organisational_unit.find database_label id in
-        Update.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags ou)
-    in
-    let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
-      Http_utils.redirect_to_with_actions
-        base_path
-        [ HttpUtils.Message.set ~success:[ success ] ]
-    in
-    events |>> handle
-  in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
-;;
-
-let create = write `Create
-
-let update req =
-  let id = id req in
-  write (`Update id) req
-;;
-
 let show action req =
-  let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, base_path)
-    @@ let* html =
-         match action with
-         | `New -> View.form context None |> Lwt_result.return
-         | `Edit ->
-           let* ou =
-             req
-             |> id
-             |> Organisational_unit.find database_label
-             >|+ CCOption.return
-           in
-           View.form context ou |> Lwt_result.return
-       in
-       html
-       |> create_layout ~active_navigation:base_path req context
-       >|+ Sihl.Web.Response.of_html
+    let* ou =
+      req |> id |> Organisational_unit.find database_label >|- Response.not_found
+    in
+    Response.bad_request_render_error context
+    @@
+    let html =
+      match action with
+      | `New -> View.create context
+      | `Edit -> View.detail context ou
+    in
+    html |> create_layout req context >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let new_form = show `New
 let edit = show `Edit
+
+let create req =
+  let%lwt urlencoded =
+    Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+  in
+  let result { Pool_context.database_label; user; _ } =
+    Response.bad_request_on_error ~urlencoded new_form
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let events =
+      let open Cqrs_command.Organisational_unit_command in
+      Create.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags)
+    in
+    let handle events =
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      Http_utils.redirect_to_with_actions
+        (ou_path ())
+        [ HttpUtils.Message.set ~success:[ Pool_message.Success.Created field ] ]
+    in
+    events |>> handle
+  in
+  Response.handle ~src req result
+;;
+
+let update req =
+  let%lwt urlencoded =
+    Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+  in
+  let id = id req in
+  let result { Pool_context.database_label; user; _ } =
+    let* ou = Organisational_unit.find database_label id >|- Response.not_found in
+    Response.bad_request_on_error ~urlencoded edit
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let events =
+      let open Cqrs_command.Organisational_unit_command in
+      Update.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags ou)
+    in
+    let handle events =
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      Http_utils.redirect_to_with_actions
+        (ou_path ~id ~suffix:"edit" ())
+        [ HttpUtils.Message.set ~success:[ Pool_message.Success.Updated field ] ]
+    in
+    events |>> handle
+  in
+  Response.handle ~src req result
+;;
+
+let changelog req =
+  let ou_id = id req in
+  let url =
+    HttpUtils.Url.Admin.organisational_unit_path ~suffix:"changelog" ~id:ou_id ()
+  in
+  let open Organisational_unit in
+  Helpers.Changelog.htmx_handler ~url (Id.to_common ou_id) req
+;;
 
 module Access : module type of Helpers.Access = struct
   include Helpers.Access
@@ -117,18 +121,13 @@ module Access : module type of Helpers.Access = struct
   module Guardian = Middleware.Guardian
 
   let organisational_units =
-    Guardian.id_effects
-      Organisational_unit.Id.of_string
-      Field.OrganisationalUnit
+    Guardian.id_effects Organisational_unit.Id.validate Field.OrganisationalUnit
   ;;
 
   let index =
-    Organisational_unit.Guard.Access.index |> Guardian.validate_admin_entity
+    Guardian.validate_admin_entity ~any_id:true Organisational_unit.Guard.Access.index
   ;;
 
-  let create = Command.Create.effects |> Guardian.validate_admin_entity
-
-  let update =
-    Command.Update.effects |> organisational_units |> Guardian.validate_generic
-  ;;
+  let create = Guardian.validate_admin_entity Command.Create.effects
+  let update = organisational_units Command.Update.effects
 end

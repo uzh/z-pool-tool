@@ -1,19 +1,16 @@
 include Entity
 
 let from_request
-  ?(filterable_by : Filter.human option)
-  ?(searchable_by : Column.t list option)
-  ?(sortable_by : Column.t list option)
-  ?(default : t option)
-  req
+      ?(filterable_by : Filter.human option)
+      ?(searchable_by : Column.t list option)
+      ?(sortable_by : Column.t list option)
+      ?(default : t option)
+      req
   =
   let query_params = Sihl.Web.Request.query_list req in
   let open CCOption in
   let find field =
-    CCList.assoc_opt
-      ~eq:CCString.equal
-      (Pool_common.Message.Field.show field)
-      query_params
+    CCList.assoc_opt ~eq:CCString.equal (Pool_message.Field.show field) query_params
     >>= CCList.head_opt
     >>= function
     | "" -> None
@@ -51,18 +48,15 @@ let from_request
     find Query.field >|= Query.of_string >|= fun query -> create query columns
   in
   let sort =
-    let open Pool_common in
-    let open Message in
+    let open Pool_message in
     let order =
       try find Field.SortOrder >|= Sort.SortOrder.read with
-      | Yojson.Json_error exn ->
-        Utils.handle_json_parse_err exn |> CCFun.const None
+      | Yojson.Json_error exn -> handle_json_parse_err exn |> CCFun.const None
       | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error (exn, yojson) ->
-        Utils.handle_ppx_yojson_err (exn, yojson) |> CCFun.const None
+        handle_ppx_yojson_err (exn, yojson) |> CCFun.const None
     in
     sortable_by
-    >>= fun columns ->
-    find Field.Order >|= Field.read >>= Sort.create ?order columns
+    >>= fun columns -> find Field.Order >|= Field.read >>= Sort.create ?order columns
   in
   create ~pagination ?filter ?search ?sort () |> apply_default ~default
 ;;
@@ -81,13 +75,10 @@ let append_query_to_sql dyn where t =
   let dyn, search =
     t >>= search |> CCOption.map_or ~default:(dyn, None) (Search.to_sql dyn)
   in
-  let order_by =
-    t >>= fun { sort; _ } -> sort >|= Sort.to_sql >|= format "ORDER BY %s"
-  in
+  let order_by = t >>= fun { sort; _ } -> sort >|= Sort.to_sql >|= format "ORDER BY %s" in
   let paginate_and_sort =
     match order_by, pagination with
-    | Some order_by, Some pagination ->
-      Some (format "%s %s" order_by pagination)
+    | Some order_by, Some pagination -> Some (format "%s %s" order_by pagination)
     | Some str, None | None, Some str -> Some str
     | None, None -> None
   in
@@ -101,21 +92,14 @@ let append_query_to_sql dyn where t =
 ;;
 
 let collect_and_count
-  database_label
-  query
-  ~(select : ?count:bool -> string -> string)
-  ?where
-  caqti_type
+      database_label
+      query
+      ~(select : ?count:bool -> string -> string)
+      ?where
+      ?(dyn = Dynparam.empty)
+      caqti_type
   =
-  let open Utils.Database in
   let open Caqti_request.Infix in
-  let database_label = Pool_database.Label.value database_label in
-  let where, dyn =
-    CCOption.map_or
-      ~default:(None, Dynparam.empty)
-      (fun (where, dyn) -> Some where, dyn)
-      where
-  in
   let Dynparam.Pack (pt, pv), where, paginate_and_sort =
     append_query_to_sql dyn where query
   in
@@ -126,8 +110,8 @@ let collect_and_count
     |> pt ->* caqti_type
   in
   let count_request = select ~count:true where |> pt ->! Caqti_type.int in
-  let%lwt rows = collect database_label request pv in
-  let%lwt count = find database_label count_request pv in
+  let%lwt rows = Database.collect database_label request pv in
+  let%lwt count = Database.find database_label count_request pv in
   let query = CCOption.value ~default:(empty ()) query in
   Lwt.return (rows, set_page_count query count)
 ;;

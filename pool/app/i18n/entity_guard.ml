@@ -6,11 +6,9 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun Entity.{ id; _ } ->
-        Guard.Target.create
-          `I18n
-          (id |> Guard.Uuid.target_of Pool_common.Id.value))
+         Guard.Target.create `I18n (id |> Guard.Uuid.target_of Pool_common.Id.value))
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 

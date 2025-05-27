@@ -1,12 +1,12 @@
 module Id = Pool_common.Id
 
 module Title : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 type single_val =
   | Bool of bool
-  | Date of Pool_common.Model.Ptime.date
+  | Date of Pool_model.Base.Ptime.date
   | Language of Pool_common.Language.t
   | Nr of float
   | Option of Custom_field.SelectOption.Id.t
@@ -56,11 +56,7 @@ module Key : sig
   val pp : Format.formatter -> t -> unit
   val equal : t -> t -> bool
   val show : t -> string
-
-  val hardcoded_to_single_value_sql
-    :  hardcoded
-    -> (string, Pool_common.Message.error) result
-
+  val hardcoded_to_single_value_sql : hardcoded -> (string, Pool_message.Error.t) result
   val equal_human : human -> human -> bool
   val show_human : human -> string
   val type_of_key : human -> input_type
@@ -151,8 +147,8 @@ type t =
   { id : Pool_common.Id.t
   ; query : query
   ; title : Title.t option
-  ; created_at : Ptime.t
-  ; updated_at : Ptime.t
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 
 module Human : sig
@@ -165,12 +161,7 @@ module Human : sig
 
   val show : t -> string
   val init : ?key:Key.human -> ?operator:Operator.t -> ?value:value -> unit -> t
-
-  val of_yojson
-    :  Key.human list
-    -> Yojson.Safe.t
-    -> (t, Pool_common.Message.error) result
-
+  val of_yojson : Key.human list -> Yojson.Safe.t -> (t, Pool_message.Error.t) result
   val all_query_experiments : t -> Pool_common.Id.t list
   val all_query_tags : t -> Tags.Id.t list
 end
@@ -180,51 +171,39 @@ val show : t -> string
 val pp : Format.formatter -> t -> unit
 val create : ?id:Pool_common.Id.t -> Title.t option -> query -> t
 val yojson_of_query : query -> Yojson.Safe.t
-val query_of_yojson : Yojson.Safe.t -> (query, Pool_common.Message.error) result
-val query_of_string : string -> (query, Pool_common.Message.error) result
+val query_of_yojson : Yojson.Safe.t -> (query, Pool_message.Error.t) result
+val query_of_string : string -> (query, Pool_message.Error.t) result
 
 val validate_query
   :  Key.human list
   -> t list
   -> query
-  -> (query, Pool_common.Message.error) result
+  -> (query, Pool_message.Error.t) result
 
 val contains_template : query -> bool
-
-val find
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
-
-val find_all_templates : Pool_database.Label.t -> unit -> t list Lwt.t
-
-val find_templates_by
-  :  Query.t
-  -> Pool_database.Label.t
-  -> (t list * Query.t) Lwt.t
+val find : Database.Label.t -> Pool_common.Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find_all_templates : Database.Label.t -> unit -> t list Lwt.t
+val find_templates_by : Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
 
 val find_template
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
-val find_multiple_templates
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t list
-  -> t list Lwt.t
+val find_multiple_templates : Database.Label.t -> Pool_common.Id.t list -> t list Lwt.t
 
 type event =
   | Created of t
   | Deleted of t
-  | Updated of t
+  | Updated of t * t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
+val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val created : t -> event
 val deleted : t -> event
-val updated : t -> event
+val updated : t -> t -> event
 
 module UtilsF : sig
   type filter_label =
@@ -237,11 +216,7 @@ module UtilsF : sig
   val equal_filter_label : filter_label -> filter_label -> bool
   val show_filter_label : filter_label -> string
   val to_label : filter_label -> string
-
-  val label_of_string
-    :  string
-    -> (filter_label, Pool_common__Entity_message.error) result
-
+  val label_of_string : string -> (filter_label, Pool_message.Error.t) result
   val all_filter_labels : filter_label list
   val default_filter_label : filter_label
 end
@@ -252,47 +227,41 @@ module Repo : sig
   val query : query Caqti_type.t
 end
 
-val all_keys : Pool_database.Label.t -> Key.human list Lwt.t
+val all_keys : Database.Label.t -> Key.human list Lwt.t
 
 val key_of_string
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> string
-  -> (Key.human, Pool_common.Message.error) Lwt_result.t
+  -> (Key.human, Pool_message.Error.t) Lwt_result.t
 
 val t_to_human : Key.human list -> t list -> query -> Human.t
-val find_templates_of_query : Pool_database.Label.t -> query -> t list Lwt.t
-
-val toggle_predicate_type
-  :  Human.t
-  -> string
-  -> (Human.t, Pool_common.Message.error) result
-
+val find_templates_of_query : Database.Label.t -> query -> t list Lwt.t
+val toggle_predicate_type : Human.t -> string -> (Human.t, Pool_message.Error.t) result
 val all_query_experiments : t -> Pool_common.Id.t list
 val all_query_tags : t -> Tags.Id.t list
 
 type base_condition =
   | MatchesFilter
   | Matcher of Pool_common.Id.t
-  | MatcherReset of Pool_common.Id.t * Ptime.t
 
 val find_filtered_contacts
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> ?order_by:string
   -> ?limit:int
   -> base_condition
   -> t option
-  -> (Contact.t list, Pool_common.Message.error) Lwt_result.t
+  -> (Contact.t list, Pool_message.Error.t) Lwt_result.t
 
 val count_filtered_contacts
   :  ?include_invited:bool
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> base_condition
   -> query option
-  -> (int, Pool_common.Message.error) Lwt_result.t
+  -> (int, Pool_message.Error.t) Lwt_result.t
 
 val contact_matches_filter
   :  ?default:bool
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> query
   -> Contact.t
   -> bool Lwt.t
@@ -302,7 +271,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 
@@ -313,7 +282,7 @@ module Guard : sig
 
   module Access : sig
     val index : Guard.ValidationSet.t
-    val create : Guard.ValidationSet.t
+    val create : ?experiment_id:Pool_common.Id.t -> unit -> Guard.ValidationSet.t
     val update : Id.t -> Guard.ValidationSet.t
     val delete : Id.t -> Guard.ValidationSet.t
   end
@@ -324,3 +293,5 @@ val default_query : Query.t
 val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
+
+module VersionHistory : Changelog.TSig with type record = t

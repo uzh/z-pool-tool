@@ -1,7 +1,7 @@
 open CCFun.Infix
-module Dynparam = Utils.Database.Dynparam
-module Message = Pool_common.Message
-module Field = Message.Field
+module Dynparam = Database.Dynparam
+module Message = Pool_message
+module Field = Pool_message.Field
 open Entity
 
 let where_prefix str = Format.asprintf "WHERE %s" str
@@ -23,11 +23,21 @@ let filtered_base_condition ?(include_invited = false) =
     AND pool_contacts.email_verified IS NOT NULL
     |sql}
   in
-  let exclude_invited = {sql| AND pool_invitations.uuid IS NULL |sql} in
-  let exclude_invited_after =
-    {sql| AND(pool_invitations.created_at IS NULL
-          OR (pool_invitations.resent_at IS NULL
-            OR COALESCE(pool_invitations.resent_at, pool_invitations.created_at) < ?))
+  let exclude_invited =
+    {sql|
+    	AND (
+        pool_invitations.uuid IS NULL
+        OR (
+          EXISTS ( SELECT 1 FROM  pool_experiment_invitation_reset WHERE experiment_uuid = pool_invitations.experiment_uuid )
+          AND COALESCE(pool_invitations.resent_at, pool_invitations.created_at) <= (
+            SELECT created_at
+            FROM pool_experiment_invitation_reset
+            WHERE experiment_uuid = pool_invitations.experiment_uuid
+            ORDER BY created_at DESC
+            LIMIT 1
+          )
+        )
+      )
     |sql}
   in
   let exclude_assigned =
@@ -45,11 +55,7 @@ let filtered_base_condition ?(include_invited = false) =
   (function
     | MatchesFilter -> [ base ]
     | Matcher _ ->
-      [ base; exclude_assigned ]
-      @ if include_invited then [] else [ exclude_invited ]
-    | MatcherReset _ ->
-      [ base; exclude_assigned ]
-      @ if include_invited then [] else [ exclude_invited_after ])
+      [ base; exclude_assigned ] @ if include_invited then [] else [ exclude_invited ])
   %> CCString.concat "\n"
 ;;
 
@@ -65,9 +71,7 @@ let custom_field_sql =
   |sql}
 ;;
 
-let filter_custom_fields =
-  Format.asprintf {sql| %s AND (%s) |sql} custom_field_sql
-;;
+let filter_custom_fields = Format.asprintf {sql| %s AND (%s) |sql} custom_field_sql
 
 let add_value_to_params operator value dyn =
   let open Operator in
@@ -79,7 +83,7 @@ let add_value_to_params operator value dyn =
   in
   let add c v = Dynparam.add c v dyn in
   match operator with
-  | Existence _ -> Error Message.(Invalid Field.Predicate)
+  | Existence _ -> Error Message.(Error.Invalid Field.Predicate)
   | Equality _ | List _ | String _ | Size _ ->
     Ok
       (match value with
@@ -90,9 +94,7 @@ let add_value_to_params operator value dyn =
        | Option id ->
          add
            Caqti_type.string
-           (id
-            |> Custom_field.SelectOption.Id.value
-            |> wrap_in_percentage operator)
+           (id |> Custom_field.SelectOption.Id.value |> wrap_in_percentage operator)
        | Str s -> add Caqti_type.string (wrap_in_percentage operator s))
 ;;
 
@@ -109,13 +111,10 @@ let add_single_value (key : Key.t) operator dyn value =
   | Key.CustomField id ->
     let* dyn =
       Dynparam.(
-        dyn
-        |> add Custom_field.Repo.Id.t id
-        |> add_value_to_params operator value)
+        dyn |> add Custom_field.Repo.Id.t id |> add_value_to_params operator value)
     in
     let sql =
-      where_clause coalesce_value (Operator.to_sql operator)
-      |> filter_custom_fields
+      where_clause coalesce_value (Operator.to_sql operator) |> filter_custom_fields
     in
     Ok (dyn, sql)
 ;;
@@ -147,14 +146,14 @@ let add_uuid_param dyn ids =
   let open CCResult in
   CCList.fold_left
     (fun query id ->
-      query
-      >>= fun (dyn, params) ->
-      match id with
-      | Bool _ | Date _ | Language _ | Nr _ | Option _ ->
-        Error Message.(QueryNotCompatible (Field.Value, Field.Key))
-      | Str id ->
-        add_value_to_params Operator.(Equality.Equal |> equality) (Str id) dyn
-        >|= fun dyn -> dyn, "UNHEX(REPLACE(?, '-', ''))" :: params)
+       query
+       >>= fun (dyn, params) ->
+       match id with
+       | Bool _ | Date _ | Language _ | Nr _ | Option _ ->
+         Error Message.(Error.QueryNotCompatible (Field.Value, Field.Key))
+       | Str id ->
+         add_value_to_params Operator.(Equality.Equal |> equality) (Str id) dyn
+         >|= fun dyn -> dyn, "UNHEX(REPLACE(?, '-', ''))" :: params)
     (Ok (dyn, []))
     ids
   >|= fun (dyn, ids) -> dyn, CCString.concat "," ids
@@ -163,26 +162,21 @@ let add_uuid_param dyn ids =
 let add_list_condition subquery dyn ids =
   let open Operator in
   let compare_length (dyn, condition) =
-    (dyn, Format.asprintf "(%s) %s" (subquery ~count:true) condition)
-    |> CCResult.return
+    (dyn, Format.asprintf "(%s) %s" (subquery ~count:true) condition) |> CCResult.return
   in
   function
   | List o ->
     let open ListM in
     (match o with
      | ContainsAll ->
-       (Dynparam.add Caqti_type.int (CCList.length ids) dyn, " = ? ")
-       |> compare_length
-     | ContainsNone ->
-       Ok (dyn, Format.asprintf "NOT EXISTS (%s)" (subquery ~count:false))
-     | ContainsSome ->
-       Ok (dyn, Format.asprintf "EXISTS (%s)" (subquery ~count:false)))
+       (Dynparam.add Caqti_type.int (CCList.length ids) dyn, " = ? ") |> compare_length
+     | ContainsNone -> Ok (dyn, Format.asprintf "NOT EXISTS (%s)" (subquery ~count:false))
+     | ContainsSome -> Ok (dyn, Format.asprintf "EXISTS (%s)" (subquery ~count:false)))
   | Equality _ | String _ | Size _ | Existence _ ->
-    Error Message.(Invalid Field.Operator)
+    Error Message.(Error.Invalid Field.Operator)
 ;;
 
-(* The subquery returns any contacts that has been an assignment to an
-   experiment. *)
+(* The subquery returns any contacts that has been an assignment to an experiment. *)
 let assignment_subquery dyn operator ids =
   let open CCResult in
   let* dyn, query_params = add_uuid_param dyn ids in
@@ -238,9 +232,8 @@ let invitation_subquery dyn operator ids =
   add_list_condition subquery dyn ids operator
 ;;
 
-(* The subquery does not return any contacts that have shown up at a session of
-   the current experiment. It does not make a difference, if they
-   participated. *)
+(* The subquery does not return any contacts that have shown up at a session of the
+   current experiment. It does not make a difference, if they participated. *)
 let participation_subquery dyn operator ids =
   let open CCResult in
   let* dyn, query_params = add_uuid_param dyn ids in
@@ -290,10 +283,7 @@ let tag_subquery dyn operator ids =
   add_list_condition subquery dyn ids operator
 ;;
 
-let predicate_to_sql
-  (dyn, sql)
-  ({ Predicate.key; operator; value } : Predicate.t)
-  =
+let predicate_to_sql (dyn, sql) ({ Predicate.key; operator; value } : Predicate.t) =
   let open CCResult in
   let open Operator in
   match value with
@@ -301,14 +291,13 @@ let predicate_to_sql
     (match operator with
      | Existence operator -> add_existence_condition key operator dyn
      | Equality _ | String _ | Size _ | List _ ->
-       Error Message.(QueryNotCompatible (Field.Value, Field.Key)))
+       Error Message.(Error.QueryNotCompatible (Field.Value, Field.Key)))
   | Single value ->
     let add_value = add_single_value key operator in
     (match key with
      | Key.Hardcoded _ -> add_value dyn value
      | Key.CustomField _ ->
-       add_value dyn value
-       >|= fun (dyn, sql) -> dyn, Format.asprintf "EXISTS (%s)" sql)
+       add_value dyn value >|= fun (dyn, sql) -> dyn, Format.asprintf "EXISTS (%s)" sql)
   | Lst [] -> Ok (dyn, sql)
   | Lst values ->
     let open Key in
@@ -326,20 +315,17 @@ let predicate_to_sql
         | NumInvitations
         | NumNoShows
         | NumParticipations
-        | NumShowUps ->
-          Error Message.(QueryNotCompatible (Field.Value, Field.Key)))
+        | NumShowUps -> Error Message.(Error.QueryNotCompatible (Field.Value, Field.Key)))
      | CustomField id ->
        let* dyn, subqueries =
          CCList.fold_left
            (fun res value ->
-             match res with
-             | Error err -> Error err
-             | Ok (dyn, lst_sql) ->
-               let* dyn = add_value_to_params operator value dyn in
-               let new_sql =
-                 where_clause coalesce_value (Operator.to_sql operator)
-               in
-               Ok (dyn, lst_sql @ [ new_sql ]))
+              match res with
+              | Error err -> Error err
+              | Ok (dyn, lst_sql) ->
+                let* dyn = add_value_to_params operator value dyn in
+                let new_sql = where_clause coalesce_value (Operator.to_sql operator) in
+                Ok (dyn, lst_sql @ [ new_sql ]))
            (Ok (Dynparam.(dyn |> add Custom_field.Repo.Id.t id), []))
            values
        in
@@ -360,23 +346,21 @@ let predicate_to_sql
            | ContainsNone -> build_query "AND"
            | ContainsSome -> build_query "OR")
         | Equality _ | String _ | Size _ | Existence _ ->
-          Error Message.(Invalid Field.Operator)))
+          Error Message.(Error.Invalid Field.Operator)))
 ;;
 
 let filter_to_sql template_list dyn query =
   let open Entity in
   let open CCResult in
-  let rec query_sql (dyn, sql) query
-    : (Dynparam.t * string, Message.error) result
-    =
+  let rec query_sql (dyn, sql) query : (Dynparam.t * string, Pool_message.Error.t) result =
     let of_list (dyn, sql) queries operator =
       let query =
         CCList.fold_left
           (fun res query ->
-            res
-            >>= fun (dyn, lst_sql) ->
-            query_sql (dyn, sql) query
-            >|= fun (dyn, new_sql) -> dyn, lst_sql @ [ new_sql ])
+             res
+             >>= fun (dyn, lst_sql) ->
+             query_sql (dyn, sql) query
+             >|= fun (dyn, new_sql) -> dyn, lst_sql @ [ new_sql ])
           (Ok (dyn, []))
           queries
       in
@@ -392,40 +376,27 @@ let filter_to_sql template_list dyn query =
     | And queries -> of_list (dyn, sql) queries "AND"
     | Or queries -> of_list (dyn, sql) queries "OR"
     | Not f ->
-      query_sql (dyn, sql) f
-      >|= fun (dyn, sql) -> dyn, Format.asprintf "NOT %s" sql
+      query_sql (dyn, sql) f >|= fun (dyn, sql) -> dyn, Format.asprintf "NOT %s" sql
     | Template id ->
       template_list
       |> CCList.find_opt (fun template -> Pool_common.Id.equal template.id id)
-      |> CCOption.to_result Message.(NotFound Field.Template)
+      |> CCOption.to_result Message.(Error.NotFound Field.Template)
       >>= fun filter -> query_sql (dyn, sql) filter.query
     | Pred predicate -> predicate_to_sql (dyn, sql) predicate
   in
   query_sql (dyn, "") query
 ;;
 
-let filtered_params
-  ?include_invited
-  ?group_by
-  ?order_by
-  use_case
-  template_list
-  filter
-  =
+let filtered_params ?include_invited ?group_by ?order_by use_case template_list filter =
   let open CCResult.Infix in
   let base_dyn =
     let open Dynparam in
-    let dyn =
-      empty |> add Caqti_type.string Sihl_user.(status_to_string Inactive)
-    in
+    let dyn = empty |> add Caqti_type.string Pool_user.Status.(show Inactive) in
     match use_case with
     | MatchesFilter -> dyn
     | Matcher experiment_id ->
       let id = experiment_id |> Pool_common.Id.value in
       dyn |> add Caqti_type.string id
-    | MatcherReset (experiment_id, allow_before) ->
-      let id = experiment_id |> Pool_common.Id.value in
-      dyn |> add Caqti_type.string id |> add Caqti_type.ptime allow_before
   in
   let query =
     let base_condition = filtered_base_condition ?include_invited use_case in
@@ -433,8 +404,7 @@ let filtered_params
     | None -> Ok (base_dyn, base_condition)
     | Some filter ->
       filter_to_sql template_list base_dyn filter
-      >|= fun (dyn, sql) ->
-      dyn, Format.asprintf "%s\n AND %s" base_condition sql
+      >|= fun (dyn, sql) -> dyn, Format.asprintf "%s\n AND %s" base_condition sql
   in
   query
   >|= fun (dyn, sql) ->
@@ -473,15 +443,15 @@ let find_experiments_by_key expected_key query =
     | Template _ -> ids
     | Pred { Predicate.key; value; _ } ->
       let open Key in
-      (match[@warning "-4"] key with
+      (match key with
        | Hardcoded key ->
          if equal_hardcoded key expected_key
          then (
            match value with
            | Lst values -> values @ ids
-           | _ -> ids)
+           | Single _ | NoValue -> ids)
          else ids
-       | _ -> ids)
+       | CustomField _ -> ids)
   in
   search [] query
   |> CCList.filter_map (fun value ->

@@ -1,3 +1,5 @@
+open Pool_message
+open Pool_user
 module Root_command = Cqrs_command.Root_command
 
 module Data = struct
@@ -12,19 +14,17 @@ let create_root () =
   let command =
     CCResult.get_exn
     @@ Root_command.Create.decode
-         Pool_common.Message.
-           [ Field.(Email |> show), [ email ]
-           ; Field.(Password |> show), [ password ]
-           ; Field.(Firstname |> show), [ firstname ]
-           ; Field.(Lastname |> show), [ lastname ]
-           ]
+         [ Field.(Email |> show), [ email ]
+         ; Field.(Password |> show), [ password ]
+         ; Field.(Firstname |> show), [ firstname ]
+         ; Field.(Lastname |> show), [ lastname ]
+         ]
   in
   let events = Root_command.Create.handle command in
   let expected =
-    let open Pool_user in
     let open CCResult in
     let* email = email |> EmailAddress.create in
-    let* password = password |> Password.create in
+    let password = password |> Password.Plain.create in
     let* firstname = firstname |> Firstname.create in
     let* lastname = lastname |> Lastname.create in
     let create =
@@ -39,36 +39,23 @@ let create_root () =
     Ok [ Admin.Created create |> Pool_event.admin ]
   in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
 
 let create_root_with_invalid_password () =
   let open CCResult.Infix in
-  let open Pool_common in
   let open Data in
   let password = "e" in
   let events =
     Root_command.Create.decode
-      Message.
-        [ Field.(Email |> show), [ email ]
-        ; Field.(Password |> show), [ password ]
-        ; Field.(Firstname |> show), [ firstname ]
-        ; Field.(Lastname |> show), [ lastname ]
-        ]
+      [ Field.(Email |> show), [ email ]
+      ; Field.(Password |> show), [ password ]
+      ; Field.(Firstname |> show), [ firstname ]
+      ; Field.(Lastname |> show), [ lastname ]
+      ]
     >>= Root_command.Create.handle
   in
-  let expected =
-    Error
-      (Message.Conformist Message.[ Field.Password, PasswordPolicyMinLength 8 ])
-  in
+  let expected = Error Error.(Conformist [ Field.Password, PasswordPolicyMinLength 8 ]) in
   Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;

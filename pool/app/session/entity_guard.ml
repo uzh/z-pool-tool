@@ -3,14 +3,13 @@ open Utils.Lwt_result.Infix
 module Target = struct
   type t = Entity.t [@@deriving eq, show]
 
-  let to_authorizable ?ctx t =
+  let to_authorizable ?ctx id =
     let open Guard in
     Persistence.Target.decorate
       ?ctx
-      (fun { Entity.id; _ } ->
-        Target.create `Session (id |> Uuid.target_of Pool_common.Id.value))
-      t
-    >|- Pool_common.Message.authorization
+      (fun id -> Target.create `Session (id |> Uuid.target_of Pool_common.Id.value))
+      id
+    >|- Pool_message.Error.authorization
   ;;
 end
 
@@ -23,17 +22,19 @@ module Access = struct
 
   let session ?session_id ?(model = `Session) permission =
     one_of_tuple
-      ( permission
-      , model
-      , CCOption.map (Uuid.target_of Entity.Id.value) session_id )
+      (permission, model, CCOption.map (Uuid.target_of Entity.Id.value) session_id)
+  ;;
+
+  let permission_on_target permission session_id =
+    PermissionOnTarget.create
+      ~target_uuid:(session_id |> Uuid.target_of Entity.Id.value)
+      permission
+      `Session
   ;;
 
   let index ?(model = `Session) id =
     And
-      [ Or
-          [ session ~model index_permission
-          ; Experiment.Guard.Access.read ~model id
-          ]
+      [ Or [ session ~model index_permission; Experiment.Guard.Access.read ~model id ]
       ; Experiment.Guard.Access.read id
       ]
   ;;
@@ -96,4 +97,6 @@ module Access = struct
       ; Experiment.Guard.Access.read experiment_id
       ]
   ;;
+
+  let update_permission_on_target = permission_on_target Update
 end

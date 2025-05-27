@@ -1,4 +1,4 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 
 let src = Logs.Src.create "custom_field_settings.cqrs"
 
@@ -13,7 +13,7 @@ module UpdateVisibilitySettings : sig
     -> [< `Close | `Detail ]
     -> t
     -> unit
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Guard.ValidationSet.t
 end = struct
@@ -30,20 +30,18 @@ end = struct
     let active, inactive =
       CCList.partition_filter_map
         (fun field ->
-          let active = getter field in
-          CCList.find_opt
-            (fun selected_id ->
-              selected_id |> Id.of_string |> Id.equal (id field))
-            selected
-          |> function
-          | Some (_ : string) when not active -> `Left (setter true field)
-          | None when active -> `Right (setter false field)
-          | Some (_ : string) | None -> `Drop)
+           let active = getter field in
+           CCList.find_opt
+             (fun selected_id -> selected_id |> Id.of_string |> Id.equal (id field))
+             selected
+           |> function
+           | Some (_ : string) when not active ->
+             `Left (Updated (field, setter true field))
+           | None when active -> `Right (Updated (field, setter false field))
+           | Some (_ : string) | None -> `Drop)
         fields
     in
-    active @ inactive
-    |> CCList.map (fun field -> Updated field |> Pool_event.custom_field)
-    |> CCResult.return
+    active @ inactive |> Pool_event.(map custom_field) |> CCResult.return
   ;;
 
   let effects = Custom_field.Guard.Access.create

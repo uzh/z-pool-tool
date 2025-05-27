@@ -1,56 +1,21 @@
-module Url : sig
-  include Pool_common.Model.StringSig
+val connect_and_migrate : Database.Label.t -> (unit, Pool_message.Error.t) result Lwt.t
+
+type event =
+  | Migrated of Database.t
+  | StatusUpdated of Database.Label.t * Database.Status.t
+
+val equal_event : event -> event -> bool
+val pp_event : Format.formatter -> event -> unit
+val show_event : event -> string
+val handle_event : 'a -> event -> unit Lwt.t
+
+module Root : sig
+  val steps : unit -> Database.Migration.t list
 end
 
-module Label : sig
-  include Pool_common.Model.StringSig
-
-  val of_string : string -> t
+module Tenant : sig
+  val steps : unit -> Database.Migration.t list
 end
 
-type t =
-  { url : Url.t
-  ; label : Label.t
-  }
-
-val root : Label.t
-val is_root : Label.t -> bool
-val equal : t -> t -> bool
-val pp : Format.formatter -> t -> unit
-val create : Label.t -> Url.t -> (t, Pool_common.Message.error) result
-val add_pool : t -> unit
-val drop_pool : Label.t -> unit Lwt.t
-val read_pool : t -> Label.t
-val to_ctx : Label.t -> (string * string) list
-val of_ctx_opt : (string * string) list -> Label.t option
-val of_ctx_exn : (string * string) list -> Label.t
-
-val test_and_create
-  :  Url.t
-  -> Label.t
-  -> (t, Pool_common.Message.error) Lwt_result.t
-
-module Repo : sig
-  module Url : sig
-    type t = Url.t
-
-    val t : t Caqti_type.t
-  end
-
-  module Label : sig
-    type t = Label.t
-
-    val t : t Caqti_type.t
-  end
-
-  val t : t Caqti_type.t
-end
-
-module GuardBackend : Guardian_backend.Pools.Sig
-
-module Logger : sig
-  module Tags : sig
-    val create : Label.t -> Logs.Tag.set
-    val add : Label.t -> Logs.Tag.set -> Logs.Tag.set
-  end
-end
+val lifecycle : Sihl.Container.lifecycle
+val register : unit -> Sihl.Container.Service.t

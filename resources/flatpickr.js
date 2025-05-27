@@ -63,6 +63,7 @@ export function initDatepicker(container = document) {
 
             const minDate = largestDate([parsedMinDate, minInputElementDate, nowDate])
 
+
             const f = flatpickr(e, {
                 ...globalConfig(e),
                 altFormat,
@@ -80,12 +81,25 @@ export function initDatepicker(container = document) {
                         }
                     }
                 },
-                onReady: function (value, originalValue, { altInput }) {
+                onReady: function (value, originalValue, instance) {
+                    const { altInput, hourElement, minuteElement } = instance;
                     altInput.disabled = e.readOnly; // Workaround for https://github.com/flatpickr/flatpickr/issues/2492
                     classlist.forEach(cls => altInput.classList.add(cls))
-                }
+
+                    // Manually set time when using keyboard
+                    hourElement.addEventListener("keyup", (e) => {
+                        const date = instance.selectedDates[0] || new Date();
+                        date.setHours(e.currentTarget.value)
+                        instance.setDate(date);
+                    })
+
+                    minuteElement.addEventListener("keyup", (e) => {
+                        const date = instance.selectedDates[0] || new Date();
+                        date.setMinutes(e.currentTarget.value)
+                        instance.setDate(date);
+                    })
+                },
             })
-            f._input.onkeydown = () => false
             if (minInputEl) {
                 minInputEl.addEventListener("change", (e) => {
                     const value = new Date(e.currentTarget.value)

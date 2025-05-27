@@ -1,17 +1,17 @@
 (library
  (name message_template)
  (libraries
+  authentication
   assignment
   contact
   email
+  invitation
   pool_common
-  pool_database
   pool_tenant
   pool_user
-  queue
-  service
   session
   settings
+  signup_code
   text_message
   utils)
  (preprocess

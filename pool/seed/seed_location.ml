@@ -31,25 +31,17 @@ let locations =
   let open Pool_location in
   [ ( "ETH Decision Science Laboratory"
     , Some "Tram 6, 7, 10 or 15 to Haldenegg"
-    , Some
-        ( None
-        , Some "Stockwerk A"
-        , Some "IFW"
-        , "Haldeneggsteig 4"
-        , "8092"
-        , "Zurich" )
+    , Some (None, Some "Stockwerk A", Some "IFW", "Haldeneggsteig 4", "8092", "Zurich")
     , Some "https://www.uast.uzh.ch/assets/map-descil.jpg"
     , Status.Active )
   ; ( "SNS Lab fMRI"
     , Some sns_fmri_description
-    , Some
-        (Some "USZ", Some "SNS Labor", None, "Rämistrasse 100", "8091", "Zürich")
+    , Some (Some "USZ", Some "SNS Labor", None, "Rämistrasse 100", "8091", "Zürich")
     , Some "https://www.uast.uzh.ch/assets/map-usz.jpg"
     , Status.Active )
   ; ( "SNS Behavioral Lab"
     , Some sns_behavioural_description
-    , Some
-        (Some "USZ", Some "SNS Labor", None, "Rämistrasse 100", "8091", "Zürich")
+    , Some (Some "USZ", Some "SNS Labor", None, "Rämistrasse 100", "8091", "Zürich")
     , Some "https://www.uast.uzh.ch/assets/map-usz.jpg"
     , Status.Active )
   ]
@@ -70,13 +62,10 @@ let locations =
         |> Address.physical
       | None -> Address.Virtual
     in
-    create label description address link status []
-    |> Pool_common.Utils.get_or_failwith)
+    create label description address link status |> Pool_common.Utils.get_or_failwith)
 ;;
 
 let create pool =
   let open Pool_location in
-  default_values @ locations
-  |> CCList.map created
-  |> Lwt_list.iter_s (handle_event pool)
+  default_values @ locations |> CCList.map created |> Lwt_list.iter_s (handle_event pool)
 ;;

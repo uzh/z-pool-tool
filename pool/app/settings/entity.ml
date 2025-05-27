@@ -1,6 +1,5 @@
 open Ppx_yojson_conv_lib.Yojson_conv
-module Message = Pool_common.Message
-module TimeUnit = Pool_common.Model.TimeUnit
+module TimeUnit = Pool_model.Base.TimeUnit
 
 type command =
   { time_value : int
@@ -10,71 +9,15 @@ type command =
 let update_command time_value time_unit = { time_value; time_unit }
 
 let update_duration_schema integer_schema field =
-  Pool_common.Utils.PoolConformist.(
+  Pool_conformist.(
     make Field.[ integer_schema; TimeUnit.named_schema field () ] update_command)
 ;;
 
-module ContactEmail = struct
-  include Pool_common.Model.String
-
-  let field = Message.Field.ContactEmail
-
-  let create email =
-    let open Mrmime in
-    match Mailbox.of_string email with
-    | Ok _ -> Ok email
-    | Error _ -> Error Pool_common.Message.(Invalid field)
-  ;;
-
-  let schema () = schema ~validation:create field ()
-  let of_string m = m
-end
-
-module EmailSuffix = struct
-  include Pool_common.Model.String
-
-  let field = Message.Field.EmailSuffix
-  (* TODO: email address validation *)
-
-  let schema () = schema field ()
-  let of_string m = m
-end
-
-module InactiveUser = struct
-  module DisableAfter = struct
-    module Core = struct
-      let name = Pool_common.Message.Field.InactiveUserDisableAfter
-    end
-
-    include Pool_common.Model.Duration (Core)
-  end
-
-  module Warning = struct
-    module Core = struct
-      let name = Pool_common.Message.Field.InactiveUserWarning
-    end
-
-    include Pool_common.Model.Duration (Core)
-  end
-end
-
-module TriggerProfileUpdateAfter = struct
-  module Core = struct
-    type t
-
-    let name = Pool_common.Message.Field.TriggerProfileUpdateAfter
-  end
-
-  include Pool_common.Model.Duration (Core)
-end
-
 module TermsAndConditions = struct
   module Terms = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
-    let field = Message.Field.TermsAndConditions
-    (* TODO: email address validation *)
-
+    let field = Pool_message.Field.TermsAndConditions
     let schema () = schema field ()
     let of_string m = m
   end
@@ -91,138 +34,231 @@ module TermsAndConditions = struct
   let value m = m
 end
 
+module Key = struct
+  let printer = Utils.ppx_printer
+
+  type t =
+    | ContactEmail [@name "contact_email"] [@printer printer "contact_email"]
+    | EmailSuffixes [@name "email_suffixes"] [@printer printer "email_suffixes"]
+    | InactiveUserDisableAfter [@name "inactive_user_disable_after"]
+    [@printer printer "inactive_user_disable_after"]
+    | InactiveUserWarning [@name "inactive_user_warning"]
+    [@printer printer "inactive_user_warning"]
+    | InactiveUserServiceDisabled [@name "inactive_user_service_disabled"]
+    [@printer printer "inactive_user_service_disabled"]
+    | Languages [@name "languages"] [@printer printer "languages"]
+    | ReminderLeadTime [@name "default_reminder_lead_time"]
+    [@printer printer "default_reminder_lead_time"]
+    | TextMsgReminderLeadTime [@name "default_text_msg_reminder_lead_time"]
+    [@printer printer "default_text_msg_reminder_lead_time"]
+    | TriggerProfileUpdateAfter [@name "trigger_profile_update_after"]
+    [@printer printer "trigger_profile_update_after"]
+    | UserImportFirstReminderAfter [@name "user_import_first_reminder_after"]
+    [@printer printer "user_import_first_reminder_after"]
+    | UserImportSecondReminderAfter [@name "user_import_second_reminder_after"]
+    [@printer printer "user_import_second_reminder_after"]
+  [@@deriving eq, show { with_path = false }, yojson]
+
+  let read = Utils.Json.read_variant t_of_yojson
+  let to_json_string key = key |> yojson_of_t |> Yojson.Safe.to_string
+end
+
+module ContactEmail = struct
+  include Pool_model.Base.String
+
+  let key = Key.ContactEmail
+  let field = Pool_message.Field.ContactEmail
+
+  let create email =
+    let open Mrmime in
+    match Mailbox.of_string email with
+    | Ok _ -> Ok email
+    | Error _ -> Error Pool_message.(Error.Invalid field)
+  ;;
+
+  let schema () = schema ~validation:create field ()
+  let of_string m = m
+end
+
+module EmailSuffix = struct
+  include Pool_model.Base.String
+
+  let field = Pool_message.Field.EmailSuffix
+  (* TODO: email address validation *)
+
+  let schema () = schema field ()
+  let of_string m = m
+end
+
+module EmailSuffixes = struct
+  type t = EmailSuffix.t list [@@deriving eq, show, yojson]
+
+  let key = Key.EmailSuffixes
+end
+
+module EmailReminderLeadTime = struct
+  type t = Pool_common.Reminder.EmailLeadTime.t [@@deriving eq, show, yojson]
+
+  let key = Key.ReminderLeadTime
+end
+
+module TextMsgReminderLeadTime = struct
+  type t = Pool_common.Reminder.TextMessageLeadTime.t [@@deriving eq, show, yojson]
+
+  let key = Key.TextMsgReminderLeadTime
+end
+
+module InactiveUser = struct
+  module DisableAfter = struct
+    module Core = struct
+      let name = Pool_message.Field.InactiveUserDisableAfter
+    end
+
+    include Pool_model.Base.Duration (Core)
+
+    let key = Key.InactiveUserDisableAfter
+  end
+
+  module Warning = struct
+    module TimeSpan = struct
+      module Core = struct
+        let name = Pool_message.Field.InactiveUserWarning
+      end
+
+      include Pool_model.Base.Duration (Core)
+    end
+
+    type t = TimeSpan.t list [@@deriving eq, show, yojson]
+
+    let key = Key.InactiveUserWarning
+  end
+
+  module ServiceDisabled = struct
+    let field = Pool_message.Field.InactiveUserDisableService
+
+    include Pool_model.Base.Boolean
+
+    let schema = schema ~default:false field
+    let key = Key.InactiveUserServiceDisabled
+  end
+end
+
+module TriggerProfileUpdateAfter = struct
+  module Core = struct
+    type t
+
+    let name = Pool_message.Field.TriggerProfileUpdateAfter
+  end
+
+  include Pool_model.Base.Duration (Core)
+
+  let key = Key.TriggerProfileUpdateAfter
+end
+
+module TenantLanguages = struct
+  type t = Pool_common.Language.t list [@@deriving eq, show, yojson]
+
+  let key = Key.Languages
+end
+
 module UserImportReminder = struct
   let validate m =
     let open Ptime.Span in
     let day = 60 * 60 * 24 |> of_int_s in
-    if m >= day then Ok m else Error Pool_common.Message.TooShort
+    if m >= day then Ok m else Error Pool_message.Error.TooShort
   ;;
 
   module FirstReminderAfter = struct
     module Core = struct
       type t
 
-      let name = Pool_common.Message.Field.FirstReminder
+      let name = Pool_message.Field.FirstReminder
     end
 
-    include Pool_common.Model.Duration (Core)
+    include Pool_model.Base.Duration (Core)
 
     let validate = validate
+    let key = Key.UserImportFirstReminderAfter
   end
 
   module SecondReminderAfter = struct
     module Core = struct
       type t
 
-      let name = Pool_common.Message.Field.SecondReminder
+      let name = Pool_message.Field.SecondReminder
     end
 
-    include Pool_common.Model.Duration (Core)
+    include Pool_model.Base.Duration (Core)
 
     let validate = validate
+    let key = Key.UserImportSecondReminderAfter
   end
 end
 
-module Value = struct
-  type default_reminder_lead_time = Pool_common.Reminder.EmailLeadTime.t
-  [@@deriving eq, show, yojson]
+module PageScript = struct
+  include Changelog.DefaultSettings
+  include Pool_model.Base.String
 
-  type default_text_msg_reminder_lead_time =
-    Pool_common.Reminder.TextMessageLeadTime.t
-  [@@deriving eq, show, yojson]
+  let model = Pool_message.Field.Setting
 
-  type tenant_languages = Pool_common.Language.t list
-  [@@deriving eq, show, yojson]
+  type location =
+    | Head [@name "head"] [@printer Utils.ppx_printer "head"]
+    | Body [@name "body"] [@printer Utils.ppx_printer "body"]
+  [@@deriving eq, show { with_path = false }, yojson]
 
-  type tenant_email_suffixes = EmailSuffix.t list [@@deriving eq, show, yojson]
-  type tenant_contact_email = ContactEmail.t [@@deriving eq, show, yojson]
+  let schema field () = schema field ()
+  let of_string m = m
+  let read_location = Utils.Json.read_variant location_of_yojson
 
-  type inactive_user_disable_after = InactiveUser.DisableAfter.t
-  [@@deriving eq, show, yojson]
-
-  type inactive_user_warning = InactiveUser.DisableAfter.t
-  [@@deriving eq, show, yojson]
-
-  type trigger_profile_update_after = TriggerProfileUpdateAfter.t
-  [@@deriving eq, show, yojson]
-
-  type t =
-    | DefaultReminderLeadTime of default_reminder_lead_time
-    | DefaultTextMsgReminderLeadTime of default_text_msg_reminder_lead_time
-    | TenantLanguages of tenant_languages
-    | TenantEmailSuffixes of tenant_email_suffixes
-    | TenantContactEmail of tenant_contact_email
-    | InactiveUserDisableAfter of inactive_user_disable_after
-    | InactiveUserWarning of inactive_user_warning
-    | TriggerProfileUpdateAfter of trigger_profile_update_after
-    | UserImportFirstReminder of UserImportReminder.FirstReminderAfter.t
-    | UserImportSecondReminder of UserImportReminder.SecondReminderAfter.t
-  [@@deriving eq, show, yojson, variants]
+  type page_scripts =
+    { head : t option
+    ; body : t option
+    }
 end
 
-type setting_key =
-  | ReminderLeadTime [@name "default_reminder_lead_time"]
-  | TextMsgReminderLeadTime [@name "default_text_msg_reminder_lead_time"]
-  | Languages [@name "languages"]
-  | EmailSuffixes [@name "email_suffixes"]
-  | ContactEmail [@name "contact_email"]
-  | InactiveUserDisableAfter [@name "inactive_user_disable_after"]
-  | InactiveUserWarning [@name "inactive_user_warning"]
-  | TriggerProfileUpdateAfter [@name "trigger_profile_update_after"]
-  | UserImportFirstReminderAfter [@name "user_import_first_reminder_after"]
-  | UserImportSecondReminderAfter [@name "user_import_second_reminder_after"]
-[@@deriving eq, show, yojson]
-
-type t =
-  { value : Value.t
-  ; created_at : Pool_common.CreatedAt.t
-  ; updated_at : Pool_common.UpdatedAt.t
-  }
-[@@deriving eq, show]
-
-module Write = struct
-  type t = { value : Value.t }
-end
+module PageScriptChangelog = Changelog.T (PageScript)
 
 let action_of_param = function
   | "create_emailsuffix" -> Ok `CreateEmailSuffix
-  | "delete_emailsuffix" -> Ok `DeleteEmailSuffix
   | "update_default_lead_time" -> Ok `UpdateDefaultLeadTime
   | "update_text_msg_default_lead_time" -> Ok `UpdateTextMsgDefaultLeadTime
   | "update_inactive_user_disable_after" -> Ok `UpdateInactiveUserDisableAfter
   | "update_inactive_user_warning" -> Ok `UpdateInactiveUserWarning
+  | "disable_inactive_user_service" -> Ok `UpdateUnactiveUserServiceDisabled
   | "update_contact_email" -> Ok `UpdateContactEmail
   | "update_emailsuffix" -> Ok `UpdateEmailSuffixes
   | "update_languages" -> Ok `UpdateLanguages
   | "update_trigger_profile_update_after" -> Ok `UpdateTriggerProfileUpdateAfter
   | "user_import_first_reminder_after" -> Ok `UserImportFirstReminderAfter
   | "user_import_second_reminder_after" -> Ok `UserImportSecondReminderAfter
-  | _ -> Error Pool_common.Message.DecodeAction
+  | "update_head_scripts" -> Ok `UpdateHeadScripts
+  | "update_body_scripts" -> Ok `UpdateBodyScripts
+  | _ -> Error Pool_message.Error.DecodeAction
 ;;
 
 let stringify_action = function
   | `CreateEmailSuffix -> "create_emailsuffix"
-  | `DeleteEmailSuffix -> "delete_emailsuffix"
   | `UpdateDefaultLeadTime -> "update_default_lead_time"
   | `UpdateTextMsgDefaultLeadTime -> "update_text_msg_default_lead_time"
   | `UpdateInactiveUserDisableAfter -> "update_inactive_user_disable_after"
   | `UpdateInactiveUserWarning -> "update_inactive_user_warning"
+  | `UpdateUnactiveUserServiceDisabled -> "disable_inactive_user_service"
   | `UpdateContactEmail -> "update_contact_email"
   | `UpdateEmailSuffixes -> "update_emailsuffix"
   | `UpdateLanguages -> "update_languages"
   | `UpdateTriggerProfileUpdateAfter -> "update_trigger_profile_update_after"
   | `UserImportFirstReminderAfter -> "user_import_first_reminder_after"
   | `UserImportSecondReminderAfter -> "user_import_second_reminder_after"
+  | `UpdateHeadScripts -> "update_head_scripts"
+  | `UpdateBodyScripts -> "update_body_scripts"
 ;;
 
 let default_email_session_reminder_lead_time_key_yojson =
-  yojson_of_setting_key ReminderLeadTime
+  Key.(yojson_of_t ReminderLeadTime)
 ;;
 
 let default_text_message_session_reminder_lead_time_key_yojson =
-  yojson_of_setting_key TextMsgReminderLeadTime
+  Key.(yojson_of_t TextMsgReminderLeadTime)
 ;;
 
-let trigger_profile_update_after_key_yojson =
-  yojson_of_setting_key TriggerProfileUpdateAfter
-;;
+let trigger_profile_update_after_key_yojson = Key.(yojson_of_t TriggerProfileUpdateAfter)

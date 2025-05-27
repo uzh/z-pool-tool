@@ -27,9 +27,7 @@ let insert_request =
   |> Caqti_type.(t2 Id.t Id.t ->. unit)
 ;;
 
-let insert pool =
-  Utils.Database.exec (Pool_database.Label.value pool) insert_request
-;;
+let insert pool = Database.exec pool insert_request
 
 let delete_request =
   let open Caqti_request.Infix in
@@ -41,9 +39,7 @@ let delete_request =
   |> Caqti_type.(t2 Id.t Id.t ->. unit)
 ;;
 
-let delete pool =
-  Utils.Database.exec (Pool_database.Label.value pool) delete_request
-;;
+let delete pool = Database.exec pool delete_request
 
 let find_all_request =
   let open Caqti_request.Infix in
@@ -56,12 +52,7 @@ let find_all_request =
   |> Pool_common.Repo.Id.t ->* RepoEntity.t
 ;;
 
-let find_all pool entity =
-  Utils.Database.collect
-    (Pool_database.Label.value pool)
-    find_all_request
-    (get_id entity)
-;;
+let find_all pool entity = Database.collect pool find_all_request (get_id entity)
 
 let find_available_for_experiment_request =
   let open Caqti_request.Infix in
@@ -104,9 +95,7 @@ let find_available_for_session_request =
 
 let find_available pool entity =
   let model = Entity.Model.Contact in
-  let collect fnc id =
-    Utils.Database.collect (Pool_database.Label.value pool) fnc (model, id)
-  in
+  let collect fnc id = Database.collect pool fnc (model, id) in
   match entity with
   | Experiment id -> collect find_available_for_experiment_request id
   | Session id -> collect find_available_for_session_request id

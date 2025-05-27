@@ -4,16 +4,15 @@
  (preprocess
   (pps lwt_ppx ppx_deriving.show))
  (libraries
+  assignment_job
+  contact_job
   caqti-driver-mariadb
   command
-  database
   guard
   pool_canary
-  queue
+  pool_queue
   reminder
   routes
-  service
   sihl
   system_event
-  tenant
   text_message))

@@ -1,20 +1,32 @@
 (tests
- (names command integration filter_invitation_tests filter_assignment_tests)
+ (names
+  command
+  integration
+  filter_invitation_tests
+  filter_assignment_tests
+  password_reset_test
+  pool_user_test
+  pool_token_test)
  (libraries
   admin
+  api_key
   alcotest
   alcotest-lwt
   assignment
   caqti-driver-mariadb
+  changelog
   contact
   contact_counter
+  contact_job
   cqrs_command
   custom_field
+  database
   experiment
   guard
   handler
   http_utils
   invitation
+  layout
   matcher
   pool_database
   pool_event
@@ -23,11 +35,16 @@
   reminder
   seed
   tags
-  tenant
   user_import
   utils
   waiting_list)
  (preprocess
-  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show)))
+  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_string)))
 
 (include_subdirs unqualified)
+
+(env
+ (_
+  (env-vars
+   (SIHL_ENV "test")
+   (TEST_MAIL "test@econ.uzh.ch"))))

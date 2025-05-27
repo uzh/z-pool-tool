@@ -1,11 +1,10 @@
 open Ppx_yojson_conv_lib.Yojson_conv
-module Message = Pool_common.Message
 module Language = Pool_common.Language
 module Answer = Entity_answer
 module User = Pool_user
 
 module Ptime = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 end
 
 let printer = Utils.ppx_printer
@@ -16,13 +15,17 @@ end
 
 module Model = struct
   module Core = struct
-    let field = Message.Field.Model
+    let field = Pool_message.Field.Model
 
     type t = Contact [@name "contact"] [@printer printer "contact"]
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+
+    let to_nav_link = function
+      | Contact -> Pool_common.I18n.Contacts
+    ;;
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 end
 
@@ -35,16 +38,17 @@ module Name = struct
 
   let find_opt lang t = CCList.assoc_opt ~eq:Language.equal lang t
   let find_opt_or lang default t = find_opt lang t |> CCOption.value ~default
+  let get_hd t = CCList.hd t |> snd
+  let find lang t = find_opt lang t |> CCOption.value ~default:(CCList.hd t |> snd)
 
   let create sys_languages names =
     CCList.filter
       (fun lang ->
-        CCList.assoc_opt ~eq:Pool_common.Language.equal lang names
-        |> CCOption.is_none)
+         CCList.assoc_opt ~eq:Pool_common.Language.equal lang names |> CCOption.is_none)
       sys_languages
     |> function
     | [] -> Ok names
-    | _ -> Error Message.(AllLanguagesRequired Field.Name)
+    | _ -> Error Pool_message.(Error.AllLanguagesRequired Field.Name)
   ;;
 end
 
@@ -61,7 +65,7 @@ end
 
 module FieldType = struct
   module Core = struct
-    let field = Message.Field.FieldType
+    let field = Pool_message.Field.FieldType
 
     type t =
       | Boolean [@name "boolean"] [@printer printer "boolean"]
@@ -73,7 +77,7 @@ module FieldType = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 
   let to_string t =
@@ -82,62 +86,77 @@ module FieldType = struct
 end
 
 module Required = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema Message.Field.Required
+  let schema = schema Pool_message.Field.Required
 end
 
 module Disabled = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema Message.Field.Disabled
+  let schema = schema Pool_message.Field.Disabled
 end
 
 module PublishedAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.Ptime
 
   let create m = Ok m
-  let schema = schema Pool_common.Message.Field.PublishedAt create
+  let schema = schema Pool_message.Field.PublishedAt create
 end
 
 module AdminHint = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Message.Field.AdminHint
+  let field = Pool_message.Field.AdminHint
   let schema () = schema field ()
 end
 
 module AdminOverride = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema Message.Field.Override
+  let schema = schema Pool_message.Field.Override
 end
 
 module AdminViewOnly = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema Message.Field.AdminViewOnly
+  let schema = schema Pool_message.Field.AdminViewOnly
 end
 
 module AdminInputOnly = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema Message.Field.AdminInputOnly
+  let schema = schema Pool_message.Field.AdminInputOnly
 end
 
 module PromptOnRegistration = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema Message.Field.PromptOnRegistration
+  let schema = schema Pool_message.Field.PromptOnRegistration
+end
+
+module DuplicateWeighting = struct
+  include Pool_model.Base.Integer
+
+  let min = 0
+  let max = 10
+  let init = 0
+  let field = Pool_message.Field.DuplicateWeighting
+
+  let create i =
+    if i < min || i > max then Error Pool_message.(Error.OutOfRange (min, max)) else Ok i
+  ;;
+
+  let schema = schema field create
 end
 
 module Validation = struct
   type raw = (string * string) list [@@deriving show, eq, yojson]
 
   type 'a t =
-    (('a -> ('a, Message.error) result) * raw
+    (('a -> ('a, Pool_message.Error.t) result) * raw
     [@equal fun (_, raw1) (_, raw2) -> equal_raw raw1 raw2])
-  [@@deriving show, eq]
+  [@@deriving show, eq, yojson]
 
   let read_key key_of_yojson m =
     try Some (Utils.Json.read_variant key_of_yojson m) with
@@ -149,17 +168,13 @@ module Validation = struct
     rules
     |> snd
     |> CCList.filter_map (fun (key, rule_value) ->
-      read_key key
-      >|= to_hint
-      >>= fun (parse, variant) -> parse rule_value >|= variant)
+      read_key key >|= to_hint >>= fun (parse, variant) -> parse rule_value >|= variant)
   ;;
 
   module Text = struct
     type key =
-      | TextLengthMin [@name "text_length_min"]
-      [@printer printer "text_length_min"]
-      | TextLengthMax [@name "text_length_max"]
-      [@printer printer "text_length_max"]
+      | TextLengthMin [@name "text_length_min"] [@printer printer "text_length_min"]
+      | TextLengthMax [@name "text_length_max"] [@printer printer "text_length_max"]
     [@@deriving show, eq, yojson]
 
     let key_to_human = function
@@ -172,13 +187,13 @@ module Validation = struct
     let check_min_length rule_value value =
       if CCString.length value >= rule_value
       then Ok value
-      else Error (Message.TextLengthMin rule_value)
+      else Error (Pool_message.Error.TextLengthMin rule_value)
     ;;
 
     let check_max_length rule_value value =
       if CCString.length value <= rule_value
       then Ok value
-      else Error (Message.TextLengthMax rule_value)
+      else Error (Pool_message.Error.TextLengthMax rule_value)
     ;;
 
     let schema data =
@@ -186,25 +201,23 @@ module Validation = struct
       ( (fun value ->
           CCList.fold_left
             (fun result (key, rule_value) ->
-              let map_or = CCOption.map_or ~default:result in
-              match read_key key with
-              | Some TextLengthMin ->
-                rule_value
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_min_length rule)
-              | Some TextLengthMax ->
-                rule_value
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_max_length rule)
-              | None -> result)
+               let map_or = CCOption.map_or ~default:result in
+               match read_key key with
+               | Some TextLengthMin ->
+                 rule_value
+                 |> CCInt.of_string
+                 |> map_or (fun rule -> result >>= check_min_length rule)
+               | Some TextLengthMax ->
+                 rule_value
+                 |> CCInt.of_string
+                 |> map_or (fun rule -> result >>= check_max_length rule)
+               | None -> result)
             (Ok value)
             data)
       , data )
     ;;
 
-    let all =
-      [ show_key TextLengthMin, `Number; show_key TextLengthMax, `Number ]
-    ;;
+    let all = [ show_key TextLengthMin, `Number; show_key TextLengthMax, `Number ]
 
     let hints =
       let open Pool_common in
@@ -232,13 +245,13 @@ module Validation = struct
     let check_min rule_value value =
       if value >= rule_value
       then Ok value
-      else Error (Message.NumberMin rule_value)
+      else Error (Pool_message.Error.NumberMin rule_value)
     ;;
 
     let check_max rule_value value =
       if value <= rule_value
       then Ok value
-      else Error (Message.NumberMax rule_value)
+      else Error (Pool_message.Error.NumberMax rule_value)
     ;;
 
     let schema data =
@@ -246,17 +259,13 @@ module Validation = struct
       ( (fun value ->
           CCList.fold_left
             (fun result (key, rule) ->
-              let map_or = CCOption.map_or ~default:result in
-              match read_key key with
-              | Some NumberMin ->
-                rule
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_min rule)
-              | Some NumberMax ->
-                rule
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_max rule)
-              | None -> result)
+               let map_or = CCOption.map_or ~default:result in
+               match read_key key with
+               | Some NumberMin ->
+                 rule |> CCInt.of_string |> map_or (fun rule -> result >>= check_min rule)
+               | Some NumberMax ->
+                 rule |> CCInt.of_string |> map_or (fun rule -> result >>= check_max rule)
+               | None -> result)
             (Ok value)
             data)
       , data )
@@ -276,10 +285,8 @@ module Validation = struct
 
   module MultiSelect = struct
     type key =
-      | OptionsCountMin [@name "options_count_min"]
-      [@printer printer "options_count_min"]
-      | OptionsCountMax [@name "options_count_max"]
-      [@printer printer "options_count_max"]
+      | OptionsCountMin [@name "options_count_min"] [@printer printer "options_count_min"]
+      | OptionsCountMax [@name "options_count_max"] [@printer printer "options_count_max"]
     [@@deriving show, eq, yojson]
 
     let key_to_human = function
@@ -292,13 +299,13 @@ module Validation = struct
     let check_options_min_count rule_value options =
       if CCList.length options >= rule_value
       then Ok options
-      else Error (Message.SelectedOptionsCountMin rule_value)
+      else Error (Pool_message.Error.SelectedOptionsCountMin rule_value)
     ;;
 
     let check_options_max_count rule_value options =
       if CCList.length options <= rule_value
       then Ok options
-      else Error (Message.SelectedOptionsCountMax rule_value)
+      else Error (Pool_message.Error.SelectedOptionsCountMax rule_value)
     ;;
 
     let schema data =
@@ -306,25 +313,23 @@ module Validation = struct
       ( (fun value ->
           CCList.fold_left
             (fun result (key, rule_value) ->
-              let map_or = CCOption.map_or ~default:result in
-              match read_key key with
-              | Some OptionsCountMin ->
-                rule_value
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_options_min_count rule)
-              | Some OptionsCountMax ->
-                rule_value
-                |> CCInt.of_string
-                |> map_or (fun rule -> result >>= check_options_max_count rule)
-              | None -> result)
+               let map_or = CCOption.map_or ~default:result in
+               match read_key key with
+               | Some OptionsCountMin ->
+                 rule_value
+                 |> CCInt.of_string
+                 |> map_or (fun rule -> result >>= check_options_min_count rule)
+               | Some OptionsCountMax ->
+                 rule_value
+                 |> CCInt.of_string
+                 |> map_or (fun rule -> result >>= check_options_max_count rule)
+               | None -> result)
             (Ok value)
             data)
       , data )
     ;;
 
-    let all =
-      [ show_key OptionsCountMin, `Number; show_key OptionsCountMax, `Number ]
-    ;;
+    let all = [ show_key OptionsCountMin, `Number; show_key OptionsCountMax, `Number ]
 
     let hints rules =
       let open Pool_common in
@@ -365,6 +370,10 @@ module Validation = struct
 end
 
 module SelectOption = struct
+  include Changelog.DefaultSettings
+
+  let model = Pool_message.Field.CustomFieldOption
+
   module Id = struct
     include Pool_common.Id
   end
@@ -380,17 +389,15 @@ module SelectOption = struct
 
   let name lang (t : t) =
     Name.find_opt lang t.name
-    |> CCOption.to_result Message.(NotFound Field.Name)
+    |> CCOption.to_result Pool_message.(Error.NotFound Field.Name)
     |> Pool_common.Utils.get_or_failwith
   ;;
 
-  let create ?(id = Id.create ()) ?published_at name =
-    { id; name; published_at }
-  ;;
+  let create ?(id = Id.create ()) ?published_at name = { id; name; published_at }
 
   let to_common_field language m =
     let name = name language m in
-    Message.(Field.CustomHtmx (name, m.id |> Id.value))
+    Pool_message.(Field.CustomHtmx (name, m.id |> Id.value))
   ;;
 
   module Public = struct
@@ -404,7 +411,7 @@ module SelectOption = struct
 
     let name lang (t : t) =
       Name.find_opt lang t.name
-      |> CCOption.to_result Message.(NotFound Field.Name)
+      |> CCOption.to_result Pool_message.(Error.NotFound Field.Name)
       |> Pool_common.Utils.get_or_failwith
     ;;
 
@@ -412,7 +419,7 @@ module SelectOption = struct
 
     let to_common_field language m =
       let name = name language m in
-      Message.(Field.CustomHtmx (name, m.id |> Id.value))
+      Pool_message.Field.CustomHtmx (name, m.id |> Id.value)
     ;;
   end
 end
@@ -446,6 +453,18 @@ module Public = struct
     | Text of string public * string Answer.t option
   [@@deriving eq, show, variants]
 
+  let[@warning "-4"] equal_answer a b =
+    let open Answer in
+    match a, b with
+    | Boolean (_, a), Boolean (_, b) -> equal_value ~consider_admin:true a b
+    | Date (_, a), Date (_, b) -> equal_value ~consider_admin:true a b
+    | MultiSelect (_, _, a), MultiSelect (_, _, b) -> equal_value ~consider_admin:true a b
+    | Number (_, a), Number (_, b) -> equal_value ~consider_admin:true a b
+    | Select (_, _, a), Select (_, _, b) -> equal_value ~consider_admin:true a b
+    | Text (_, a), Text (_, b) -> equal_value ~consider_admin:true a b
+    | _ -> false
+  ;;
+
   let id (t : t) =
     match t with
     | Boolean ({ id; _ }, _)
@@ -477,7 +496,7 @@ module Public = struct
     | Select ({ name; _ }, _, _)
     | Text ({ name; _ }, _) ->
       Name.find_opt lang name
-      |> CCOption.to_result Pool_common.Message.(NotFound Field.Name)
+      |> CCOption.to_result Pool_message.(Error.NotFound Field.Name)
       |> Pool_common.Utils.get_or_failwith
   ;;
 
@@ -566,30 +585,26 @@ module Public = struct
     | MultiSelect (public, options, answer) ->
       multiselect { public with version } options answer
     | Number (public, answer) -> number { public with version } answer
-    | Select (public, options, answer) ->
-      select { public with version } options answer
+    | Select (public, options, answer) -> select { public with version } options answer
     | Text (public, answer) -> text { public with version } answer
   ;;
 
   let to_common_field language m =
     let id = id m in
     let name = name_value language m in
-    Message.(Field.CustomHtmx (name, id |> Id.value))
+    Pool_message.Field.CustomHtmx (name, id |> Id.value)
   ;;
 
   let to_common_hint language m =
     let open CCOption in
-    hint language m
-    >|= Hint.value_hint
-    >|= fun h -> Pool_common.I18n.CustomHtmx h
+    hint language m >|= Hint.value_hint >|= fun h -> Pool_common.I18n.CustomHtmx h
   ;;
 
   let validation_hints =
     let return = CCOption.return in
     function
     | Boolean _ | Date _ | Select _ -> None
-    | Number ({ validation; _ }, _) ->
-      return (Validation.Number.hints validation)
+    | Number ({ validation; _ }, _) -> return (Validation.Number.hints validation)
     | MultiSelect ({ validation; _ }, _, _) ->
       return (Validation.MultiSelect.hints validation)
     | Text ({ validation; _ }, _) -> return (Validation.Text.hints validation)
@@ -605,10 +620,14 @@ module Public = struct
 end
 
 module Group = struct
+  include Changelog.DefaultSettings
+
+  let model = Pool_message.Field.CustomFieldGroup
+
   module Id = struct
     include Pool_common.Id
 
-    let schema = schema ~field:Message.Field.CustomFieldGroup
+    let schema = schema ~field:Pool_message.Field.CustomFieldGroup
   end
 
   type t =
@@ -616,13 +635,13 @@ module Group = struct
     ; model : Model.t
     ; name : Name.t
     }
-  [@@deriving eq, show]
+  [@@deriving eq, show, yojson]
 
   let create ?(id = Id.create ()) model name = { id; model; name }
 
   let name lang (t : t) =
     Name.find_opt lang t.name
-    |> CCOption.to_result Pool_common.Message.(NotFound Field.Name)
+    |> CCOption.to_result Pool_message.(Error.NotFound Field.Name)
     |> Pool_common.Utils.get_or_failwith
   ;;
 
@@ -636,7 +655,7 @@ module Group = struct
 
     let name lang (t : t) =
       Name.find_opt lang t.name
-      |> CCOption.to_result Pool_common.Message.(NotFound Field.Name)
+      |> CCOption.to_result Pool_message.(Error.NotFound Field.Name)
       |> Pool_common.Utils.get_or_failwith
     ;;
   end
@@ -659,8 +678,9 @@ type 'a custom_field =
   ; published_at : PublishedAt.t option
   ; show_on_session_close_page : bool
   ; show_on_session_detail_page : bool
+  ; duplicate_weighting : DuplicateWeighting.t option
   }
-[@@deriving eq, show]
+[@@deriving eq, show, yojson]
 
 type t =
   | Boolean of bool custom_field
@@ -669,157 +689,128 @@ type t =
   | MultiSelect of SelectOption.t list custom_field * SelectOption.t list
   | Select of SelectOption.t custom_field * SelectOption.t list
   | Text of string custom_field
-[@@deriving eq, show]
+[@@deriving eq, show, yojson]
 
 let create
-  ?(id = Pool_common.Id.create ())
-  ?(select_options = [])
-  ?published_at
-  field_type
-  model
-  name
-  hint
-  validation
-  required
-  disabled
-  custom_field_group_id
-  admin_hint
-  admin_override
-  admin_view_only
-  admin_input_only
-  prompt_on_registration
+      ?(id = Pool_common.Id.create ())
+      ?(select_options = [])
+      ?published_at
+      ?duplicate_weighting
+      field_type
+      model
+      name
+      hint
+      validation
+      required
+      disabled
+      custom_field_group_id
+      admin_hint
+      admin_override
+      admin_view_only
+      admin_input_only
+      prompt_on_registration
   =
   let open CCResult in
   let show_on_session_close_page = false in
   let show_on_session_detail_page = false in
   let required = if admin_input_only then false else required in
   let admin_input_only = admin_view_only || admin_input_only in
+  let make_field validation =
+    { id
+    ; model
+    ; name
+    ; hint
+    ; validation
+    ; required
+    ; disabled
+    ; custom_field_group_id
+    ; admin_hint
+    ; admin_override
+    ; admin_view_only
+    ; admin_input_only
+    ; published_at
+    ; prompt_on_registration
+    ; show_on_session_close_page
+    ; show_on_session_detail_page
+    ; duplicate_weighting
+    }
+  in
   match (field_type : FieldType.t) with
-  | FieldType.Boolean ->
-    Ok
-      (Boolean
-         { id
-         ; model
-         ; name
-         ; hint
-         ; validation = Validation.pure
-         ; required
-         ; disabled
-         ; custom_field_group_id
-         ; admin_hint
-         ; admin_override
-         ; admin_view_only
-         ; admin_input_only
-         ; published_at
-         ; prompt_on_registration
-         ; show_on_session_close_page
-         ; show_on_session_detail_page
-         })
-  | FieldType.Date ->
-    Ok
-      (Date
-         { id
-         ; model
-         ; name
-         ; hint
-         ; validation = Validation.pure
-         ; required
-         ; disabled
-         ; custom_field_group_id
-         ; admin_hint
-         ; admin_override
-         ; admin_view_only
-         ; admin_input_only
-         ; published_at
-         ; prompt_on_registration
-         ; show_on_session_close_page
-         ; show_on_session_detail_page
-         })
+  | FieldType.Boolean -> Ok (Boolean (make_field Validation.pure))
+  | FieldType.Date -> Ok (Date (make_field Validation.pure))
   | FieldType.Number ->
     let validation = Validation.Number.schema validation in
-    Ok
-      (Number
-         { id
-         ; model
-         ; name
-         ; hint
-         ; validation
-         ; required
-         ; disabled
-         ; custom_field_group_id
-         ; admin_hint
-         ; admin_override
-         ; admin_view_only
-         ; admin_input_only
-         ; published_at
-         ; prompt_on_registration
-         ; show_on_session_close_page
-         ; show_on_session_detail_page
-         })
+    Ok (Number (make_field validation))
   | FieldType.Text ->
     let validation = Validation.Text.schema validation in
-    Ok
-      (Text
-         { id
-         ; model
-         ; name
-         ; hint
-         ; validation
-         ; required
-         ; disabled
-         ; custom_field_group_id
-         ; admin_hint
-         ; admin_override
-         ; admin_view_only
-         ; admin_input_only
-         ; published_at
-         ; prompt_on_registration
-         ; show_on_session_close_page
-         ; show_on_session_detail_page
-         })
+    Ok (Text (make_field validation))
   | FieldType.MultiSelect ->
     let validation = Validation.MultiSelect.schema validation in
-    Ok
-      (MultiSelect
-         ( { id
-           ; model
-           ; name
-           ; hint
-           ; validation
-           ; required
-           ; disabled
-           ; custom_field_group_id
-           ; admin_hint
-           ; admin_override
-           ; admin_view_only
-           ; admin_input_only
-           ; published_at
-           ; prompt_on_registration
-           ; show_on_session_close_page
-           ; show_on_session_detail_page
-           }
-         , select_options ))
-  | FieldType.Select ->
-    Ok
-      (Select
-         ( { id
-           ; model
-           ; name
-           ; hint
-           ; validation = Validation.pure
-           ; required
-           ; disabled
-           ; custom_field_group_id
-           ; admin_hint
-           ; admin_override
-           ; admin_view_only
-           ; admin_input_only
-           ; published_at
-           ; prompt_on_registration
-           ; show_on_session_close_page
-           ; show_on_session_detail_page
-           }
-         , select_options ))
+    Ok (MultiSelect (make_field validation, select_options))
+  | FieldType.Select -> Ok (Select (make_field Validation.pure, select_options))
+;;
+
+type update =
+  { name : Name.t
+  ; hint : Hint.t
+  ; required : Required.t
+  ; disabled : Disabled.t
+  ; custom_field_group_id : Group.Id.t option
+  ; admin_hint : AdminHint.t option
+  ; admin_override : AdminOverride.t
+  ; admin_view_only : AdminViewOnly.t
+  ; admin_input_only : AdminInputOnly.t
+  ; prompt_on_registration : PromptOnRegistration.t
+  ; duplicate_weighting : DuplicateWeighting.t option
+  }
+
+let update_attributes
+      ({ name
+       ; hint
+       ; required
+       ; disabled
+       ; custom_field_group_id
+       ; admin_hint
+       ; admin_override
+       ; admin_view_only
+       ; admin_input_only
+       ; prompt_on_registration
+       ; duplicate_weighting
+       } :
+        update)
+      (field : 'a custom_field)
+  : 'a custom_field
+  =
+  { field with
+    name
+  ; hint
+  ; required
+  ; disabled
+  ; custom_field_group_id
+  ; admin_hint
+  ; admin_override
+  ; admin_view_only
+  ; admin_input_only
+  ; prompt_on_registration
+  ; duplicate_weighting
+  }
+;;
+
+let update field update validation =
+  match field with
+  | Boolean field -> Boolean (update_attributes update field)
+  | Date field -> Date (update_attributes update field)
+  | Number field ->
+    let validation = Validation.Number.schema validation in
+    Number { (update_attributes update field) with validation }
+  | MultiSelect (field, options) ->
+    let validation = Validation.MultiSelect.schema validation in
+    let field = { (update_attributes update field) with validation } in
+    MultiSelect (field, options)
+  | Select (field, options) -> Select (update_attributes update field, options)
+  | Text field ->
+    let validation = Validation.Text.schema validation in
+    Text { (update_attributes update field) with validation }
 ;;
 
 let id = function
@@ -853,7 +844,7 @@ let name_value lang (t : t) =
   t
   |> name
   |> Name.find_opt lang
-  |> CCOption.to_result Message.(NotFound Field.Name)
+  |> CCOption.to_result Pool_message.(Error.NotFound Field.Name)
   |> Pool_common.Utils.get_or_failwith
 ;;
 
@@ -891,6 +882,17 @@ let published_at = function
   | MultiSelect ({ published_at; _ }, _)
   | Select ({ published_at; _ }, _)
   | Text { published_at; _ } -> published_at
+;;
+
+let set_published_at =
+  let published_at = Some (PublishedAt.create_now ()) in
+  function
+  | Boolean m -> Boolean { m with published_at }
+  | Date m -> Date { m with published_at }
+  | Number m -> Number { m with published_at }
+  | MultiSelect (m, options) -> MultiSelect ({ m with published_at }, options)
+  | Select (m, options) -> Select ({ m with published_at }, options)
+  | Text m -> Text { m with published_at }
 ;;
 
 let group_id = function
@@ -987,6 +989,15 @@ let set_show_on_session_close_page status = function
   | Text field -> Text { field with show_on_session_close_page = status }
 ;;
 
+let duplicate_weighting = function
+  | Boolean { duplicate_weighting; _ }
+  | Date { duplicate_weighting; _ }
+  | Number { duplicate_weighting; _ }
+  | MultiSelect ({ duplicate_weighting; _ }, _)
+  | Select ({ duplicate_weighting; _ }, _)
+  | Text { duplicate_weighting; _ } -> duplicate_weighting
+;;
+
 let field_type = function
   | Boolean _ -> FieldType.Boolean
   | Date _ -> FieldType.Date
@@ -1000,8 +1011,7 @@ let validation_strings =
   let open Validation in
   function
   | Boolean _ | Date _ | Select _ -> []
-  | MultiSelect ({ validation; _ }, _) ->
-    validation |> snd |> to_strings MultiSelect.all
+  | MultiSelect ({ validation; _ }, _) -> validation |> snd |> to_strings MultiSelect.all
   | Number { validation; _ } -> validation |> snd |> to_strings Number.all
   | Text { validation; _ } -> validation |> snd |> to_strings Text.all
 ;;
@@ -1014,20 +1024,14 @@ let validation_to_yojson = function
 ;;
 
 let boolean_fields =
-  Message.Field.
-    [ Required
-    ; Disabled
-    ; Override
-    ; AdminInputOnly
-    ; AdminViewOnly
-    ; PromptOnRegistration
-    ]
+  Pool_message.Field.
+    [ Required; Disabled; Override; AdminInputOnly; AdminViewOnly; PromptOnRegistration ]
 ;;
 
 let has_options = function
   | MultiSelect (_, options) | Select (_, options) ->
     if CCList.is_empty options
-    then Error Pool_common.Message.CustomFieldNoOptions
+    then Error Pool_message.Error.CustomFieldNoOptions
     else Ok ()
   | Boolean _ | Date _ | Number _ | Text _ -> Ok ()
 ;;
@@ -1050,6 +1054,7 @@ module Write = struct
     ; prompt_on_registration : PromptOnRegistration.t
     ; show_on_session_close_page : bool
     ; show_on_session_detail_page : bool
+    ; duplicate_weighting : int option
     }
   [@@deriving eq, show]
 end
@@ -1057,20 +1062,19 @@ end
 let group_fields groups fields =
   let partition group =
     CCList.partition
-      CCFun.(
-        group_id %> CCOption.map_or ~default:false (Id.equal group.Group.id))
+      CCFun.(group_id %> CCOption.map_or ~default:false (Id.equal group.Group.id))
   in
   CCList.fold_left
     (fun (grouped, ungrouped) group ->
-      let of_group, ungrouped = partition group ungrouped in
-      grouped @ [ group, of_group ], ungrouped)
+       let of_group, ungrouped = partition group ungrouped in
+       grouped @ [ group, of_group ], ungrouped)
     ([], fields)
     groups
 ;;
 
 module PartialUpdate = struct
-  module PoolField = Pool_common.Message.Field
-  module Conformist = Pool_common.Utils.PoolConformist
+  module PoolField = Pool_message.Field
+  module Conformist = Pool_conformist
 
   type t =
     | Firstname of Pool_common.Version.t * User.Firstname.t

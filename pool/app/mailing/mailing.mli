@@ -5,32 +5,26 @@ module Id : sig
 end
 
 module StartAt : sig
-  include Pool_common.Model.BaseSig
+  include Pool_model.Base.BaseSig
 
-  val create : Ptime.t -> (t, Pool_common.Message.error) result
+  val create : Ptime.t -> (t, Pool_message.Error.t) result
   val create_now : unit -> t
   val value : t -> Ptime.t
   val to_human : t -> string
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module StartNow : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 end
 
 module EndAt : sig
-  include Pool_common.Model.BaseSig
+  include Pool_model.Base.BaseSig
 
-  val create : Ptime.t -> (t, Pool_common.Message.error) result
+  val create : Ptime.t -> (t, Pool_message.Error.t) result
   val value : t -> Ptime.t
   val to_human : t -> string
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module Start : sig
@@ -42,29 +36,26 @@ module Start : sig
     :  ?allow_start_in_past:bool
     -> t
     -> EndAt.t
-    -> (StartAt.t, Pool_common.Message.error) result
+    -> (StartAt.t, Pool_message.Error.t) result
 
-  val create
-    :  StartAt.t option
-    -> StartNow.t
-    -> (t, Pool_common.Message.error) result
+  val create : StartAt.t option -> StartNow.t -> (t, Pool_message.Error.t) result
 end
 
 module Limit : sig
-  include Pool_common.Model.IntegerSig
+  include Pool_model.Base.IntegerSig
 
   val default : t
 end
 
 module InvitationCount : sig
-  include Pool_common.Model.IntegerSig
+  include Pool_model.Base.IntegerSig
 
   val default : t
 end
 
 module Distribution : sig
   module SortableField : sig
-    val field : Pool_common.Message.Field.t
+    val field : Pool_message.Field.t
 
     type t =
       | AssignmentCount
@@ -82,12 +73,9 @@ module Distribution : sig
     val to_human : Pool_common.Language.t -> t -> string
     val to_sql : t -> string
     val read : string -> t
-    val create : string -> (t, Pool_common.Message.error) result
+    val create : string -> (t, Pool_message.Error.t) result
     val all : t list
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
   module SortOrder : sig
@@ -100,13 +88,10 @@ module Distribution : sig
     val show : t -> string
     val to_human : Pool_common.Language.t -> t -> string
     val read : string -> t
-    val create : string -> (t, Pool_common.Message.error) result
+    val create : string -> (t, Pool_message.Error.t) result
     val all : t list
     val default : t
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
   type sorted = (SortableField.t * SortOrder.t) list
@@ -130,22 +115,9 @@ module Distribution : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val get_order_element : t -> string
-
-  val schema
-    :  unit
-    -> ( Pool_common.Message.error
-         , sorted )
-         Pool_common.Utils.PoolConformist.Field.t
-
-  val is_random_schema
-    :  unit
-    -> ( Pool_common.Message.error
-         , bool )
-         Pool_common.Utils.PoolConformist.Field.t
-
-  val of_urlencoded_list
-    :  string list
-    -> (string option, Pool_common.Message.error) result
+  val schema : unit -> (Pool_message.Error.t, sorted) Pool_conformist.Field.t
+  val is_random_schema : unit -> (Pool_message.Error.t, bool) Pool_conformist.Field.t
+  val of_urlencoded_list : string list -> (string option, Pool_message.Error.t) result
 end
 
 type t =
@@ -171,7 +143,7 @@ val create
   -> EndAt.t
   -> Limit.t
   -> Distribution.t option
-  -> (t, Pool_common.Message.error) result
+  -> (t, Pool_message.Error.t) result
 
 type update =
   { start_at : StartAt.t
@@ -197,41 +169,34 @@ val created : t * Experiment.Id.t -> event
 val updated : update * t -> event
 val deleted : t -> event
 val stopped : t -> event
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
-
-val find
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (t, Pool_common.Message.error) Lwt_result.t
+val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_with_detail
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Id.t
-  -> (t * InvitationCount.t, Pool_common.Message.error) Lwt_result.t
+  -> (t * InvitationCount.t, Pool_message.Error.t) Lwt_result.t
 
-val find_by_experiment
-  :  Pool_database.Label.t
-  -> Experiment.Id.t
-  -> t list Lwt.t
+val find_by_experiment : Database.Label.t -> Experiment.Id.t -> t list Lwt.t
 
 val find_by_experiment_with_count
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Query.t option
   -> Experiment.Id.t
   -> ((t * InvitationCount.t) list * Query.t) Lwt.t
 
-val find_overlaps : Pool_database.Label.t -> t -> t list Lwt.t
+val find_overlaps : Database.Label.t -> t -> t list Lwt.t
 
 module Status : sig
   module ToHandle : sig
-    include Pool_common.Model.BaseSig
+    include Pool_model.Base.BaseSig
 
     val value : t -> int
-    val create : int -> (t, Pool_common.Message.error) result
+    val create : int -> (t, Pool_message.Error.t) result
   end
 
   module LastRun : sig
-    include Pool_common.Model.BooleanSig
+    include Pool_model.Base.BooleanSig
   end
 
   type status =
@@ -246,7 +211,7 @@ module Status : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val find_current : Pool_database.Label.t -> Ptime.span -> t list Lwt.t
+  val find_current : Database.Label.t -> Ptime.span -> t list Lwt.t
 end
 
 module Repo : sig
@@ -262,7 +227,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 
@@ -279,6 +244,8 @@ module Guard : sig
     val delete : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
   end
 end
+
+module VersionHistory : Changelog.TSig with type record = t
 
 val column_start : Query.Column.t
 val column_end : Query.Column.t

@@ -79,6 +79,7 @@ let recruiter_permissions : RolePermission.t list =
 let recruiter_role_permissions : RolePermission.t list =
   let open Core.Permission in
   [ `Recruiter, Manage, `ContactDirectMessage
+  ; `Recruiter, Manage, `InvitationNotification
   ; `Recruiter, Manage, `RoleAdmin
   ; `Recruiter, Manage, `RoleAssistant
   ; `Recruiter, Manage, `RoleExperimenter
@@ -203,25 +204,27 @@ let sql_uuid_list_fragment pool permission model actor =
   | false, [] -> Some "(NULL)"
   | false, ids ->
     ids
-    |> CCList.map (Uuid.Target.to_string %> Pool_common.Id.sql_value_fragment)
+    |> CCList.map
+         (Uuid.Target.to_string
+          %> Format.asprintf "'%s'"
+          %> Pool_common.Id.sql_value_fragment)
     |> CCString.concat ", "
     |> Format.asprintf "(%s)"
     |> CCOption.return
 ;;
 
 let create_where
-  ?actor
-  ?permission
-  ?(checks : (string -> string) list = [])
-  ?all
-  pool
-  model
+      ?actor
+      ?permission
+      ?(checks : (string -> string) list = [])
+      ?all
+      pool
+      model
   =
   let open Utils.Lwt_result.Infix in
-  let tags = Pool_database.Logger.Tags.create pool in
-  let log_warning =
-    Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags
-  in
+  let open Pool_message in
+  let tags = Database.Logger.Tags.create pool in
+  let log_warning = Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags in
   match actor, permission with
   | Some actor, Some permission ->
     sql_uuid_list_fragment pool permission model actor
@@ -233,10 +236,10 @@ let create_where
        |> CCOption.return
      | None -> all)
   | None, Some _ ->
-    let _ = log_warning Pool_common.Message.(Undefined Field.Actor) in
+    let (_ : Error.t) = log_warning (Error.Undefined Field.Actor) in
     Lwt.return_some "FALSE"
   | Some _, None ->
-    let _ = log_warning Pool_common.Message.(Undefined Field.Permission) in
+    let (_ : Error.t) = log_warning (Error.Undefined Field.Permission) in
     Lwt.return_some "FALSE"
   | None, None -> Lwt.return_none
 ;;
@@ -306,24 +309,22 @@ end
 
 module RolePermission = struct
   include RolePermission
-  open Pool_common.Message
+  open Pool_message
 
   let column_role = (Field.Role, "role_permissions.role") |> Query.Column.create
 
-  let column_model =
-    (Field.Model, "role_permissions.target_model") |> Query.Column.create
+  let column_target =
+    (Field.Target, "role_permissions.target_model") |> Query.Column.create
   ;;
 
-  let column_action =
-    (Field.Action, "role_permissions.permission") |> Query.Column.create
-  ;;
+  let column_action = (Field.Action, "role_permissions.permission") |> Query.Column.create
 
   let column_created_at =
     (Field.CreatedAt, "role_permissions.created_at") |> Query.Column.create
   ;;
 
   let filterable_by = None
-  let searchable_by = [ column_role; column_model; column_action ]
+  let searchable_by = [ column_role; column_target; column_action ]
   let sortable_by = column_created_at :: searchable_by
 
   let default_sort =
@@ -335,11 +336,9 @@ end
 
 module ActorPermission = struct
   include ActorPermission
-  open Pool_common.Message
+  open Pool_message
 
-  let column_actor =
-    (Field.Actor, "actor_permissions.actor_uuid") |> Query.Column.create
-  ;;
+  let column_actor = (Field.Actor, "actor_permissions.actor_uuid") |> Query.Column.create
 
   let column_action =
     (Field.Permission, "actor_permissions.permission") |> Query.Column.create
@@ -358,11 +357,7 @@ module ActorPermission = struct
   ;;
 
   let filterable_by = None
-
-  let searchable_by =
-    [ column_actor; column_action; column_model; column_target ]
-  ;;
-
+  let searchable_by = [ column_actor; column_action; column_model; column_target ]
   let sortable_by = column_created_at :: searchable_by
 
   let default_sort =

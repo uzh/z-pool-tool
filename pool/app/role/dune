@@ -1,8 +1,9 @@
 (library
  (name role)
- (libraries pool_common sihl guardian)
+ (libraries pool.message sihl guardian)
  (preprocess
   (pps
+   ppx_deriving.enum
    ppx_deriving.show
    ppx_deriving.ord
    ppx_deriving_yojson

@@ -1,7 +1,8 @@
 open Utils.Lwt_result.Infix
 module Command = Cqrs_command.Admin_command
 module HttpUtils = Http_utils
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
+module Response = Http_response
 
 module Config = struct
   let src = Logs.Src.create "handler.admin.user_profile"
@@ -16,20 +17,21 @@ module MakeUserProfile (Config : module type of Config) = struct
 
   let show req =
     let result ({ Pool_context.database_label; language; user; _ } as context) =
-      Utils.Lwt_result.map_error (fun err -> err, "/login")
-      @@ let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
-         let%lwt password_policy =
-           I18n.find_by_key database_label I18n.Key.PasswordPolicyText language
-         in
-         Page.Admin.login_information
-           ~action_prefix:prefix
-           admin
-           context
-           password_policy
-         |> create_layout ~active_navigation req context
-         >|+ Sihl.Web.Response.of_html
+      let* admin =
+        Pool_context.get_admin_user user
+        |> Lwt_result.lift
+        >|- CCFun.const Response.access_denied
+      in
+      Response.bad_request_render_error context
+      @@
+      let%lwt password_policy =
+        I18n.find_by_key database_label I18n.Key.PasswordPolicyText language
+      in
+      Page.Admin.login_information ~action_prefix:prefix admin context password_policy
+      |> create_layout ~active_navigation req context
+      >|+ Sihl.Web.Response.of_html
     in
-    result |> HttpUtils.extract_happy_path ~src req
+    Response.handle ~src req result
   ;;
 
   let update_password req =
@@ -37,29 +39,26 @@ module MakeUserProfile (Config : module type of Config) = struct
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let result { Pool_context.database_label; language; user; _ } =
       let tags = Pool_context.Logger.Tags.req req in
-      Utils.Lwt_result.map_error (fun msg ->
-        msg, active_navigation, [ urlencoded_to_flash urlencoded ])
+      Response.bad_request_on_error show
       @@ let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
          let tenant = Pool_context.Tenant.get_tenant_exn req in
          let%lwt notification =
-           Message_template.PasswordChange.create
-             language
-             tenant
-             (Admin.user admin)
+           Message_template.PasswordChange.create language tenant (Admin.user admin)
          in
          let* events =
            let open CCResult.Infix in
-           Command.UpdatePassword.(
-             decode urlencoded >>= handle ~tags ~notification admin)
+           let open Cqrs_command.User_command.UpdatePassword in
+           decode urlencoded
+           >>= handle ~tags ~notification Admin.(admin |> id |> Id.to_user)
            |> Lwt_result.lift
          in
-         let%lwt () = Pool_event.handle_events ~tags database_label events in
+         let%lwt () = Pool_event.handle_events ~tags database_label user events in
          redirect_to_with_actions
            active_navigation
-           [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ]
+           [ Message.set ~success:[ Pool_message.Success.PasswordChanged ] ]
          |> Lwt_result.ok
     in
-    result |> extract_happy_path_with_actions ~src req
+    Response.handle ~src req result
   ;;
 
   let update_name req =
@@ -67,21 +66,19 @@ module MakeUserProfile (Config : module type of Config) = struct
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let result { Pool_context.database_label; user; _ } =
       let tags = Pool_context.Logger.Tags.req req in
-      Utils.Lwt_result.map_error (fun msg ->
-        msg, active_navigation, [ urlencoded_to_flash urlencoded ])
+      Response.bad_request_on_error show
       @@ let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
          let* events =
            let open CCResult.Infix in
-           Command.Update.(decode urlencoded >>= handle ~tags admin)
-           |> Lwt_result.lift
+           Command.Update.(decode urlencoded >>= handle ~tags admin) |> Lwt_result.lift
          in
-         let%lwt () = Pool_event.handle_events ~tags database_label events in
+         let%lwt () = Pool_event.handle_events ~tags database_label user events in
          redirect_to_with_actions
            active_navigation
-           [ Message.set ~success:[ Pool_common.Message.Updated Field.Name ] ]
+           [ Message.set ~success:[ Pool_message.Success.Updated Field.Name ] ]
          |> Lwt_result.ok
     in
-    result |> extract_happy_path_with_actions ~src req
+    Response.handle ~src req result
   ;;
 end
 

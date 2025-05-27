@@ -1,0 +1,13 @@
+(library
+ (name api)
+ (libraries
+  experiment
+  http_utils
+  http_response
+  middleware
+  organisational_unit
+  pool_common)
+ (preprocess
+  (pps lwt_ppx ppx_deriving.show)))
+
+(include_subdirs unqualified)

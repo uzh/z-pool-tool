@@ -46,8 +46,8 @@ let find_request =
 
 let find pool id =
   let open Lwt.Infix in
-  Utils.Database.find_opt (Pool_database.Label.value pool) find_request id
-  >|= CCOption.to_result Pool_common.Message.(NotFound Field.OrganisationalUnit)
+  Database.find_opt pool find_request id
+  >|= CCOption.to_result Pool_message.(Error.NotFound Field.OrganisationalUnit)
 ;;
 
 let find_all_request =
@@ -55,9 +55,7 @@ let find_all_request =
   select_from |> Caqti_type.unit ->* t
 ;;
 
-let all pool =
-  Utils.Database.collect (Pool_database.Label.value pool) find_all_request
-;;
+let all pool = Database.collect pool find_all_request
 
 let insert_request =
   let open Caqti_request.Infix in
@@ -73,12 +71,7 @@ let insert_request =
   |> Caqti_type.(t2 Pool_common.Repo.Id.t Name.t ->. unit)
 ;;
 
-let insert pool t =
-  Utils.Database.exec
-    (Pool_database.Label.value pool)
-    insert_request
-    (t.id, t.name)
-;;
+let insert pool t = Database.exec pool insert_request (t.id, t.name)
 
 let update_request =
   let open Caqti_request.Infix in
@@ -92,9 +85,7 @@ let update_request =
   |> t ->. Caqti_type.unit
 ;;
 
-let update pool =
-  Utils.Database.exec (Pool_database.Label.value pool) update_request
-;;
+let update pool = Database.exec pool update_request
 
 let select_count where_fragment =
   Format.asprintf

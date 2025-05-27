@@ -1,4 +1,4 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 
 let src = Logs.Src.create "custom_field_option_command.cqrs"
 
@@ -19,7 +19,7 @@ module Create : sig
     -> Pool_common.Language.t list
     -> Custom_field.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = command
 
@@ -42,7 +42,7 @@ module Update : sig
     -> Pool_common.Language.t list
     -> Custom_field.SelectOption.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Custom_field.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -52,9 +52,9 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open Custom_field in
     let open CCResult in
-    let* name = Name.create sys_languages command in
-    let m = SelectOption.create ~id:option.SelectOption.id name in
-    Ok [ OptionUpdated m |> Pool_event.custom_field ]
+    let* names = Name.create sys_languages command in
+    let updated : SelectOption.t = SelectOption.{ option with name = names } in
+    Ok [ OptionUpdated (option, updated) |> Pool_event.custom_field ]
   ;;
 
   let effects = Custom_field.Guard.Access.update
@@ -66,7 +66,7 @@ module Destroy : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Custom_field.SelectOption.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Custom_field.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -75,10 +75,8 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) option =
     Logs.info ~src (fun m -> m "Handle command Destroy" ~tags);
     match option.Custom_field.SelectOption.published_at with
-    | None ->
-      Ok [ Custom_field.OptionDestroyed option |> Pool_event.custom_field ]
-    | Some _ ->
-      Error Pool_common.Message.(AlreadyPublished Field.CustomFieldOption)
+    | None -> Ok [ Custom_field.OptionDestroyed option |> Pool_event.custom_field ]
+    | Some _ -> Error Pool_message.(Error.AlreadyPublished Field.CustomFieldOption)
   ;;
 
   let effects = Custom_field.Guard.Access.delete

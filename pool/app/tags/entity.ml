@@ -1,13 +1,18 @@
+open Ppx_yojson_conv_lib.Yojson_conv
 open CCFun.Infix
-module Message = Pool_common.Message
-module Ptime = Pool_common.Model.Ptime
+module Message = Pool_message
+module Ptime = Pool_model.Base.Ptime
 module Id = Pool_common.Id
+
+let model = Pool_message.Field.Tag
+
+include Changelog.DefaultSettings
 
 let printer = Utils.ppx_printer
 
 module Model = struct
   module Core = struct
-    let field = Message.Field.Model
+    let field = Pool_message.Field.Model
 
     type t =
       | Contact [@name "contact"] [@printer printer "contact"]
@@ -15,21 +20,21 @@ module Model = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 end
 
 module Title = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Message.Field.Title
+  let field = Pool_message.Field.Title
   let schema () = schema field ()
 end
 
 module Description = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Message.Field.Description
+  let field = Pool_message.Field.Description
   let schema () = schema field ()
 end
 
@@ -39,7 +44,7 @@ type t =
   ; description : Description.t option
   ; model : Model.t
   }
-[@@deriving eq, show]
+[@@deriving eq, show, yojson]
 
 let create ?(id = Id.create ()) ?description title model =
   let open CCResult in
@@ -63,7 +68,7 @@ module Tagged = struct
   let create model_uuid tag_uuid = Ok { model_uuid; tag_uuid }
 end
 
-open Pool_common.Message
+open Pool_message
 
 let column_title = (Field.Title, "pool_tags.title") |> Query.Column.create
 let column_model = (Field.Model, "pool_tags.model") |> Query.Column.create
@@ -72,16 +77,9 @@ let column_description =
   (Field.Description, "pool_tags.description") |> Query.Column.create
 ;;
 
-let column_created_at =
-  (Field.CreatedAt, "pool_tags.created_at") |> Query.Column.create
-;;
-
+let column_created_at = (Field.CreatedAt, "pool_tags.created_at") |> Query.Column.create
 let filterable_by = None
 let searchable_by = [ column_title; column_model; column_description ]
 let sortable_by = column_created_at :: searchable_by
-
-let default_sort =
-  Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
-;;
-
+let default_sort = Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
 let default_query = Query.create ~sort:default_sort ()

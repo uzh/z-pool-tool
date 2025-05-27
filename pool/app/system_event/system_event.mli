@@ -1,13 +1,20 @@
+type identifier =
+  [ `Server
+  | `Worker
+  ]
+
 module Id : module type of Pool_common.Id
 
 module Job : sig
   type t =
     | GuardianCacheCleared
+    | GtxConfigCacheCleared
     | I18nPageUpdated
+    | PageScriptsUpdated
     | SmtpAccountUpdated
-    | TenantDatabaseAdded of Pool_database.Label.t
-    | TenantDatabaseUpdated of Pool_database.Label.t
-    | TenantDatabaseDeleted of Pool_database.Label.t
+    | TenantDatabaseReset of Database.Label.t
+    | TenantCacheCleared
+    | TenantDatabaseCacheCleared
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
@@ -15,7 +22,7 @@ module Job : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val read : string -> t
-  val of_string : string -> (t, Pool_common.Message.error) result
+  val of_string : string -> (t, Pool_message.Error.t) result
   val to_string : t -> string
 end
 
@@ -33,9 +40,9 @@ val create : ?id:Id.t -> Job.t -> t
 
 module EventLog : sig
   module ServiceIdentifier : sig
-    include Pool_common.Model.StringSig
+    include Pool_model.Base.StringSig
 
-    val get : ?identifier:string -> unit -> t
+    val get : identifier -> t
   end
 
   module Status : sig
@@ -52,7 +59,7 @@ module EventLog : sig
   end
 
   module Message : sig
-    include Pool_common.Model.StringSig
+    include Pool_model.Base.StringSig
   end
 
   type t
@@ -64,12 +71,15 @@ val created : t -> event
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val find_pending : EventLog.ServiceIdentifier.t -> t list Lwt.t
 val handle_event : event -> unit Lwt.t
-val handle_system_event : ?identifier:string -> t -> unit Lwt.t
+val handle_system_event : identifier -> t -> unit Lwt.t
 
 module Service : sig
-  val run : ?identifier:string -> unit -> unit Lwt.t
-  val register : ?identifier:string -> unit -> Sihl.Container.Service.t
-  val register_worker : unit -> Sihl.Container.Service.t
+  val run : identifier -> unit -> unit Lwt.t
+  val register : identifier -> unit -> Sihl.Container.Service.t
+
+  module ConnectionWatcher : sig
+    val rerun_migrations_for_connection_issues : unit -> unit Lwt.t
+    val register : unit -> Sihl.Container.Service.t
+  end
 end

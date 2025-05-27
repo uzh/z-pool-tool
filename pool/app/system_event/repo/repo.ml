@@ -2,7 +2,7 @@ open CCFun
 module RepoEntity = Repo_entity
 
 module Sql = struct
-  open Pool_database
+  open Database
 
   let select_sql =
     {sql|
@@ -34,8 +34,8 @@ module Sql = struct
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt (Label.value pool) find_request id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.SystemEvent)
+    Database.find_opt pool find_request id
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.SystemEvent)
   ;;
 
   let insert_request =
@@ -56,7 +56,7 @@ module Sql = struct
     |> RepoEntity.t ->. Caqti_type.unit
   ;;
 
-  let insert = Label.value %> flip Utils.Database.exec insert_request
+  let insert = flip Database.exec insert_request
 
   module EventLog = struct
     let select_sql =
@@ -94,16 +94,12 @@ module Sql = struct
          ->* RepoEntity.t
     ;;
 
-    let find_by_event_and_host pool =
-      Utils.Database.collect
-        (Pool_database.Label.value pool)
-        find_by_event_and_host_request
-    ;;
+    let find_by_event_and_host pool = Database.collect pool find_by_event_and_host_request
 
     let insert_request =
       let open Caqti_request.Infix in
-      (* TODO: Consider using UPDATE ON DUPLICATE when event_id/service_id pair
-         should be unique *)
+      (* TODO: Consider using UPDATE ON DUPLICATE when event_id/service_id pair should be
+         unique *)
       {sql|
         INSERT INTO pool_system_event_logs (
           event_uuid,
@@ -124,25 +120,31 @@ module Sql = struct
       |> RepoEntity.EventLog.t ->. Caqti_type.unit
     ;;
 
-    let insert = Label.value %> flip Utils.Database.exec insert_request
+    let insert = flip Database.exec insert_request
   end
 
   let find_pending_request =
     let open Caqti_request.Infix in
-    {sql|
-    LEFT JOIN pool_system_event_logs
-      ON pool_system_event_logs.event_uuid = pool_system_events.uuid
-        AND pool_system_event_logs.service_identifier = $1
-    WHERE
-      pool_system_event_logs.status IS NULL
-      OR pool_system_event_logs.status != "successful"
-    |sql}
-    |> Format.asprintf "%s\n%s" select_sql
+    let joins =
+      {sql|
+        LEFT JOIN pool_system_event_logs
+          ON pool_system_event_logs.event_uuid = pool_system_events.uuid
+            AND pool_system_event_logs.service_identifier = $1
+      |sql}
+    in
+    let where =
+      {sql|
+        pool_system_event_logs.status IS NULL
+        OR pool_system_event_logs.status != "successful"
+      |sql}
+    in
+    Format.asprintf "%s %s WHERE %s" select_sql joins where
     |> RepoEntity.EventLog.ServiceIdentifier.t ->! RepoEntity.t
   ;;
 
-  let find_pending =
-    Utils.Database.collect (Label.value root) find_pending_request
+  let find_pending identifier =
+    Entity.EventLog.ServiceIdentifier.get identifier
+    |> Database.collect Pool.Root.label find_pending_request
   ;;
 end
 

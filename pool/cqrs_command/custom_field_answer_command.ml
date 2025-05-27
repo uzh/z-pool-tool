@@ -6,9 +6,9 @@ module UpdateMultiple : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Pool_context.user
-    -> Pool_common.Id.t
+    -> Contact.Id.t
     -> t
-    -> (Pool_event.t, Pool_common.Message.error) result
+    -> (Pool_event.t, Pool_message.Error.t) result
 
   val effects : unit -> Guard.ValidationSet.t
 end = struct
@@ -16,9 +16,7 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) user contact_id f =
     Logs.info ~src (fun m -> m "Handle command UpdateMultiple" ~tags);
-    Ok
-      (Custom_field.AnswerUpserted (f, contact_id, user)
-       |> Pool_event.custom_field)
+    Ok (Custom_field.AnswerUpserted (f, contact_id, user) |> Pool_event.custom_field)
   ;;
 
   let effects () = failwith "Admin pages: unused effect"

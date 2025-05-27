@@ -8,6 +8,7 @@ let suite =
           ; test_case "find tenants" `Slow check_find_tenant_database
           ; test_case "access tenant" `Slow check_tenant_database
           ] )
+    ; ("api_key", Api_key_test.[ test_case "get current api_key" `Slow get_current ])
     ; ( "settings"
       , Tenant_settings_test.
           [ test_case "read contact email" `Slow check_contact_email
@@ -16,31 +17,27 @@ let suite =
               "read inactive user disable after"
               `Slow
               check_inactive_user_disable_after
-          ; test_case
-              "read inactive user warning after"
-              `Slow
-              check_inactive_user_warning
+          ; test_case "read inactive user warning after" `Slow check_inactive_user_warning
+          ; test_case "disable inactive user service" `Slow disable_inactive_user_service
           ; test_case "read languages" `Slow check_languages
-          ; test_case
-              "has terms and conditions"
-              `Slow
-              check_terms_and_conditions
+          ; test_case "has terms and conditions" `Slow check_terms_and_conditions
           ; test_case "login after terms update" `Slow login_after_terms_update
           ; test_case "can create smtp auth" `Slow create_smtp_auth
           ; test_case "can delete smtp auth" `Slow delete_smtp_auth
+          ; test_case "update gtx settings" `Slow update_gtx_settings
           ] )
-    ; ( "dev/test"
-      , [ test_case "intercept email" `Slow Common_test.validate_email ] )
+    ; "dev/test", [ test_case "intercept email" `Slow Common_test.validate_email ]
+    ; ( "authentication"
+      , Authentication_test.
+          [ test_case "too many login attempts" `Slow login_too_many_attempts_test
+          ; test_case "failed login test" `Slow failed_login_test
+          ; test_case "successful create 2fa test" `Slow successful_create_2fa_test
+          ; test_case "confirm 2fa test" `Slow confirm_2fa_test
+          ] )
     ; ( "authorization"
       , Authorization_test.
-          [ test_case
-              "permit valid operation"
-              `Slow
-              recruiter_can_update_contact_language
-          ; test_case
-              "deny invalid operation"
-              `Slow
-              guest_cannot_update_language
+          [ test_case "permit valid operation" `Slow recruiter_can_update_contact_language
+          ; test_case "deny invalid operation" `Slow guest_cannot_update_language
           ; test_case "use parametric roles" `Slow operator_works
           ; test_case
               "test adding of role assignments"
@@ -51,6 +48,21 @@ let suite =
               `Slow
               Admin_role_assignment.grant_roles
           ] )
+    ; ( "authorization index lists"
+      , Authorization_lists_test.
+          [ test_case "experiments" `Slow experiments
+          ; test_case "locations" `Slow locations
+          ; test_case "contacts" `Slow contacts
+          ; test_case "admins" `Slow admins
+          ; test_case "dashboard calendar" `Slow dashboard_calendar
+          ; test_case "location calendar" `Slow location_calendar
+          ] )
+    ; ( "authorization navigation"
+      , Authorization_navigation_test.
+          [ test_case "admin navigation" `Slow admin_navigation
+          ; test_case "operator navigation" `Slow operator_navigation
+          ] )
+    ; ("announcement", Announcement_test.[ test_case "find current" `Slow find_current ])
     ; ( "partial_update"
       , Partial_update.
           [ test_case "update with old version" `Slow update_with_old_version
@@ -78,7 +90,12 @@ let suite =
           ] )
     ; ( "filter"
       , Filter_test.
-          [ test_case "filter contacts" `Slow filter_contacts
+          [ test_case "update filter" `Slow update_filter
+          ; test_case
+              "create and update filter template"
+              `Slow
+              create_and_update_filter_template
+          ; test_case "filter contacts" `Slow filter_contacts
           ; test_case "filter by email and custom field" `Slow filter_by_email
           ; test_case "filter exclude inactive" `Slow filter_exclude_inactive
           ; test_case
@@ -109,26 +126,17 @@ let suite =
               "no admin values shown to contacts"
               `Slow
               no_admin_values_shown_to_contacts
-          ; test_case
-              "filter ignore admin value"
-              `Slow
-              filter_ignore_admin_value
+          ; test_case "filter ignore admin value" `Slow filter_ignore_admin_value
           ; test_case
               "filter by experiment participation"
               `Slow
               filter_by_experiment_participation
-          ; test_case
-              "filter by empty language"
-              `Slow
-              filter_by_empty_hardcoded_value
+          ; test_case "filter by empty language" `Slow filter_by_empty_hardcoded_value
           ; test_case
               "filter by non-empty language"
               `Slow
               filter_by_non_empty_hardcoded_value
-          ; test_case
-              "filter by empty custom field"
-              `Slow
-              filter_by_empty_custom_field
+          ; test_case "filter by empty custom field" `Slow filter_by_empty_custom_field
           ; test_case
               "filter by nonempty custom field"
               `Slow
@@ -137,15 +145,31 @@ let suite =
               "filter by empty custom field with deleted answer"
               `Slow
               filter_by_empty_custom_field_with_deleted_value
-          ; test_case
-              "filter by date type custom field"
-              `Slow
-              filter_by_date_custom_field
+          ; test_case "filter by date type custom field" `Slow filter_by_date_custom_field
           ] )
     ; ( "matcher"
       , Matcher_test.
-          [ test_case "send invitations" `Slow create_invitations
+          [ test_case "create invitations" `Slow create_invitations
+          ; test_case "send invitations" `Slow send_invitations
           ; test_case "reset experiment invitations" `Slow reset_invitations
+          ; test_case "matcher notifiaction" `Slow matcher_notification
+          ; test_case
+              "online experiment matcher"
+              `Slow
+              create_invitations_for_online_experiment
+          ] )
+    ; ( "assignment job"
+      , Assignment_job_test.
+          [ test_case "initialize tests" `Slow init
+          ; test_case "update without filter" `Slow update_without_filter
+          ; test_case "exclude contact" `Slow exclude_contact
+          ] )
+    ; ( "contact job"
+      , Contact_job_test.
+          [ test_case
+              "find contacts to remind about inactivity"
+              `Slow
+              find_contacts_to_remind
           ] )
     ; ( "contact"
       , Contact_test.
@@ -185,44 +209,38 @@ let suite =
               `Slow
               assignment_creation_with_sender
           ] )
-    ; Message_history.(
-        ( "message_history"
-        , [ test_case "initialize message history data" `Slow initialize
+    ; Message_mapping.(
+        ( "message_mappings"
+        , [ test_case "initialize message mapping data" `Slow initialize
           ; test_case
-              "account suspension message history"
+              "account suspension message mapping"
               `Slow
               account_suspension_notification
           ; test_case
-              "assignment confirmation message history"
+              "assignment confirmation message mapping"
               `Slow
               assignment_confirmation
           ; test_case
-              "assignment session change message history"
+              "assignment session change message mapping"
               `Slow
               assignment_session_change
           ; test_case
-              "contact email change attempt message history"
+              "contact email change attempt message mapping"
               `Slow
               contact_email_change_attempt
           ; test_case
-              "contact registration attempt message history"
+              "contact registration attempt message mapping"
               `Slow
               contact_registration_attempt
           ; test_case
-              "email verification attempt message history"
+              "email verification attempt message mapping"
               `Slow
               email_verification
-          ; test_case
-              "experiment invitation message history"
-              `Slow
-              experiment_invitation
-          ; test_case "password change message history" `Slow password_change
-          ; test_case "password reset message history" `Slow password_reset
-          ; test_case
-              "phone verification message history"
-              `Slow
-              phone_verification
-          ; test_case "session reminder message history" `Slow session_reminder
+          ; test_case "experiment invitation message mapping" `Slow experiment_invitation
+          ; test_case "password change message mapping" `Slow password_change
+          ; test_case "password reset message mapping" `Slow password_reset
+          ; test_case "phone verification message mapping" `Slow phone_verification
+          ; test_case "session reminder message mapping" `Slow session_reminder
           ] ))
     ; ( "assignment"
       , Assignment_test.
@@ -230,6 +248,7 @@ let suite =
               "cancel assignment with follow ups"
               `Slow
               cancel_assignment_with_follow_ups
+          ; test_case "has upcoming sessions" `Slow has_upcoming_sessions
           ] )
     ; ( "session"
       , Session_test.
@@ -267,8 +286,7 @@ let suite =
           ; test_case
               "exclude experiment after registration for session"
               `Slow
-              AvailableExperiments
-              .exclude_experiment_after_registration_for_session
+              AvailableExperiments.exclude_experiment_after_registration_for_session
           ; test_case
               "cancel session contact is assigned to"
               `Slow
@@ -278,30 +296,20 @@ let suite =
               `Slow
               AvailableExperiments.mark_assignment_as_deleted
           ] )
+    ; ( "statistics"
+      , [ test_case "invitation statistics" `Slow Statistics_test.invitation_statistics ]
+      )
     ; ( "filtering"
-      , [ test_case
-            "uninvited contact is listed"
-            `Slow
-            Filter_invitation_tests.finds_uninvited_contacts
-        ; test_case
-            "invited contact is not listed"
-            `Slow
-            Filter_invitation_tests.filters_out_invited_contacts
-        ; test_case
-            "unassigned contact is listed"
-            `Slow
-            Filter_assignment_tests.finds_unassigned_contacts
-        ; test_case
-            "assigned contact is not listed"
-            `Slow
-            Filter_assignment_tests.filters_out_assigned_contacts
+      , let open Filter_invitation_tests in
+        let open Filter_assignment_tests in
+        [ test_case "uninvited contact is listed" `Slow finds_uninvited_contacts
+        ; test_case "invited contact is not listed" `Slow filters_out_invited_contacts
+        ; test_case "unassigned contact is listed" `Slow finds_unassigned_contacts
+        ; test_case "assigned contact is not listed" `Slow filters_out_assigned_contacts
         ] )
     ; ( "contact counter"
       , Contact_counter_test.
-          [ test_case
-              "invite contact: ssend invitation"
-              `Slow
-              InviteContact.invite
+          [ test_case "invite contact: ssend invitation" `Slow InviteContact.invite
           ; test_case
               "attend all: register for session"
               `Slow
@@ -318,10 +326,7 @@ let suite =
               "delete attended: delete follow up"
               `Slow
               DeleteAttended.delete_follow_up
-          ; test_case
-              "delete attended: delete main"
-              `Slow
-              DeleteAttended.delete_main
+          ; test_case "delete attended: delete main" `Slow DeleteAttended.delete_main
           ; test_case
               "cancel session: without follow up"
               `Slow
@@ -335,14 +340,8 @@ let suite =
               "Do not attend: register for session"
               `Slow
               DoNotAttend.register_for_session
-          ; test_case
-              "Do not attend: close main session"
-              `Slow
-              DoNotAttend.close_main
-          ; test_case
-              "no show: register for session"
-              `Slow
-              NoShow.register_for_session
+          ; test_case "Do not attend: close main session" `Slow DoNotAttend.close_main
+          ; test_case "no show: register for session" `Slow NoShow.register_for_session
           ; test_case "no show: close main" `Slow NoShow.close_main
           ; test_case
               "delete unattended: register"
@@ -364,6 +363,10 @@ let suite =
               "update closed: update assignment manually"
               `Slow
               UpdateAssignments.update_assignment_manually
+          ; test_case
+              "update online assignment manually"
+              `Slow
+              UpdateAssignments.update_online_assignment
           ; test_case
               "update closed: close follow up session"
               `Slow
@@ -389,26 +392,30 @@ let suite =
     ; ( "user import"
       , User_import_test.
           [ test_case "confirm as contact" `Slow confirm_as_contact_integration
-          ; test_case
-              "find contacts to notify"
-              `Slow
-              Repo.find_contacts_to_notify
-          ; test_case
-              "find contacts to remind"
-              `Slow
-              Repo.find_contacts_to_remind
+          ; test_case "find contacts to notify" `Slow Repo.find_contacts_to_notify
+          ; test_case "find contacts to remind" `Slow Repo.find_contacts_to_remind
+          ] )
+    ; ("user", User_test.[ test_case "failed login attempts" `Slow failed_login_attempts ])
+    ; ( "time window"
+      , Time_window_test.[ test_case "confirm as contact" `Slow find_overlapping ] )
+    ; ( "duplicate contacts"
+      , Duplicate_contacts_test.
+          [ test_case "check similarity" `Slow check_similarity
+          ; test_case "override a with b" `Slow override_a_with_b
+          ; test_case "override b with a" `Slow override_b_with_a
+          ; test_case "override with participations" `Slow override_with_participations
           ] )
     ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]
 ;;
 
 let services =
-  [ Database.register ()
-  ; Service.User.register ()
-  ; Service.Token.register ()
+  [ Pool_database.register ()
+  ; Pool_user.register ()
+  ; Pool_token.register ()
   ; Email.Service.register ()
-  ; Email.Service.Queue.register ()
-  ; Service.Storage.register ()
+  ; Pool_queue.register ()
+  ; Storage.register ()
   ]
 ;;
 

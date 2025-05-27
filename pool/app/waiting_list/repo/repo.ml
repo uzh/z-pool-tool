@@ -1,6 +1,6 @@
 module RepoEntity = Repo_entity
-module Database = Pool_database
-module Dynparam = Utils.Database.Dynparam
+module Database = Database
+module Dynparam = Database.Dynparam
 
 module Sql = struct
   let sql_select_columns =
@@ -28,9 +28,7 @@ module Sql = struct
   ;;
 
   let find_request_sql ?(count = false) where_fragment =
-    let columns =
-      if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
-    in
+    let columns = if count then "COUNT(*)" else CCString.concat ", " sql_select_columns in
     Format.asprintf
       {sql|SELECT %s FROM pool_waiting_list %s %s|sql}
       columns
@@ -41,7 +39,10 @@ module Sql = struct
   let find_request =
     let open Caqti_request.Infix in
     {sql|
-      WHERE pool_waiting_list.uuid = UNHEX(REPLACE(?, '-', ''))
+      WHERE
+        pool_waiting_list.uuid = UNHEX(REPLACE(?, '-', ''))
+      AND
+        pool_waiting_list.marked_as_deleted = 0
     |sql}
     |> find_request_sql
     |> Caqti_type.string ->! RepoEntity.t
@@ -49,11 +50,8 @@ module Sql = struct
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_request
-      (id |> Pool_common.Id.value)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.WaitingList)
+    Database.find_opt pool find_request (id |> Pool_common.Id.value)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.WaitingList)
   ;;
 
   let user_is_enlisted_request =
@@ -63,24 +61,40 @@ module Sql = struct
         contact_uuid = UNHEX(REPLACE($1, '-', ''))
       AND
         experiment_uuid = UNHEX(REPLACE($2, '-', ''))
+      AND
+        marked_as_deleted = 0
     |sql}
     |> find_request_sql
-    |> Caqti_type.(t2 string string) ->! RepoEntity.t
+    |> Caqti_type.(t2 Contact.Repo.Id.t Experiment.Repo.Entity.Id.t) ->! RepoEntity.t
   ;;
 
   let find_by_contact_and_experiment pool contact experiment_id =
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      user_is_enlisted_request
-      ( contact |> Contact.id |> Pool_common.Id.value
-      , experiment_id |> Experiment.Id.value )
+    Database.find_opt pool user_is_enlisted_request (contact |> Contact.id, experiment_id)
+  ;;
+
+  let find_by_contact_to_merge_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE contact_uuid = UNHEX(REPLACE($1, '-', ''))
+      AND NOT EXISTS (
+        SELECT 1
+        FROM pool_waiting_list AS merge
+        WHERE pool_waiting_list.experiment_uuid = merge.experiment_uuid
+          AND merge.contact_uuid = UNHEX(REPLACE($2, '-', '')))|sql}
+    |> find_request_sql
+    |> Caqti_type.(t2 Contact.Repo.Id.t Contact.Repo.Id.t) ->* RepoEntity.t
+  ;;
+
+  let find_by_contact_to_merge pool ~contact ~merged_contact =
+    let open Contact in
+    Database.collect pool find_by_contact_to_merge_request (id merged_contact, id contact)
   ;;
 
   let find_by_experiment ?query pool id =
     let where =
-      let sql =
-        {sql|
+      {sql|
           pool_waiting_list.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+          AND pool_waiting_list.marked_as_deleted = 0
           AND NOT EXISTS (
             SELECT 1
             FROM pool_assignments
@@ -89,29 +103,13 @@ module Sql = struct
             WHERE pool_assignments.contact_uuid = user_users.uuid
               AND pool_assignments.marked_as_deleted != 1)
         |sql}
-      in
-      let dyn =
-        let open Dynparam in
-        let add_id = add Pool_common.Repo.Id.t (Experiment.Id.to_common id) in
-        empty |> add_id |> add_id
-      in
-      sql, dyn
     in
-    Query.collect_and_count
-      pool
-      query
-      ~select:find_request_sql
-      ~where
-      RepoEntity.t
-  ;;
-
-  let find_binary_experiment_id_sql =
-    {sql|
-      SELECT exp.uuid
-      FROM pool_waiting_list AS wl
-      LEFT JOIN pool_experiments AS exp ON wl.experiment_uuid = exp.uuid
-      WHERE wl.uuid = ?
-    |sql}
+    let dyn =
+      let open Dynparam in
+      let add_id = add Pool_common.Repo.Id.t (Experiment.Id.to_common id) in
+      empty |> add_id |> add_id
+    in
+    Query.collect_and_count pool query ~select:find_request_sql ~where ~dyn RepoEntity.t
   ;;
 
   let find_experiment_id_request =
@@ -133,11 +131,8 @@ module Sql = struct
 
   let find_experiment_id pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_experiment_id_request
-      id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+    Database.find_opt pool find_experiment_id_request id
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
   ;;
 
   let insert_request =
@@ -153,14 +148,13 @@ module Sql = struct
         UNHEX(REPLACE($2, '-', '')),
         UNHEX(REPLACE($3, '-', '')),
         $4
-      )
+      ) ON DUPLICATE KEY UPDATE
+        marked_as_deleted = 0
     |sql}
     |> Caqti_type.(RepoEntity.Write.t ->. unit)
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Pool_database.Label.value pool) insert_request
-  ;;
+  let insert pool = Database.exec pool insert_request
 
   let update_request =
     let open Caqti_request.Infix in
@@ -175,37 +169,32 @@ module Sql = struct
 
   let update pool (m : Entity.t) =
     let open Entity in
-    let caqti =
-      m.admin_comment |> AdminComment.value, m.id |> Pool_common.Id.value
-    in
-    Utils.Database.exec (Pool_database.Label.value pool) update_request caqti
+    let caqti = m.admin_comment |> AdminComment.value, m.id |> Pool_common.Id.value in
+    Database.exec pool update_request caqti
   ;;
 
   let delete_request =
     let open Caqti_request.Infix in
     {sql|
-      DELETE FROM pool_waiting_list
-      WHERE
-        uuid = UNHEX(REPLACE($1, '-', ''))
+      UPDATE pool_waiting_list
+      SET marked_as_deleted = 1
+      WHERE uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     |> Caqti_type.(string ->. unit)
   ;;
 
   let delete pool m =
-    Utils.Database.exec
-      (Database.Label.value pool)
-      delete_request
-      (m.Entity.id |> Pool_common.Id.value)
+    Database.exec pool delete_request (m.Entity.id |> Pool_common.Id.value)
   ;;
 end
 
 let find = Sql.find
 let find_by_contact_and_experiment = Sql.find_by_contact_and_experiment
+let find_by_contact_to_merge = Sql.find_by_contact_to_merge
 
 let user_is_enlisted pool contact experiment_id =
   let open Utils.Lwt_result.Infix in
-  Sql.find_by_contact_and_experiment pool contact experiment_id
-  ||> CCOption.is_some
+  Sql.find_by_contact_and_experiment pool contact experiment_id ||> CCOption.is_some
 ;;
 
 let find_by_experiment = Sql.find_by_experiment

@@ -2,7 +2,7 @@ open Entity
 module RepoEntity = Repo_entity
 module User = Pool_user
 
-let not_found = Pool_common.Message.(NotFound Field.Smtp)
+let not_found = Pool_message.(Error.NotFound Field.Smtp)
 
 let find_request_sql : type a. a carrier -> string -> string =
   fun carrier where_fragment ->
@@ -18,23 +18,17 @@ let find_request_sql : type a. a carrier -> string -> string =
         SUBSTR(HEX(user_users.uuid), 21)
       )),
       user_users.email,
-      user_users.username,
       user_users.name,
       user_users.given_name,
-      user_users.password,
       user_users.status,
       user_users.admin,
-      user_users.confirmed,
-      user_users.created_at,
-      user_users.updated_at
+      user_users.confirmed
     |sql}
   in
   let email_unverified = "pool_email_verifications.token" in
   let email_verified = "pool_email_verifications.verified" in
   let created_updated_at =
-    [ "pool_email_verifications.created_at"
-    ; "pool_email_verifications.updated_at"
-    ]
+    [ "pool_email_verifications.created_at"; "pool_email_verifications.updated_at" ]
   in
   let from_fragment =
     {sql|
@@ -56,9 +50,7 @@ let find_request_sql : type a. a carrier -> string -> string =
   | VerifiedC -> select email_verified
 ;;
 
-let find_by_user_request
-  : type a. a carrier -> (string, a t, [ `One ]) Caqti_request.t
-  =
+let find_by_user_request : type a. a carrier -> (string, a t, [ `One ]) Caqti_request.t =
   let open Caqti_request.Infix in
   function
   | UnverifiedC ->
@@ -73,8 +65,7 @@ let find_by_user_request
     |> Caqti_type.string ->! RepoEntity.verified_t
 ;;
 
-let find_by_address_request
-  : type a. a carrier -> (string, a t, [ `One ]) Caqti_request.t
+let find_by_address_request : type a. a carrier -> (string, a t, [ `One ]) Caqti_request.t
   =
   let open Caqti_request.Infix in
   function
@@ -92,20 +83,17 @@ let find_by_address_request
 
 let find_by_user pool carrier user_id =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
-    (find_by_user_request carrier)
-    (Pool_common.Id.value user_id)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Email)
+  Database.find_opt pool (find_by_user_request carrier) (Pool_common.Id.value user_id)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.Email)
 ;;
 
 let find_by_address pool carrier address =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Database.Label.value pool)
+  Database.find_opt
+    pool
     (find_by_address_request carrier)
-    (address |> User.EmailAddress.value)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Email)
+    (Pool_user.EmailAddress.value address)
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.Email)
 ;;
 
 let insert_request =
@@ -121,17 +109,10 @@ let insert_request =
         $3
       )
     |sql}
-  |> Caqti_type.(
-       t3 User.Repo.EmailAddress.t Pool_common.Repo.Id.t RepoEntity.Token.t
-       ->. unit)
+  |> Caqti_type.(t3 User.Repo.EmailAddress.t User.Repo.Id.t RepoEntity.Token.t ->. unit)
 ;;
 
-let insert pool t =
-  Utils.Database.exec
-    (Database.Label.value pool)
-    insert_request
-    (address t, user_id t, token t |> Token.value)
-;;
+let insert pool t = Database.exec pool insert_request (address t, user_id t, token t)
 
 let verify_request =
   let open Caqti_request.Infix in
@@ -142,15 +123,11 @@ let verify_request =
       WHERE user_uuid = UNHEX(REPLACE($1, '-', '')) AND address = $2 AND verified IS NULL
     |sql}
   |> Caqti_type.(
-       t3 Pool_common.Repo.Id.t User.Repo.EmailAddress.t RepoEntity.VerifiedAt.t
-       ->. unit)
+       t3 User.Repo.Id.t User.Repo.EmailAddress.t RepoEntity.VerifiedAt.t ->. unit)
 ;;
 
 let verify pool t =
-  Utils.Database.exec
-    (Database.Label.value pool)
-    verify_request
-    (user_id t, address t, VerifiedAt.create_now ())
+  Database.exec pool verify_request (user_id t, address t, VerifiedAt.create_now ())
 ;;
 
 let delete_unverified_by_user_request =
@@ -159,15 +136,10 @@ let delete_unverified_by_user_request =
     DELETE FROM pool_email_verifications
     WHERE user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL
   |sql}
-  |> Caqti_type.(string ->. unit)
+  |> User.Repo.Id.t ->. Caqti_type.unit
 ;;
 
-let delete_unverified_by_user pool id =
-  Utils.Database.exec
-    (Pool_database.Label.value pool)
-    delete_unverified_by_user_request
-  @@ Pool_common.Id.value id
-;;
+let delete_unverified_by_user pool = Database.exec pool delete_unverified_by_user_request
 
 module Smtp = struct
   module Id = Entity_smtp.Id
@@ -211,8 +183,7 @@ module Smtp = struct
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt (Database.Label.value pool) find_request id
-    ||> CCOption.to_result not_found
+    Database.find_opt pool find_request id ||> CCOption.to_result not_found
   ;;
 
   let find_by_label_request =
@@ -223,10 +194,7 @@ module Smtp = struct
   ;;
 
   let find_by_label pool label =
-    Utils.Database.find_opt
-      (Database.Label.value pool)
-      find_by_label_request
-      (Entity.SmtpAuth.Label.value label)
+    Database.find_opt pool find_by_label_request (Entity.SmtpAuth.Label.value label)
   ;;
 
   let find_full_request =
@@ -238,8 +206,7 @@ module Smtp = struct
 
   let find_full pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt (Database.Label.value pool) find_full_request id
-    ||> CCOption.to_result not_found
+    Database.find_opt pool find_full_request id ||> CCOption.to_result not_found
   ;;
 
   let find_full_default_request =
@@ -251,11 +218,7 @@ module Smtp = struct
 
   let find_full_default pool =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Database.Label.value pool)
-      find_full_default_request
-      ()
-    ||> CCOption.to_result not_found
+    Database.find_opt pool find_full_default_request () ||> CCOption.to_result not_found
   ;;
 
   let find_default_request =
@@ -268,9 +231,7 @@ module Smtp = struct
     |> Caqti_type.unit ->! RepoEntity.SmtpAuth.t
   ;;
 
-  let find_default_opt pool =
-    Utils.Database.find_opt (Database.Label.value pool) find_default_request ()
-  ;;
+  let find_default_opt pool = Database.find_opt pool find_default_request ()
 
   let find_default pool =
     let open Utils.Lwt_result.Infix in
@@ -282,9 +243,7 @@ module Smtp = struct
     "" |> select_smtp_sql |> Caqti_type.unit ->* RepoEntity.SmtpAuth.t
   ;;
 
-  let find_all pool =
-    Utils.Database.collect (Pool_database.Label.value pool) find_all_request ()
-  ;;
+  let find_all pool = Database.collect pool find_all_request ()
 
   let select_count where_fragment =
     Format.asprintf
@@ -297,12 +256,11 @@ module Smtp = struct
   ;;
 
   let find_by query pool =
-    Query.collect_and_count
-      pool
-      (Some query)
-      ~select:(fun ?(count = false) fragment ->
-        if count then select_count fragment else select_smtp_sql fragment)
-      RepoEntity.SmtpAuth.t
+    let select =
+      fun ?(count = false) fragment ->
+      if count then select_count fragment else select_smtp_sql fragment
+    in
+    Query.collect_and_count pool (Some query) ~select RepoEntity.SmtpAuth.t
   ;;
 
   let unset_default_flags pool =
@@ -314,7 +272,7 @@ module Smtp = struct
       |sql}
       |> Caqti_type.(unit ->. unit)
     in
-    Utils.Database.exec (Database.Label.value pool) request
+    Database.exec pool request
   ;;
 
   let insert_request =
@@ -351,7 +309,7 @@ module Smtp = struct
       | true -> unset_default_flags pool ()
       | false -> Lwt.return ()
     in
-    Utils.Database.exec (Database.Label.value pool) insert_request t
+    Database.exec pool insert_request t
   ;;
 
   let update_request =
@@ -378,7 +336,7 @@ module Smtp = struct
       | true -> unset_default_flags pool ()
       | false -> Lwt.return ()
     in
-    Utils.Database.exec (Database.Label.value pool) update_request t
+    Database.exec pool update_request t
   ;;
 
   let delete_request =
@@ -390,9 +348,7 @@ module Smtp = struct
     |> RepoEntity.SmtpAuth.(Id.t ->. Caqti_type.unit)
   ;;
 
-  let delete pool t =
-    Utils.Database.exec (Database.Label.value pool) delete_request t
-  ;;
+  let delete pool t = Database.exec pool delete_request t
 
   let update_password_request =
     let open Caqti_request.Infix in
@@ -406,7 +362,5 @@ module Smtp = struct
     |> Caqti_type.(RepoEntity.SmtpAuth.(t2 Id.t (option Password.t)) ->. unit)
   ;;
 
-  let update_password pool =
-    Utils.Database.exec (Database.Label.value pool) update_password_request
-  ;;
+  let update_password pool = Database.exec pool update_password_request
 end

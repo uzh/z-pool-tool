@@ -3,11 +3,11 @@
  (name pool_location)
  (libraries
   admin
+  changelog
   guard
   pool_common
-  pool_database
   pool_tenant
-  service
+  storage
   query
   sihl
   utils)

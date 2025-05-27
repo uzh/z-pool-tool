@@ -1,11 +1,15 @@
-module Database = Pool_database
-module Id : module type of Pool_common.Id
-module Title : Pool_common.Model.StringSig
-module Description : Pool_common.Model.StringSig
-module GtxApiKey : Pool_common.Model.StringSig
+module Title : Pool_model.Base.StringSig
+module Description : Pool_model.Base.StringSig
+
+module Id : sig
+  include Pool_model.Base.IdSig
+
+  val to_common : t -> Pool_common.Id.t
+  val of_common : Pool_common.Id.t -> t
+end
 
 module Url : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 
   val of_pool : Database.Label.t -> t Lwt.t
 end
@@ -22,12 +26,9 @@ module Styles : sig
   module Write : sig
     type t
 
-    val create : string -> (t, Pool_common.Message.error) result
+    val create : string -> (t, Pool_message.Error.t) result
     val value : t -> string
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 end
 
@@ -41,12 +42,9 @@ module Icon : sig
   module Write : sig
     type t
 
-    val create : string -> (t, Pool_common.Message.error) result
+    val create : string -> (t, Pool_message.Error.t) result
     val value : t -> string
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 end
 
@@ -58,9 +56,7 @@ module Logos : sig
 
   val schema
     :  unit
-    -> ( Pool_common.Message.error
-         , Pool_common.Id.t list )
-         Pool_common.Utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, Pool_common.Id.t list) Pool_conformist.Field.t
 
   val of_files : Pool_common.File.t list -> t
 end
@@ -73,15 +69,25 @@ module PartnerLogos : sig
 
   val schema
     :  unit
-    -> ( Pool_common.Message.error
-         , Pool_common.Id.t list )
-         Pool_common.Utils.PoolConformist.Field.t
+    -> (Pool_message.Error.t, Pool_common.Id.t list) Pool_conformist.Field.t
 
   val of_files : Pool_common.File.t list -> t
 end
 
-module Maintenance : Pool_common.Model.BooleanSig
-module Disabled : Pool_common.Model.BooleanSig
+module EmailLogo : sig
+  type t
+
+  val value : t -> Pool_common.File.t
+  val equal : t -> t -> bool
+
+  module Write : sig
+    type t
+
+    val create : string -> (t, Pool_message.Error.t) result
+    val value : t -> string
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+  end
+end
 
 module LogoMapping : sig
   module LogoType : sig
@@ -89,10 +95,10 @@ module LogoMapping : sig
       | PartnerLogo
       | TenantLogo
 
-    val of_string : string -> (t, Pool_common.Message.error) result
+    val of_string : string -> (t, Pool_message.Error.t) result
     val to_string : t -> string
     val all : t list
-    val all_fields : Pool_common.Message.Field.t list
+    val all_fields : Pool_message.Field.t list
   end
 
   module Write : sig
@@ -119,10 +125,9 @@ type t =
   ; icon : Icon.t option
   ; logos : Logos.t
   ; partner_logo : PartnerLogos.t
-  ; maintenance : Maintenance.t
-  ; disabled : Disabled.t
+  ; email_logo : EmailLogo.t option
+  ; status : Database.Status.t
   ; default_language : Pool_common.Language.t
-  ; text_messages_enabled : bool
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -138,12 +143,10 @@ module Write : sig
     ; title : Title.t
     ; description : Description.t option
     ; url : Url.t
-    ; database : Database.t
-    ; gtx_api_key : GtxApiKey.t option
+    ; database_label : Database.Label.t
     ; styles : Styles.Write.t option
+    ; email_logo : EmailLogo.Write.t option
     ; icon : Icon.Write.t option
-    ; maintenance : Maintenance.t
-    ; disabled : Disabled.t
     ; default_language : Pool_common.Language.t
     ; created_at : Pool_common.CreatedAt.t
     ; updated_at : Pool_common.UpdatedAt.t
@@ -153,86 +156,72 @@ module Write : sig
     :  Title.t
     -> Description.t option
     -> Url.t
-    -> Database.t
+    -> Database.Label.t
     -> Styles.Write.t option
     -> Icon.Write.t option
+    -> EmailLogo.Write.t option
     -> Pool_common.Language.t
     -> t
 
   val show : t -> string
+  val database_label : t -> Database.Label.t
 end
 
 type update =
   { title : Title.t
   ; description : Description.t option
   ; url : Url.t
-  ; disabled : Disabled.t
+  ; status : Database.Status.t option
   ; default_language : Pool_common.Language.t
   ; styles : Styles.Write.t option
   ; icon : Icon.Write.t option
+  ; email_logo : EmailLogo.Write.t option
   }
 
+val file_fields : Pool_message.Field.t list
+val find : Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find_full : Id.t -> (Write.t, Pool_message.Error.t) Lwt_result.t
+val find_by_label : Database.Label.t -> (t, Pool_message.Error.t) Lwt_result.t
+
+val find_by_url
+  :  ?should_cache:(t -> bool)
+  -> Url.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
+
+val find_all : unit -> t list Lwt.t
+val create_public_url : Url.t -> string -> string
+val clear_cache : unit -> unit
+
+module Repo : sig
+  module Id : sig
+    val t : Id.t Caqti_type.t
+  end
+end
+
+type handle_list_recruiters = unit -> Pool_user.t list Lwt.t
+type handle_list_tenants = unit -> t list Lwt.t
 type logo_mappings = LogoMapping.Write.t list
 
 type event =
-  | Created of Write.t [@equal equal]
+  | Created of (Write.t * Database.t) [@equal equal]
   | LogosUploaded of logo_mappings
   | LogoDeleted of t * Pool_common.Id.t
   | DetailsEdited of Write.t * update
   | DatabaseEdited of Write.t * Database.t
-  | Destroyed of Id.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
-  | GtxApiKeyUpdated of Write.t * GtxApiKey.t
-  | GtxApiKeyRemoved of Write.t
 
 val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val find : Id.t -> (t, Pool_common.Message.error) Lwt_result.t
-val find_full : Id.t -> (Write.t, Pool_common.Message.error) Lwt_result.t
-
-val find_by_label
-  :  Database.Label.t
-  -> (t, Pool_common.Message.error) Lwt_result.t
-
-val find_all : unit -> t list Lwt.t
-val find_databases : unit -> Database.t list Lwt.t
-
-val find_database_by_label
-  :  Pool_database.Label.t
-  -> (Database.t, Pool_common.Message.error) Lwt_result.t
-
-val find_gtx_api_key_by_label
-  :  Pool_database.Label.t
-  -> (GtxApiKey.t, Pool_common.Message.error) result Lwt.t
-
-val create_public_url : Url.t -> string -> string
-
-type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
-type handle_list_tenants = unit -> t list Lwt.t
-
-module Selection : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : Url.t -> Database.Label.t -> t
-  val find_all : unit -> t list Lwt.t
-  val url : t -> string
-  val label : t -> Database.Label.t
-end
-
-val file_fields : Pool_common.Message.Field.t list
 
 module Guard : sig
   module Actor : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Actor.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 
@@ -244,7 +233,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
   end

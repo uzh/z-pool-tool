@@ -1,9 +1,9 @@
-module Database = Pool_database
+module Database = Database
 module Id = Pool_common.Id
 module File = Pool_common.File
 
 let src = Logs.Src.create "http_utils.file"
-let tags = Pool_database.(Logger.Tags.create root)
+let tags = Database.(Logger.Tags.create Pool.Root.label)
 let import_dir = "/tmp/pool/import"
 
 let raise_if_failed msg process_result =
@@ -24,8 +24,7 @@ let prepare_import_directory () =
   let open Utils.Lwt_result.Infix in
   Logs.debug ~src (fun m -> m ~tags "IMPORT: Making sure directory exist");
   let message = Format.asprintf "while creating directory %s" import_dir in
-  Lwt_process.exec ("", [| "mkdir"; "-p"; import_dir |])
-  ||> raise_if_failed message
+  Lwt_process.exec ("", [| "mkdir"; "-p"; import_dir |]) ||> raise_if_failed message
 ;;
 
 let save_files allow_list req =
@@ -33,17 +32,13 @@ let save_files allow_list req =
   let files = Hashtbl.create ~random:true 5 in
   let assocs = Hashtbl.create ~random:true 5 in
   let callback ~name ~filename string =
-    if CCString.equal filename ""
-       || not (CCList.mem ~eq:CCString.equal name allow_list)
+    if CCString.equal filename "" || not (CCList.mem ~eq:CCString.equal name allow_list)
     then Lwt.return_unit
     else
       let open Utils.Lwt_result.Infix in
       let filename = Filename.basename filename in
       let write file =
-        string
-        |> CCString.length
-        |> Lwt_unix.write_string file string 0
-        ||> ignore
+        string |> CCString.length |> Lwt_unix.write_string file string 0 ||> ignore
       in
       match Hashtbl.find_opt files filename with
       | Some file -> write file
@@ -97,9 +92,7 @@ let file_to_storage_add pool filename =
       }
   in
   let base64 = Base64.encode_exn data in
-  let%lwt _ =
-    Service.Storage.upload_base64 ~ctx:(Pool_database.to_ctx pool) file base64
-  in
+  let%lwt _ = Storage.upload_base64 pool file base64 in
   let%lwt () = remove_imported_file filename in
   file.Sihl_storage.id |> Lwt.return_ok
 ;;
@@ -109,9 +102,9 @@ let multipart_form_data_to_urlencoded list =
   let () =
     CCList.iter
       (fun (k, v) ->
-        match Hashtbl.find_opt fields k with
-        | None -> Hashtbl.add fields k [ v ]
-        | Some lst -> Hashtbl.replace fields k (CCList.cons v lst))
+         match Hashtbl.find_opt fields k with
+         | None -> Hashtbl.add fields k [ v ]
+         | Some lst -> Hashtbl.replace fields k (CCList.cons v lst))
       list
   in
   fields |> Hashtbl.to_seq |> CCList.of_seq
@@ -134,8 +127,7 @@ let update_files pool files req =
     | Some filename ->
       (match load_file filename with
        | Ok (filesize, mime, data) ->
-         let ctx = Pool_database.to_ctx pool in
-         let%lwt file = Service.Storage.find ~ctx id in
+         let%lwt file = Storage.find pool id in
          let updated_file =
            let open Sihl_storage in
            file
@@ -144,24 +136,22 @@ let update_files pool files req =
            |> set_mime_stored (File.Mime.to_string mime)
          in
          let base64 = Base64.encode_exn data in
-         let%lwt _ = Service.Storage.update_base64 ~ctx updated_file base64 in
+         let%lwt _ = Storage.update_base64 pool updated_file base64 in
          let%lwt () = remove_imported_file filename in
          Lwt.return_some (Ok id)
        | Error err -> Lwt.return_some (Error err))
     | None -> Lwt.return_none
   in
   let%lwt result =
-    Lwt_list.filter_map_p
-      (fun (key, assets_id) -> update_asset key assets_id)
-      files
+    Lwt_list.filter_map_p (fun (key, assets_id) -> update_asset key assets_id) files
   in
   result |> CCList.all_ok |> Lwt.return
 ;;
 
 let get_storage_file ?tags database_label asset_id =
   let open Utils.Lwt_result.Infix in
-  Service.Storage.find_opt ~ctx:(Pool_database.to_ctx database_label) asset_id
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.File)
+  Storage.find_opt database_label asset_id
+  ||> CCOption.to_result Pool_message.(Error.NotFound Field.File)
   >|- fun err ->
   Logs.warn ~src (fun m ->
     m ?tags "A user experienced an error: File not found with id %s" asset_id);
@@ -173,7 +163,6 @@ let cleanup_upload database_label files =
   function
   | Ok resp -> Lwt.return_ok resp
   | Error err ->
-    let ctx = database_label |> Pool_database.to_ctx in
-    let%lwt () = Lwt_list.iter_s (snd %> Service.Storage.delete ~ctx) files in
+    let%lwt () = Lwt_list.iter_s (snd %> Storage.delete database_label) files in
     Lwt.return_error err
 ;;

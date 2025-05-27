@@ -1,25 +1,32 @@
 (library
  (name handler)
  (libraries
+  announcement
+  authentication
   assignment
+  assignment_job
   contact
   component
   cqrs_command
+  duplicate_contacts
   email
   guard
   htmx
   http_utils
+  http_response
   layout
   mailing
+  matcher
   message_template
   middleware
+  organisational_unit
   page
   pool_common
-  queue
+  pool_version
   reminder
   schedule
-  service
   sihl
+  signup_code
   statistics
   tags
   user_import

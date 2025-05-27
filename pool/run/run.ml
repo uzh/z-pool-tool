@@ -2,34 +2,41 @@ let src = Logs.Src.create "run"
 let () = Printexc.record_backtrace true
 
 let worker_services =
-  [ Pool_canary.register ()
-  ; Database.register ()
-  ; Service.Storage.register ()
+  [ Pool_database.register ()
+  ; Pool_canary.register ()
+  ; Storage.register ()
   ; Schedule.register ()
-  ; Queue.register
-      ~jobs:
-        [ Queue.hide Email.Service.Job.send
-        ; Queue.hide Text_message.Service.Job.send
-        ]
-      ()
+  ; Pool_queue.(
+      register
+        ~kind:Worker
+        ~jobs:
+          [ hide ~execute_on_root:true Email.Service.Job.send
+          ; hide Text_message.Service.Job.send
+          ; hide Assignment_job.job
+          ]
+        ())
   ; Matcher.register ()
-  ; System_event.Service.register_worker ()
+  ; System_event.Service.register `Worker ()
   ; User_import.Service.register ()
   ; Reminder.Service.register ()
+  ; Assignment_job.register ()
+  ; Contact_job.Inactivity.register ()
+  ; System_event.Service.ConnectionWatcher.register ()
+  ; Duplicate_contacts.Service.register ()
   ]
 ;;
 
 let services =
-  [ Pool_canary.register ()
-  ; Database.register ()
-  ; Service.User.register ~commands:[] ()
-  ; Service.Token.register ()
+  [ Pool_database.register ()
+  ; Pool_canary.register ()
+  ; Pool_user.register ()
+  ; Pool_token.register ()
+  ; Pool_queue.register ()
   ; Email.Service.register ()
   ; Text_message.Service.register ()
-  ; Email.Service.Queue.register ()
-  ; Service.Storage.register ()
+  ; Storage.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
-  ; System_event.Service.register ()
+  ; System_event.Service.register `Server ()
   ]
 ;;
 
@@ -37,6 +44,7 @@ let commands =
   let open Command in
   [ Migrate.root
   ; Migrate.tenants
+  ; Migrate.tenant_migration_pending
   ; Seed.root_data
   ; Seed.root_data_clean
   ; Seed.tenant_data
@@ -52,6 +60,7 @@ let commands =
   ; SystemEvent.handle_system_events_command
   ; Contact.all_profile_update_triggers
   ; Contact.tenant_specific_profile_update_trigger
+  ; Contact.find_duplicates
   ; Matcher.run_tenant
   ; Matcher.run_all
   ; Mail.send_mail
@@ -74,10 +83,7 @@ let () =
     |> with_services services
     |> before_start (fun () ->
       (Lwt.async_exception_hook
-       := fun exn ->
-            Pool_common.Message.NotHandled (Printexc.to_string exn)
-            |> Pool_common.Utils.with_log_error ~src
-            |> ignore);
+       := fun exn -> Logger.log_exception ~src ~tags:Logs.Tag.empty exn |> ignore);
       Lwt.return @@ Logger.create_logs_dir ())
     |> run ~commands ~log_reporter:Logger.reporter)
 ;;

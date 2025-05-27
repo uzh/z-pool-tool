@@ -1,5 +1,5 @@
 module RepoEntity = Repo_entity
-module Dynparam = Utils.Database.Dynparam
+module Dynparam = Database.Dynparam
 
 let to_entity = RepoEntity.to_entity
 let of_entity = RepoEntity.of_entity
@@ -24,16 +24,13 @@ module Sql = struct
       then "COUNT(*)"
       else CCString.concat ", " (sql_select_columns @ additional_cols)
     in
-    Format.asprintf
-      {sql|SELECT %s FROM pool_mailing %s|sql}
-      columns
-      where_fragment
+    Format.asprintf {sql|SELECT %s FROM pool_mailing %s|sql} columns where_fragment
   ;;
 
   let count_column =
     {sql|
-      (SELECT COUNT(invitation_uuid) 
-      FROM pool_mailing_invitations 
+      (SELECT COUNT(invitation_uuid)
+      FROM pool_mailing_invitations
       WHERE mailing_uuid =  pool_mailing.uuid) as invitation_count
     |sql}
   ;;
@@ -50,8 +47,8 @@ module Sql = struct
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt (Pool_database.Label.value pool) find_request id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Mailing)
+    Database.find_opt pool find_request id
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Mailing)
   ;;
 
   let select_with_count = find_request_sql ~additional_cols:[ count_column ]
@@ -69,11 +66,8 @@ module Sql = struct
 
   let find_with_detail pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_with_detail_request
-      id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Mailing)
+    Database.find_opt pool find_with_detail_request id
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Mailing)
   ;;
 
   let find_by_experiment_request =
@@ -87,30 +81,16 @@ module Sql = struct
     |> Experiment.Repo.Entity.Id.t ->* RepoEntity.t
   ;;
 
-  let find_by_experiment pool =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_by_experiment_request
-  ;;
+  let find_by_experiment pool = Database.collect pool find_by_experiment_request
 
   let find_by_experiment_with_count pool query id =
     let select = select_with_count in
-    let where =
-      let sql =
-        {sql| pool_mailing.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
-      in
-      let dyn =
-        Dynparam.(
-          empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
-      in
-      sql, dyn
+    let where = {sql| pool_mailing.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql} in
+    let dyn =
+      Dynparam.(empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
     in
-    Query.collect_and_count
-      pool
-      query
-      ~select
-      ~where
-      RepoEntity.(Caqti_type.t2 t InvitationCount.t)
+    RepoEntity.(Caqti_type.t2 t InvitationCount.t)
+    |> Query.collect_and_count pool query ~select ~where ~dyn
   ;;
 
   let find_current_request =
@@ -124,12 +104,7 @@ module Sql = struct
     |> Caqti_type.unit ->* RepoEntity.t
   ;;
 
-  let find_current pool =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_current_request
-      ()
-  ;;
+  let find_current pool = Database.collect pool find_current_request ()
 
   let find_overlaps_request =
     let open Caqti_request.Infix in
@@ -144,10 +119,7 @@ module Sql = struct
   ;;
 
   let find_overlaps pool start_at end_at ignore_id =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_overlaps_request
-      (start_at, end_at, ignore_id)
+    Database.collect pool find_overlaps_request (start_at, end_at, ignore_id)
   ;;
 
   let find_binary_experiment_id_sql =
@@ -177,11 +149,8 @@ module Sql = struct
 
   let find_experiment_id pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_experiment_id_request
-      id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+    Database.find_opt pool find_experiment_id_request id
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
   ;;
 
   let insert_request =
@@ -210,9 +179,7 @@ module Sql = struct
     |> RepoEntity.t ->. Caqti_type.unit
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Pool_database.Label.value pool) insert_request
-  ;;
+  let insert pool = Database.exec pool insert_request
 
   let update_request =
     let open Caqti_request.Infix in
@@ -228,9 +195,7 @@ module Sql = struct
     |> RepoEntity.Update.t ->. Caqti_type.unit
   ;;
 
-  let update pool =
-    Utils.Database.exec (Pool_database.Label.value pool) update_request
-  ;;
+  let update pool = Database.exec pool update_request
 
   let delete_request =
     let open Caqti_request.Infix in
@@ -241,9 +206,7 @@ module Sql = struct
     |> RepoEntity.Id.t ->. Caqti_type.unit
   ;;
 
-  let delete pool =
-    Utils.Database.exec (Pool_database.Label.value pool) delete_request
-  ;;
+  let delete pool = Database.exec pool delete_request
 
   module Status = struct
     let find_current_request =
@@ -273,12 +236,7 @@ module Sql = struct
       |> Caqti_type.ptime_span ->* Status.t
     ;;
 
-    let find_current pool interval =
-      Utils.Database.collect
-        (Pool_database.Label.value pool)
-        find_current_request
-        interval
-    ;;
+    let find_current pool interval = Database.collect pool find_current_request interval
   end
 end
 
@@ -289,8 +247,7 @@ let find pool id =
 
 let find_with_detail pool id =
   let open Utils.Lwt_result.Infix in
-  Sql.find_with_detail pool id
-  >|+ fun (model, count) -> model |> to_entity, count
+  Sql.find_with_detail pool id >|+ fun (model, count) -> model |> to_entity, count
 ;;
 
 let find_by_experiment pool id =
@@ -314,11 +271,7 @@ let find_overlaps pool Entity.{ id; start_at; end_at; _ } =
 ;;
 
 let find_experiment_id = Sql.find_experiment_id
-
-let insert pool experiment_id model =
-  model |> of_entity experiment_id |> Sql.insert pool
-;;
-
+let insert pool experiment_id model = model |> of_entity experiment_id |> Sql.insert pool
 let update = Sql.update
 let delete = Sql.delete
 

@@ -1,20 +1,30 @@
-module Database = Pool_database
-module Dynparam = Utils.Database.Dynparam
+module Database = Database
+module Dynparam = Database.Dynparam
 open Caqti_request.Infix
 open Entity
 
-module SentInvitations = struct
-  let count_invitations_request ?(by_count = false) () =
-    let base =
-      {sql|
+let assignment_counts =
+  let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
+  let decode (show_up_count, no_show_count, participation_count) =
+    Ok { show_up_count; no_show_count; participation_count }
+  in
+  Caqti_type.(custom ~encode ~decode (t3 int int int))
+;;
+
+module FilterStatistics = struct
+  let count_invited_contacts_request =
+    {sql|
       SELECT COUNT(1)
       FROM pool_invitations
-      WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+        INNER JOIN pool_contacts ON pool_contacts.user_uuid = pool_invitations.contact_uuid
+        INNER JOIN user_users ON user_users.uuid = pool_contacts.user_uuid
+      WHERE 
+        experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+        AND pool_contacts.paused != 1
+        AND pool_contacts.disabled = 0
+        AND user_users.status = "active"
     |sql}
-    in
-    match by_count with
-    | false -> base
-    | true -> Format.asprintf "%s \n %s" base "AND send_count = ?"
+    |> Caqti_type.(string ->! int)
   ;;
 
   let find_unique_counts_request =
@@ -27,50 +37,8 @@ module SentInvitations = struct
     |> Caqti_type.(string ->* int)
   ;;
 
-  let total_invitation_count_by_experiment pool experiment_id =
-    let open Caqti_request.Infix in
-    Utils.Database.find
-      (pool |> Pool_database.Label.value)
-      (count_invitations_request () |> Caqti_type.(string ->! int))
-      (Id.value experiment_id)
-  ;;
-
-  let by_experiment pool ({ id; _ } as experiment) =
-    let open Utils.Lwt_result.Infix in
-    let%lwt counts =
-      Utils.Database.collect
-        (pool |> Database.Label.value)
-        find_unique_counts_request
-        (Id.value id)
-    in
-    let base_dyn = Dynparam.(empty |> add Caqti_type.string (Id.value id)) in
-    let%lwt total_sent = total_invitation_count_by_experiment pool id in
-    let%lwt sent_by_count =
-      counts
-      |> Lwt_list.map_s (fun send_count ->
-        let (Dynparam.Pack (pt, pv)) =
-          base_dyn |> Dynparam.add Caqti_type.int send_count
-        in
-        let request =
-          count_invitations_request ~by_count:true () |> pt ->! Caqti_type.int
-        in
-        Utils.Database.find (pool |> Pool_database.Label.value) request pv
-        |> Lwt.map (fun count -> send_count, count))
-    in
-    let* total_match_filter =
-      let query =
-        experiment.filter |> CCOption.map (fun { Filter.query; _ } -> query)
-      in
-      Filter.(
-        count_filtered_contacts
-          ~include_invited:true
-          pool
-          (Matcher (Id.to_common id))
-          query)
-    in
-    Lwt.return_ok
-      Statistics.SentInvitations.
-        { total_sent; total_match_filter; sent_by_count }
+  let invited_contacts_count pool experiment_id =
+    Database.find pool count_invited_contacts_request (Id.value experiment_id)
   ;;
 end
 
@@ -91,7 +59,7 @@ let has_open_sessions_request =
   let open Caqti_request.Infix in
   {sql|
     SELECT
-      COUNT(s.uuid) > 1
+      COUNT(s.uuid) >= 1
     FROM
       pool_sessions s
       LEFT JOIN (
@@ -116,15 +84,10 @@ let has_open_sessions_request =
 
 let registration_possible pool id =
   let open Utils.Lwt_result.Infix in
-  Utils.Database.find
-    (Database.Label.value pool)
-    registration_disabled_request
-    id
-  ||> not
+  Database.find pool registration_disabled_request id
   >|> function
-  | false -> Lwt.return_false
-  | true ->
-    Utils.Database.find (Database.Label.value pool) has_open_sessions_request id
+  | true -> Lwt.return_false
+  | false -> Database.find pool has_open_sessions_request id
 ;;
 
 let sending_invitations_request =
@@ -150,9 +113,7 @@ let sending_invitations_request =
 
 let sending_invitations pool id =
   let open Utils.Lwt_result.Infix in
-  let open Statistics.SendingInvitations in
-  Utils.Database.find (Database.Label.value pool) sending_invitations_request id
-  ||> read
+  Database.find pool sending_invitations_request id ||> SendingInvitations.read
 ;;
 
 let session_count_request =
@@ -169,9 +130,7 @@ let session_count_request =
   |> Caqti_type.(Repo_entity.Id.t ->! int)
 ;;
 
-let session_count pool =
-  Utils.Database.find (Database.Label.value pool) session_count_request
-;;
+let session_count pool = Database.find pool session_count_request
 
 let sent_invitation_count_request =
   let open Caqti_request.Infix in
@@ -186,9 +145,7 @@ let sent_invitation_count_request =
   |> Caqti_type.(Repo_entity.Id.t ->! int)
 ;;
 
-let sent_invitation_count pool =
-  Utils.Database.find (Database.Label.value pool) sent_invitation_count_request
-;;
+let sent_invitation_count pool = Database.find pool sent_invitation_count_request
 
 let assignment_counts_request =
   let open Caqti_request.Infix in
@@ -207,9 +164,7 @@ let assignment_counts_request =
         AND pool_assignments.marked_as_deleted = 0
         AND pool_assignments.canceled_at IS NULL
     |sql}
-  |> Caqti_type.(Repo_entity.Id.t ->! t3 int int int)
+  |> Repo_entity.Id.t ->! assignment_counts
 ;;
 
-let assignment_counts pool =
-  Utils.Database.find (Database.Label.value pool) assignment_counts_request
-;;
+let assignment_counts pool = Database.find pool assignment_counts_request

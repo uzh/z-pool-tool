@@ -1,7 +1,8 @@
-let ( let@ ) = Result.bind
+let ( let@ ) = CCResult.( >>= )
 let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f
 let ( let& ) = Lwt_result.bind
 let test_db = Test_utils.Data.database_label
+let current_user = Test_utils.Model.create_admin ()
 
 let session ~experiment =
   let open Session in
@@ -11,24 +12,15 @@ let session ~experiment =
   let* session_duration =
     let one_day = Ptime.Span.of_int_s 86_400 in
     let tomorrow =
-      Ptime.add_span now one_day
-      |> CCOption.get_exn_or "could not add one day to now"
+      Ptime.add_span now one_day |> CCOption.get_exn_or "could not add one day to now"
     in
     Duration.create (Ptime.diff tomorrow now)
   in
   let pid = Pool_location.Id.create () in
   let pool_address = Pool_location.Address.virtual_ in
   let pool_status = Pool_location.Status.Active in
-  let mapping_file = [] in
   let* pool_location =
-    Pool_location.create
-      ~id:pid
-      "a-pool-location"
-      None
-      pool_address
-      None
-      pool_status
-      mapping_file
+    Pool_location.create ~id:pid "a-pool-location" None pool_address None pool_status
   in
   let* max_participants = ParticipantAmount.create 2112 in
   let* min_participants = ParticipantAmount.create 1984 in
@@ -49,7 +41,7 @@ let session ~experiment =
     ; Session.Created session |> Pool_event.session
     ]
   in
-  let& () = Pool_event.handle_events test_db events |> Lwt_result.ok in
+  let& () = Pool_event.handle_events test_db current_user events |> Lwt_result.ok in
   Lwt_result.lift (Ok session)
 ;;
 
@@ -74,63 +66,52 @@ let experiment () =
       external_data_required
       show_external_data_id_links
   in
-  let experiment_created =
-    experiment |> Experiment.created |> Pool_event.experiment
-  in
+  let experiment_created = experiment |> Experiment.created |> Pool_event.experiment in
   let& () =
-    Pool_event.handle_event test_db experiment_created |> Lwt_result.ok
+    Pool_event.handle_event test_db current_user experiment_created |> Lwt_result.ok
   in
   Experiment.find test_db experiment_id
 ;;
 
 let contact ~prefix () =
   let open Contact in
-  let user_id = Id.create () in
+  let user_id = Contact.Id.create () in
   let* email =
-    let email = Format.asprintf "%s+%s@domain.test" prefix (Id.value user_id) in
+    let email = Format.asprintf "%s+%s@domain.test" prefix (Contact.Id.value user_id) in
     Pool_user.EmailAddress.create email
   in
-  let* password = Pool_user.Password.create_unvalidated "a-password" in
+  let password =
+    Pool_user.Password.Plain.(
+      create "Somepassword1!" |> validate |> Pool_common.Utils.get_or_failwith)
+  in
   let* firstname = Pool_user.Firstname.create "firstname" in
   let* lastname = Pool_user.Lastname.create "lastname" in
   let terms_accepted_at =
-    Pool_user.TermsAccepted.create (Ptime_clock.now ()) |> Option.some
+    Pool_user.TermsAccepted.create (Ptime_clock.now ()) |> CCOption.return
   in
-  let language = Pool_common.Language.En |> Option.some in
+  let language = Pool_common.Language.En |> CCOption.return in
   let contact_created =
     [ Contact.created
-        { user_id
-        ; email
-        ; password
-        ; firstname
-        ; lastname
-        ; terms_accepted_at
-        ; language
-        }
+        { user_id; email; password; firstname; lastname; terms_accepted_at; language }
       |> Pool_event.contact
     ]
   in
-  let& () = Pool_event.handle_events test_db contact_created |> Lwt_result.ok in
+  let& () =
+    Pool_event.handle_events test_db current_user contact_created |> Lwt_result.ok
+  in
   let& contact = Contact.find test_db user_id in
   let%lwt token = Email.create_token test_db email in
   let* verification_events =
     let open Cqrs_command.User_command in
     let created_email =
-      Email.Created (email, token, user_id) |> Pool_event.email_verification
+      Email.Created (email, token, user_id |> Id.to_user) |> Pool_event.email_verification
     in
     let email = Email.create email contact.user token in
     let@ verify_events = VerifyEmail.handle (Contact contact) email in
     Ok (created_email :: verify_events)
   in
   let& () =
-    Pool_event.handle_events test_db verification_events |> Lwt_result.ok
-  in
-  let& contact = Contact.find test_db user_id in
-  let verification_events =
-    [ Contact.Verified contact |> Pool_event.contact ]
-  in
-  let& () =
-    Pool_event.handle_events test_db verification_events |> Lwt_result.ok
+    Pool_event.handle_events test_db current_user verification_events |> Lwt_result.ok
   in
   let& contact = Contact.find test_db user_id in
   Lwt_result.lift (Ok contact)
@@ -144,15 +125,16 @@ let assignment ~experiment ~session ~contact =
       handle
         { experiment; contact; follow_up_sessions = []; session }
         (fun (_ : Assignment.t) ->
-          Sihl_email.create
-            ~sender:"sender"
-            ~recipient:"recipient"
-            ~subject:"subject"
-            "body"
-          |> Email.create_job)
+           Sihl_email.create
+             ~sender:"sender"
+             ~recipient:"recipient"
+             ~subject:"subject"
+             "body"
+           |> Email.Service.Job.create
+           |> Email.create_dispatch)
         already_enrolled)
   in
-  let& () = Pool_event.handle_events test_db events |> Lwt_result.ok in
+  let& () = Pool_event.handle_events test_db current_user events |> Lwt_result.ok in
   Lwt_result.lift (Ok ())
 ;;
 
@@ -165,18 +147,19 @@ let invitation ~experiment ~contacts =
         ; contacts
         ; invited_contacts = []
         ; create_message =
-            (fun (_ : Contact.t) ->
+            (fun (_ : Invitation.t) ->
               Sihl_email.create
                 ~sender:"sender"
                 ~recipient:"recipient"
                 ~subject:"subject"
                 "body"
-              |> Email.create_job
-              |> Result.ok)
+              |> Email.Service.Job.create
+              |> Email.create_dispatch
+              |> CCResult.return)
         ; mailing = None
         })
   in
-  let& () = Pool_event.handle_events test_db events |> Lwt_result.ok in
+  let& () = Pool_event.handle_events test_db current_user events |> Lwt_result.ok in
   Lwt_result.lift (Ok ())
 ;;
 
@@ -204,9 +187,7 @@ let finds_unassigned_contacts =
   let& assigned_contact = contact ~prefix:"invited" () in
   let& unassigned_contact = contact ~prefix:"probe" () in
   (* 3. send invitations *)
-  let& () =
-    invitation ~experiment ~contacts:[ assigned_contact; unassigned_contact ]
-  in
+  let& () = invitation ~experiment ~contacts:[ assigned_contact; unassigned_contact ] in
   (* 4. only accept one of the invitations, creating the assignment *)
   let& () = assignment ~experiment ~contact:assigned_contact ~session in
   (* 5. create a filter that for assignments that includes our experiment *)
@@ -226,42 +207,28 @@ let finds_unassigned_contacts =
     Filter.create None (Pred predicate)
   in
   let& found_contacts =
-    Filter.find_filtered_contacts
-      test_db
-      Filter.MatchesFilter
-      (Some assignment_filter)
+    Filter.find_filtered_contacts test_db Filter.MatchesFilter (Some assignment_filter)
   in
-  (* FIXME(@leostera): since tests are not currently running in isolation, when
-     we search for things we may find a lot more than we care about. This little
-     filtering makes sure that we only ever return some of the users that we
-     have created. This is a HACK and we shoudl fix it by ensuring every test is
-     run in its own transaction. *)
+  (* FIXME(@leostera): since tests are not currently running in isolation, when we search
+     for things we may find a lot more than we care about. This little filtering makes
+     sure that we only ever return some of the users that we have created. This is a HACK
+     and we shoudl fix it by ensuring every test is run in its own transaction. *)
   let found_contacts =
     CCList.filter
       (fun contact ->
-        let open Contact in
-        let open Sihl_user in
-        contact.user.id = unassigned_contact.user.id
-        || contact.user.id = assigned_contact.user.id)
+         let open Contact in
+         let open Pool_user in
+         contact.user.id = unassigned_contact.user.id
+         || contact.user.id = assigned_contact.user.id)
       found_contacts
   in
   (* 6. assert on the found contacts *)
-  let& expected_contact =
-    Contact.find test_db (Contact.id unassigned_contact)
-  in
+  let& expected_contact = Contact.find test_db (Contact.id unassigned_contact) in
   Alcotest.(
-    check
-      int
-      "wrong number of contacts returned"
-      1
-      (CCList.length found_contacts));
+    check int "wrong number of contacts returned" 1 (CCList.length found_contacts));
   let actual_contact = CCList.hd found_contacts in
   Alcotest.(
-    check
-      Test_utils.contact
-      "wrong contact retrieved"
-      expected_contact
-      actual_contact);
+    check Test_utils.contact "wrong contact retrieved" expected_contact actual_contact);
   Lwt_result.lift (Ok ())
 ;;
 
@@ -305,30 +272,22 @@ let filters_out_assigned_contacts =
     Filter.create None (Pred predicate)
   in
   let& found_contacts =
-    Filter.find_filtered_contacts
-      test_db
-      Filter.MatchesFilter
-      (Some assignment_filter)
+    Filter.find_filtered_contacts test_db Filter.MatchesFilter (Some assignment_filter)
   in
-  (* FIXME(@leostera): since tests are not currently running in isolation, when
-     we search for things we may find a lot more than we care about. This little
-     filtering makes sure that we only ever return some of the users that we
-     have created. This is a HACK and we shoudl fix it by ensuring every test is
-     run in its own transaction. *)
+  (* FIXME(@leostera): since tests are not currently running in isolation, when we search
+     for things we may find a lot more than we care about. This little filtering makes
+     sure that we only ever return some of the users that we have created. This is a HACK
+     and we shoudl fix it by ensuring every test is run in its own transaction. *)
   let found_contacts =
     CCList.filter
       (fun contact ->
-        let open Contact in
-        let open Sihl_user in
-        contact.user.id = assigned_contact.user.id)
+         let open Contact in
+         let open Pool_user in
+         contact.user.id = assigned_contact.user.id)
       found_contacts
   in
   (* 4. assert on the found contacts *)
   Alcotest.(
-    check
-      int
-      "wrong number of contacts returned"
-      0
-      (CCList.length found_contacts));
+    check int "wrong number of contacts returned" 0 (CCList.length found_contacts));
   Lwt_result.lift (Ok ())
 ;;

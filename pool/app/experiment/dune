@@ -1,6 +1,7 @@
 (library
  (name experiment)
  (libraries
+  admin
   contact
   email
   filter
@@ -8,8 +9,7 @@
   organisational_unit
   pool_common
   query
-  sihl
-  tenant)
+  sihl)
  (preprocess
   (pps
    lwt_ppx

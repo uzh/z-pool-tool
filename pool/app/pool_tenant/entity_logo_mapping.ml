@@ -10,7 +10,7 @@ module LogoType = struct
   let of_string = function
     | "partner_logo" -> Ok PartnerLogo
     | "tenant_logo" -> Ok TenantLogo
-    | _ -> Error Pool_common.Message.(Invalid Field.LogoType)
+    | _ -> Error Pool_message.(Error.Invalid Field.LogoType)
   ;;
 
   let to_string = function
@@ -21,7 +21,7 @@ module LogoType = struct
   let all = [ PartnerLogo; TenantLogo ]
 
   let field_of_t =
-    let open Pool_common.Message.Field in
+    let open Pool_message.Field in
     function
     | TenantLogo -> TenantLogos
     | PartnerLogo -> PartnerLogos

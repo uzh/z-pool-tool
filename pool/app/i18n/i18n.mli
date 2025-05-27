@@ -4,6 +4,12 @@ module Key : sig
     | ActorPermissionHint
     | AssistantRoleHint
     | CreditsText
+    | DashboardUpcomingSessions
+    | DashboardOnlineStudies
+    | DashboardExperimentRegistration
+    | DashboardExperimentHistory
+    | DashboardWaitinglist
+    | ExperimentNavigationTitle
     | ExperimenterRoleHint
     | GreetingsText
     | PasswordPolicyText
@@ -12,20 +18,17 @@ module Key : sig
     | TermsAndConditions
     | WelcomeText
 
-  val create : string -> (t, Pool_common.Message.error) result
+  val create : string -> (t, Pool_message.Error.t) result
   val show : t -> string
   val equal : t -> t -> bool
   val compare : t -> t -> int
-  val is_rich_text : t -> bool
+  val input_type : t -> [> `RichText | `TextArea | `TextInput ]
   val all : t list
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module Content : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 type t
@@ -54,45 +57,32 @@ type event =
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
-val find : Pool_database.Label.t -> Pool_common.Id.t -> t Lwt.t
-
-val find_with_default_content
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t
-  -> t Lwt.t
-
-val find_by_key
-  :  Pool_database.Label.t
-  -> Key.t
-  -> Pool_common.Language.t
-  -> t Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
+val find : Database.Label.t -> Pool_common.Id.t -> t Lwt.t
+val find_with_default_content : Database.Label.t -> Pool_common.Id.t -> t Lwt.t
+val find_by_key : Database.Label.t -> Key.t -> Pool_common.Language.t -> t Lwt.t
 
 val find_by_key_opt
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Key.t
   -> Pool_common.Language.t
   -> t option Lwt.t
 
-val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
-val terms_and_conditions_last_updated : Pool_database.Label.t -> Ptime.t Lwt.t
+val find_all : Database.Label.t -> unit -> t list Lwt.t
+val terms_and_conditions_last_updated : Database.Label.t -> Ptime.t Lwt.t
 
-module I18nPageCache : sig
+module I18nCache : sig
   val clear : unit -> unit
 end
 
-val i18n_is_set
-  :  Pool_database.Label.t
-  -> Pool_common.Language.t
-  -> Key.t
-  -> bool Lwt.t
+val privacy_policy_is_set : Database.Label.t -> Pool_common.Language.t -> bool Lwt.t
 
 module Guard : sig
   module Target : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Entity.PoolError.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 

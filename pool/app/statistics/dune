@@ -1,13 +1,14 @@
 (library
  (name statistics)
  (libraries
+  assignment
   containers
+  experiment
   guard
   i18n
   pool_common
   pool_database
   ptime
-  service
   settings
   sihl
   utils)
@@ -16,7 +17,10 @@
    lwt_ppx
    ppx_deriving.enum
    ppx_deriving.eq
+   ppx_deriving.ord
    ppx_deriving.show
+   ppx_fields_conv
+   ppx_sexp_conv
    ppx_variants_conv
    ppx_yojson_conv)))
 

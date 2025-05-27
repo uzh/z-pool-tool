@@ -1,83 +1,167 @@
+include Changelog.DefaultSettings
+open Ppx_yojson_conv_lib.Yojson_conv
+
+let model = Pool_message.Field.Experiment
+
 module Id = struct
   include Pool_common.Id
 
   let to_common m = m
 end
 
-module Common = Pool_common
-
 module Title = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Common.Message.Field.Title
+  let field = Pool_message.Field.Title
   let schema () = schema field ()
 end
 
 module PublicTitle = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Common.Message.Field.PublicTitle
-  let schema () = schema field ()
-  let placeholder = "###"
+  let field = Pool_message.Field.PublicTitle
+
+  let schema ?default () : (Pool_message.Error.t, t) Pool_conformist.Field.t =
+    Pool_conformist.schema_decoder ?default create value field
+  ;;
 end
 
 module InternalDescription = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Common.Message.Field.InternalDescription
+  let field = Pool_message.Field.InternalDescription
   let schema () = schema field ()
 end
 
 module PublicDescription = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Common.Message.Field.PublicDescription
+  let field = Pool_message.Field.PublicDescription
   let schema () = schema field ()
 end
 
 module CostCenter = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = Common.Message.Field.CostCenter
+  let field = Pool_message.Field.CostCenter
   let schema () = schema field ()
 end
 
-module DirectRegistrationDisabled = struct
-  include Pool_common.Model.Boolean
+module Filter = struct
+  include Filter
 
-  let schema = schema Common.Message.Field.DirectRegistrationDisabled
+  let yojson_of_t { Filter.id; _ } = `String (Id.value id)
+  let t_of_yojson _ = failwith "decode only"
+end
+
+module ContactEmail = struct
+  open Pool_user.EmailAddress
+
+  let field = Pool_message.Field.ContactEmail
+  let schema = schema ~field
+end
+
+module DirectRegistrationDisabled = struct
+  include Pool_model.Base.Boolean
+
+  let schema = schema Pool_message.Field.DirectRegistrationDisabled
 end
 
 module RegistrationDisabled = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema Common.Message.Field.RegistrationDisabled
+  let schema = schema Pool_message.Field.RegistrationDisabled
 end
 
 module AllowUninvitedSignup = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema Common.Message.Field.AllowUninvitedSignup
+  let schema = schema Pool_message.Field.AllowUninvitedSignup
 end
 
 module ExternalDataRequired = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema Common.Message.Field.ExternalDataRequired
+  let schema = schema Pool_message.Field.ExternalDataRequired
 end
 
 module ShowExternalDataIdLinks = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
-  let schema = schema Common.Message.Field.ShowExteralDataIdLinks
+  let schema = schema Pool_message.Field.ShowExteralDataIdLinks
 end
 
-module InvitationResetAt = struct
-  include Pool_common.Model.Ptime
+module AssignmentWithoutSession = struct
+  include Pool_model.Base.Boolean
 
-  let create m = Ok m
-  let schema = schema Common.Message.Field.InvitationResetAt create
-  let of_ptime m = m
+  let schema = schema Pool_message.Field.AssignmentWithoutSession
+end
+
+module SurveyUrl = struct
+  include Pool_model.Base.String
+  open Pool_message
+
+  let validation str =
+    let open CCResult.Infix in
+    let open Uri in
+    let invalid_error = Error (Error.Invalid Field.SurveyUrl) in
+    let trimmed = CCString.trim str in
+    let uri = of_string trimmed in
+    try
+      let* () =
+        match scheme uri with
+        | Some ("http" | "https") -> Ok ()
+        | _ -> invalid_error
+      in
+      Ok trimmed
+    with
+    | _ -> invalid_error
+  ;;
+
+  let create = validation
+  let field = Field.SurveyUrl
+  let schema () = schema ~validation field ()
+end
+
+module MatcherNotificationSent = struct
+  type t = bool [@@deriving show, eq, yojson]
+
+  let value t = t
+  let create t = t
+end
+
+module OnlineExperiment = struct
+  type t = { survey_url : SurveyUrl.t } [@@deriving eq, fields ~getters, show, yojson]
+
+  let create ~survey_url = { survey_url }
+
+  let create_opt ~assignment_without_session ~survey_url =
+    match assignment_without_session, survey_url with
+    | false, _ | _, None -> None
+    | true, Some survey_url -> Some { survey_url }
+  ;;
+
+  let callback_url (tenant : Pool_tenant.t) ~experiment_id ~assignment_id =
+    Format.asprintf
+      "/experiments/%s/submit/%s"
+      (Id.value experiment_id)
+      (Pool_common.Id.value assignment_id)
+    |> Pool_tenant.(create_public_url tenant.url)
+  ;;
+
+  let url_params tenant ~experiment_id ~assignment_id =
+    let open Pool_common in
+    [ "assignmentId", Id.value assignment_id
+    ; "experimentId", Id.value experiment_id
+    ; ( Pool_message.Field.(show CallbackUrl)
+      , callback_url tenant ~experiment_id ~assignment_id )
+    ]
+  ;;
+
+  let render_survey_url tenant ~experiment_id ~assignment_id survey_url =
+    let params = url_params tenant ~experiment_id ~assignment_id in
+    Utils.Message.render_params params survey_url
+  ;;
 end
 
 type t =
@@ -90,7 +174,7 @@ type t =
   ; cost_center : CostCenter.t option
   ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
-  ; contact_person_id : Admin.Id.t option
+  ; contact_email : Pool_user.EmailAddress.t option
   ; smtp_auth_id : Email.SmtpAuth.Id.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
@@ -98,37 +182,39 @@ type t =
   ; external_data_required : ExternalDataRequired.t
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
-  ; email_session_reminder_lead_time :
-      Pool_common.Reminder.EmailLeadTime.t option
+  ; online_experiment : OnlineExperiment.t option
+  ; email_session_reminder_lead_time : Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
       Pool_common.Reminder.TextMessageLeadTime.t option
-  ; invitation_reset_at : InvitationResetAt.t option
+  ; matcher_notification_sent : MatcherNotificationSent.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving eq, fields ~getters, show]
+[@@deriving eq, fields ~getters, show, yojson]
+
+let compare a b = Id.compare a.id b.id
 
 let create
-  ?id
-  ?contact_person_id
-  ?cost_center
-  ?internal_description
-  ?public_description
-  ?language
-  ?email_session_reminder_lead_time
-  ?experiment_type
-  ?filter
-  ?invitation_reset_at
-  ?organisational_unit
-  ?smtp_auth_id
-  ?text_message_session_reminder_lead_time
-  title
-  public_title
-  direct_registration_disabled
-  registration_disabled
-  allow_uninvited_signup
-  external_data_required
-  show_external_data_id_links
+      ?id
+      ?contact_email
+      ?cost_center
+      ?internal_description
+      ?public_description
+      ?language
+      ?email_session_reminder_lead_time
+      ?experiment_type
+      ?filter
+      ?organisational_unit
+      ?smtp_auth_id
+      ?text_message_session_reminder_lead_time
+      ?online_experiment
+      title
+      public_title
+      direct_registration_disabled
+      registration_disabled
+      allow_uninvited_signup
+      external_data_required
+      show_external_data_id_links
   =
   let open CCResult in
   Ok
@@ -141,7 +227,7 @@ let create
     ; cost_center
     ; organisational_unit
     ; filter
-    ; contact_person_id
+    ; contact_email
     ; smtp_auth_id
     ; direct_registration_disabled
     ; registration_disabled
@@ -151,11 +237,40 @@ let create
     ; experiment_type
     ; email_session_reminder_lead_time
     ; text_message_session_reminder_lead_time
-    ; invitation_reset_at
-    ; created_at = Ptime_clock.now ()
-    ; updated_at = Ptime_clock.now ()
+    ; online_experiment
+    ; matcher_notification_sent = false
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
 ;;
+
+module SendingInvitations = struct
+  module Core = struct
+    let field = Pool_message.Field.SendingInvitations
+
+    type t =
+      | No [@name "no"] [@printer Utils.ppx_printer "no"]
+      | Sending [@name "sending"] [@printer Utils.ppx_printer "sending"]
+      | Scheduled [@name "scheduled"] [@printer Utils.ppx_printer "scheduled"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
+
+  include Pool_model.Base.SelectorType (Core)
+  include Core
+
+  let read str =
+    try Ok (Utils.Json.read_variant t_of_yojson str) with
+    | _ -> Error (Pool_message.Error.Invalid field)
+  ;;
+
+  let hint = Pool_common.I18n.ExperimentStatisticsSendingInvitations
+end
+
+type assignment_counts =
+  { show_up_count : int
+  ; no_show_count : int
+  ; participation_count : int
+  }
 
 module DirectEnrollment = struct
   type t =
@@ -176,11 +291,7 @@ module DirectEnrollment = struct
     available_spots && not contact_already_assigned
   ;;
 
-  let contact_meets_criteria
-    pool
-    ({ filter; allow_uninvited_signup; _ } : t)
-    contact
-    =
+  let contact_meets_criteria pool ({ filter; allow_uninvited_signup; _ } : t) contact =
     match allow_uninvited_signup, filter with
     | true, _ | false, None -> Lwt.return true
     | _, Some query -> Filter.contact_matches_filter pool query contact
@@ -199,17 +310,19 @@ module Public = struct
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     ; experiment_type : Pool_common.ExperimentType.t option
     ; smtp_auth_id : Email.SmtpAuth.Id.t option
+    ; online_experiment : OnlineExperiment.t option
     }
   [@@deriving eq, show]
 
   let create
-    ?description
-    ?language
-    ?experiment_type
-    ?smtp_auth_id
-    id
-    public_title
-    direct_registration_disabled
+        ?description
+        ?language
+        ?experiment_type
+        ?smtp_auth_id
+        ?online_experiment
+        id
+        public_title
+        direct_registration_disabled
     =
     { id
     ; public_title
@@ -218,6 +331,7 @@ module Public = struct
     ; direct_registration_disabled
     ; experiment_type
     ; smtp_auth_id
+    ; online_experiment
     }
   ;;
 
@@ -232,18 +346,21 @@ module Public = struct
   let direct_registration_disabled (m : t) = m.direct_registration_disabled
   let experiment_type (m : t) = m.experiment_type
   let smtp_auth_id (m : t) = m.smtp_auth_id
+  let online_experiment (m : t) = m.online_experiment
+  let is_sessionless (m : t) = m |> online_experiment |> CCOption.is_some
 end
 
 let to_public
-  { id
-  ; public_title
-  ; public_description
-  ; language
-  ; direct_registration_disabled
-  ; experiment_type
-  ; smtp_auth_id
-  ; _
-  }
+      { id
+      ; public_title
+      ; public_description
+      ; language
+      ; direct_registration_disabled
+      ; experiment_type
+      ; smtp_auth_id
+      ; online_experiment
+      ; _
+      }
   =
   { Public.id
   ; public_title
@@ -252,6 +369,7 @@ let to_public
   ; direct_registration_disabled
   ; experiment_type
   ; smtp_auth_id
+  ; online_experiment
   }
 ;;
 
@@ -263,6 +381,14 @@ let email_session_reminder_lead_time_value m =
 let text_message_session_reminder_lead_time_value m =
   m.text_message_session_reminder_lead_time
   |> CCOption.map Pool_common.Reminder.TextMessageLeadTime.value
+;;
+
+let assignment_without_session_value ({ online_experiment; _ } : t) =
+  CCOption.is_some online_experiment
+;;
+
+let survey_url_value ({ online_experiment; _ } : t) =
+  online_experiment |> CCOption.map OnlineExperiment.survey_url
 ;;
 
 let direct_registration_disabled_value (m : t) =
@@ -285,12 +411,24 @@ let show_external_data_id_links_value (m : t) =
   ShowExternalDataIdLinks.value m.show_external_data_id_links
 ;;
 
+module InvitationReset = struct
+  type t =
+    { created_at : Pool_common.CreatedAt.t
+          [@equal fun a b -> Sihl.Configuration.is_test () || a = b]
+    ; iteration : int
+    ; contacts_matching_filter : int
+    ; invitations_sent : int
+    }
+  [@@deriving eq, show]
+end
+
 let boolean_fields =
-  Pool_common.Message.Field.
-    [ DirectRegistrationDisabled
-    ; RegistrationDisabled
-    ; AllowUninvitedSignup
+  Pool_message.Field.
+    [ AllowUninvitedSignup
+    ; AssignmentWithoutSession
+    ; DirectRegistrationDisabled
     ; ExternalDataRequired
+    ; RegistrationDisabled
     ; ShowExteralDataIdLinks
     ]
 ;;
@@ -298,15 +436,12 @@ let boolean_fields =
 let contact_meets_criteria pool { filter; allow_uninvited_signup; _ } contact =
   match allow_uninvited_signup, filter with
   | true, _ | false, None -> Lwt.return true
-  | _, Some { Filter.query; _ } ->
-    Filter.contact_matches_filter pool query contact
+  | _, Some { Filter.query; _ } -> Filter.contact_matches_filter pool query contact
 ;;
 
-open Pool_common.Message
+open Pool_message
 
-let column_title =
-  (Field.Title, "pool_experiments.title") |> Query.Column.create
-;;
+let column_title = (Field.Title, "pool_experiments.title") |> Query.Column.create
 
 let column_public_title =
   (Field.PublicTitle, "pool_experiments.public_title") |> Query.Column.create
@@ -317,8 +452,7 @@ let column_created_at =
 ;;
 
 let column_experiment_type =
-  (Field.ExperimentType, "pool_experiments.experiment_type")
-  |> Query.Column.create
+  (Field.ExperimentType, "pool_experiments.experiment_type") |> Query.Column.create
 ;;
 
 let experiment_type_filter =
@@ -330,8 +464,7 @@ let experiment_type_filter =
     |> CCList.map (fun exp_type ->
       let label =
         languages
-        |> CCList.map (fun lang ->
-          lang, show exp_type |> CCString.capitalize_ascii)
+        |> CCList.map (fun lang -> lang, show exp_type |> CCString.capitalize_ascii)
       in
       let value = show exp_type in
       SelectOption.create label value)
@@ -342,9 +475,5 @@ let experiment_type_filter =
 let filterable_by = Some [ experiment_type_filter ]
 let searchable_by = [ column_title; column_public_title; Tags.column_title ]
 let sortable_by = column_created_at :: searchable_by
-
-let default_sort =
-  Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
-;;
-
+let default_sort = Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
 let default_query = Query.create ~sort:default_sort ()

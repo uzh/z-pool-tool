@@ -1,3 +1,5 @@
+open CCFun.Infix
+
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let sign_up =
@@ -25,30 +27,21 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
     ~help
     (let open Utils.Lwt_result.Infix in
      function
-     | [ db_pool
-       ; email
-       ; password
-       ; firstname
-       ; lastname
-       ; language
-       ; terms_accepted
-       ]
+     | [ db_pool; email; password; firstname; lastname; language; terms_accepted ]
        when CCString.equal terms_accepted "accept" ->
        let%lwt pool = Command_utils.is_available_exn db_pool in
        let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
-       let user_id = Pool_common.Id.create () in
+       let user_id = Contact.Id.create () in
        let%lwt events =
-         let open Cqrs_command.Contact_command.SignUp in
-         let language =
-           Pool_common.Language.create language |> CCResult.to_opt
-         in
-         let ({ firstname; lastname; email; _ } as decoded) =
+         let open Cqrs_command in
+         let language = Pool_common.Language.create language |> CCResult.to_opt in
+         let ({ User_command.firstname; lastname; email; _ } as decoded) =
            [ "email", [ email ]
            ; "password", [ password ]
            ; "firstname", [ firstname ]
            ; "lastname", [ lastname ]
            ]
-           |> decode
+           |> Contact_command.SignUp.decode
            |> get_or_failwith
          in
          let%lwt token = Email.create_token pool email in
@@ -61,14 +54,20 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
              token
              firstname
              lastname
-             user_id
+             (Contact.Id.to_user user_id)
          in
          decoded
-         |> handle [] ~user_id token email verification_mail language
+         |> Contact_command.SignUp.handle
+              []
+              ~user_id
+              token
+              email
+              verification_mail
+              language
          |> get_or_failwith
          |> Lwt.return
        in
-       let%lwt () = Lwt_list.iter_s (Pool_event.handle_event pool) events in
+       let%lwt () = Pool_event.handle_system_events pool events in
        Lwt.return_some ()
      | _ -> Command_utils.failwith_missmatch help)
 ;;
@@ -80,19 +79,15 @@ let trigger_profile_update_by_tenant pool =
   match contacts with
   | [] -> Lwt_result.return ()
   | contacts ->
-    let%lwt create_message =
-      Message_template.ProfileUpdateTrigger.prepare pool tenant
-    in
+    let%lwt create_message = Message_template.ProfileUpdateTrigger.prepare pool tenant in
     let* emails =
-      CCList.map create_message contacts
-      |> CCResult.flatten_l
-      |> Lwt_result.lift
+      CCList.map create_message contacts |> CCResult.flatten_l |> Lwt_result.lift
     in
     Cqrs_command.Contact_command.SendProfileUpdateTrigger.(
       { contacts; emails }
       |> handle
       |> Lwt_result.lift
-      |>> Pool_event.handle_events pool)
+      |>> Pool_event.handle_system_events pool)
 ;;
 
 let tenant_specific_profile_update_trigger =
@@ -101,10 +96,7 @@ let tenant_specific_profile_update_trigger =
     "Send profile update triggers of all tenants"
     (fun pool ->
        let open Utils.Lwt_result.Infix in
-       pool
-       |> trigger_profile_update_by_tenant
-       ||> get_or_failwith
-       ||> CCOption.some)
+       pool |> trigger_profile_update_by_tenant ||> get_or_failwith %> CCOption.return)
 ;;
 
 let all_profile_update_triggers =
@@ -113,9 +105,32 @@ let all_profile_update_triggers =
     "Send profile update triggers of all tenants"
     (fun () ->
        let open Utils.Lwt_result.Infix in
-       Command_utils.setup_databases ()
-       >|> Lwt_list.map_s trigger_profile_update_by_tenant
+       let%lwt () = Database.Pool.initialize () in
+       Database.Pool.Tenant.all ()
+       |> Lwt_list.map_s trigger_profile_update_by_tenant
        ||> CCList.all_ok
-       ||> get_or_failwith
-       ||> fun (_ : unit list) -> Some ())
+       ||> get_or_failwith %> Utils.flat_unit %> CCOption.return)
+;;
+
+let find_duplicates =
+  let help =
+    {|<database_label> <user_uuid>
+
+Provide all fields to sign up a new contact:
+        <database_label>      : string
+        <user_uuid>           : string
+        |}
+  in
+  Sihl.Command.make
+    ~name:"find_duplicates"
+    ~description:"Finds duplicate contacts"
+    ~help
+    (function
+    | [ db_pool; user_uuid ] ->
+      let open Utils.Lwt_result.Infix in
+      let%lwt () = Database.Pool.initialize () in
+      let user_uuid = Pool_common.Id.of_string user_uuid in
+      let db_pool = Database.Label.of_string db_pool in
+      Duplicate_contacts.Service.run db_pool user_uuid ||> CCOption.return
+    | _ -> Command_utils.failwith_missmatch help)
 ;;

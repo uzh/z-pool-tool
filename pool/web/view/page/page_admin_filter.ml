@@ -1,16 +1,11 @@
 open CCFun
 open Containers
 open Tyxml.Html
-open Pool_common
 
 let list { Pool_context.language; _ } filter_list query =
   let url = Uri.of_string "/admin/filter" in
   let data_table =
-    Component.DataTable.create_meta
-      ~search:Filter.searchable_by
-      url
-      query
-      language
+    Component.DataTable.create_meta ~search:Filter.searchable_by url query language
   in
   let cols =
     let create_filter : [ | Html_types.flow5 ] elt =
@@ -18,14 +13,14 @@ let list { Pool_context.language; _ } filter_list query =
         ~style:`Success
         ~icon:Component.Icon.Add
         ~classnames:[ "small" ]
-        ~control:(language, Message.(Add (Some Field.Filter)))
+        ~control:(language, Pool_message.(Control.Add (Some Field.Filter)))
         "/admin/filter/new"
     in
     [ `column Filter.column_title; `custom create_filter ]
   in
   let row (filter : Filter.t) =
     let open Filter in
-    let title = Option.map Title.value filter.title in
+    let title = CCOption.map Title.value filter.title in
     [ txt (Option.get_or ~default:"" title)
     ; Format.asprintf "/admin/filter/%s/edit" (Filter.Id.value filter.id)
       |> Component.Input.edit_link
@@ -45,15 +40,15 @@ let list { Pool_context.language; _ } filter_list query =
 let index ({ Pool_context.language; _ } as context) filter_list query =
   let hint =
     [ Pool_common.(Utils.hint_to_string language I18n.FilterTemplates) |> txt ]
-    |> Component.Notification.notification language `Warning
+    |> Component.Notification.create language `Warning
   in
   div
-    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ txt
-            (Pool_common.(Utils.field_to_string language Message.Field.Filter)
-             |> CCString.capitalize_ascii)
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
+        [ Pool_common.Utils.field_to_string language Pool_message.Field.Filter
+          |> CCString.capitalize_ascii
+          |> txt
         ]
     ; hint
     ; div ~a:[ a_class [ "gap" ] ] [ list context filter_list query ]
@@ -61,26 +56,37 @@ let index ({ Pool_context.language; _ } as context) filter_list query =
 ;;
 
 let edit
-  { Pool_context.language; csrf; _ }
-  filter
-  key_list
-  query_experiments
-  query_tags
+      ({ Pool_context.language; csrf; _ } as context)
+      filter
+      key_list
+      query_experiments
+      query_tags
   =
+  let changelog =
+    match filter with
+    | None -> txt ""
+    | Some filter ->
+      let url =
+        Http_utils.Url.Admin.filter_path ~suffix:"changelog" ~id:filter.Filter.id ()
+        |> Uri.of_string
+      in
+      Component.Changelog.list context url None
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ Component.Partials.form_title
-        language
-        Pool_common.Message.Field.Filter
-        filter
-    ; Component.Filter.(
-        filter_form
-          csrf
-          language
-          (Http_utils.Filter.Template filter)
-          key_list
-          []
-          query_experiments
-          query_tags)
+    [ Component.Partials.form_title language Pool_message.Field.Filter filter
+    ; div
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ Component.Filter.(
+            filter_form
+              csrf
+              language
+              (Http_utils.Filter.Template filter)
+              key_list
+              []
+              query_experiments
+              query_tags)
+        ; changelog
+        ]
     ]
 ;;

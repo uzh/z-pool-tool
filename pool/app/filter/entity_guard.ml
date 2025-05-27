@@ -6,11 +6,9 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun { Entity.id; _ } ->
-        Guard.Target.create
-          `Filter
-          (id |> Guard.Uuid.target_of Pool_common.Id.value))
+         Guard.Target.create `Filter (id |> Guard.Uuid.target_of Pool_common.Id.value))
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 
@@ -19,12 +17,19 @@ module Access = struct
   open ValidationSet
   open Permission
 
-  let filter action uuid =
-    one_of_tuple (action, `Filter, Some (uuid |> Uuid.target_of Entity.Id.value))
+  let filter ?id ?(model = `Filter) permission =
+    one_of_tuple (permission, model, CCOption.map (Uuid.target_of Entity.Id.value) id)
   ;;
 
   let index = one_of_tuple (Read, `Filter, None)
-  let create = one_of_tuple (Read, `Filter, None)
-  let update = filter Update
-  let delete = filter Delete
+
+  let create ?experiment_id () =
+    CCOption.map_or
+      ~default:(filter Create)
+      (fun id -> And [ Or [ filter Create; filter ~id:(Entity.Id.of_common id) Create ] ])
+      experiment_id
+  ;;
+
+  let update id = filter ~id Update
+  let delete id = filter ~id Delete
 end

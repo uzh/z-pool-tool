@@ -6,10 +6,15 @@
   guardian.backend
   lwt
   pool_common
-  pool_database
+  database
   role
   query
   sihl
   utils)
  (preprocess
-  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_string)))
+  (pps
+   lwt_ppx
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_string
+   ppx_variants_conv)))

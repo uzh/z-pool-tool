@@ -16,8 +16,7 @@ let create ?(active = false) ?subtitle language title id html =
   let attrs =
     let base_classnames = [ "fullscreen-overlay"; "modal" ] in
     match active with
-    | true ->
-      [ a_class ("active" :: base_classnames); a_aria "hidden" [ "false" ] ]
+    | true -> [ a_class ("active" :: base_classnames); a_aria "hidden" [ "false" ] ]
     | false -> [ a_class base_classnames; a_aria "hidden" [ "true" ] ]
   in
   div
@@ -28,6 +27,10 @@ let create ?(active = false) ?subtitle language title id html =
         ; div ~a:[ a_class [ "modal-content" ] ] [ html ]
         ]
     ]
+;;
+
+let create_placeholder id =
+  div ~a:[ a_id id; a_class [ "fullscreen-overlay"; "modal" ] ] []
 ;;
 
 let js_modal_add_spinner =

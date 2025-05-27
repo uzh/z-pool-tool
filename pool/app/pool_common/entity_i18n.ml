@@ -1,15 +1,32 @@
+open Sexplib.Conv
+
+module Ptime = struct
+  include Pool_model.Base.Ptime
+
+  module Span = struct
+    include Pool_model.Base.PtimeSpan
+  end
+end
+
 type t =
   | Activity
   | Address
   | AdminComment
+  | AnnouncementsListTitle
+  | AnnouncementsTenantSelect
+  | ApiKeys
+  | Assigned
   | AssignmentEditTagsWarning
   | AssignmentListEmpty
+  | Available
   | AvailableSpots
   | Canceled
+  | CanceledSessionsTitle
   | Closed
   | ContactWaitingListEmpty
-  | ContactWaitingListTitle
   | CustomFieldsSettings
+  | CustomFieldsSettingsCloseScreen
+  | CustomFieldsSettingsDetailScreen
   | DashboardProfileCompletionText
   | DashboardProfileCompletionTitle
   | DashboardTitle
@@ -19,11 +36,17 @@ type t =
   | EmailConfirmationNote
   | EmailConfirmationTitle
   | EmptyListGeneric
-  | EmtpyList of Entity_message.Field.t
+  | EmtpyList of Pool_message.Field.t
   | EnrollInExperiment
   | ExperimentHistory
   | ExperimentListEmpty
   | ExperimentListPublicTitle
+  | ExperimentOnlineListEmpty
+  | ExperimentOnlineListPublicTitle
+  | ExperimentOnlineParticiated of Ptime.t
+  | ExperimentOnlineParticipationDeadline of Ptime.t
+  | ExperimentOnlineParticipationNoUpcoming
+  | ExperimentOnlineParticipationUpcoming of Ptime.t
   | ExperimentListTitle
   | ExperimentMessagingSubtitle
   | ExperimentNewTitle
@@ -34,7 +57,11 @@ type t =
   | FilterContactsDescription
   | FilterNrOfContacts
   | FilterNrOfSentInvitations
+  | FilterNrOfUnsuitableAssignments
+  | FilterNuberMatchingUninvited
   | FollowUpSessionFor
+  | HasGlobalRole of string
+  | Help
   | ImportConfirmationNote
   | ImportConfirmationTitle
   | ImportPendingNote
@@ -42,6 +69,7 @@ type t =
   | IncompleteSessions
   | InvitationsStatistics
   | InvitationsStatisticsIntro
+  | Iteration
   | JobCloneOf
   | LocationDetails
   | LocationFileNew
@@ -53,12 +81,18 @@ type t =
   | LoginTitle
   | MailingDetailTitle of Ptime.t
   | MailingDistributionDescription
+  | MailingExperimentNoUpcomingSession
+  | MailingExperimentNoUpcomingTimewindow
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
+  | MatchesFilterChangeReasonFilter
+  | MatchesFilterChangeReasonManually
+  | MatchesFilterChangeReasonWorker
   | MessageHistory of string
-  | NoEntries of Entity_message.Field.t
+  | NoEntries of Pool_message.Field.t
   | NoInvitationsSent
   | Note
+  | NotMatchingFilter
   | OurPartners
   | Past
   | PastSessionsTitle
@@ -66,15 +100,15 @@ type t =
   | ProfileCompletionText
   | Reminder
   | ResendReminders
+  | Reset
   | ResetPasswordLink
   | ResetPasswordTitle
   | RoleApplicableToAssign
   | RoleCurrentlyAssigned
-  | RoleCurrentlyNoneAssigned of Entity_message.Field.t
+  | RoleCurrentlyNoneAssigned of Pool_message.Field.t
   | RolesGranted
   | SelectedTags
   | SelectedTagsEmpty
-  | SentInvitations
   | SessionCloseScreen
   | SessionDetailScreen
   | SessionDetailTitle of Ptime.t
@@ -91,18 +125,26 @@ type t =
   | TermsAndConditionsLastUpdated of Ptime.t
   | TermsAndConditionsTitle
   | TermsAndConditionsUpdated
+  | TenantMaintenanceText
+  | TenantMaintenanceTitle
   | TextTemplates
+  | TimeWindowDetailTitle of string
+  | TotalSentInvitations
   | UpcomingSessionsListEmpty
   | UpcomingSessionsTitle
+  | UserLoginBlockedUntil of Ptime.t
   | UserProfileDetailsSubtitle
   | UserProfileLoginSubtitle
   | UserProfilePausedNote
   | Validation
+  | VersionsListTitle
   | WaitingListIsDisabled
 
 type nav_link =
   | ActorPermissions
   | Admins
+  | Announcements
+  | ApiKeys
   | Assignments
   | ContactInformation
   | Contacts
@@ -110,8 +152,9 @@ type nav_link =
   | CustomFields
   | Dashboard
   | Experiments
+  | ExperimentsCustom of string
   | ExternalDataIds
-  | Field of Entity_message.Field.t
+  | Field of Pool_message.Field.t
   | Filter
   | I18n
   | Invitations
@@ -119,6 +162,7 @@ type nav_link =
   | Login
   | LoginInformation
   | Logout
+  | ManageDuplicates
   | Mailings
   | MessageHistory
   | MessageTemplates
@@ -126,21 +170,26 @@ type nav_link =
   | Overview
   | ParticipationTags
   | PersonalDetails
+  | Pools
   | PrivacyPolicy
   | Profile
   | Queue
+  | QueueHistory
   | RolePermissions
   | Schedules
+  | SentInvitations
   | Sessions
   | Settings
   | Smtp
+  | SignupCodes
   | SystemSettings
   | Tags
-  | Tenants
   | TextMessages
+  | TimeWindows
   | Users
   | WaitingList
-[@@deriving eq]
+  | Versions
+[@@deriving eq, show, sexp_of]
 
 type hint =
   | AdminOverwriteContactValues
@@ -149,10 +198,15 @@ type hint =
   | AssignmentCancellationMessageFollowUps
   | AssignmentConfirmationMessageFollowUps
   | AssignmentsMarkedAsClosed
+  | AssignmentsNotMatchingFilerSession of int
+  | AssignmentWithoutSession
+  | ContactAccountPaused
   | ContactCurrentCellPhone of string
   | ContactEnrollmentDoesNotMatchFilter
   | ContactEnrollmentRegistrationDisabled
   | ContactEnterCellPhoneToken of string
+  | ContactExperimentNotMatchingFilter
+  | ContactExperimentHistory
   | ContactInformationEmailHint
   | ContactLanguage
   | ContactNoCellPhone
@@ -166,42 +220,56 @@ type hint =
   | CustomFieldAdminViewOnly
   | CustomFieldAnsweredOnRegistration
   | CustomFieldContactModel
+  | CustomFieldDuplicateWeight
   | CustomFieldExperimentModel
   | CustomFieldGroups
   | CustomFieldNoContactValue
   | CustomFieldOptionsCompleteness
   | CustomFieldPromptOnRegistration
   | CustomFieldSessionModel
-  | CustomFieldSort of Entity_message.Field.t
+  | CustomFieldSort of Pool_message.Field.t
   | CustomFieldTypeMultiSelect
   | CustomFieldTypeSelect
   | CustomFieldTypeText
   | CustomHtmx of string
+  | DashboardDuplicateContactsNotification of int
   | DefaultReminderLeadTime of Ptime.Span.t
+  | DeleteContact
   | DirectRegistrationDisbled
   | Distribution
   | DuplicateSession
   | DuplicateSessionList
   | EmailPlainText
   | ExperimentAssignment
-  | ExperimentContactPerson
+  | ExperimentCallbackUrl
+  | ExperimentContactPerson of string
   | ExperimentLanguage
   | ExperimentMailings
   | ExperimentMailingsRegistrationDisabled
   | ExperimentMessageTemplates
   | ExperimentSessions
+  | ExperimentTimewindows
+  | ExperimentSessionsCancelDelete
   | ExperimentSessionsPublic
+  | ExperimentSmtp of string
   | ExperimentStatisticsRegistrationPossible
   | ExperimentStatisticsSendingInvitations
   | ExperimentWaitingList
+  | ExperimentSurveyRedirectUrl
+  | ExperimentSurveyUrl
   | ExternalDataRequired
+  | FileUploadAcceptMime of string list
   | FilterTemplates
   | GtxKeyMissing
   | GtxKeyStored
+  | GtxSender
   | I18nText of string
   | LocationFiles
   | LocationsIndex
+  | LoginTokenSent of string
   | MailingLimit
+  | MailingLimitExceedsMatchingContacts
+  | MergeContacts
   | MessageTemplateAccountSuspensionNotification
   | MessageTemplateAssignmentCancellation
   | MessageTemplateAssignmentConfirmation
@@ -210,7 +278,12 @@ type hint =
   | MessageTemplateContactRegistrationAttempt
   | MessageTemplateEmailVerification
   | MessageTemplateExperimentInvitation
+  | MessageTemplateInactiveContactWarning
+  | MessageTemplateInactiveContactDeactivation
+  | MessageTemplateLogin2FAToken
   | MessageTemplateManualSessionMessage
+  | MessageTemplateMatcherNotification
+  | MessageTemplateMatchFilterUpdateNotification
   | MessageTemplatePasswordChange
   | MessageTemplatePasswordReset
   | MessageTemplatePhoneVerification
@@ -219,6 +292,7 @@ type hint =
   | MessageTemplateSessionReminder
   | MessageTemplateSessionReschedule
   | MessageTemplateSignupVerification
+  | MessageTemplateTextTemplates
   | MessageTemplateUserImport
   | MessageTemplateWaitingListConfirmation
   | MissingMessageTemplates
@@ -227,11 +301,14 @@ type hint =
   | NumberIsWeeksHint
   | NumberMax of int
   | NumberMin of int
+  | OnlineExperiment
   | Overbook
   | PartialUpdate
   | ParticipationTagsHint
   | PauseAccountAdmin
   | PauseAccountContact
+  | PermissionManage
+  | PermissionsExplanationLink
   | PromoteContact
   | RateDependencyWith
   | RateDependencyWithout
@@ -242,12 +319,14 @@ type hint =
   | ResendRemindersWarning
   | ResetInvitations
   | ResetInvitationsLastReset of Ptime.t
-  | RoleIntro of Entity_message.Field.t * Entity_message.Field.t
-  | RolePermissionsIntro
+  | ReleaseNotesHint of string
+  | RoleIntro of Pool_message.Field.t * Pool_message.Field.t
+  | RolePermissionsModelList
+  | RolePermissionsRoleList
   | ScheduleAt of Ptime.t
   | ScheduledIntro
   | ScheduleEvery of Ptime.Span.t
-  | SearchByFields of Entity_message.Field.t list
+  | SearchByFields of Pool_message.Field.t list
   | SelectedDateIsPast
   | SelectedOptionsCountMax of int
   | SelectedOptionsCountMin of int
@@ -257,17 +336,24 @@ type hint =
   | SessionCloseHints
   | SessionCloseLegendNoShow
   | SessionCloseLegendParticipated
+  | SessionCloseLegendVerified
   | SessionCloseNoParticipationTagsSelected
   | SessionCloseParticipationTagsSelected
   | SessionRegistrationFollowUpHint
   | SessionRegistrationHint
   | SessionReminderLanguageHint
   | SessionReminderLeadTime
+  | SettigsInactiveUsers
+  | SettingsContactEmail
   | SettingsNoEmailSuffixes
+  | SettingsPageScripts
+  | SignUpCodeHint
   | SignUpForWaitingList
+  | SmtpMissing
   | SmtpSettingsDefaultFlag
   | SmtpSettingsIntro
   | SmtpValidation
+  | SurveyUrl
   | SwapSessions
   | TagsIntro
   | TemplateTextElementsHint
@@ -278,17 +364,18 @@ type hint =
   | TextLengthMax of int
   | TextLengthMin of int
   | UserImportInterval
+  | VerifyContact
   | WaitingListPhoneMissingContact
-[@@deriving variants]
+[@@deriving eq, show, variants, sexp_of]
 
 type confirmable =
   | CancelAssignment
   | CancelAssignmentWithFollowUps
   | CancelSession
   | CloseSession
+  | DeleteContact
   | DeleteCustomField
   | DeleteCustomFieldOption
-  | DeleteEmailSuffix
   | DeleteExperiment
   | DeleteExperimentFilter
   | DeleteFile
@@ -297,6 +384,7 @@ type confirmable =
   | DeleteMessageTemplate
   | DeleteSession
   | DeleteSmtpServer
+  | DisableApiKey
   | LoadDefaultTemplate
   | MarkAssignmentAsDeleted
   | MarkAssignmentWithFollowUpsAsDeleted

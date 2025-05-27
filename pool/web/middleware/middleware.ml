@@ -1,4 +1,5 @@
 module Admin = Middleware_admin
+module Api = Middleware_api
 module Contact = Middleware_contact
 module Context = Middleware_context
 module Error = Middleware_error
@@ -7,3 +8,4 @@ module Logger = Middleware_logger
 module NotAllowed = Middleware_not_allowed
 module Root = Middleware_root
 module Tenant = Middleware_tenant
+module TrailingSlash = Middleware_trailing_slash

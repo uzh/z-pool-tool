@@ -2,29 +2,22 @@ open CCFun.Infix
 open Tyxml.Html
 open Pool_common
 open Component.Input
+open Pool_message
 module Table = Component.Table
-module Message = Pool_common.Message
 module DataTable = Component.DataTable
 
+let waiting_list_path = HttpUtils.Url.Admin.waiting_list_path
+
 let list
-  ?(access_contact_profiles = false)
-  { Pool_context.language; _ }
-  experiment
-  (waiting_list_entries, query)
+      ?(access_contact_profiles = false)
+      { Pool_context.language; _ }
+      experiment
+      (waiting_list_entries, query)
   =
   let open Pool_user in
-  let url =
-    experiment.Experiment.id
-    |> Experiment.Id.value
-    |> Format.asprintf "/admin/experiments/%s/waiting-list"
-    |> Uri.of_string
-  in
+  let url = waiting_list_path experiment.Experiment.id |> Uri.of_string in
   let data_table =
-    Component.DataTable.create_meta
-      ~search:Waiting_list.searchable_by
-      url
-      query
-      language
+    Component.DataTable.create_meta ~search:Waiting_list.searchable_by url query language
   in
   let cols =
     let open Pool_common in
@@ -33,9 +26,9 @@ let list
     in
     [ `column column_name
     ; `column column_email
-    ; `custom (to_string Message.Field.CellPhone)
+    ; `custom (to_string Field.CellPhone)
     ; `column Waiting_list.column_signed_up_at
-    ; `custom (to_string Message.Field.AdminComment)
+    ; `custom (to_string Field.AdminComment)
     ; `empty
     ]
   in
@@ -45,20 +38,20 @@ let list
     %> Format.asprintf "/admin/contacts/%s"
     %> link_as_button
          ~is_text:true
-         ~control:(language, Pool_common.Message.OpenProfile)
+         ~control:(language, Control.OpenProfile)
          ~icon:Component.Icon.PersonOutline
   in
   let th_class = [ "w-3"; "w-3"; "w-2"; "w-2"; "w-2" ] in
   let row
-    ({ Waiting_list.contact; admin_comment; created_at; _ } as waiting_list :
-      Waiting_list.t)
+        ({ Waiting_list.contact; admin_comment; created_at; _ } as waiting_list :
+          Waiting_list.t)
     =
     let edit =
       Waiting_list.(id %> Id.value)
       %> Format.asprintf "%s/%s" (Uri.to_string url)
       %> link_as_button
            ~is_text:true
-           ~control:(language, Pool_common.Message.(Edit None))
+           ~control:(language, Control.Edit None)
            ~icon:Component.Icon.CreateOutline
     in
     let buttons =
@@ -68,14 +61,11 @@ let list
       |> Component.ButtonGroup.dropdown
       |> CCList.pure
     in
-    [ Page_admin_contact.contact_lastname_firstname
-        access_contact_profiles
-        contact
+    [ Component.Contacts.contact_lastname_firstname access_contact_profiles contact
     ; txt (Contact.email_address contact |> EmailAddress.value)
+    ; txt (contact.Contact.cell_phone |> CCOption.map_or ~default:"" CellPhone.value)
     ; txt
-        (contact.Contact.cell_phone
-         |> CCOption.map_or ~default:"" CellPhone.value)
-    ; txt (Utils.Time.formatted_date_time created_at)
+        (created_at |> Pool_common.CreatedAt.value |> Pool_model.Time.formatted_date_time)
     ; admin_comment
       |> CCOption.map_or ~default:"" Waiting_list.AdminComment.value
       |> HttpUtils.first_n_characters
@@ -115,16 +105,9 @@ let session_row language chronological session =
   let waiting_list_radio_button language session =
     let open Pool_common in
     if Session.is_fully_booked session
-    then
-      span [ txt (Utils.error_to_string language Message.SessionFullyBooked) ]
+    then span [ txt (Utils.error_to_string language Error.SessionFullyBooked) ]
     else if is_followup
-    then
-      span
-        [ txt
-            (Utils.error_to_string
-               language
-               Message.SessionRegistrationViaParent)
-        ]
+    then span [ txt (Utils.error_to_string language Error.SessionRegistrationViaParent) ]
     else (
       match Session.assignment_creatable session |> CCResult.is_ok with
       | false -> txt ""
@@ -132,16 +115,15 @@ let session_row language chronological session =
         input
           ~a:
             [ a_input_type `Radio
-            ; a_name Message.Field.(show Session)
+            ; a_name Field.(show Session)
             ; a_value Session.(session.id |> Id.value)
             ]
           ())
   in
   let cells =
-    let open Message in
     [ title, Some (show_field Field.Date)
     ; ( waiting_list_radio_button language session
-      , Some Pool_common.(Utils.control_to_string language Message.Select) )
+      , Some Pool_common.(Utils.control_to_string language Control.Select) )
     ; ( txt (CCInt.to_string (session.assignment_count |> AssignmentCount.value))
       , Some (show_field Field.AssignmentCount) )
     ; txt key_figures, Some Page_admin_session.key_figures_head
@@ -156,9 +138,7 @@ let session_row language chronological session =
 ;;
 
 let session_list language chronological sessions =
-  let open Pool_common in
   let thead =
-    let open Message in
     let to_txt = Table.field_to_txt language in
     [ to_txt Field.Date
     ; txt ""
@@ -170,19 +150,20 @@ let session_list language chronological sessions =
   let rows =
     CCList.flat_map
       (fun (parent, follow_ups) ->
-        let row = session_row language chronological in
-        let parent = row parent in
-        let follow_ups = CCList.map row follow_ups in
-        parent :: follow_ups)
+         let row = session_row language chronological in
+         let parent = row parent in
+         let follow_ups = CCList.map row follow_ups in
+         parent :: follow_ups)
       sessions
   in
   let chronological_toggle =
     let open Page_admin_session in
-    if sessions
-       |> CCList.fold_left
-            (fun acc (session, followups) -> acc @ (session :: followups))
-            []
-       |> some_session_is_followup
+    if
+      sessions
+      |> CCList.fold_left
+           (fun acc (session, followups) -> acc @ (session :: followups))
+           []
+      |> some_session_is_followup
     then Page_admin_session.Partials.chronological_toggle language chronological
     else txt ""
   in
@@ -192,12 +173,7 @@ let session_list language chronological sessions =
     ; table
         ~a:
           [ a_class
-              [ "table"
-              ; "break-mobile"
-              ; "session-list"
-              ; "striped"
-              ; "align-last-end"
-              ]
+              [ "table"; "break-mobile"; "session-list"; "striped"; "align-last-end" ]
           ]
         ~thead
         rows
@@ -205,12 +181,11 @@ let session_list language chronological sessions =
 ;;
 
 let detail
-  (Waiting_list.{ id; contact; experiment; admin_comment; _ } : Waiting_list.t)
-  sessions
-  experiment_id
-  (Pool_context.{ language; csrf; user; _ } as context)
-  flash_fetcher
-  chronological
+      (Waiting_list.{ id; contact; experiment; admin_comment; _ } : Waiting_list.t)
+      sessions
+      experiment_id
+      (Pool_context.{ language; csrf; user; flash_fetcher; _ } as context)
+      chronological
   =
   let waiting_list_detail =
     div
@@ -220,29 +195,24 @@ let detail
           ~a:
             [ a_class [ "stack" ]
             ; a_method `Post
-            ; a_action
-                (Sihl.Web.externalize_path
-                   (Format.asprintf
-                      "/admin/experiments/%s/waiting-list/%s"
-                      (Experiment.Id.value experiment.Experiment.id)
-                      (Waiting_list.Id.value id)))
+            ; a_action (waiting_list_path ~id experiment_id |> Sihl.Web.externalize_path)
             ]
           [ csrf_element csrf ()
           ; textarea_element
+              ?flash_fetcher
               language
-              Message.Field.AdminComment
+              Field.AdminComment
               ~value:
                 (CCOption.map_or
                    ~default:""
                    Waiting_list.AdminComment.value
                    admin_comment)
-              ~flash_fetcher
           ; div
               ~a:[ a_class [ "flexrow" ] ]
               [ submit_element
                   ~classnames:[ "push" ]
                   language
-                  Message.(Save (Some Field.AdminComment))
+                  Control.(Save (Some Field.AdminComment))
                   ()
               ]
           ]
@@ -251,13 +221,7 @@ let detail
   let sessions =
     let content =
       if CCList.is_empty sessions
-      then
-        div
-          [ txt
-              (Utils.text_to_string
-                 language
-                 (I18n.EmtpyList Message.Field.Sessions))
-          ]
+      then div [ txt (Utils.text_to_string language (I18n.EmtpyList Field.Sessions)) ]
       else
         session_list language chronological sessions
         |> fun content ->
@@ -265,10 +229,7 @@ let detail
           ~a:
             [ a_method `Post
             ; a_action
-                (Format.asprintf
-                   "/admin/experiments/%s/waiting-list/%s/assign"
-                   (experiment_id |> Experiment.Id.value)
-                   (id |> Waiting_list.Id.value)
+                (waiting_list_path ~id ~suffix:"assign" experiment_id
                  |> Sihl.Web.externalize_path)
             ]
           [ csrf_element csrf ()
@@ -278,24 +239,25 @@ let detail
               [ submit_element
                   ~classnames:[ "push" ]
                   language
-                  (Message.Assign (Some Field.Contact))
+                  (Control.Assign (Some Field.Contact))
                   ()
               ]
           ]
     in
     div
       [ h2
-          ~a:[ a_class [ "heading-2" ] ]
+          ~a:[ a_class [ "heading-2"; "has-gap" ] ]
           [ txt (Utils.nav_link_to_string language I18n.Sessions) ]
-      ; p
-          [ txt
-              (I18n.AssignContactFromWaitingList
-               |> Utils.hint_to_string language)
-          ]
+      ; p [ txt (I18n.AssignContactFromWaitingList |> Utils.hint_to_string language) ]
       ; content
       ]
   in
-  div ~a:[ a_class [ "stack-lg" ] ] [ waiting_list_detail; sessions ]
+  let changelog_url =
+    waiting_list_path ~id ~suffix:"changelog" experiment_id |> Uri.of_string
+  in
+  div
+    ~a:[ a_class [ "stack-lg" ] ]
+    [ waiting_list_detail; sessions; Component.Changelog.list context changelog_url None ]
   |> CCList.return
   |> Layout.Experiment.(create context (NavLink I18n.WaitingList) experiment)
 ;;
@@ -305,7 +267,7 @@ let index ?access_contact_profiles context experiment waiting_list =
   |> CCList.return
   |> Layout.Experiment.(
        create
-         ~active_navigation:I18n.WaitingList
+         ~active_navigation:"waiting-list"
          ~hint:I18n.ExperimentWaitingList
          context
          (NavLink I18n.WaitingList)

@@ -1,0 +1,18 @@
+(library
+ (name pool_model)
+ (public_name pool.model)
+ (libraries containers pool.conformist pool.message pool.utils)
+ (wrapped true)
+ (preprocess
+  (pps
+   lwt_ppx
+   ppx_string
+   ppx_deriving.enum
+   ppx_deriving.eq
+   ppx_deriving.ord
+   ppx_deriving.show
+   ppx_sexp_conv
+   ppx_variants_conv
+   ppx_yojson_conv)))
+
+(include_subdirs qualified)

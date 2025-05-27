@@ -1,4 +1,5 @@
 open CCFun.Infix
+open Entity
 
 module Id = struct
   include Pool_common.Repo.Id
@@ -77,9 +78,7 @@ module Address = struct
           ~decode
           (t2
              (option Institution.t)
-             (t2
-                (option Room.t)
-                (t2 (option Building.t) (t2 Street.t (t2 Zip.t City.t))))))
+             (t2 (option Room.t) (t2 (option Building.t) (t2 Street.t (t2 Zip.t City.t))))))
     ;;
   end
 
@@ -93,9 +92,7 @@ module Address = struct
       | true, _ -> Ok Virtual
       | _, Some address -> Ok (Physical address)
       | false, None ->
-        failwith
-          "Location could be created without beeing virtual and without \
-           address!"
+        failwith "Location could be created without beeing virtual and without address!"
     in
     Caqti_type.(custom ~encode ~decode (t2 bool (option Mail.t)))
   ;;
@@ -109,31 +106,16 @@ end
 
 module Status = Pool_common.Repo.Model.SelectorType (Entity.Status)
 
-type t =
-  { id : Pool_common.Id.t
-  ; name : Name.t
-  ; description : Description.t option
-  ; address : Address.t
-  ; link : Link.t option
-  ; status : Status.t
-  ; created_at : Pool_common.CreatedAt.t
-  ; updated_at : Pool_common.UpdatedAt.t
-  }
-
 let t =
   let encode m =
     Ok
       ( m.id
       , ( m.name
-        , ( m.description
-          , (m.address, (m.link, (m.status, (m.created_at, m.updated_at)))) ) )
-      )
+        , (m.description, (m.address, (m.link, (m.status, (m.created_at, m.updated_at)))))
+        ) )
   in
   let decode
-    ( id
-    , ( name
-      , (description, (address, (link, (status, (created_at, updated_at))))) )
-    )
+        (id, (name, (description, (address, (link, (status, (created_at, updated_at)))))))
     =
     let open CCResult in
     Ok { id; name; description; address; link; status; created_at; updated_at }
@@ -154,58 +136,5 @@ let t =
                      (option Link.t)
                      (t2
                         Status.t
-                        (t2
-                           Pool_common.Repo.CreatedAt.t
-                           Pool_common.Repo.UpdatedAt.t))))))))
+                        (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))))))
 ;;
-
-let to_entity (m : t) files : Entity.t =
-  { Entity.id = m.id
-  ; name = m.name
-  ; description = m.description
-  ; address = m.address
-  ; link = m.link
-  ; status = m.status
-  ; files
-  ; created_at = m.created_at
-  ; updated_at = m.updated_at
-  }
-;;
-
-let of_entity (m : Entity.t) : t =
-  { id = m.Entity.id
-  ; name = m.Entity.name
-  ; description = m.Entity.description
-  ; address = m.Entity.address
-  ; link = m.Entity.link
-  ; status = m.Entity.status
-  ; created_at = m.Entity.created_at
-  ; updated_at = m.Entity.updated_at
-  }
-;;
-
-module Update = struct
-  type t =
-    { id : Pool_common.Id.t
-    ; name : Name.t
-    ; description : Description.t
-    ; address : Address.t
-    ; link : Link.t
-    }
-
-  let t =
-    let encode (m : Entity.t) =
-      Ok Entity.(m.id, (m.name, (m.description, (m.address, m.link))))
-    in
-    let decode _ = failwith "Write model only" in
-    Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (t2
-           Pool_common.Repo.Id.t
-           (t2
-              Name.t
-              (t2 (option Description.t) (t2 Address.t (option Link.t))))))
-  ;;
-end

@@ -3,7 +3,7 @@ include Entity
 module Guard = Entity_guard
 
 let src = Logs.Src.create "schedule.service"
-let tags = Pool_database.(Logger.Tags.create root)
+let tags = Database.(Logger.Tags.create Pool.Root.label)
 
 module Registered = struct
   module ScheduleMap = CCMap.Make (Label)
@@ -86,11 +86,12 @@ module Registered = struct
   ;;
 end
 
-let run ({ label; scheduled_time; status; _ } as schedule : t) =
+let run ({ database_label; label; scheduled_time; status; _ } as schedule : t) =
   let open Utils.Lwt_result.Infix in
+  let tags = CCOption.map_or ~default:tags Database.Logger.Tags.create database_label in
   let delay = run_in scheduled_time in
-  let paused () =
-    Logs.debug ~src (fun m -> m ~tags "%s: Run is paused" label);
+  let notify status =
+    Logs.debug ~src (fun m -> m ~tags "%s: Run is %s" label (Status.show status));
     Lwt.return_unit
   in
   let run ({ label; scheduled_time; fcn; _ } as schedule) =
@@ -99,43 +100,78 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
       Lwt.catch
         (fun () -> fcn ())
         (fun exn ->
-          Logs.err ~src (fun m ->
-            m
-              ~tags
-              "Exception caught while running schedule:\n %s"
-              (Printexc.to_string exn));
-          Lwt.return_unit)
+           let prefix = Format.asprintf "Running schedule %s" label in
+           let%lwt () = Registered.update_status Status.Failed schedule in
+           Logger.log_exception ~prefix ~tags ~src exn;
+           Lwt.return_unit)
     in
     Registered.update_run_status schedule scheduled_time
   in
   let rec loop () : unit Lwt.t =
-    let process schedule =
-      let%lwt () = run schedule in
-      Lwt_unix.sleep delay >|> loop
+    let rerun () = Lwt_unix.sleep delay >|> loop in
+    let database_ok () =
+      let open Database in
+      let open Status in
+      let database_status =
+        CCOption.map_or ~default:Active (fun label ->
+          match Pool.Tenant.find label with
+          | Ok database -> status database
+          | Error _ -> Disabled)
+      in
+      let retry_connection label =
+        (* Reset database connection to "Close" before retry *)
+        let%lwt () = Pool.disconnect label in
+        Pool.connect label
+        >|> function
+        | Ok () ->
+          let%lwt () =
+            let open Pool_database in
+            StatusUpdated (label, Active) |> handle_event Pool.Root.label
+          in
+          Lwt.return_true
+        | Error _ -> Lwt.return_false
+      in
+      match database_status database_label with
+      | Active -> Lwt.return_true
+      | ConnectionIssue ->
+        CCOption.map_or ~default:Lwt.return_false retry_connection schedule.database_label
+      | Disabled
+      | Maintenance
+      | MigrationsConnectionIssue
+      | MigrationsFailed
+      | MigrationsPending -> Lwt.return false
     in
-    let open Status in
-    match scheduled_time, status with
-    | Every _, Active -> process schedule
-    | At time, Active when Ptime.is_later ~than:(Ptime_clock.now ()) time ->
-      let%lwt () = Registered.update_status Status.Running schedule in
-      process schedule
-    | (Every _ | At _), Paused -> paused ()
-    | (Every _ | At _), (Active | Finished | Running | Stopped) ->
-      Lwt.return_unit
+    let run_schedule () =
+      let process schedule =
+        let%lwt () = run schedule in
+        rerun ()
+      in
+      let open Status in
+      match scheduled_time, status with
+      | Every _, Active -> process schedule
+      | At time, Active when Ptime.is_later ~than:(Ptime_clock.now ()) time ->
+        let%lwt () = Registered.update_status Status.Running schedule in
+        process schedule
+      | (Every _ | At _), ((Paused | Failed) as status) -> notify status
+      | (Every _ | At _), (Active | Finished | Running | Stopped) -> Lwt.return_unit
+    in
+    match%lwt database_ok () with
+    | true -> run_schedule ()
+    | false -> rerun ()
   in
   loop ()
 ;;
 
-let start_schedule ({ label; _ } as schedule : t) =
-  Logs.info ~src (fun m -> m ~tags "Start %s" label);
+let start_schedule ?tags ({ label; _ } as schedule : t) =
+  Logs.info ~src (fun m -> m ?tags "Start %s" label);
   Lwt.ignore_result @@ run schedule;
   Lwt.return_unit
 ;;
 
-let start () =
+let start ?tags () =
   let%lwt () = Repo.stop_all_active () in
-  Logs.info ~src (fun m -> m ~tags "Start schedule");
-  Registered.iter_lwt start_schedule
+  Logs.info ~src (fun m -> m ?tags "Start schedule");
+  Registered.iter_lwt (start_schedule ?tags)
 ;;
 
 let stop = Registered.stop_all_active
@@ -143,7 +179,7 @@ let stop = Registered.stop_all_active
 let lifecycle =
   Sihl.Container.create_lifecycle
     "pool schedule"
-    ~dependencies:(fun () -> [ Database.lifecycle ])
+    ~dependencies:(fun () -> [ Pool_database.lifecycle ])
     ~start
     ~stop
 ;;
@@ -153,10 +189,10 @@ let register ?(schedules = []) () =
   Sihl.Container.Service.create lifecycle
 ;;
 
-let add_and_start schedule =
+let add_and_start ?tags schedule =
   let%lwt () = Registered.add schedule in
-  start_schedule schedule
+  start_schedule ?tags schedule
 ;;
 
 let find_all = Repo.find_all
-let find_by = Repo.find_by
+let find_by_db_label = Repo.find_by_db_label

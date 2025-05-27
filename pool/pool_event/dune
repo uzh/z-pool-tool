@@ -3,10 +3,13 @@
  (name pool_event)
  (libraries
   admin
+  announcement
+  api_key
   assignment
+  assignment_job
   contact
   custom_field
-  database
+  duplicate_contacts
   email
   experiment
   filter
@@ -16,16 +19,19 @@
   mailing
   message_template
   organisational_unit
+  pool_database
   pool_location
   pool_tenant
   pool_user
+  pool_version
   settings
   sihl
+  signup_code
   system_event
   tags
-  tenant
+  time_window
   user_import
   waiting_list
   logger)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_variants_conv)))
+  (pps ppx_deriving.eq ppx_deriving.show ppx_string ppx_variants_conv)))

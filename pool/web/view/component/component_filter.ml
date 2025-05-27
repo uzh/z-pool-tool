@@ -1,6 +1,7 @@
 open Tyxml.Html
 open Filter
 open Http_utils.Filter
+open Pool_message
 module Input = Component_input
 module Icon = Component_icon
 module Utils = Component_utils
@@ -11,27 +12,23 @@ let inset = "inset-sm"
 let form_action = function
   | Experiment exp ->
     let base =
-      Format.asprintf
-        "/admin/experiments/%s/filter"
-        Experiment.(Id.value exp.id)
+      Format.asprintf "/admin/experiments/%s/filter" Experiment.(Id.value exp.id)
     in
     (match exp.Experiment.filter with
      | None -> Format.asprintf "%s/%s" base
-     | Some filter ->
-       Format.asprintf "%s/%s/%s" base Filter.(Id.value filter.id))
+     | Some filter -> Format.asprintf "%s/%s/%s" base Filter.(Id.value filter.id))
   | Template filter ->
     let base = Format.asprintf "/admin/filter" in
     (match filter with
      | None -> Format.asprintf "%s/%s" base
-     | Some filter ->
-       Format.asprintf "%s/%s/%s" base Filter.(Id.value filter.id))
+     | Some filter -> Format.asprintf "%s/%s/%s" base Filter.(Id.value filter.id))
 ;;
 
 let select_default_option language selected =
   let attrs = if selected then [ a_selected () ] else [] in
-  option
-    ~a:attrs
-    (txt Pool_common.(Utils.control_to_string language Message.PleaseSelect))
+  Pool_common.Utils.control_to_string language Control.PleaseSelect
+  |> txt
+  |> option ~a:attrs
 ;;
 
 let operators_select language ?operators ?selected () =
@@ -41,7 +38,7 @@ let operators_select language ?operators ?selected () =
     Input.selector
       ~option_formatter:Operator.to_human
       language
-      Pool_common.Message.Field.Operator
+      Field.Operator
       Operator.show
       operators
       selected
@@ -49,17 +46,17 @@ let operators_select language ?operators ?selected () =
 ;;
 
 let value_input
-  language
-  query_experiments
-  query_tags
-  input_type
-  ?(disabled = false)
-  ?value
-  ()
+      language
+      query_experiments
+      query_tags
+      input_type
+      ?(disabled = false)
+      ?value
+      ()
   =
   let open Filter in
   let open CCOption.Infix in
-  let field_name = Pool_common.Message.Field.Value in
+  let field_name = Field.Value in
   let single_value =
     value
     >>= function
@@ -68,22 +65,21 @@ let value_input
   in
   let find_in_options options option_id =
     CCList.find_opt
-      Custom_field.(
-        fun option -> SelectOption.Id.equal option.SelectOption.id option_id)
+      Custom_field.(fun option -> SelectOption.Id.equal option.SelectOption.id option_id)
       options
   in
   let selected_options options =
     CCOption.map_or
       ~default:[]
       (fun value ->
-        match value with
-        | NoValue | Single _ -> []
-        | Lst lst ->
-          CCList.filter_map
-            (function[@warning "-4"]
-              | Option id -> find_in_options options id
-              | _ -> None)
-            lst)
+         match value with
+         | NoValue | Single _ -> []
+         | Lst lst ->
+           CCList.filter_map
+             (function
+               | Option id -> find_in_options options id
+               | Bool _ | Date _ | Language _ | Nr _ | Str _ -> None)
+             lst)
       value
   in
   match input_type with
@@ -96,9 +92,9 @@ let value_input
      | Key.Str ->
        let value =
          single_value
-         >>= function[@warning "-4"]
+         >>= function
          | Str s -> Some s
-         | _ -> None
+         | Bool _ | Date _ | Language _ | Nr _ | Option _ -> None
        in
        Input.input_element
          ~additional_attributes
@@ -110,9 +106,9 @@ let value_input
      | Key.Nr ->
        let value =
          single_value
-         >>= (function[@warning "-4"]
-                | Nr n -> Some n
-                | _ -> None)
+         >>= (function
+          | Nr n -> Some n
+          | Bool _ | Date _ | Language _ | Option _ | Str _ -> None)
          |> CCOption.map (fun f -> f |> CCFloat.to_int |> CCInt.to_string)
        in
        Input.input_element
@@ -127,9 +123,9 @@ let value_input
          CCOption.map_or
            ~default:false
            (fun value ->
-             match[@warning "-4"] value with
-             | Bool b -> b
-             | _ -> false)
+              match value with
+              | Bool b -> b
+              | Date _ | Language _ | Nr _ | Option _ | Str _ -> false)
            single_value
        in
        Input.checkbox_element
@@ -142,15 +138,11 @@ let value_input
      | Key.Date ->
        let value =
          single_value
-         >>= function[@warning "-4"]
+         >>= function
          | Date d -> Some d
-         | _ -> None
+         | Bool _ | Language _ | Nr _ | Option _ | Str _ -> None
        in
-       Input.date_picker_element
-         ~additional_attributes
-         ?value
-         language
-         field_name
+       Input.date_picker_element ~additional_attributes ?value language field_name
      | Key.Select options ->
        let selected = selected_options options in
        let open Component_search in
@@ -175,10 +167,9 @@ let value_input
      | Key.Languages languages ->
        let selected =
          single_value
-         >>= function[@warning "-4"]
-         | Language lang ->
-           CCList.find_opt (Pool_common.Language.equal lang) languages
-         | _ -> None
+         >>= function
+         | Language lang -> CCList.find_opt (Pool_common.Language.equal lang) languages
+         | Bool _ | Date _ | Nr _ | Option _ | Str _ -> None
        in
        Input.selector
          ~attributes:additional_attributes
@@ -216,19 +207,16 @@ let value_input
            | NoValue | Single _ -> []
            | Lst lst ->
              CCList.filter_map
-               (function[@warning "-4"]
+               (function
                  | Str id ->
                    let experiment_id = id |> Experiment.Id.of_string in
                    CCList.find_opt
                      (fun (id, _) -> Experiment.Id.equal id experiment_id)
                      query_experiments
-                 | _ -> None)
+                 | Bool _ | Date _ | Language _ | Nr _ | Option _ -> None)
                lst)
        in
-       Component_search.Experiment.filter_multi_search
-         ~selected
-         ~disabled
-         language
+       Component_search.Experiment.filter_multi_search ~selected ~disabled language
      | Key.QueryTags ->
        let selected =
          value
@@ -236,33 +224,21 @@ let value_input
            | NoValue | Single _ -> []
            | Lst lst ->
              CCList.filter_map
-               (function[@warning "-4"]
+               (function
                  | Str id ->
                    let tag_id = id |> Tags.Id.of_string in
-                   CCList.find_opt
-                     (fun (id, _) -> Tags.Id.equal id tag_id)
-                     query_tags
-                 | _ -> None)
+                   CCList.find_opt (fun (id, _) -> Tags.Id.equal id tag_id) query_tags
+                 | Bool _ | Date _ | Language _ | Nr _ | Option _ -> None)
                lst)
        in
        Component_search.Tag.filter_multi_search ~selected ~disabled language ())
 ;;
 
-let predicate_value_form
-  language
-  query_experiments
-  query_tags
-  ?key
-  ?value
-  ?operator
-  ()
-  =
+let predicate_value_form language query_experiments query_tags ?key ?value ?operator () =
   let open CCOption.Infix in
   let input_type = key >|= Filter.Key.type_of_key in
   let operators = key >|= Filter.Operator.operators_of_key in
-  let operator_select =
-    operators_select language ?operators ?selected:operator ()
-  in
+  let operator_select = operators_select language ?operators ?selected:operator () in
   let value_disabled =
     operator >|= Filter.Operator.value_disabled |> CCOption.value ~default:false
   in
@@ -276,34 +252,25 @@ let predicate_value_form
       ?value
       ()
   in
-  div
-    ~a:[ a_class [ "switcher-sm"; "flex-gap" ] ]
-    [ operator_select; input_field ]
+  div ~a:[ a_class [ "switcher-sm"; "flex-gap" ] ] [ operator_select; input_field ]
 ;;
 
 let single_predicate_form
-  language
-  param
-  identifier
-  key_list
-  templates_disabled
-  query_experiments
-  query_tags
-  ?key
-  ?operator
-  ?value
-  ()
-  =
-  let toggle_id = Utils.format_identifiers ~prefix:"pred-s" identifier in
-  let toggled_content =
-    predicate_value_form
       language
+      param
+      identifier
+      key_list
+      templates_disabled
       query_experiments
       query_tags
       ?key
-      ?value
       ?operator
+      ?value
       ()
+  =
+  let toggle_id = Utils.format_identifiers ~prefix:"pred-s" identifier in
+  let toggled_content =
+    predicate_value_form language query_experiments query_tags ?key ?value ?operator ()
   in
   let key_selector =
     let attributes =
@@ -323,7 +290,7 @@ let single_predicate_form
       ~required:true
       ~classnames:[ "key-select" ]
       language
-      Pool_common.Message.Field.Key
+      Field.Key
       Key.human_to_value
       key_list
       key
@@ -331,19 +298,17 @@ let single_predicate_form
   in
   div
     ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-    [ key_selector
-    ; div ~a:[ a_id toggle_id; a_class [ "grow-2" ] ] [ toggled_content ]
-    ]
+    [ key_selector; div ~a:[ a_id toggle_id; a_class [ "grow-2" ] ] [ toggled_content ] ]
 ;;
 
 let predicate_type_select
-  language
-  experiment
-  target
-  identifier
-  templates_disabled
-  ?selected
-  ()
+      language
+      experiment
+      target
+      identifier
+      templates_disabled
+      ?selected
+      ()
   =
   let attributes =
     Utils.htmx_attribs
@@ -366,7 +331,7 @@ let predicate_type_select
     ~attributes
     ~hide_label:true
     language
-    Pool_common.Message.Field.Predicate
+    Field.Predicate
     show_filter_label
     all_labels
     selected
@@ -378,7 +343,7 @@ let add_predicate_btn experiment identifier templates_disabled =
   div
     ~a:[ a_id id; a_user_data "new-predicate" "" ]
     [ Input.submit_icon
-        ~classnames:[ "success" ]
+        ~classnames:[ "success"; "small" ]
         ~attributes:
           (Utils.htmx_attribs
              ~action:(form_action experiment "add-predicate")
@@ -393,21 +358,19 @@ let add_predicate_btn experiment identifier templates_disabled =
 ;;
 
 let rec predicate_form
-  language
-  param
-  key_list
-  template_list
-  templates_disabled
-  query_experiments
-  query_tags
-  query
-  ?(identifier = [ 0 ])
-  ()
+          language
+          param
+          key_list
+          template_list
+          templates_disabled
+          query_experiments
+          query_tags
+          query
+          ?(identifier = [ 0 ])
+          ()
   =
   let query = CCOption.value ~default:(Filter.Human.init ()) query in
-  let predicate_identifier =
-    Utils.format_identifiers ~prefix:"filter" identifier
-  in
+  let predicate_identifier = Utils.format_identifiers ~prefix:"filter" identifier in
   let selected =
     let open Human in
     let open UtilsF in
@@ -437,16 +400,15 @@ let rec predicate_form
     | And queries | Or queries ->
       CCList.mapi
         (fun i query ->
-          let query = CCOption.pure query in
-          to_form query ~identifier:(identifier @ [ i ]) ())
+           let query = CCOption.pure query in
+           to_form query ~identifier:(identifier @ [ i ]) ())
         queries
       @ [ add_predicate_btn
             param
             (identifier @ [ CCList.length queries ])
             templates_disabled
         ]
-    | Not query ->
-      to_form (Some query) ~identifier:(identifier @ [ 0 ]) () |> CCList.pure
+    | Not query -> to_form (Some query) ~identifier:(identifier @ [ 0 ]) () |> CCList.pure
     | Pred predicate ->
       let ({ Predicate.key; operator; value } : Predicate.human) = predicate in
       single_predicate_form
@@ -471,10 +433,9 @@ let rec predicate_form
       Input.selector
         ~add_empty:true
         ~option_formatter:(fun f ->
-          f.title
-          |> CCOption.map_or ~default:(f.id |> Pool_common.Id.value) Title.value)
+          f.title |> CCOption.map_or ~default:(f.id |> Pool_common.Id.value) Title.value)
         language
-        Pool_common.Message.Field.Template
+        Field.template
         (fun f -> f.id |> Pool_common.Id.value)
         template_list
         selected
@@ -507,43 +468,15 @@ let rec predicate_form
     ]
 ;;
 
-let counts_table language experiment (matching_filter_count, invitation_count) =
-  let open Pool_common in
-  let to_string = Utils.text_to_string language in
-  table
-    ~a:[ a_class [ "table"; "simple"; "width-auto" ] ]
-    [ tr
-        [ th [ txt (to_string I18n.FilterNrOfContacts) ]
-        ; td
-            [ span
-                ~a:
-                  [ a_id "contact-counter"
-                  ; a_user_data
-                      "action"
-                      (experiment.Experiment.id
-                       |> Experiment.Id.value
-                       |> Format.asprintf "/admin/experiments/%s/contact-count"
-                       |> Sihl.Web.externalize_path)
-                  ]
-                [ txt (CCInt.to_string matching_filter_count) ]
-            ]
-        ]
-    ; tr
-        [ th [ txt (to_string I18n.FilterNrOfSentInvitations) ]
-        ; td [ txt (CCInt.to_string invitation_count) ]
-        ]
-    ]
-;;
-
 let filter_form
-  ?counts
-  csrf
-  language
-  param
-  key_list
-  template_list
-  query_experiments
-  query_tags
+      ?statistics
+      csrf
+      language
+      param
+      key_list
+      template_list
+      query_experiments
+      query_tags
   =
   let filter, action =
     let open Experiment in
@@ -560,15 +493,26 @@ let filter_form
   let filter_query =
     filter
     |> CCOption.map
-         Filter.(
-           fun filter -> filter.query |> t_to_human key_list template_list)
+         Filter.(fun filter -> filter.query |> t_to_human key_list template_list)
   in
   let result_counter =
     let default = txt "" in
     match param with
     | Template _ -> default
     | Experiment experiment ->
-      counts |> CCOption.map_or ~default (counts_table language experiment)
+      statistics
+      |> CCOption.map_or ~default (fun statistics ->
+        div
+          ~a:
+            [ a_id "invitation-statistics"
+            ; a_user_data
+                "action"
+                (experiment.Experiment.id
+                 |> Experiment.Id.value
+                 |> Format.asprintf "/admin/experiments/%s/filter-statistics"
+                 |> Sihl.Web.externalize_path)
+            ]
+          [ Component_statistics.ExperimentFilter.create language statistics ])
   in
   let delete_form =
     match param with
@@ -589,14 +533,12 @@ let filter_form
              ; a_user_data
                  "confirmable"
                  Pool_common.(
-                   Utils.confirmable_to_string
-                     language
-                     I18n.DeleteExperimentFilter)
+                   Utils.confirmable_to_string language I18n.DeleteExperimentFilter)
              ]
            [ Input.csrf_element csrf ()
            ; Input.submit_element
                language
-               Pool_common.Message.(Delete (Some Field.Filter))
+               (Control.Delete (Some Field.Filter))
                ~submit_type:`Error
                ~has_icon:Icon.TrashOutline
                ()
@@ -619,19 +561,17 @@ let filter_form
       filter_query
       ()
   in
-  let title_input, _ =
+  let title_input =
     match param with
     | Template _ ->
       let open CCOption.Infix in
-      let open Pool_common in
-      ( Input.input_element
-          ?value:(filter >>= fun filter -> filter.title >|= Title.value)
-          ~required:true
-          language
-          `Text
-          Message.Field.Title
-      , [ a_user_data "hx-params" Message.Field.(show Title) ] )
-    | Experiment _ -> txt "", []
+      Input.input_element
+        ?value:(filter >>= fun filter -> filter.title >|= Title.value)
+        ~required:true
+        language
+        `Text
+        Field.Title
+    | Experiment _ -> txt ""
   in
   let filter_id =
     (match param with
@@ -639,7 +579,7 @@ let filter_form
        experiment.Experiment.filter |> CCOption.map (fun f -> f.id)
      | Template f -> f |> CCOption.map (fun f -> f.Filter.id))
     |> CCOption.map_or ~default:[] (fun id ->
-      Pool_common.[ a_user_data Message.Field.(show filter) (Id.value id) ])
+      Pool_common.[ a_user_data Field.(show filter) (Id.value id) ])
   in
   div
     ~a:[ a_class [ stack ] ]
@@ -669,7 +609,7 @@ let filter_form
                         ~trigger:"click"
                         ~templates_disabled
                         ())
-                Pool_common.Message.(Save None)
+                (Control.Save None)
                 ()
             ]
         ]

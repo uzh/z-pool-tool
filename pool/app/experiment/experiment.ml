@@ -1,6 +1,8 @@
 include Entity
 include Event
+module Guardian = Guard
 module Guard = Entity_guard
+module VersionHistory = Version_history
 
 module Repo = struct
   module Public = struct
@@ -11,30 +13,21 @@ module Repo = struct
     end
   end
 
-  include Repo
   module Entity = Repo_entity
+  include Repo
 end
 
 let find = Repo.find
-let find_all = Repo.find_all
+let all = Repo.all
+let list_by_user = Repo.Sql.list_by_user
 let find_all_ids_of_contact_id = Repo.find_all_ids_of_contact_id
 let find_public = Repo_public.find
 let find_full_by_contact = Repo_public.find_full_by_contact
-
-let find_all_public_by_contact =
-  Repo_public.find_all_public_by_contact ~has_session:false
-;;
-
-let find_upcoming_to_register =
-  Repo_public.find_all_public_by_contact ~has_session:true
-;;
+let find_upcoming_to_register = Repo_public.find_upcoming_to_register
+let find_upcoming = Repo_public.find_upcoming
 
 let find_pending_waitinglists_by_contact =
   Repo_public.find_pending_waitinglists_by_contact
-;;
-
-let find_past_experiments_by_contact =
-  Repo_public.find_past_experiments_by_contact
 ;;
 
 let find_of_session = Repo.find_of_session
@@ -44,10 +37,23 @@ let search = Repo.search
 let search_multiple_by_id = Repo.search_multiple_by_id
 let find_to_enroll_directly = Repo.find_to_enroll_directly
 let contact_is_enrolled = Repo.contact_is_enrolled
-let find_targets_grantable_by_admin = Repo.find_targets_grantable_by_admin
+let find_targets_grantable_by_target = Repo.find_targets_grantable_by_target
+let get_default_public_title = Repo.Sql.get_default_public_title
 
 let query_participation_history_by_contact =
   Repo.Sql.query_participation_history_by_contact
+;;
+
+let registration_possible = Repo_statistics.registration_possible
+let sending_invitations = Repo_statistics.sending_invitations
+let assignment_counts = Repo_statistics.assignment_counts
+
+let find_admins_to_notify_about_invitations database_label experiment_id =
+  Admin.find_all_with_permissions_on_target
+    database_label
+    `InvitationNotification
+    (Id.to_common experiment_id)
+    Guardian.Permission.[ Read ]
 ;;
 
 let possible_participant_count _ = Lwt.return 0
@@ -60,44 +66,32 @@ let smtp_auth database_label ({ smtp_auth_id; _ } : t) =
   | Some id -> Email.SmtpAuth.find database_label id >|+ CCOption.return
 ;;
 
-let find_contact_person database_label { contact_person_id; _ } =
-  let open Utils.Lwt_result.Infix in
-  contact_person_id
-  |> CCOption.map_or ~default:Lwt.return_none (fun id ->
-    id |> Admin.find database_label ||> CCResult.to_opt)
-;;
+let is_sessionless ({ online_experiment; _ } : t) = CCOption.is_some online_experiment
+let invited_contacts_count = Repo_statistics.FilterStatistics.invited_contacts_count
 
-let invitation_count =
-  Repo_statistics.SentInvitations.total_invitation_count_by_experiment
-;;
+module Public = struct
+  include Public
 
-module Statistics = struct
-  include Statistics
-  module Repo = Repo_statistics
+  let column_public_title =
+    (Pool_message.Field.Title, "pool_experiments.public_title") |> Query.Column.create
+  ;;
 
-  module SentInvitations = struct
-    include SentInvitations
+  let contact_matches_filter = Repo.Public.contact_matches_filter
+  let filterable_by = None
+  let searchable_by = [ column_public_title ]
+  let sortable_by = Entity.[ column_public_title ]
+  let default_sort = Entity.default_sort
+  let default_query = Query.create ~sort:default_sort ()
+end
 
-    let create = Repo.SentInvitations.by_experiment
-  end
+module InvitationReset = struct
+  include InvitationReset
 
-  let create pool ({ id; _ } as experiment) =
-    let open Utils.Lwt_result.Infix in
-    let%lwt registration_possible = Repo.registration_possible pool id in
-    let* sending_invitations = Repo.sending_invitations pool id in
-    let%lwt session_count = Repo.session_count pool id in
-    let* invitations = SentInvitations.create pool experiment in
-    let%lwt showup_count, noshow_count, participation_count =
-      Repo.assignment_counts pool id
-    in
-    Lwt_result.return
-      { registration_possible
-      ; sending_invitations
-      ; session_count
-      ; invitations
-      ; showup_count
-      ; noshow_count
-      ; participation_count
-      }
+  let insert = Repo_invitation_reset.insert
+  let find_by_experiment = Repo_invitation_reset.find_by_experiment
+  let find_latest_by_experiment = Repo_invitation_reset.find_latest_by_experiment
+
+  let invitations_sent_since_last_reset =
+    Repo_invitation_reset.invitations_sent_since_last_reset
   ;;
 end

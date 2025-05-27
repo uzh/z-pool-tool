@@ -2,10 +2,12 @@
  (name pool_context)
  (libraries
   admin
+  announcement
+  api_key
   contact
+  gtx_config
   logger
   pool_common
-  pool_database
   pool_tenant
   sihl
   utils)

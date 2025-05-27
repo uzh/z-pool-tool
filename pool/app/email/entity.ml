@@ -1,5 +1,4 @@
-module PoolError = Pool_common.Message
-module Database = Pool_database
+open CCFun.Infix
 module SmtpAuth = Entity_smtp
 module User = Pool_user
 
@@ -13,24 +12,28 @@ module Sihl_email = struct
     && equal e1.subject e2.subject
     && equal e1.text e2.text
   ;;
+
+  let yojson_of_t = Sihl.Contract.Email.to_yojson
+
+  let t_of_yojson =
+    of_yojson
+    %> function
+    | Some email -> email
+    | None -> Yojson.json_error "Invalid serialized email string received"
+  ;;
 end
 
 module Token = struct
-  type t = string [@@deriving eq, show]
-
-  let create m = m
-  let value m = m
-end
-
-module VerifiedAt = struct
-  include Pool_common.Model.Ptime
+  include Pool_model.Base.String
 
   let create m = m
 end
+
+module VerifiedAt = Pool_model.Base.Ptime
 
 type email_unverified =
   { address : User.EmailAddress.t
-  ; user : Sihl_user.t
+  ; user : Pool_user.t
   ; token : Token.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -39,7 +42,7 @@ type email_unverified =
 
 type email_verified =
   { address : User.EmailAddress.t
-  ; user : Sihl_user.t
+  ; user : Pool_user.t
   ; verified_at : VerifiedAt.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -76,17 +79,16 @@ let pp : type state. Format.formatter -> state t -> unit =
 ;;
 
 let show : type state. state t -> string = function
-  | Unverified { address; _ } | Verified { address; _ } ->
-    User.EmailAddress.show address
+  | Unverified { address; _ } | Verified { address; _ } -> User.EmailAddress.show address
 ;;
 
-let user_id : type state. state t -> Pool_common.Id.t = function
-  | Unverified { user; _ } | Verified { user; _ } ->
-    user.Sihl.Contract.User.id |> Pool_common.Id.of_string
+let user_id : type state. state t -> Pool_user.Id.t = function
+  | Unverified { user; _ } | Verified { user; _ } -> user.User.id
 ;;
 
 let user_is_confirmed : type state. state t -> bool = function
-  | Unverified { user; _ } | Verified { user; _ } -> user.Sihl_user.confirmed
+  | Unverified { user; _ } | Verified { user; _ } ->
+    user.Pool_user.confirmed |> Pool_user.Confirmed.value
 ;;
 
 let address : type state. state t -> User.EmailAddress.t = function
@@ -100,8 +102,8 @@ let create address user token =
     { address
     ; user
     ; token = Token.value token
-    ; created_at = Ptime_clock.now ()
-    ; updated_at = Ptime_clock.now ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
 ;;
 
@@ -111,39 +113,27 @@ let verify (Unverified email) =
     ; user = email.user
     ; verified_at = VerifiedAt.create_now ()
     ; created_at = email.created_at
-    ; updated_at = Ptime_clock.now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
 ;;
 
-type email = Sihl.Contract.Email.t
+module Job = struct
+  type t =
+    { email : Sihl_email.t
+    ; smtp_auth_id : SmtpAuth.Id.t option [@yojson.option]
+    }
+  [@@deriving eq, fields, show, yojson] [@@yojson.allow_extra_fields]
 
-let email_of_yojson =
-  CCFun.(
-    Sihl.Contract.Email.of_yojson
-    %> function
-    | Some email -> email
-    | None -> Yojson.json_error "Invalid serialized email string received")
-;;
+  let create ?smtp_auth_id email = { email; smtp_auth_id }
 
-let yojson_of_email = Sihl.Contract.Email.to_yojson
-let equal_email = Sihl.Contract.Email.equal
-let pp_email = Sihl.Contract.Email.pp
-
-type job =
-  { email : email
-  ; smtp_auth_id : SmtpAuth.Id.t option [@yojson.option]
-  ; message_history : Queue.History.create option [@yojson.option]
-  ; resent : Pool_common.Id.t option [@yojson.option]
-  }
-[@@deriving eq, show, yojson]
-
-let parse_job_json str =
-  try Ok (str |> Yojson.Safe.from_string |> job_of_yojson) with
-  | _ -> Error Pool_common.Message.(Invalid Field.Input)
-;;
-
-let job_message_history { message_history; _ } = message_history
-
-let create_job ?smtp_auth_id ?message_history email =
-  { email; smtp_auth_id; message_history; resent = None }
-;;
+  let update ?new_email_address ?new_smtp_auth_id { email; smtp_auth_id } =
+    let open CCOption in
+    let email =
+      let email_address = map Pool_user.EmailAddress.value new_email_address in
+      Sihl.Contract.Email.
+        { email with recipient = value ~default:email.recipient email_address }
+    in
+    let smtp_auth_id = new_smtp_auth_id <+> smtp_auth_id in
+    { email; smtp_auth_id }
+  ;;
+end

@@ -2,33 +2,37 @@
  (name cqrs_command)
  (libraries
   admin
+  announcement
+  api_key
+  assignment_job
   conformist
-  custom_field
   contact
+  custom_field
   contact_counter
-  database
   email
   experiment
   filter
   guard
+  gtx_config
   i18n
   organisational_unit
   pool_common
+  pool_database
   pool_event
   pool_location
   pool_tenant
   pool_user
+  pool_version
   role
   session
   settings
   sihl
   system_event
   tags
-  tenant
+  time_window
   user_import)
  (preprocess
   (pps
-   ppx_here
    lwt_ppx
    ppx_deriving.enum
    ppx_deriving.eq

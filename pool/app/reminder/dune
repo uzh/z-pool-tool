@@ -1,21 +1,12 @@
 (library
  (name reminder)
- (libraries
-  assignment
-  message_template
-  service
-  sihl
-  utils
-  pool_common
-  pool_database
-  pool_event)
+ (libraries assignment message_template sihl utils pool_common pool_event)
  (preprocess
   (pps
    lwt_ppx
    ppx_deriving.enum
    ppx_deriving.eq
    ppx_deriving.show
-   ppx_inline_test
    ppx_sexp_conv
    ppx_variants_conv
    ppx_yojson_conv)))

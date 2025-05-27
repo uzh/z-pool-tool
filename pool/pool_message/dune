@@ -1,0 +1,12 @@
+(library
+ (name pool_message)
+ (public_name pool.message)
+ (libraries containers caqti-lwt.unix lwt pool.utils)
+ (wrapped true)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_sexp_conv
+   ppx_variants_conv
+   ppx_yojson_conv)))

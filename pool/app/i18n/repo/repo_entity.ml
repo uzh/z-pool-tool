@@ -10,9 +10,7 @@ end
 
 let t =
   let encode m = Ok (m.id, (m.key, (m.language, m.content))) in
-  let decode (id, (key, (language, content))) =
-    Ok { id; key; language; content }
-  in
+  let decode (id, (key, (language, content))) = Ok { id; key; language; content } in
   Caqti_type.(
     custom
       ~encode
@@ -31,7 +29,5 @@ let t_with_default_content =
     custom
       ~encode
       ~decode
-      (t2
-         Common.Repo.Id.t
-         (t2 Key.t (t2 Common.Repo.Language.t (option string)))))
+      (t2 Common.Repo.Id.t (t2 Key.t (t2 Common.Repo.Language.t (option string)))))
 ;;

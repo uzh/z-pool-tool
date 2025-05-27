@@ -3,6 +3,7 @@ open Utils.Lwt_result.Infix
 open Guard
 
 let target_of = Uuid.target_of Entity.Id.value
+let to_actor t = t |> Entity.id |> Guard.Uuid.actor_of CCFun.id
 
 module Actor = struct
   type t = Entity.t [@@deriving eq, show]
@@ -11,10 +12,10 @@ module Actor = struct
     Persistence.Actor.decorate
       ?ctx
       (Entity.user
-       %> (fun { Sihl_user.id; _ } -> id |> Uuid.Actor.of_string_exn)
+       %> (fun { Pool_user.id; _ } -> id |> Uuid.actor_of Pool_user.Id.value)
        %> Actor.create `Admin)
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 
@@ -25,10 +26,10 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (Entity.user
-       %> (fun { Sihl_user.id; _ } -> id |> Uuid.Target.of_string_exn)
+       %> (fun { Pool_user.id; _ } -> id |> Uuid.target_of Pool_user.Id.value)
        %> Target.create `Admin)
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 
@@ -36,8 +37,16 @@ module Access = struct
   open ValidationSet
   open Permission
 
+  let admin permission uuid =
+    PermissionOnTarget.create
+      ~target_uuid:(uuid |> Uuid.target_of Entity.Id.value)
+      permission
+      `Admin
+  ;;
+
   let index = one_of_tuple (Read, `Admin, None)
   let create = one_of_tuple (Create, `Admin, None)
   let read id = one_of_tuple (Read, `Admin, Some (target_of id))
   let update id = one_of_tuple (Update, `Admin, Some (target_of id))
+  let can_update_target = admin Update
 end

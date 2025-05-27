@@ -218,8 +218,8 @@ function configRequest(e, form) {
 }
 
 // Should this update every time, the filter gets adjusted but not saved?
-const updateContactCount = async (form) => {
-    const target = document.getElementById("contact-counter");
+const updateStatistics = async (form) => {
+    const target = document.getElementById("invitation-statistics");
     let message = "-"
     const parseQuery = () => {
         try {
@@ -232,23 +232,13 @@ const updateContactCount = async (form) => {
 
     if (target) {
         const action = target.dataset.action;
-        const spinner = icon(["icon-spinner-outline", "rotate"])
-        target.innerHTML = "";
-        target.appendChild(spinner);
         try {
             const query = parseQuery();
             const body = { query: JSON.stringify(query), _csrf: csrfToken(form) }
             if (query) {
                 const response = await postIUrlencoded(action, body)
-                const data = await response.json();
-                if (!response.ok) {
-                    throw (data.message || response.statusText || globalErrorMsg)
-                }
-                if (response.status < 200 || response.status > 300) {
-                    notifyUser(notificationId, "error", data.message)
-                } else {
-                    message = data.count
-                }
+                const data = await response.text();
+                message = data
             }
         } catch (error) {
             message = globalErrorMsg;
@@ -263,7 +253,7 @@ function addRemovePredicateListener(form, wrapper) {
     [...el.querySelectorAll("[data-delete-predicate]")].forEach(elm => {
         elm.addEventListener("click", (e) => {
             e.currentTarget.closest(".predicate").remove();
-            updateContactCount(form);
+            updateStatistics(form);
         })
     })
 }
@@ -275,7 +265,7 @@ function addOperatorChangeListeners(form, wrapper) {
             const predicate = e.target.closest('.predicate');
             const inputs = findValueInputs(predicate)
             inputs.forEach(input => input.disabled = disableValueInput(e.currentTarget.value))
-            updateContactCount(form);
+            updateStatistics(form);
         })
     })
 }
@@ -291,7 +281,7 @@ const addInputChangeListeners = (form, wrapper) => {
     const el = wrapper || form;
     const listener = (e) => {
         hideError(e.currentTarget);
-        updateContactCount(form);
+        updateStatistics(form);
     }
     const valueInputs = findValueInputs(el)
     valueInputs.forEach(input => {
@@ -303,7 +293,7 @@ const addKeyChangeListeners = (form, wrapper) => {
     const el = wrapper || form;
     const listener = (e) => {
         hideError(e.currentTarget);
-        updateContactCount(form);
+        updateStatistics(form);
     }
     [...el.querySelectorAll('[name="key"]')].forEach(select => {
         select.addEventListener("input", listener)
@@ -314,7 +304,7 @@ const addMultiSelectObserver = (form, wrapper) => {
     const el = wrapper || form;
     [...el.querySelectorAll("[data-search-selection]")].forEach(results => {
         const observer = new MutationObserver(function (mutations, observer) {
-            updateContactCount(form)
+            updateStatistics(form)
         })
         observer.observe(results, observerConfig);
     })
@@ -340,7 +330,7 @@ export function initFilterForm() {
         form.addEventListener('htmx:afterSwap', (e) => {
             addEventListeners(form, e.detail.elt)
             addCloseListener(notificationId);
-            updateContactCount(form);
+            updateStatistics(form);
         })
         form.addEventListener('htmx:configRequest', (e) => configRequest(e, form))
     }

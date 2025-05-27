@@ -1,4 +1,4 @@
-open Entity_file_mapping
+open Entity_file
 
 module Id = struct
   include Id
@@ -16,14 +16,9 @@ end
 
 let file =
   let encode m = Ok (m.id, (m.label, (m.language, m.file))) in
-  let decode (id, (label, (language, file))) =
-    Ok { id; label; language; file }
-  in
+  let decode (id, (label, (language, file))) = Ok { id; label; language; file } in
   Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      (t2 Id.t (t2 Label.t (t2 Pool_common.Repo.Language.t File.t))))
+    custom ~encode ~decode (t2 Id.t (t2 Label.t (t2 Pool_common.Repo.Language.t File.t))))
 ;;
 
 module Write = struct
@@ -44,7 +39,7 @@ module Write = struct
   ;;
 end
 
-let of_entity (location : Entity.t) (m : file) : Write.file =
+let of_entity (location : Entity.t) (m : t) : Write.file =
   Write.
     { id = m.id
     ; label = m.label
@@ -99,11 +94,8 @@ module Sql = struct
 
   let find pool mapping_id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_request
-      mapping_id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.FileMapping)
+    Database.find_opt pool find_request mapping_id
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.FileMapping)
   ;;
 
   let find_by_location_request =
@@ -116,10 +108,7 @@ module Sql = struct
   ;;
 
   let find_by_location pool location =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_by_location_request
-      location
+    Database.collect pool find_by_location_request location
   ;;
 
   let find_binary_location_id_sql =
@@ -153,11 +142,8 @@ module Sql = struct
 
   let find_location_id pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_location_id_request
-      id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Location)
+    Database.find_opt pool find_location_id_request id
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Location)
   ;;
 
   let insert_request =
@@ -180,9 +166,7 @@ module Sql = struct
     |> Write.file ->. Caqti_type.unit
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Pool_database.Label.value pool) insert_request
-  ;;
+  let insert pool = Database.exec pool insert_request
 
   let delete_request =
     let open Caqti_request.Infix in
@@ -197,12 +181,8 @@ module Sql = struct
     let open Utils.Lwt_result.Infix in
     (* TODO: Transaction *)
     let%lwt { file; _ } = find pool id ||> Pool_common.Utils.get_or_failwith in
-    let%lwt () =
-      Utils.Database.exec (Pool_database.Label.value pool) delete_request id
-    in
-    Service.Storage.delete
-      ~ctx:(Pool_database.to_ctx pool)
-      (Id.value file.File.id)
+    let%lwt () = Database.exec pool delete_request id in
+    Storage.delete pool (Id.value file.File.id)
   ;;
 end
 

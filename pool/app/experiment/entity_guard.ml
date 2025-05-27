@@ -7,9 +7,9 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun Entity.{ id; _ } ->
-        Target.create `Experiment (id |> Uuid.target_of Entity.Id.value))
+         Target.create `Experiment (id |> Uuid.target_of Entity.Id.value))
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 

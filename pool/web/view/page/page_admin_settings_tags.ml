@@ -1,9 +1,8 @@
-open CCFun
 open Containers
 open Tyxml.Html
 module HttpUtils = Http_utils
 module Input = Component.Input
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let tags_path ?suffix () =
   let default = "/admin/settings/tags/" in
@@ -14,7 +13,7 @@ let layout language children =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     (h1
-       ~a:[ a_class [ "heading-1" ] ]
+       ~a:[ a_class [ "heading-1"; "has-gap" ] ]
        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tags) ]
      :: children)
 ;;
@@ -37,12 +36,11 @@ module List = struct
   let create { Pool_context.language; _ } tags =
     let thead =
       let open Input in
-      (Field.[ Title; Description; Model ]
-       |> Component.Table.fields_to_txt language)
+      (Field.[ Title; Description; Model ] |> Component.Table.fields_to_txt language)
       @ [ link_as_button
             ~style:`Success
             ~icon:Icon.Add
-            ~control:(language, Pool_common.Message.(Add (Some Field.Tag)))
+            ~control:(language, Pool_message.(Control.Add (Some Field.Tag)))
             (tags_path ~suffix:"create" ())
         ]
     in
@@ -54,24 +52,20 @@ end
 let list Pool_context.{ language; _ } tags query =
   let url = Uri.of_string (tags_path ()) in
   let data_table =
-    Component.DataTable.create_meta
-      ~search:Tags.searchable_by
-      url
-      query
-      language
+    Component.DataTable.create_meta ~search:Tags.searchable_by url query language
   in
   let cols =
     let create_tag : [ | Html_types.flow5 ] elt =
       Component.Input.link_as_button
         ~style:`Success
         ~icon:Component.Icon.Add
-        ~control:(language, Pool_common.Message.(Add (Some Field.Tag)))
+        ~control:(language, Pool_message.(Control.Add (Some Field.Tag)))
         (tags_path ~suffix:"create" ())
     in
     [ `column Tags.column_title
     ; `column Tags.column_description
     ; `column Tags.column_model
-    ; `custom create_tag
+    ; `mobile create_tag
     ]
   in
   let th_class = [ "w-4"; "w-4"; "w-2"; "w-2" ] in
@@ -83,15 +77,18 @@ let list Pool_context.{ language; _ } tags query =
       |> CCList.return
       |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
     in
-    [ txt (Title.value tag.title)
-    ; txt (CCOption.map_or ~default:"" Tags.Description.value tag.description)
-    ; txt (Model.show tag.model |> String.capitalize_ascii)
-    ; buttons tag
+    [ txt (Title.value tag.title), Some Field.Title
+    ; ( txt (CCOption.map_or ~default:"" Tags.Description.value tag.description)
+      , Some Field.Description )
+    ; txt (Model.show tag.model |> CCString.capitalize_ascii), Some Field.Model
+    ; buttons tag, None
     ]
-    |> CCList.map (CCList.return %> td)
+    |> CCList.map (fun (html, field) ->
+      td ~a:(Component.Table.data_label_opt language field) [ html ])
     |> tr
   in
   Component.DataTable.make
+    ~break_mobile:true
     ~th_class
     ~target_id:"tags-table"
     ~cols
@@ -139,8 +136,7 @@ let tag_form ?flash_fetcher ?tag Pool_context.{ language; csrf; _ } =
             language
             `Text
             Field.Description
-            ?value:
-              CCOption.(bind tag (fun m -> m.description) >|= Description.value)
+            ?value:CCOption.(bind tag (fun m -> m.description) >|= Description.value)
             ?flash_fetcher
         ; Input.selector
             ~add_empty:(CCOption.is_none tag)
@@ -161,7 +157,7 @@ let tag_form ?flash_fetcher ?tag Pool_context.{ language; csrf; _ } =
             [ Input.reset_form_button language
             ; Input.submit_element
                 language
-                Pool_common.Message.(
+                Pool_message.Control.(
                   let field = Some Field.Tag in
                   match tag with
                   | None -> Create field
@@ -173,8 +169,17 @@ let tag_form ?flash_fetcher ?tag Pool_context.{ language; csrf; _ } =
     ]
 ;;
 
-let edit ?flash_fetcher ({ Pool_context.language; _ } as context) tag =
-  [ div ~a:[ a_class [ "stack-lg" ] ] [ tag_form ?flash_fetcher ~tag context ] ]
+let edit ({ Pool_context.language; flash_fetcher; _ } as context) tag =
+  let changelog_url =
+    HttpUtils.Url.Admin.Settings.tags_path ~id:tag.Tags.id ~suffix:"changelog" ()
+    |> Uri.of_string
+  in
+  [ div
+      ~a:[ a_class [ "stack-lg" ] ]
+      [ tag_form ?flash_fetcher ~tag context
+      ; Component.Changelog.list context changelog_url None
+      ]
+  ]
   |> layout language
 ;;
 
