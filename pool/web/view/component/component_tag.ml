@@ -1,10 +1,22 @@
 open Tyxml.Html
 
-let create_chip ?(ghost = false) ?(inline = false) style text =
+let create_chip
+      ?(classnames = [])
+      ?(ghost = false)
+      ?(inline = false)
+      ?(style : [ `Error | `Primary | `Success ] option)
+      text
+  =
   let classnames =
+    let base = "tag" :: classnames in
+    let base =
+      match style with
+      | None -> base
+      | Some style -> Component_input.submit_type_to_class style :: base
+    in
     CCList.fold_left
       (fun acc (condition, name) -> if condition then name :: acc else acc)
-      (Component_input.submit_type_to_class style :: [ "tag" ])
+      base
       [ ghost, "ghost"; inline, "inline" ]
   in
   span ~a:[ a_class classnames ] [ txt text ]
@@ -26,13 +38,10 @@ let create ?remove_action language tag =
               ; a_action (action tag)
               ; a_user_data
                   "confirmable"
-                  Pool_common.(
-                    Utils.confirmable_to_string language I18n.RemoveTag)
+                  Pool_common.(Utils.confirmable_to_string language I18n.RemoveTag)
               ]
             [ Component_input.csrf_element csrf ()
-            ; button
-                ~a:[ a_button_type `Submit ]
-                [ Component_icon.(to_html Close) ]
+            ; button ~a:[ a_button_type `Submit ] [ Component_icon.(to_html Close) ]
             ]
         ] )
   in
@@ -59,18 +68,10 @@ let tag_form ?label language remove_action tags =
   | Some i18n ->
     div
       ~a:[ a_class [ "form-group" ] ]
-      [ Tyxml.Html.label
-          [ txt Pool_common.(Utils.text_to_string language i18n) ]
-      ; html
-      ]
+      [ Tyxml.Html.label [ txt Pool_common.(Utils.text_to_string language i18n) ]; html ]
 ;;
 
-let add_tags_form
-  Pool_context.{ language; csrf; _ }
-  ?(existing = [])
-  available
-  action
-  =
+let add_tags_form Pool_context.{ language; csrf; _ } ?(existing = []) available action =
   let available =
     CCList.(filter CCFun.(flip (mem ~eq:Tags.equal) existing %> not) available)
   in
@@ -84,7 +85,7 @@ let add_tags_form
               ~add_empty:true
               ~option_formatter:Tags.(fun tag -> Title.value tag.title)
               language
-              Pool_common.Message.Field.Tag
+              Pool_message.Field.tag
               Tags.(fun tag -> Id.value tag.id)
               available
               None
@@ -94,7 +95,7 @@ let add_tags_form
               [ submit_element
                   ~classnames:[ "push" ]
                   language
-                  Pool_common.Message.(Add (Some Field.Tag))
+                  Pool_message.(Control.Add (Some Field.Tag))
                   ()
               ]
           ]

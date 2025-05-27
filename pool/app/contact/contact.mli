@@ -1,48 +1,30 @@
-module Id = Pool_common.Id
+module Id : sig
+  include Pool_model.Base.IdSig
+
+  val of_common : Pool_common.Id.t -> t
+  val to_common : t -> Pool_common.Id.t
+  val of_user : Pool_user.Id.t -> t
+  val to_user : t -> Pool_user.Id.t
+end
 
 module NumberOfInvitations : sig
-  type t
-
-  val init : t
-  val of_int : int -> t
-  val equal : t -> t -> bool
-  val update : int -> t -> t
+  include Entity.CounterSig
 end
 
 module NumberOfAssignments : sig
-  type t
-
-  val init : t
-  val of_int : int -> t
-  val equal : t -> t -> bool
-  val update : int -> t -> t
+  include Entity.CounterSig
 end
 
 module NumberOfShowUps : sig
-  type t
-
-  val init : t
-  val of_int : int -> t
-  val equal : t -> t -> bool
-  val update : int -> t -> t
+  include Entity.CounterSig
 end
 
 module NumberOfNoShows : sig
-  type t
-
-  val init : t
-  val of_int : int -> t
-  val equal : t -> t -> bool
-  val update : int -> t -> t
+  include Entity.CounterSig
 end
 
 module NumberOfParticipations : sig
-  type t
-
-  val init : t
-  val of_int : int -> t
-  val equal : t -> t -> bool
-  val update : int -> t -> t
+  include Entity.CounterSig
 end
 
 module AdminComment : sig
@@ -54,7 +36,7 @@ module AdminComment : sig
 end
 
 type t =
-  { user : Service.User.t
+  { user : Pool_user.t
   ; terms_accepted_at : Pool_user.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
@@ -79,83 +61,77 @@ type t =
   }
 
 val profile_completion_cookie : string
-val user : t -> Sihl_user.t
-val id : t -> Pool_common.Id.t
+val user : t -> Pool_user.t
+val id : t -> Id.t
 val firstname : t -> Pool_user.Firstname.t
 val lastname : t -> Pool_user.Lastname.t
 val fullname : t -> string
 val lastname_firstname : t -> string
 val email_address : t -> Pool_user.EmailAddress.t
+val cell_phone : t -> Pool_user.CellPhone.t option
 val is_inactive : t -> bool
+val is_paused : t -> bool
+val num_participations : t -> NumberOfParticipations.t
+val num_invitations : t -> NumberOfInvitations.t
+val num_assignments : t -> NumberOfAssignments.t
+val num_show_ups : t -> NumberOfShowUps.t
+val num_no_shows : t -> NumberOfNoShows.t
 val sexp_of_t : t -> Sexplib0.Sexp.t
+val yojson_of_t : t -> Yojson.Safe.t
 val show : t -> string
 val compare : t -> t -> int
+val set_email_address : t -> Pool_user.EmailAddress.t -> t
+val set_firstname : t -> Pool_user.Firstname.t -> t
+val set_lastname : t -> Pool_user.Lastname.t -> t
+val set_language : t -> Pool_common.Language.t option -> t
+val set_cellphone : t -> Pool_user.CellPhone.t option -> t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find_admin_comment : Database.Label.t -> Id.t -> AdminComment.t option Lwt.t
+val find_multiple : Database.Label.t -> Id.t list -> t list Lwt.t
 
-val find
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
-
-val find_admin_comment
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t
-  -> AdminComment.t option Lwt.t
-
-val find_multiple
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t list
-  -> t list Lwt.t
-
-val find_by_email
-  :  Pool_database.Label.t
-  -> Pool_user.EmailAddress.t
-  -> (t, Pool_common.Message.error) result Lwt.t
-
-val find_by_user
-  :  Pool_database.Label.t
-  -> Sihl_user.t
-  -> (t, Pool_common.Message.error) result Lwt.t
-
-val find_all
+val list_by_user
   :  ?query:Query.t
-  -> ?actor:Guard.Actor.t
-  -> ?permission:Guard.Permission.t
-  -> Pool_database.Label.t
-  -> unit
+  -> Database.Label.t
+  -> Guard.Actor.t
   -> (t list * Query.t) Lwt.t
 
-val find_to_trigger_profile_update
-  :  Pool_database.Label.t
-  -> (t list, 'a) Lwt_result.t
+val find_by_email
+  :  Database.Label.t
+  -> Pool_user.EmailAddress.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
 
-val should_send_registration_attempt_notification
-  :  Pool_database.Label.t
-  -> t
-  -> bool Lwt.t
+val find_by_user
+  :  Database.Label.t
+  -> Pool_user.t
+  -> (t, Pool_message.Error.t) Lwt_result.t
+
+val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+val find_to_trigger_profile_update : Database.Label.t -> (t list, 'a) Lwt_result.t
+val should_send_registration_attempt_notification : Database.Label.t -> t -> bool Lwt.t
 
 val find_cell_phone_verification_by_contact
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> t
   -> Pool_user.UnverifiedCellPhone.t option Lwt.t
 
 val find_cell_phone_verification_by_contact_and_code
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> t
   -> Pool_common.VerificationCode.t
-  -> (Pool_user.UnverifiedCellPhone.t, Pool_common.Message.error) result Lwt.t
+  -> (Pool_user.UnverifiedCellPhone.t, Pool_message.Error.t) Lwt_result.t
 
 val find_full_cell_phone_verification_by_contact
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> t
-  -> (Pool_user.UnverifiedCellPhone.full, Pool_common.Message.error) result
-       Lwt.t
+  -> (Pool_user.UnverifiedCellPhone.full, Pool_message.Error.t) Lwt_result.t
 
-val has_terms_accepted : Pool_database.Label.t -> t -> bool Lwt.t
+val has_terms_accepted : Database.Label.t -> t -> bool Lwt.t
+val find_last_signin_at : Database.Label.t -> t -> Ptime.t Lwt.t
 
 type create =
-  { user_id : Pool_common.Id.t
+  { user_id : Id.t
   ; email : Pool_user.EmailAddress.t
-  ; password : Pool_user.Password.t
+  ; password : Pool_user.Password.Plain.t
   ; firstname : Pool_user.Firstname.t
   ; lastname : Pool_user.Lastname.t
   ; terms_accepted_at : Pool_user.TermsAccepted.t option
@@ -170,35 +146,24 @@ type session_participation =
 type event =
   | Created of create
   | EmailUpdated of t * Pool_user.EmailAddress.t
-  | PasswordUpdated of
-      t
-      * Pool_user.Password.t
-      * Pool_user.Password.t
-      * Pool_user.PasswordConfirmed.t
-  | Verified of t
   | EmailVerified of t
   | TermsAccepted of t
-  | Disabled of t
+  | MarkedAsDeleted of t
   | UnverifiedDeleted of t
   | CellPhoneAdded of t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
   | CellPhoneVerified of t * Pool_user.CellPhone.t
   | CellPhoneVerificationReset of t
-  | ImportConfirmed of t * Pool_user.Password.t
+  | ImportConfirmed of t * Pool_user.Password.Plain.t
   | ImportDisabled of t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t
   | SignInCounterUpdated of t
+  | NotifiedAbountInactivity of t
 
 val created : create -> event
 val updated : t -> event
-
-val handle_event
-  :  ?tags:Logs.Tag.set
-  -> Pool_database.Label.t
-  -> event
-  -> unit Lwt.t
-
+val handle_event : ?tags:Logs.Tag.set -> Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
@@ -210,9 +175,15 @@ val update_num_show_ups : step:int -> t -> t
 val update_num_no_shows : step:int -> t -> t
 val update_num_participations : step:int -> t -> t
 
+module Write : sig
+  type t
+end
+
+val to_write : t -> Write.t
+
 module Preview : sig
   type t =
-    { user : Sihl_user.t
+    { user : Pool_user.t
     ; language : Pool_common.Language.t option
     ; cell_phone : Pool_user.CellPhone.t option
     ; paused : Pool_user.Paused.t
@@ -235,30 +206,32 @@ val default_sort : Query.Sort.t
 val default_query : Query.t
 
 module Repo : sig
-  module Preview : sig
-    val t : Preview.t Caqti_type.t
-  end
+  module Id : Pool_model.Base.CaqtiSig with type t = Id.t
+  module Preview : Pool_model.Base.CaqtiSig with type t = Preview.t
 
-  module Entity : sig
-    val t : t Caqti_type.t
-  end
-
+  val t : t Caqti_type.t
   val joins : string
   val sql_select_columns : string list
+  val make_sql_select_columns : user_table:string -> contact_table:string -> string list
 
   val find_request_sql
-    :  ?additional_joins:string list
+    :  ?distinct:bool
+    -> ?additional_joins:string list
     -> ?count:bool
     -> string
     -> string
+
+  val update_request : (Write.t, unit, [ `Zero ]) Caqti_request.t
 end
+
+module VersionHistory : Changelog.TSig with type record = t
 
 module Guard : sig
   module Target : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 
@@ -270,7 +243,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Actor.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 

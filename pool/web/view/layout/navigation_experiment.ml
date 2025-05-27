@@ -1,6 +1,6 @@
 open Entity
 module NavUtils = Navigation_utils
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let read_entity entity =
   Guard.(ValidationSet.one_of_tuple (Permission.Read, entity, None))
@@ -11,7 +11,7 @@ let experiment_url id =
 ;;
 
 type title =
-  | Control of Pool_common.Message.control
+  | Control of Pool_message.Control.t
   | NavLink of I18n.nav_link
   | I18n of I18n.t
   | Text of string
@@ -33,21 +33,16 @@ let nav_elements experiment =
   let id = experiment |> id in
   let target_uuid = Uuid.target_of Id.value id in
   let url = experiment_url id in
-  let sessions_label =
-    if Experiment.is_sessionless experiment then TimeWindows else Sessions
-  in
+  let sessions_label = if is_sessionless experiment then TimeWindows else Sessions in
   let left =
     [ Single (url "", Overview, Set (Guard.Access.read id))
-    ; Single
-        (url "sessions", sessions_label, Set (Session.Guard.Access.index id))
+    ; Single (url "sessions", sessions_label, Set (Session.Guard.Access.index id))
     ; Parent
         ( None
         , Invitations
         , OnChildren
-        , [ Single
-              (url "invitations", Filter, Set (Invitation.Guard.Access.index id))
-          ; Single
-              (url "mailings", Mailings, Set (Mailing.Guard.Access.index id))
+        , [ Single (url "invitations", Filter, Set (Invitation.Guard.Access.index id))
+          ; Single (url "mailings", Mailings, Set (Mailing.Guard.Access.index id))
           ; Single
               ( url "invitations/sent"
               , SentInvitations
@@ -56,14 +51,9 @@ let nav_elements experiment =
     ]
   in
   let waiting_list_nav =
-    if experiment
-       |> direct_registration_disabled
-       |> DirectRegistrationDisabled.value
+    if experiment |> direct_registration_disabled |> DirectRegistrationDisabled.value
     then
-      [ Single
-          ( url "waiting-list"
-          , WaitingList
-          , Set (Waiting_list.Guard.Access.index id) )
+      [ Single (url "waiting-list", WaitingList, Set (Waiting_list.Guard.Access.index id))
       ]
     else []
   in
@@ -81,20 +71,23 @@ let nav_elements experiment =
               , Field Field.Experimenter
               , Set (Experimenter.read ~target_uuid ()) )
           ] )
-    ; Single (url "messages", MessageHistory, Set Queue.Guard.Access.index)
+    ; Single
+        ( url "messages"
+        , MessageHistory
+        , Set (Pool_queue.Guard.Access.index ~id:target_uuid ()) )
     ]
   in
   left @ waiting_list_nav @ right |> CCList.map NavElement.create
 ;;
 
 let create
-  ?active_navigation
-  ?buttons
-  ?hint
-  ({ Pool_context.database_label; language; user; _ } as context)
-  title
-  experiment
-  content
+      ?active_navigation
+      ?buttons
+      ?hint
+      ({ Pool_context.database_label; language; user; _ } as context)
+      title
+      experiment
+      content
   =
   let open Utils.Lwt_result.Infix in
   let open Tab_navigation in

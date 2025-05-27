@@ -1,27 +1,24 @@
 open Tyxml.Html
 module Input = Component.Input
-module Message = Pool_common.Message
+module Message = Pool_message
 
-let form
-  Pool_context.{ language; csrf; query_language; _ }
-  flash_fetcher
-  custom_fields
+let form Pool_context.{ language; csrf; query_parameters; flash_fetcher; _ } custom_fields
   =
   let custom_fields_form =
     let to_html field =
-      Input.custom_field_to_static_input ~flash_fetcher language field
+      Input.custom_field_to_static_input ?flash_fetcher language field
     in
     Page_contact_edit.grouped_custom_fields_form language custom_fields to_html
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt
             Pool_common.(
               Utils.text_to_string language I18n.DashboardProfileCompletionTitle)
         ]
-    ; Component.Notification.notification
+    ; Component.Notification.create
         language
         `Warning
         [ Pool_common.(Utils.text_to_string language I18n.ProfileCompletionText)
@@ -32,8 +29,8 @@ let form
           [ a_class [ "stack"; "gap-lg" ]
           ; a_method `Post
           ; a_action
-              (Http_utils.externalize_path_with_lang
-                 query_language
+              (Http_utils.externalize_path_with_params
+                 query_parameters
                  "/user/completion")
           ; a_user_data "detect-unsaved-changes" ""
           ]
@@ -44,7 +41,7 @@ let form
                 [ Input.submit_element
                     ~classnames:[ "push" ]
                     language
-                    Message.(Save None)
+                    Message.(Control.Save None)
                     ~submit_type:`Primary
                     ()
                 ]

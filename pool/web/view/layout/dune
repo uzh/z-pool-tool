@@ -1,6 +1,7 @@
 (library
  (name layout)
  (libraries
+  api_key
   assignment
   contact
   component
@@ -12,10 +13,9 @@
   mailing
   message_template
   pool_common
-  queue
   schedule
-  service
   sihl
+  signup_code
   waiting_list)
  (preprocess
-  (pps lwt_ppx ppx_deriving.show)))
+  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show)))

@@ -1,10 +1,10 @@
-(lang dune 2.8)
+(lang dune 3.7)
 
 (generate_opam_files true)
 
 (name pool)
 
-(version 0.7.1)
+(version 0.11.1)
 
 (authors "Department of Economics, University of Zurich")
 
@@ -35,27 +35,11 @@
    (and
     (>= 4.0.0)
     (< 5.0.0)))
-  (sihl-cache
-   (and
-    (>= 4.0.0)
-    (< 5.0.0)))
   (sihl-email
    (and
     (>= 4.0.0)
     (< 5.0.0)))
-  (sihl-queue
-   (and
-    (>= 4.0.0)
-    (< 5.0.0)))
   (sihl-storage
-   (and
-    (>= 4.0.0)
-    (< 5.0.0)))
-  (sihl-token
-   (and
-    (>= 4.0.0)
-    (< 5.0.0)))
-  (sihl-user
    (and
     (>= 4.0.0)
     (< 5.0.0)))
@@ -64,12 +48,12 @@
   (logs
    (>= 0.7.0))
   (containers
-   (>= 3.6))
+   (>= 3.14))
   (containers-data
-   (>= 3.6))
+   (>= 3.14))
   (mariadb
    (and
-    (>= 1.1.6)
+    (>= 1.2.0)
     (< 2.0.0)))
   (caqti-driver-mariadb
    (>= 2.0.1))
@@ -82,11 +66,14 @@
   (ppx_deriving
    (>= 5.2.1))
   (ppx_string
-   (>= 0.16.0))
+   (= v0.17.0))
   (ppx_yojson_conv
-   (>= 0.14.0))
+   (= v0.17.0))
   (ppx_variants_conv
-   (= v0.16.0))
+   (= v0.17.0))
+  (tyxml-ppx
+   (>= 4.6.0))
+  digestif
   canary
   (guardian
    (= 0.3.2))

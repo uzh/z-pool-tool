@@ -14,8 +14,7 @@ end
 
 let t =
   let encode _ = failwith "Read model only" in
-  let decode (id, (contact, (resent_at, (send_count, (created_at, updated_at)))))
-    =
+  let decode (id, (contact, (resent_at, (send_count, (created_at, updated_at))))) =
     let open CCResult in
     Ok { id; contact; resent_at; send_count; created_at; updated_at }
   in
@@ -27,10 +26,8 @@ let t =
       (t2
          Id.t
          (t2
-            Contact.Repo.Entity.t
-            (t2
-               (option ResentAt.t)
-               (t2 SendCount.t (t2 CreatedAt.t UpdatedAt.t))))))
+            Contact.Repo.t
+            (t2 (option ResentAt.t) (t2 SendCount.t (t2 CreatedAt.t UpdatedAt.t))))))
 ;;
 
 module Update = struct
@@ -55,7 +52,7 @@ module Write = struct
   type t =
     { id : Pool_common.Id.t
     ; experiment_id : Experiment.Id.t
-    ; contact_id : Pool_common.Id.t
+    ; contact_id : Contact.Id.t
     ; resent_at : Entity.ResentAt.t option
     ; send_count : SendCount.t
     ; created_at : Pool_common.CreatedAt.t
@@ -78,8 +75,8 @@ module Write = struct
       Ok
         ( m.id
         , ( m.experiment_id
-          , ( m.contact_id
-            , (m.resent_at, (m.send_count, (m.created_at, m.updated_at))) ) ) )
+          , (m.contact_id, (m.resent_at, (m.send_count, (m.created_at, m.updated_at)))) )
+        )
     in
     let decode _ = failwith "Write model only" in
     let open Pool_common.Repo in
@@ -92,9 +89,7 @@ module Write = struct
            (t2
               Experiment.Repo.Entity.Id.t
               (t2
-                 Id.t
-                 (t2
-                    (option ResentAt.t)
-                    (t2 SendCount.t (t2 CreatedAt.t UpdatedAt.t)))))))
+                 Contact.Repo.Id.t
+                 (t2 (option ResentAt.t) (t2 SendCount.t (t2 CreatedAt.t UpdatedAt.t)))))))
   ;;
 end

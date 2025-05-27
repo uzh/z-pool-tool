@@ -1,19 +1,20 @@
 module Label : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 end
 
 module Status : sig
   type t =
     | Active
+    | Failed
     | Finished
     | Paused
     | Running
     | Stopped
 
-  val create : string -> (t, Pool_common.Message.error) result
+  val create : string -> (t, Pool_message.Error.t) result
   val init : t
   val all : t list
-  val schema : unit -> ('a, t) Pool_common.Utils.PoolConformist.Field.t
+  val schema : unit -> ('a, t) Pool_conformist.Field.t
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
@@ -22,30 +23,35 @@ module Status : sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
-module LastRunAt : Pool_common.Model.PtimeSig
+module LastRunAt : Pool_model.Base.PtimeSig
 
 module ScheduledTime : sig
-  include Pool_common.Model.PtimeSig
+  include Pool_model.Base.PtimeSig
 
-  val create : Ptime.t -> (t, Pool_common.Message.error) result
+  val create : Ptime.t -> (t, Pool_message.Error.t) result
 end
 
-module ScheduledTimeSpan : Pool_common.Model.PtimeSpanSig
+module ScheduledTimeSpan : Pool_model.Base.PtimeSpanSig
 
 type scheduled_time =
   | Every of ScheduledTimeSpan.t
   | At of ScheduledTime.t
-[@@deriving eq, show]
 
 type t =
   { label : Label.t
+  ; database_label : Database.Label.t option
   ; scheduled_time : scheduled_time
   ; status : Status.t
   ; last_run : LastRunAt.t option
   ; fcn : unit -> unit Lwt.t [@opaque] [@equal fun _ _ -> true]
   }
 
-val create : string -> scheduled_time -> (unit -> unit Lwt.t) -> t
+val create
+  :  string
+  -> scheduled_time
+  -> Database.Label.t option
+  -> (unit -> unit Lwt.t)
+  -> t
 
 type public =
   { label : Label.t
@@ -54,13 +60,13 @@ type public =
   ; last_run : LastRunAt.t option
   }
 
-val add_and_start : t -> unit Lwt.t
+val add_and_start : ?tags:Logs.Tag.set -> t -> unit Lwt.t
 val stop : unit -> unit Lwt.t
 val lifecycle : Sihl.Container.lifecycle
 val register : ?schedules:t list -> unit -> Sihl.Container.Service.t
 val is_ok : public -> bool
 val find_all : unit -> public list Lwt.t
-val find_by : Query.t -> (public list * Query.t) Lwt.t
+val find_by_db_label : Database.Label.t -> Query.t -> (public list * Query.t) Lwt.t
 
 module Guard : sig
   module Access : sig

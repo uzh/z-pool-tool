@@ -1,10 +1,10 @@
 let printer = Utils.ppx_printer
 
-open Pool_common
-module Field = Message.Field
+module Field = Pool_message.Field
+module Integer = Pool_model.Base.Integer
 
 module ExperimentCount = struct
-  include Model.Integer
+  include Integer
 
   let field = Field.ExperimentCount
   let create = CCResult.return
@@ -12,7 +12,7 @@ module ExperimentCount = struct
 end
 
 module AssignmentCount = struct
-  include Model.Integer
+  include Integer
 
   let field = Field.AssignmentCount
   let create = CCResult.return
@@ -20,7 +20,7 @@ module AssignmentCount = struct
 end
 
 module ShowUpCount = struct
-  include Model.Integer
+  include Integer
 
   let field = Field.ShowUpCount
   let create = CCResult.return
@@ -28,7 +28,7 @@ module ShowUpCount = struct
 end
 
 module NoShowCount = struct
-  include Model.Integer
+  include Integer
 
   let field = Field.NoShowCount
   let create = CCResult.return
@@ -36,7 +36,7 @@ module NoShowCount = struct
 end
 
 module ParticipationCount = struct
-  include Model.Integer
+  include Integer
 
   let field = Field.ParticipantCount
   let create = CCResult.return

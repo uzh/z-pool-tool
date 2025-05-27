@@ -3,15 +3,15 @@ open Tyxml.Html
 module Input = Component_input
 module Table = Component_table
 module Icon = Component_icon
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 let print = Utils.ppx_printer
 
 module Utils = Component_utils
 
-let roles_path ?suffix admin =
+let roles_path base_path ?suffix target_id =
   let default =
-    Format.asprintf "/admin/admins/%s/" Admin.(id admin |> Id.value)
+    Format.asprintf "%s/%s/" base_path (Guard.Uuid.Target.to_string target_id)
   in
   CCOption.map_or ~default (Format.asprintf "%s%s" default) suffix
 ;;
@@ -20,21 +20,23 @@ let create_target_path ?uuid =
   let build path =
     CCOption.map_or ~default:"" Guard.Uuid.Target.to_string
     %> Format.asprintf "/admin/%s/%s/" path
-    %> Sihl.Web.externalize_path
   in
   flip CCOption.bind (function
-    | `Experiment -> Some (build "experiments" uuid)
-    | `Location -> Some (build "locations" uuid)
     | `Admin -> Some (build "admins" uuid)
     | `Contact -> Some (build "contacts" uuid)
     | `CustomField -> Some (build "custom-fields/contact/field" uuid)
     | `CustomFieldGroup -> Some (build "custom-fields/contact/group" uuid)
+    | `Experiment -> Some (build "experiments" uuid)
     | `Filter -> Some (build "filter" uuid)
+    | `Location -> Some (build "locations" uuid)
     | `Tag -> Some (build "settings/tags" uuid)
+    | `Announcement
     | `Assignment
+    | `ApiKey
     | `ContactInfo
     | `ContactDirectMessage
     | `ContactName
+    | `DuplicateContact
     | `I18n
     | `Invitation
     | `InvitationNotification
@@ -55,34 +57,45 @@ let create_target_path ?uuid =
     | `Schedule
     | `Session
     | `SessionClose
+    | `SignupCode
     | `Smtp
     | `Statistics
     | `System
     | `SystemSetting
     | `Tenant
+    | `Version
     | `WaitingList -> None)
 ;;
 
-let target_path ({ Guard.ActorRole.target_uuid; _ }, target_model, _) =
-  create_target_path ?uuid:target_uuid target_model
+let roles_section ?(top_element = []) language children =
+  let open Pool_common in
+  div
+    [ h2
+        ~a:[ a_class [ "heading-2"; "has-gap" ] ]
+        [ Utils.text_to_string language I18n.RolesGranted |> txt ]
+    ; div ~a:[ a_class [ "stack" ] ] (top_element @ children)
+    ]
 ;;
 
 module List = struct
   let row
-    ?(is_edit = false)
-    Pool_context.{ csrf; language; _ }
-    target_admin
-    (( ({ Guard.ActorRole.actor_uuid; role; target_uuid } as actor_role)
-     , (_ : Role.Target.t option)
-     , (title : string option) ) as role_element)
+        ?(is_edit = false)
+        ~path
+        Pool_context.{ csrf; language; _ }
+        target_id
+        (( ({ Guard.ActorRole.actor_uuid; role; target_uuid } as actor_role)
+         , (_ : Role.Target.t option)
+         , (title : string option) ) as role_element)
     =
+    let target_path ({ Guard.ActorRole.target_uuid; _ }, target_model, _) =
+      create_target_path ?uuid:target_uuid target_model
+    in
     let button_form target name submit_type confirm_text =
       form
         ~a:
           [ a_method `Post
           ; a_action
-              (roles_path ~suffix:target target_admin
-               |> Sihl.Web.externalize_path)
+              (roles_path ~suffix:target path target_id |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
               (Pool_common.Utils.confirmable_to_string language confirm_text)
@@ -107,14 +120,14 @@ module List = struct
          @ CCOption.map_or
              ~default:[]
              (fun uuid ->
-               [ input
-                   ~a:
-                     [ a_name Input.Field.(show Target)
-                     ; a_value ([%show: Guard.Uuid.Target.t] uuid)
-                     ; a_hidden ()
-                     ]
-                   ()
-               ])
+                [ input
+                    ~a:
+                      [ a_name Input.Field.(show Target)
+                      ; a_value ([%show: Guard.Uuid.Target.t] uuid)
+                      ; a_hidden ()
+                      ]
+                    ()
+                ])
              target_uuid)
     in
     let buttons =
@@ -124,14 +137,15 @@ module List = struct
         CCOption.map_or
           ~default
           (Input.link_as_button
-             ~control:(language, Pool_common.Message.show)
+             ~control:(language, Pool_message.Control.Show)
              ~icon:Icon.Eye
            %> CCList.return)
           (target_path role_element)
       in
       let remove_button =
         if is_edit
-        then [ button_form "revoke-role" Message.delete `Error I18n.RevokeRole ]
+        then
+          [ button_form "revoke-role" Pool_message.Control.delete `Error I18n.RevokeRole ]
         else default
       in
       target_button @ remove_button
@@ -145,57 +159,52 @@ module List = struct
     to_human actor_role title :: [ buttons ]
   ;;
 
-  let create
-    ?is_edit
-    ({ Pool_context.language; _ } as context)
-    target_admin
-    roles
-    =
+  let create ?is_edit ~path ({ Pool_context.language; _ } as context) target_id roles =
     let open CCList in
     let thead =
-      let open Pool_common.Message in
+      let open Pool_message in
       (Field.[ Role ] |> Table.fields_to_txt language) @ [ txt "" ]
     in
     roles
-    >|= row ?is_edit context target_admin
+    >|= row ?is_edit ~path context target_id
     |> Table.horizontal_table `Striped ~thead
   ;;
 end
 
 module Search = struct
-  let action_path admin =
-    Format.asprintf "/admin/admins/%s/%s" Admin.(admin |> id |> Id.value)
+  let action_path base_path target_id =
+    Format.asprintf "%s/%s/%s" base_path (Guard.Uuid.Target.to_string target_id)
   ;;
 
-  let value_input language admin_id =
+  let value_input ~path language target_id =
     let open Role.Role in
     let open Pool_common.I18n in
     function
     | Some QueryLocations ->
       let hints = [ RoleIntro (Field.Location, Field.Locations) ] in
-      Component_search.RoleTarget.locations ~hints language admin_id
+      Component_search.RoleTarget.locations ~hints ~path language target_id
     | Some QueryExperiments ->
       let hints = [ RoleIntro (Field.Experiment, Field.Experiments) ] in
-      Component_search.RoleTarget.experiments ~hints language admin_id
+      Component_search.RoleTarget.experiments ~hints ~path language target_id
     | None -> div []
   ;;
 
-  let value_form language admin_id ?key () =
+  let value_form ~path language target_id ?key () =
     CCOption.map_or ~default:(Ok None) Role.Role.type_of_key key
     |> function
     | Error err -> p [ Pool_common.Utils.error_to_string language err |> txt ]
     | Ok input_type ->
-      let input_field = value_input language admin_id input_type in
+      let input_field = value_input ~path language target_id input_type in
       div ~a:[ a_class [ "switcher-sm"; "flex-gap" ] ] [ input_field ]
   ;;
 
-  let role_form ?key language csrf admin role_list =
+  let role_form ?key ~path language csrf target_id role_list =
     let toggle_id = "role-search" in
-    let toggled_content = value_form language (Admin.id admin) ?key () in
+    let toggled_content = value_form ~path language target_id ?key () in
     let key_selector =
       let attributes =
         Utils.htmx_attribs
-          ~action:(action_path admin "toggle-role")
+          ~action:(action_path path target_id "toggle-role")
           ~trigger:"change"
           ~swap:"innerHTML"
           ~target:(Utils.as_target_id toggle_id)
@@ -219,11 +228,14 @@ module Search = struct
       Component_input.submit_element
         language
         ~classnames:[ "push"; "align-self-end" ]
-        Pool_common.Message.(Add None)
+        Pool_message.(Control.Add None)
         ()
     in
     form
-      ~a:[ a_action (action_path admin "grant-role"); a_method `Post ]
+      ~a:
+        [ a_action (action_path path target_id "grant-role" |> Sihl.Web.externalize_path)
+        ; a_method `Post
+        ]
       [ Component_input.csrf_element csrf ()
       ; div
           ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
@@ -234,18 +246,14 @@ module Search = struct
       ]
   ;;
 
-  let input_form ?key csrf language admin role_list () =
-    let role_form = role_form ?key language csrf admin role_list in
+  let input_form ?key ~path csrf language actor_id role_list () =
+    let role_form = role_form ?key ~path language csrf actor_id role_list in
     let stack = "stack-sm" in
     div
       ~a:[ a_class [ stack; "inset-sm"; "border"; "role-search" ] ]
       [ div
-          ~a:
-            [ a_id "role-search-form"; a_user_data "detect-unsaved-changes" "" ]
-          [ div
-              ~a:[ a_class [ stack; "grow"; "role-search-wrapper" ] ]
-              [ role_form ]
-          ]
+          ~a:[ a_id "role-search-form"; a_user_data "detect-unsaved-changes" "" ]
+          [ div ~a:[ a_class [ stack; "grow"; "role-search-wrapper" ] ] [ role_form ] ]
       ]
   ;;
 end
@@ -307,7 +315,7 @@ module ActorPermissionSearch = struct
       Component_input.submit_element
         language
         ~classnames:[ "push"; "align-self-end" ]
-        Pool_common.Message.(Add None)
+        Pool_message.(Control.Add None)
         ()
     in
     let value_form =
@@ -341,11 +349,112 @@ module ActorPermissionSearch = struct
     div
       ~a:[ a_class [ "trim"; "actor-search" ] ]
       [ div
-          ~a:
-            [ a_id "actor-search-form"
-            ; a_user_data "detect-unsaved-changes" ""
-            ]
+          ~a:[ a_id "actor-search-form"; a_user_data "detect-unsaved-changes" "" ]
           [ div ~a:[ a_class [ "grow"; "actor-search-wrapper" ] ] [ create ] ]
       ]
   ;;
 end
+
+let actor_explanation language =
+  let open Pool_common in
+  let to_html = function
+    | Language.En ->
+      "Actors are users that perform actions in the system. They can be assigned roles \
+       to grant them permissions on targets."
+    | Language.De ->
+      "Actors sind Benutzer die Aktionen im System ausführen. Ihnen können Rollen \
+       zugewiesen werden, um ihnen Berechtigungen auf Targets zu gewähren."
+  in
+  language |> to_html |> txt |> CCList.return |> div ~a:[ a_class [ "stack" ] ]
+;;
+
+let targets_explanation language =
+  let open Pool_common in
+  let to_html = function
+    | Language.En ->
+      "Targets are resources or entities that are accessed. A target can either be all \
+       items (experiments) of a type or a specific item (experiment X)."
+    | Language.De ->
+      "Ein Target ist eine Ressource oder Entität, auf die zugegriffen wird. Ein Target \
+       kann entweder alle Elemente (Experimente) eines Typs oder ein spezifisches \
+       Element (Experiment X) sein."
+  in
+  language |> to_html |> txt |> CCList.return |> div ~a:[ a_class [ "stack" ] ]
+;;
+
+let permissions_explanation language =
+  let open Pool_common in
+  let open Guard.Permission in
+  let title_html permission =
+    h4 ~a:[ a_class [ "has-gap" ] ] [ txt (show permission |> CCString.capitalize_ascii) ]
+  in
+  let create = function
+    | Language.En -> "Add new resources"
+    | Language.De -> "Neue Ressourcen hinzufügen"
+  in
+  let read = function
+    | Language.En -> "View existing resources"
+    | Language.De -> "Vorhandene Ressourcen anzeigen"
+  in
+  let update = function
+    | Language.En -> "Modify existing resources"
+    | Language.De -> "Vorhandene Ressourcen modifizieren"
+  in
+  let delete = function
+    | Language.En -> "Delete resources"
+    | Language.De -> "Ressourcen löschen"
+  in
+  let manage = function
+    | Language.En -> "Includes all permissions"
+    | Language.De -> "Beinhaltet alle Berechtigungen"
+  in
+  let to_html = function
+    | Create -> create
+    | Read -> read
+    | Update -> update
+    | Delete -> delete
+    | Manage -> manage
+  in
+  all
+  |> CCList.map (fun role -> div [ title_html role; p [ txt (to_html role language) ] ])
+  |> div ~a:[ a_class [ "stack" ] ]
+;;
+
+let explanation langauge =
+  let open Pool_message in
+  let title field =
+    h3
+      ~a:[ a_class [ "has-gap" ] ]
+      [ txt (Pool_common.Utils.field_to_string_capitalized langauge field) ]
+  in
+  div
+    [ title Field.Actor
+    ; actor_explanation langauge
+    ; title Field.Target
+    ; targets_explanation langauge
+    ; title Field.Permission
+    ; permissions_explanation langauge
+    ]
+;;
+
+let explanation_modal language =
+  let open Pool_common in
+  let title language =
+    Pool_common.(Utils.nav_link_to_string language I18n.RolePermissions)
+  in
+  let content = explanation language in
+  let link = Pool_common.Utils.hint_to_string language I18n.PermissionsExplanationLink in
+  let modal =
+    Component_modal.create ~active:false language title "explanation-modal" content
+  in
+  let link =
+    a
+      ~a:
+        [ a_class [ "flexrow"; "flex-gap" ]
+        ; a_user_data "modal" "explanation-modal"
+        ; a_href "#"
+        ]
+      [ Component_icon.(to_html OpenOutline); txt link ]
+  in
+  div [ modal; link ]
+;;

@@ -5,16 +5,16 @@ module Id : sig
 end
 
 module NoShow : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 
-  val field : Pool_common.Message.Field.t
+  val field : Pool_message.Field.t
   val init : t
 end
 
 module Participated : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 
-  val field : Pool_common.Message.Field.t
+  val field : Pool_message.Field.t
   val init : t
 end
 
@@ -28,19 +28,21 @@ module MatchesFilter : sig
 end
 
 module CanceledAt : sig
-  include Pool_common.Model.PtimeSig
+  include Pool_model.Base.PtimeSig
+
+  val create : Ptime.t -> (t, Pool_message.Error.t) result
 end
 
 module MarkedAsDeleted : sig
-  include Pool_common.Model.BooleanSig
+  include Pool_model.Base.BooleanSig
 
   val init : t
 end
 
 module ExternalDataId : sig
-  include Pool_common.Model.StringSig
+  include Pool_model.Base.StringSig
 
-  val field : Pool_common.Message.Field.t
+  val field : Pool_message.Field.t
 end
 
 type t =
@@ -85,19 +87,32 @@ module ExternalDataIdentifier : sig
     }
 end
 
-val is_deletable : t -> (unit, Pool_common.Message.error) result
-val is_cancellable : t -> (unit, Pool_common.Message.error) result
-val attendance_settable : t -> (unit, Pool_common.Message.error) result
+val is_deletable : t -> (unit, Pool_message.Error.t) result
+val is_cancellable : t -> (unit, Pool_message.Error.t) result
+val attendance_settable : t -> (unit, Pool_message.Error.t) result
+val session_changeable : Session.t -> t -> (unit, Pool_message.Error.t) result
+val reminder_sendable : Session.t -> t -> (unit, Pool_message.Error.t) result
 
-val session_changeable
-  :  Session.t
-  -> t
-  -> (unit, Pool_common.Message.error) result
+module IncrementParticipationCount : sig
+  type t
 
-val reminder_sendable
-  :  Session.t
-  -> t
-  -> (unit, Pool_common.Message.error) result
+  val value : t -> bool
+  val create : bool -> t
+end
+
+val validate : Experiment.t -> t -> (unit, Pool_message.Error.t list) result
+val set_close_default_values : t -> t * NoShow.t * Participated.t
+val boolean_fields : Pool_message.Field.t list
+
+type session_counters =
+  { total : int
+  ; num_no_shows : int
+  ; num_participations : int
+  }
+
+val counters_of_session : Database.Label.t -> Session.Id.t -> session_counters Lwt.t
+val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find_closed : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 module Public : sig
   type t =
@@ -109,142 +124,94 @@ module Public : sig
     }
 
   val participated : t -> Participated.t option
+
+  val find_all_by_experiment
+    :  Database.Label.t
+    -> Experiment.Id.t
+    -> Contact.t
+    -> t list Lwt.t
 end
-
-module IncrementParticipationCount : sig
-  type t
-
-  val value : t -> bool
-  val create : bool -> t
-end
-
-val validate
-  :  Experiment.t
-  -> t
-  -> (unit, Pool_common.Message.error list) result
-
-val set_close_default_values : t -> t * NoShow.t * Participated.t
-val boolean_fields : Pool_common.Message.Field.t list
-
-type session_counters =
-  { total : int
-  ; num_no_shows : int
-  ; num_participations : int
-  }
-
-val counters_of_session
-  :  Pool_database.Label.t
-  -> Session.Id.t
-  -> session_counters Lwt.t
-
-val find
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
-
-val find_closed
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
-
-val find_upcoming_public_by_experiment_and_contact_opt
-  :  Pool_database.Label.t
-  -> Experiment.Id.t
-  -> Contact.t
-  -> Public.t list Lwt.t
-
-val find_past_public_by_experiment_and_contact_opt
-  :  Pool_database.Label.t
-  -> Experiment.Id.t
-  -> Contact.t
-  -> Public.t list Lwt.t
-
-val find_all_public_by_experiment_and_contact_opt
-  :  Pool_database.Label.t
-  -> Experiment.Id.t
-  -> Contact.t
-  -> Public.t list Lwt.t
 
 val assignment_to_experiment_exists
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Experiment.Id.t
   -> Contact.t
   -> bool Lwt.t
 
 val find_by_contact_and_experiment
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Experiment.Id.t
   -> Contact.t
   -> (Session.t * t) list Lwt.t
 
-val find_not_deleted_by_session
-  :  Pool_database.Label.t
-  -> Session.Id.t
-  -> t list Lwt.t
-
-val find_all_by_session : Pool_database.Label.t -> Session.Id.t -> t list Lwt.t
+val find_by_contact : Database.Label.t -> Contact.Id.t -> t list Lwt.t
+val find_not_deleted_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
+val find_all_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
 
 val find_multiple_by_session
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Session.Id.t
   -> Id.t list
   -> t list Lwt.t
 
+val find_by_contact_to_merge
+  :  Database.Label.t
+  -> contact:Contact.t
+  -> merged_contact:Contact.t
+  -> t list Lwt.t
+
 val query_by_session
   :  ?query:Query.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> Session.Id.t
   -> (t list * Query.t) Lwt.t
 
-val find_uncanceled_by_session
-  :  Pool_database.Label.t
-  -> Session.Id.t
-  -> t list Lwt.t
+val find_uncanceled_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
 
 val find_for_session_close_screen
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Session.Id.t
   -> (t list * Custom_field.t list) Lwt.t
 
 val find_for_session_detail_screen
   :  query:Query.t
-  -> Pool_database.Label.t
+  -> Database.Label.t
   -> Session.Id.t
   -> ((t list * Custom_field.t list) * Query.t) Lwt.t
 
-val find_deleted_by_session
-  :  Pool_database.Label.t
-  -> Session.Id.t
-  -> t list Lwt.t
+val find_deleted_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
 
 val count_unsuitable_by
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> [ `Experiment of Experiment.Id.t | `Session of Session.Id.t ]
   -> int Lwt.t
 
-val find_with_follow_ups : Pool_database.Label.t -> Id.t -> t list Lwt.t
-val find_follow_ups : Pool_database.Label.t -> t -> t list Lwt.t
+val find_with_follow_ups : Database.Label.t -> Id.t -> t list Lwt.t
+val find_follow_ups : Database.Label.t -> t -> t list Lwt.t
 
 val find_upcoming_by_experiment
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Experiment.Id.t
-  -> ( Experiment.t * (Session.t * t list) list
-       , Pool_common.Message.error )
-       Lwt_result.t
+  -> (Experiment.t * (Session.t * t list) list, Pool_message.Error.t) Lwt_result.t
+
+val find_assigned_contacts_by_experiment
+  :  Database.Label.t
+  -> Experiment.Id.t
+  -> Contact.t list Lwt.t
 
 val find_upcoming
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> (Experiment.t * (Session.t * t list) list) list Lwt.t
 
 val contact_participation_in_other_assignments
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> exclude_assignments:t list
   -> Experiment.Id.t
   -> Contact.Id.t
-  -> (bool, Pool_common.Message.error) Lwt_result.t
+  -> (bool, Pool_message.Error.t) Lwt_result.t
 
 val find_external_data_identifiers_by_contact
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Contact.Id.t
   -> ExternalDataIdentifier.t list Lwt.t
 
@@ -264,24 +231,33 @@ type event =
   | Canceled of t
   | Created of (t * Session.Id.t)
   | MarkedAsDeleted of t
+  | MatchesFilterUpdated of (t * MatchesFilter.t)
   | ExternalDataIdUpdated of t * ExternalDataId.t option
-  | Updated of t
+  | Updated of t * t
 
 val canceled : t -> event
 val created : t * Session.Id.t -> event
 val markedasdeleted : t -> event
-val updated : t -> event
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
+val matchesfilterupdated : t * MatchesFilter.t -> event
+val updated : t -> t -> event
+val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
+
+val create_changelog
+  :  ?user_uuid:Pool_common.Id.t
+  -> Database.Label.t
+  -> t
+  -> t
+  -> unit Lwt.t
 
 module Guard : sig
   module Target : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_message.Error.t) Lwt_result.t
 
     type t
 

@@ -17,13 +17,13 @@ type t =
 [@@deriving eq, show]
 
 let create
-  ?id
-  ?internal_description
-  ?public_description
-  ?max_participants
-  start
-  duration
-  experiment
+      ?id
+      ?internal_description
+      ?public_description
+      ?max_participants
+      start
+      duration
+      experiment
   =
   let count encode = encode 0 |> Pool_common.Utils.get_or_failwith in
   { id = id |> CCOption.value ~default:(Id.create ())
@@ -36,14 +36,14 @@ let create
   ; no_show_count = count NoShowCount.create
   ; participant_count = count ParticipantCount.create
   ; experiment
-  ; created_at = Ptime_clock.now ()
-  ; updated_at = Ptime_clock.now ()
+  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
 ;;
 
 let ends_at ({ start; duration; _ } : t) =
   Ptime.add_span (Start.value start) (Duration.value duration)
-  |> CCOption.to_result Pool_common.Message.(Invalid Field.Duration)
+  |> CCOption.to_result Pool_message.(Error.Invalid Field.Duration)
   |> Pool_common.Utils.get_or_failwith
 ;;
 
@@ -52,7 +52,7 @@ let duration ~start ~end_at =
   let open Ptime in
   to_float_s (End.value end_at) -. to_float_s (Start.value start)
   |> Span.of_float_s
-  |> CCOption.to_result Pool_common.Message.(Invalid Field.End)
+  |> CCOption.to_result Pool_message.(Error.Invalid Field.End)
   >>= Duration.create
 ;;
 

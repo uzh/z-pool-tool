@@ -1,14 +1,11 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 
 let src = Logs.Src.create "organisational_unit.cqrs"
-
-let schema =
-  Conformist.(make Field.[ Organisational_unit.Name.schema () ] CCFun.id)
-;;
+let schema = Conformist.(make Field.[ Organisational_unit.Name.schema () ] CCFun.id)
 
 let decode data =
   Conformist.decode_and_validate schema data
-  |> CCResult.map_err Pool_common.Message.to_conformist_error
+  |> CCResult.map_err Pool_message.to_conformist_error
 ;;
 
 module Create : sig
@@ -18,7 +15,7 @@ module Create : sig
     :  ?tags:Logs.Tag.set
     -> ?id:Organisational_unit.Id.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Guard.ValidationSet.t
 end = struct
@@ -40,7 +37,7 @@ module Update : sig
     :  ?tags:Logs.Tag.set
     -> Organisational_unit.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Organisational_unit.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -48,9 +45,7 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) ou name =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
-    Ok
-      [ Organisational_unit.Updated (ou, name) |> Pool_event.organisational_unit
-      ]
+    Ok [ Organisational_unit.Updated (ou, name) |> Pool_event.organisational_unit ]
   ;;
 
   let effects = Organisational_unit.Guard.Access.update

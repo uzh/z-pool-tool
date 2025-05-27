@@ -1,5 +1,5 @@
 include Repo_entity
-module Database = Pool_database
+module Database = Database
 module Sql = Repo_sql
 
 let find_by_user = Repo_sql.find_by_user

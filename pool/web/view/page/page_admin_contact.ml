@@ -7,65 +7,34 @@ module Input = Component.Input
 module Icon = Component.Icon
 module Modal = Component.Modal
 module Status = Component.UserStatus.Contact
-module Message = Pool_common.Message
+module Duplicates = Page_admin_contact_duplicates
 
-let path =
-  Contact.id %> Pool_common.Id.value %> Format.asprintf "/admin/contacts/%s"
-;;
-
-let contact_lastname_firstname access_contact_profiles contact =
-  let text = contact |> Contact.lastname_firstname |> txt in
-  match access_contact_profiles with
-  | true -> a ~a:[ a_href (path contact |> Sihl.Web.externalize_path) ] [ text ]
-  | false -> text
-;;
-
+let path = Contact.id %> Contact.Id.value %> Format.asprintf "/admin/contacts/%s"
 let enroll_contact_modal_id = "enroll-modal"
 
 let enroll_contact_path ?suffix contact_id =
   Format.asprintf
     "/admin/contacts/%s/%s"
     (Contact.Id.value contact_id)
-    Message.Field.(Experiments |> human_url)
+    Pool_message.Field.(Experiments |> human_url)
   |> (fun base ->
-       match suffix with
-       | None -> base
-       | Some suffix -> Format.asprintf "%s/%s" base suffix)
+  match suffix with
+  | None -> base
+  | Some suffix -> Format.asprintf "%s/%s" base suffix)
   |> Sihl.Web.externalize_path
 ;;
 
 let heading_with_icons contact =
   h1
-    ~a:[ a_class [ "heading-1" ] ]
-    [ Status.identity_with_icons
-        Pool_common.Language.En
-        ~context:`All
-        true
-        contact
-    ]
+    ~a:[ a_class [ "has-gap" ] ]
+    [ Status.identity_with_icons Pool_common.Language.En ~context:`All true contact ]
 ;;
 
-let personal_detail
-  ?admin_comment
-  ?custom_fields
-  ?tags
-  current_user
-  language
-  contact
-  =
+let personal_detail ?admin_comment ?custom_fields ?tags current_user language contact =
   let open Contact in
-  let open Pool_common.Message in
+  let open Pool_message in
   let field_to_string =
-    CCFun.(
-      Pool_common.Utils.field_to_string language %> CCString.capitalize_ascii)
-  in
-  let with_comment =
-    match admin_comment with
-    | None -> []
-    | Some comment ->
-      [ ( field_to_string Field.AdminComment
-        , comment |> AdminComment.value |> Http_utils.add_line_breaks )
-      ]
+    CCFun.(Pool_common.Utils.field_to_string language %> CCString.capitalize_ascii)
   in
   let tags =
     tags
@@ -79,63 +48,74 @@ let personal_detail
       let field_name = Public.name_value language custom_field in
       tr
         [ th [ txt field_name ]
-        ; td
-            [ Component.CustomField.answer_to_html
-                current_user
-                language
-                custom_field
-            ]
+        ; td [ Component.CustomField.answer_to_html current_user language custom_field ]
         ]
     in
     custom_fields
     |> CCOption.map_or ~default:[] (fun (grouped, ungrouped) ->
       let ungrouped = ungrouped >|= field_to_row in
       let grouped =
-        grouped
-        |> flat_map (fun { Group.Public.fields; _ } -> fields >|= field_to_row)
+        grouped |> flat_map (fun { Group.Public.fields; _ } -> fields >|= field_to_row)
       in
       ungrouped @ grouped)
   in
-  Pool_common.Message.(
-    [ field_to_string Field.Name, fullname contact |> txt
-    ; ( field_to_string Field.Email
-      , email_address contact |> Pool_user.EmailAddress.value |> txt )
-    ; ( field_to_string Field.CellPhone
-      , contact.cell_phone
-        |> CCOption.map_or ~default:"" Pool_user.CellPhone.value
-        |> txt )
-    ; ( field_to_string Field.Language
-      , contact.language
-        |> CCOption.map_or ~default:"" Pool_common.Language.show
-        |> txt )
+  let table_row (label, value) = tr [ th [ txt label ]; td [ value ] ] in
+  let counter_rows =
+    [ Field.InvitationCount, num_invitations %> NumberOfInvitations.value
+    ; Field.AssignmentCount, num_assignments %> NumberOfAssignments.value
+    ; Field.NoShowCount, num_no_shows %> NumberOfNoShows.value
+    ; Field.ShowUpCount, num_show_ups %> NumberOfShowUps.value
+    ; Field.Participated, num_participations %> NumberOfParticipations.value
     ]
-    @ with_comment
-    @ tags)
-  |> fun rows ->
+    |> CCList.map (fun (field, value) ->
+      field_to_string field, value contact |> string_of_int |> txt)
+  in
+  let info_rows =
+    Pool_message.
+      [ Field.Name, fullname contact |> txt
+      ; Field.Email, email_address contact |> Pool_user.EmailAddress.value |> txt
+      ; ( Field.CellPhone
+        , contact.cell_phone
+          |> CCOption.map_or ~default:"" Pool_user.CellPhone.value
+          |> txt )
+      ; ( Field.Language
+        , contact.language |> CCOption.map_or ~default:"" Pool_common.Language.show |> txt
+        )
+      ; ( Field.TermsAndConditionsLastAccepted
+        , contact.terms_accepted_at
+          |> CCOption.map_or
+               ~default:""
+               (Pool_user.TermsAccepted.value %> Pool_model.Time.formatted_date_time)
+          |> txt )
+      ; ( Field.AdminComment
+        , admin_comment
+          |> CCOption.map_or
+               ~default:(txt "")
+               (AdminComment.value %> Http_utils.add_line_breaks) )
+      ]
+    |> CCList.map (fun (field, value) -> field_to_string field, value)
+  in
   let rows =
-    CCList.map
-      (fun (label, value) -> tr [ th [ txt label ]; td [ value ] ])
-      rows
+    (info_rows @ tags |> CCList.map table_row)
     @ custom_field_rows
+    @ (counter_rows |> CCList.map table_row)
   in
   table ~a:[ a_class (Table.table_classes `Striped ~align_top:true ()) ] rows
   |> fun html ->
   div
     [ h3
-        ~a:[ a_class [ "heading-3" ] ]
-        [ Pool_common.(
-            Utils.nav_link_to_string language I18n.PersonalDetails |> txt)
-        ]
+        ~a:[ a_class [ "heading-3"; "has-gap" ] ]
+        [ Pool_common.(Utils.nav_link_to_string language I18n.PersonalDetails |> txt) ]
     ; html
     ]
 ;;
 
 let assign_contact_experiment_modal
-  { Pool_context.language; csrf; _ }
-  contact_id
-  (experiment : Experiment.t)
-  sessions
-  matches_filter
+      { Pool_context.language; csrf; _ }
+      contact_id
+      (experiment : Experiment.t)
+      sessions
+      matches_filter
   =
   let open Pool_common in
   let title language = Utils.text_to_string language I18n.EnrollInExperiment in
@@ -148,12 +128,10 @@ let assign_contact_experiment_modal
       ; registration_disabled, ContactEnrollmentRegistrationDisabled
       ]
     |> CCList.filter_map (fun (show, i18n) ->
-      if show
-      then Some (p [ Utils.hint_to_string language i18n |> txt ])
-      else None)
+      if show then Some (p [ Utils.hint_to_string language i18n |> txt ]) else None)
     |> function
     | [] -> txt ""
-    | msg -> Component.Notification.notification language `Error msg
+    | msg -> Component.Notification.create language `Error msg
   in
   let session_select =
     let label = Session.start_end_with_duration_human in
@@ -164,7 +142,7 @@ let assign_contact_experiment_modal
         |> function
         | Ok () ->
           ( txt ""
-          , [ a_name Message.Field.(show Session)
+          , [ a_name Pool_message.Field.(show Session)
             ; a_value Session.(Id.value session.id)
             ; a_required ()
             ] )
@@ -190,7 +168,7 @@ let assign_contact_experiment_modal
   in
   let form =
     div
-      [ h4 [ txt Message.Field.(show Sessions |> CCString.capitalize_ascii) ]
+      [ h4 [ txt Pool_message.Field.(show Sessions |> CCString.capitalize_ascii) ]
       ; form
           ~a:
             [ a_method `Post
@@ -203,7 +181,7 @@ let assign_contact_experiment_modal
           Input.
             [ csrf_element csrf ()
             ; session_select
-            ; submit_element language Message.Enroll ()
+            ; submit_element language Pool_message.Control.Enroll ()
             ]
       ]
   in
@@ -211,29 +189,19 @@ let assign_contact_experiment_modal
   Modal.create ~active:true language title enroll_contact_modal_id html
 ;;
 
-let assign_contact_experiment_list
-  { Pool_context.language; _ }
-  contact_id
-  experiments
-  =
+let assign_contact_experiment_list { Pool_context.language; _ } contact_id experiments =
   let base_class = [ "data-item" ] in
-  let disabled =
-    [ a_class ([ "bg-grey-light"; "not-allowed" ] @ base_class) ]
-  in
+  let disabled = [ a_class ([ "bg-grey-lightest"; "not-allowed" ] @ base_class) ] in
   let htmx_attribs experiment_id =
     [ a_user_data "hx-trigger" "click"
     ; a_user_data
         "hx-get"
-        (enroll_contact_path
-           ~suffix:Experiment.(Id.value experiment_id)
-           contact_id)
+        (enroll_contact_path ~suffix:Experiment.(Id.value experiment_id) contact_id)
     ; a_user_data "hx-swap" "outerHTML"
     ; a_user_data "hx-target" (Format.asprintf "#%s" enroll_contact_modal_id)
     ]
   in
-  let assignable_attrs experiment_id =
-    a_class base_class :: htmx_attribs experiment_id
-  in
+  let assignable_attrs experiment_id = a_class base_class :: htmx_attribs experiment_id in
   let not_matching_filter experiment_id =
     [ a_class ([ "bg-red-lighter" ] @ base_class) ] @ htmx_attribs experiment_id
   in
@@ -243,30 +211,28 @@ let assign_contact_experiment_list
      | [] ->
        [ div
            ~a:[ a_class [ "inset-sm"; "cursor-default" ] ]
-           [ txt
-               Pool_common.(Utils.text_to_string language I18n.EmptyListGeneric)
-           ]
+           [ txt Pool_common.(Utils.text_to_string language I18n.EmptyListGeneric) ]
        ]
      | experiments ->
        let open Experiment in
        let open DirectEnrollment in
        CCList.map
          (fun ({ id; title; public_title; matches_filter; _ } as experiment) ->
-           let attrs =
-             if not (assignable experiment)
-             then disabled
-             else if not matches_filter
-             then not_matching_filter id
-             else assignable_attrs id
-           in
-           div
-             ~a:attrs
-             [ txt
-                 (Format.asprintf
-                    "%s (%s)"
-                    (Title.value title)
-                    (PublicTitle.value public_title))
-             ])
+            let attrs =
+              if not (assignable experiment)
+              then disabled
+              else if not matches_filter
+              then not_matching_filter id
+              else assignable_attrs id
+            in
+            div
+              ~a:attrs
+              [ txt
+                  (Format.asprintf
+                     "%s (%s)"
+                     (Title.value title)
+                     (PublicTitle.value public_title))
+              ])
          experiments)
 ;;
 
@@ -277,14 +243,14 @@ let assign_contact_form { Pool_context.csrf; language; _ } contact =
     Component.Table.(
       table_legend
         Pool_common.Utils.
-          [ ( error_to_string language Message.ContactDoesNotMatchFilter
+          [ ( error_to_string language Pool_message.Error.ContactDoesNotMatchFilter
             , legend_color_item "bg-red-lighter" )
           ])
   in
   let form =
     match Contact.is_inactive contact with
     | true ->
-      p [ txt Utils.(error_to_string language Message.ContactIsInactive) ]
+      p [ txt Utils.(error_to_string language Pool_message.Error.ContactIsInactive) ]
     | false ->
       div
         [ div
@@ -293,22 +259,20 @@ let assign_contact_form { Pool_context.csrf; language; _ } contact =
             ; form
                 ~a:[ a_id form_identifier ]
                 [ Input.csrf_element csrf ()
-                ; Component.Search.Experiment.assign_contact_search
-                    language
-                    contact
-                    ()
+                ; Component.Search.Experiment.assign_contact_search language contact ()
                 ]
             ]
         ; div
-            ~a:
-              [ a_id enroll_contact_modal_id
-              ; a_class [ "modal"; "fullscreen-overlay" ]
-              ]
+            ~a:[ a_id enroll_contact_modal_id; a_class [ "modal"; "fullscreen-overlay" ] ]
             []
         ]
   in
   div
-    [ h3 [ txt Utils.(text_to_string language I18n.EnrollInExperiment) ]; form ]
+    [ h3
+        ~a:[ a_class [ "has-gap" ] ]
+        [ txt Utils.(text_to_string language I18n.EnrollInExperiment) ]
+    ; form
+    ]
 ;;
 
 let list Pool_context.{ language; _ } contacts query =
@@ -325,9 +289,7 @@ let list Pool_context.{ language; _ } contacts query =
   let th_class = [ "w-5"; "w-5"; "w-2" ] in
   let row (Contact.{ disabled; _ } as contact) =
     let a =
-      if Pool_user.Disabled.value disabled
-      then [ a_class [ "bg-red-lighter" ] ]
-      else []
+      if Pool_user.Disabled.value disabled then [ a_class [ "bg-red-lighter" ] ] else []
     in
     [ Status.identity_with_icons language true contact
     ; Status.email_with_icons language contact
@@ -349,13 +311,11 @@ let index ({ Pool_context.language; _ } as context) contacts query =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Contacts) ]
     ; div
         ~a:[ a_class [ "stack" ] ]
-        [ Status.status_icons_table_legend language `All
-        ; list context contacts query
-        ]
+        [ Status.status_icons_table_legend language `All; list context contacts query ]
     ]
 ;;
 
@@ -379,20 +339,17 @@ let experiment_history Pool_context.{ language; _ } contact experiments query =
       language
   in
   let cols =
-    [ `column Experiment.column_title
-    ; `column Experiment.column_public_title
-    ; `empty
-    ]
+    [ `column Experiment.column_title; `column Experiment.column_public_title; `empty ]
   in
   let th_class = [ "w-7"; "w-5" ] in
   let row (experiment, pending) =
-    let open Experiment in
+    let open Pool_message in
     let detail_btn = Page_admin_experiments.Partials.detail_button experiment in
     let session_modal_btn =
       let url =
         Format.asprintf
           "/admin/experiments/%s/contact-history/%s"
-          (Id.value experiment.id)
+          Experiment.(Id.value experiment.id)
           Contact.(contact |> id |> Id.value)
         |> Sihl.Web.externalize_path
       in
@@ -401,7 +358,7 @@ let experiment_history Pool_context.{ language; _ } contact experiments query =
           [ hx_get url
           ; hx_swap "outerHTML"
           ; hx_target ("#" ^ experiment_history_modal_id)
-          ; a_class [ "primary" ]
+          ; a_class [ "primary"; "is-icon" ]
           ]
       in
       button ~a:attributes [ Icon.(to_html InformationOutline) ]
@@ -412,23 +369,26 @@ let experiment_history Pool_context.{ language; _ } contact experiments query =
         [ session_modal_btn; detail_btn ]
     in
     let title =
-      let text = txt (Title.value experiment.title) in
+      let text = txt Experiment.(Title.value experiment.title) in
       match pending with
       | false -> text
       | true ->
         div
-          ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+          ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
           [ span [ text ]
-          ; span
-              ~a:[ a_class [ "tag"; "primary"; "ghost"; "inline" ] ]
-              [ txt "pending" ]
+          ; span ~a:[ a_class [ "tag"; "primary"; "inline" ] ] [ txt "pending" ]
           ]
     in
-    [ title; txt (PublicTitle.value experiment.public_title); buttons ]
-    |> CCList.map (CCList.return %> td)
+    [ title, Some Field.Title
+    ; txt Experiment.(PublicTitle.value experiment.public_title), Some Field.PublicTitle
+    ; buttons, None
+    ]
+    |> CCList.map (fun (html, field) ->
+      td ~a:(Component.Table.data_label_opt language field) [ html ])
     |> tr
   in
   DataTable.make
+    ~break_mobile:true
     ~target_id:"experiment-history"
     ~th_class
     ~cols
@@ -438,77 +398,142 @@ let experiment_history Pool_context.{ language; _ } contact experiments query =
 ;;
 
 let experiment_history_modal
-  { Pool_context.language; _ }
-  (experiment : Experiment.t)
-  assignments
+      { Pool_context.csrf; language; _ }
+      (experiment : Experiment.t)
+      assignments
   =
   let open Pool_common in
   let title (_ : Language.t) = Experiment.(Title.value experiment.title) in
   let html =
     let thead =
-      Message.Field.[ Start; NoShow; Participant ]
+      Pool_message.Field.[ Start; NoShow; Participated ]
       |> CCList.map CCFun.(Utils.field_to_string_capitalized language %> txt)
     in
+    let thead = thead @ [ txt "" ] in
     let to_icon value =
-      CCOption.map_or
-        ~default:(txt "")
-        CCFun.(value %> Component.Icon.bool_to_icon)
+      CCOption.map_or ~default:(txt "") CCFun.(value %> Component.Icon.bool_to_icon)
     in
     let rows =
       let open Assignment in
+      let open Session in
       assignments
-      |> CCList.map (fun (session, { no_show; participated; _ }) ->
-        let start = Session.start_end_with_duration_human session |> txt in
+      |> CCList.map (fun (session, { id; no_show; participated; _ }) ->
+        let start = start_end_with_duration_human session |> txt in
         let start =
-          if CCOption.is_some session.Session.follow_up_to
+          if CCOption.is_some session.follow_up_to
           then div ~a:[ a_class [ "inset"; "left" ] ] [ start ]
           else start
+        in
+        let forms =
+          match session.closed_at with
+          | Some _ -> txt ""
+          | None ->
+            let action suffix =
+              Http_utils.Url.Admin.assignment_path
+                experiment.Experiment.id
+                session.id
+                ~id
+                ~suffix
+                ()
+              |> Sihl.Web.externalize_path
+            in
+            Pool_message.
+              [ ( "cancel"
+                , Pool_common.I18n.CancelAssignment
+                , Control.(Cancel (Some Field.Assignment))
+                , Icon.Close )
+              ; ( "mark-as-deleted"
+                , Pool_common.I18n.MarkAssignmentWithFollowUpsAsDeleted
+                , Control.MarkAsDeleted
+                , Icon.TrashOutline )
+              ]
+            |> CCList.map (fun (suffix, confirmable, control, icon) ->
+              form
+                ~a:
+                  [ a_method `Post
+                  ; a_action (action suffix)
+                  ; a_user_data
+                      "confirmable"
+                      (Utils.confirmable_to_string language confirmable)
+                  ]
+                Component.Input.
+                  [ csrf_element csrf ()
+                  ; submit_icon
+                      ~attributes:[ a_title (Utils.control_to_string language control) ]
+                      ~classnames:[ "error" ]
+                      icon
+                  ])
+            |> div ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "justify-end" ] ]
         in
         [ start
         ; to_icon NoShow.value no_show
         ; to_icon Participated.value participated
+        ; forms
         ])
     in
-    Component.Table.horizontal_table ~thead `Striped rows
+    Component.Table.horizontal_table ~align_last_end:true ~thead `Striped rows
   in
   Modal.create ~active:true language title experiment_history_modal_id html
 ;;
 
 let detail
-  ?admin_comment
-  (Pool_context.{ language; user; _ } as context)
-  contact
-  tags
-  external_data_ids
-  custom_fields
-  past_experiments
+      ?admin_comment
+      ~can_manage_duplicates
+      (Pool_context.{ language; user; _ } as context)
+      contact
+      tags
+      external_data_ids
+      custom_fields
+      past_experiments
+      failed_login_attempt
   =
   let subtitle nav =
     h3
       ~a:[ a_class [ "heading-3" ] ]
       Pool_common.[ Utils.nav_link_to_string language nav |> txt ]
   in
+  let failed_login_attempt =
+    let unblock_url =
+      Http_utils.Url.Admin.contact_path ~suffix:"unblock" ~id:(Contact.id contact) ()
+    in
+    Component.User.account_suspension_notification
+      ~unblock_url
+      context
+      failed_login_attempt
+  in
   let buttons =
+    let open Pool_common in
     let contact_path = path contact in
     let edit =
       Format.asprintf "%s/edit" contact_path
       |> Input.link_as_button
            ~icon:Icon.Create
            ~classnames:[ "small" ]
-           ~control:Pool_common.(language, Message.(Edit (Some Field.Contact)))
+           ~control:(language, Pool_message.(Control.Edit (Some Field.Contact)))
     in
-    let messages =
-      let path =
-        Format.asprintf "%s/messages" contact_path |> Sihl.Web.externalize_path
-      in
+    let make_link path icon nav_link =
       a
-        ~a:[ a_class [ "btn small primary is-text has-icon" ]; a_href path ]
-        [ Icon.(to_html Mail)
-        ; txt
-            Pool_common.(Utils.nav_link_to_string language I18n.MessageHistory)
+        ~a:
+          [ a_class [ "btn small primary is-text has-icon" ]
+          ; a_href (Sihl.Web.externalize_path path)
+          ]
+        [ Icon.(to_html icon)
+        ; txt Pool_common.(Utils.nav_link_to_string language nav_link)
         ]
     in
-    div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] [ messages; edit ]
+    let messages =
+      make_link (Format.asprintf "%s/messages" contact_path) Icon.Mail I18n.MessageHistory
+    in
+    let duplicate =
+      if can_manage_duplicates
+      then (
+        let path = Http_utils.Url.Admin.contact_duplicate_path (Contact.id contact) () in
+        make_link path Icon.Person I18n.ManageDuplicates)
+      else txt ""
+    in
+    div
+      ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile"; "align-start" ] ]
+      [ span ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ] [ duplicate; messages ]; edit ]
   in
   let past_experiments_html =
     let experiments, query = past_experiments in
@@ -520,90 +545,57 @@ let detail
             ]
           []
       ; h3
-          [ txt
-              Pool_common.(Utils.text_to_string language I18n.ExperimentHistory)
-          ]
+          ~a:[ a_class [ "has-gap" ] ]
+          [ txt Pool_common.(Utils.text_to_string language I18n.ExperimentHistory) ]
       ; experiment_history context contact experiments query
       ]
+  in
+  let changelog_url =
+    Http_utils.Url.Admin.contact_path ~suffix:"changelog" ~id:(Contact.id contact) ()
+    |> Uri.of_string
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
     [ div
-        ~a:[ a_class [ "flexrow"; "wrap"; "flex-gap"; "justify-between" ] ]
+        ~a:
+          [ a_class [ "flexrow"; "wrap"; "flex-gap"; "justify-between"; "align-center" ] ]
         [ div [ heading_with_icons contact ]; buttons ]
+    ; failed_login_attempt
     ; personal_detail ?admin_comment ~custom_fields ~tags user language contact
     ; div
         [ subtitle Pool_common.I18n.ExternalDataIds
         ; Component.Contacts.external_data_ids language external_data_ids
         ]
-    ; div
-        ~a:[ a_class [ "grid-col-2" ] ]
-        [ assign_contact_form context contact ]
+    ; div ~a:[ a_class [ "grid-col-2" ] ] [ assign_contact_form context contact ]
     ; past_experiments_html
+    ; Component.Changelog.list context changelog_url None
     ]
 ;;
 
-let tag_form
-  (Pool_context.{ query_language; _ } as context)
-  ?existing
-  available
-  contact
+let tag_form (Pool_context.{ query_parameters; _ } as context) ?existing available contact
   =
   let action =
-    Http_utils.externalize_path_with_lang
-      query_language
+    Http_utils.externalize_path_with_params
+      query_parameters
       (Format.asprintf
          "%s/%s/assign"
          (contact |> path)
-         Pool_common.Message.Field.(Tag |> human_url))
+         Pool_message.Field.(Tag |> human_url))
   in
   Component.Tag.add_tags_form ?existing context available action
 ;;
 
-let promote_form csrf language query_language contact =
-  let open Pool_common in
-  let action =
-    Format.asprintf
-      "/admin/contacts/%s/promote"
-      (contact |> Contact.id |> Pool_common.Id.value)
-    |> Http_utils.externalize_path_with_lang query_language
-  in
-  [ div
-      ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
-      [ form
-          ~a:
-            [ a_method `Post
-            ; a_action action
-            ; a_user_data
-                "confirmable"
-                (Utils.confirmable_to_string language I18n.PromoteContact)
-            ]
-          [ Input.csrf_element csrf ()
-          ; Input.submit_element
-              ~submit_type:`Success
-              ~classnames:[ "nobr" ]
-              language
-              Message.PromoteContact
-              ()
-          ]
-      ; div
-          ~a:[ a_class [ "grow" ] ]
-          [ txt Pool_common.(Utils.hint_to_string language I18n.PromoteContact)
-          ]
-      ]
-  ]
-;;
-
 let edit
-  ?(allowed_to_assign = false)
-  ?(allowed_to_promote = false)
-  (Pool_context.{ language; csrf; query_language; _ } as context)
-  tenant_languages
-  contact
-  custom_fields
-  tags
-  available_tags
+      ?(allowed_to_assign = false)
+      ?(allowed_to_promote = false)
+      (Pool_context.{ language; csrf; query_parameters; _ } as context)
+      tenant_languages
+      contact
+      custom_fields
+      tags
+      available_tags
   =
+  let open Page_contact_partials in
   let base_action = Htmx.admin_profile_hx_post (Contact.id contact) in
   let assign_tags =
     if allowed_to_assign
@@ -612,12 +604,12 @@ let edit
         Format.asprintf
           "%s/%s/%s/remove"
           base_action
-          Pool_common.Message.Field.(Tag |> human_url)
+          Pool_message.Field.(Tag |> human_url)
           Tags.(Id.value tag.id)
       in
       div
         [ h2
-            ~a:[ a_class [ "heading-2" ] ]
+            ~a:[ a_class [ "heading-2"; "has-gap" ] ]
             Pool_common.[ Utils.nav_link_to_string language I18n.Tags |> txt ]
         ; div
             ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
@@ -631,10 +623,22 @@ let edit
         ])
     else txt ""
   in
+  let pause_form = pause_form csrf language query_parameters contact `Admin in
+  let delete_form =
+    match Pool_user.Disabled.value contact.Contact.disabled with
+    | true -> None
+    | false -> Some (mark_as_deleted_form csrf language query_parameters contact)
+  in
   let promote_form =
     if allowed_to_promote
-    then promote_form csrf language query_language contact
-    else []
+    then Some (promote_form csrf language query_parameters contact)
+    else None
+  in
+  let verify_form = verify_form csrf language query_parameters contact in
+  let status_forms =
+    [ promote_form; Some verify_form; Some pause_form; delete_form ]
+    |> CCList.filter_map CCFun.id
+    |> status_form_table language
   in
   let form_context = `Admin in
   div
@@ -645,33 +649,13 @@ let edit
         [ Page_contact_edit.personal_details_form
             csrf
             language
-            query_language
+            query_parameters
             form_context
             tenant_languages
             contact
             custom_fields
         ; assign_tags
-        ; Page_contact_edit.status_form
-            ~additional:promote_form
-            csrf
-            language
-            query_language
-            contact
-            form_context
-        ; p
-            [ a
-                ~a:
-                  [ a_href
-                      (Sihl.Web.externalize_path
-                         (Format.asprintf
-                            "/admin/contacts/%s"
-                            (contact |> Contact.id |> Pool_common.Id.value)))
-                  ]
-                [ txt
-                    Pool_common.(
-                      Message.Back |> Utils.control_to_string language)
-                ]
-            ]
+        ; status_forms
         ]
     ]
 ;;
@@ -681,35 +665,28 @@ let external_data_ids { Pool_context.language; _ } contact external_data_ids =
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack" ] ]
     [ h1 [ txt (Contact.fullname contact) ]
-    ; h2
-        [ txt
-            Pool_common.(Utils.nav_link_to_string language I18n.ExternalDataIds)
-        ]
+    ; h2 [ txt Pool_common.(Utils.nav_link_to_string language I18n.ExternalDataIds) ]
     ; table
     ]
 ;;
 
 let message_history_url contact =
   Uri.of_string
-    (Format.asprintf
-       "/admin/contacts/%s/messages"
-       Contact.(contact |> id |> Id.value))
+    (Format.asprintf "/admin/contacts/%s/messages" Contact.(contact |> id |> Id.value))
 ;;
 
-let message_history ({ Pool_context.language; _ } as context) contact messages =
+let message_history ({ Pool_context.language; _ } as context) queue_table contact messages
+  =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt
             Pool_common.(
               Utils.text_to_string
                 language
                 I18n.(MessageHistory (Contact.lastname_firstname contact)))
         ]
-    ; Page_admin_message_history.list
-        context
-        (message_history_url contact)
-        messages
+    ; Page_admin_queue.list context queue_table (message_history_url contact) messages
     ]
 ;;

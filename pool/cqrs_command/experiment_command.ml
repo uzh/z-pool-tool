@@ -1,106 +1,96 @@
 module BaseGuard = Guard
 open Experiment
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module Reminder = Pool_common.Reminder
-module TimeUnit = Pool_common.Model.TimeUnit
+module TimeUnit = Pool_model.Base.TimeUnit
 
 let opt = Conformist.optional
 let src = Logs.Src.create "experiment_command.cqrs"
-let to_actor = CCFun.(Admin.id %> BaseGuard.Uuid.actor_of Admin.Id.value)
+let to_actor = Admin.Guard.to_actor
 let to_target { id; _ } = BaseGuard.Uuid.target_of Id.value id
 
 let to_role (admin, role, target_uuid) =
   BaseGuard.ActorRole.create ?target_uuid admin role
 ;;
 
-let default_command
-  title
-  public_title
-  internal_description
-  public_description
-  language
-  cost_center
-  contact_email
-  direct_registration_disabled
-  registration_disabled
-  allow_uninvited_signup
-  external_data_required
-  show_external_data_id_links
-  experiment_type
-  assignment_without_session
-  survey_url
-  email_session_reminder_lead_time
-  email_session_reminder_lead_time_unit
-  text_message_session_reminder_lead_time
-  text_message_session_reminder_lead_time_unit
-  : create
-  =
-  { title
-  ; public_title
-  ; internal_description
-  ; public_description
-  ; language
-  ; cost_center
-  ; contact_email
-  ; direct_registration_disabled
-  ; registration_disabled
-  ; allow_uninvited_signup
-  ; external_data_required
-  ; show_external_data_id_links
-  ; experiment_type
-  ; assignment_without_session
-  ; survey_url
-  ; email_session_reminder_lead_time
-  ; email_session_reminder_lead_time_unit
-  ; text_message_session_reminder_lead_time
-  ; text_message_session_reminder_lead_time_unit
+type command =
+  { title : Title.t
+  ; public_title : PublicTitle.t
+  ; internal_description : InternalDescription.t option
+  ; public_description : PublicDescription.t option
+  ; language : Pool_common.Language.t option
+  ; cost_center : CostCenter.t option
+  ; contact_email : Pool_user.EmailAddress.t option
+  ; direct_registration_disabled : DirectRegistrationDisabled.t
+  ; registration_disabled : RegistrationDisabled.t
+  ; allow_uninvited_signup : AllowUninvitedSignup.t
+  ; external_data_required : ExternalDataRequired.t
+  ; show_external_data_id_links : ShowExternalDataIdLinks.t
+  ; experiment_type : Pool_common.ExperimentType.t option
+  ; online_experiment : OnlineExperiment.t option
+  ; email_session_reminder_lead_time : Reminder.EmailLeadTime.t option
+  ; text_message_session_reminder_lead_time : Reminder.TextMessageLeadTime.t option
   }
-;;
 
-let create_command
-  title
-  public_title
-  description
-  language
-  cost_center
-  contact_email
-  direct_registration_disabled
-  registration_disabled
-  allow_uninvited_signup
-  external_data_required
-  show_external_data_id_links
-  experiment_type
-  assignment_without_session
-  survey_url
-  email_session_reminder_lead_time
-  email_session_reminder_lead_time_unit
-  text_message_session_reminder_lead_time
-  text_message_session_reminder_lead_time_unit
+let default_command
+      title
+      public_title
+      internal_description
+      public_description
+      language
+      cost_center
+      contact_email
+      direct_registration_disabled
+      registration_disabled
+      allow_uninvited_signup
+      external_data_required
+      show_external_data_id_links
+      experiment_type
+      assignment_without_session
+      survey_url
+      email_session_reminder_lead_time
+      email_session_reminder_lead_time_unit
+      text_message_session_reminder_lead_time
+      text_message_session_reminder_lead_time_unit
+  : (command, Pool_message.Error.t) Result.t
   =
-  default_command
-    title
-    (CCOption.value ~default:PublicTitle.placeholder public_title)
-    description
-    language
-    cost_center
-    contact_email
-    direct_registration_disabled
-    registration_disabled
-    allow_uninvited_signup
-    external_data_required
-    show_external_data_id_links
-    experiment_type
-    assignment_without_session
-    survey_url
-    email_session_reminder_lead_time
-    email_session_reminder_lead_time_unit
-    text_message_session_reminder_lead_time
-    text_message_session_reminder_lead_time_unit
+  let open CCResult in
+  let* email_session_reminder_lead_time =
+    Reminder.EmailLeadTime.of_int_opt
+      email_session_reminder_lead_time
+      email_session_reminder_lead_time_unit
+  in
+  let* text_message_session_reminder_lead_time =
+    Reminder.TextMessageLeadTime.of_int_opt
+      text_message_session_reminder_lead_time
+      text_message_session_reminder_lead_time_unit
+  in
+  let online_experiment =
+    OnlineExperiment.create_opt ~assignment_without_session ~survey_url
+  in
+  Ok
+    { title
+    ; public_title
+    ; internal_description
+    ; public_description
+    ; language
+    ; cost_center
+    ; contact_email
+    ; direct_registration_disabled
+    ; registration_disabled
+    ; allow_uninvited_signup
+    ; external_data_required
+    ; show_external_data_id_links
+    ; experiment_type
+    ; online_experiment
+    ; email_session_reminder_lead_time
+    ; text_message_session_reminder_lead_time
+    }
 ;;
 
 let update_schema command =
   let open Pool_common in
-  Utils.PoolConformist.(
+  Pool_conformist.(
     make
       Field.
         [ Title.schema ()
@@ -126,13 +116,13 @@ let update_schema command =
       command)
 ;;
 
-let create_schema command =
+let create_schema default_public_title command =
   let open Pool_common in
-  Utils.PoolConformist.(
+  Pool_conformist.(
     make
       Field.
         [ Title.schema ()
-        ; opt @@ PublicTitle.schema ()
+        ; PublicTitle.schema ~default:default_public_title ()
         ; opt @@ InternalDescription.schema ()
         ; opt @@ PublicDescription.schema ()
         ; opt @@ Pool_common.Language.schema ()
@@ -147,11 +137,14 @@ let create_schema command =
         ; AssignmentWithoutSession.schema ()
         ; opt @@ SurveyUrl.schema ()
         ; opt
-          @@ Model.Integer.schema Message.Field.EmailLeadTime CCResult.return ()
+          @@ Pool_model.Base.Integer.schema
+               Pool_message.Field.EmailLeadTime
+               CCResult.return
+               ()
         ; opt @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
         ; opt
-          @@ Model.Integer.schema
-               Message.Field.TextMessageLeadTime
+          @@ Pool_model.Base.Integer.schema
+               Pool_message.Field.TextMessageLeadTime
                CCResult.return
                ()
         ; opt @@ TimeUnit.named_schema Reminder.TextMessageLeadTime.name ()
@@ -165,7 +158,7 @@ type update_role =
   }
 
 module Create : sig
-  include Common.CommandSig with type t = create
+  include Common.CommandSig with type t = command
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -173,50 +166,41 @@ module Create : sig
     -> ?organisational_unit:Organisational_unit.t
     -> ?smtp_auth:Email.SmtpAuth.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+    :  PublicTitle.t
+    -> (string * string list) list
+    -> (t, Pool_message.Error.t) result
 end = struct
-  type t = create
+  type t = command
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?(id = Id.create ())
-    ?organisational_unit
-    ?smtp_auth
-    ({ cost_center
-     ; contact_email
-     ; internal_description
-     ; public_description
-     ; language
-     ; experiment_type
-     ; email_session_reminder_lead_time
-     ; email_session_reminder_lead_time_unit
-     ; text_message_session_reminder_lead_time
-     ; text_message_session_reminder_lead_time_unit
-     ; assignment_without_session
-     ; survey_url
-     ; _
-     } as command :
-      t)
+        ?(tags = Logs.Tag.empty)
+        ?(id = Id.create ())
+        ?organisational_unit
+        ?smtp_auth
+        ({ title
+         ; public_title
+         ; internal_description
+         ; public_description
+         ; language
+         ; cost_center
+         ; contact_email
+         ; direct_registration_disabled
+         ; registration_disabled
+         ; allow_uninvited_signup
+         ; external_data_required
+         ; show_external_data_id_links
+         ; experiment_type
+         ; online_experiment
+         ; email_session_reminder_lead_time
+         ; text_message_session_reminder_lead_time
+         } :
+          command)
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
-    let* email_session_reminder_lead_time =
-      Reminder.EmailLeadTime.of_int_opt
-        email_session_reminder_lead_time
-        email_session_reminder_lead_time_unit
-    in
-    let* text_message_session_reminder_lead_time =
-      Reminder.TextMessageLeadTime.of_int_opt
-        text_message_session_reminder_lead_time
-        text_message_session_reminder_lead_time_unit
-    in
-    let online_experiment =
-      OnlineExperiment.create_opt ~assignment_without_session ~survey_url
-    in
     let* experiment =
       Experiment.create
         ~id
@@ -228,31 +212,33 @@ end = struct
         ?email_session_reminder_lead_time
         ?experiment_type
         ?organisational_unit
-        ?smtp_auth_id:
-          (smtp_auth |> CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id))
+        ?smtp_auth_id:(CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id) smtp_auth)
         ?text_message_session_reminder_lead_time
         ?online_experiment
-        command.title
-        command.public_title
-        command.direct_registration_disabled
-        command.registration_disabled
-        command.allow_uninvited_signup
-        command.external_data_required
-        command.show_external_data_id_links
+        title
+        public_title
+        direct_registration_disabled
+        registration_disabled
+        allow_uninvited_signup
+        external_data_required
+        show_external_data_id_links
     in
     Ok [ Experiment.Created experiment |> Pool_event.experiment ]
   ;;
 
-  let decode data =
-    Conformist.decode_and_validate (create_schema create_command) data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  let decode default_public_title data =
+    Conformist.decode_and_validate
+      (create_schema default_public_title default_command)
+      data
+    |> CCResult.map_err Pool_message.to_conformist_error
+    |> CCResult.flat_map CCFun.id
   ;;
 
   let effects = Experiment.Guard.Access.create
 end
 
 module Update : sig
-  include Common.CommandSig with type t = create
+  include Common.CommandSig with type t = command
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -261,79 +247,81 @@ module Update : sig
     -> Organisational_unit.t option
     -> Email.SmtpAuth.t option
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
-  type t = create
+  type t = command
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ~session_count
-    experiment
-    organisational_unit
-    smtp
-    ({ assignment_without_session; survey_url; _ } as command : t)
+        ?(tags = Logs.Tag.empty)
+        ~session_count
+        experiment
+        organisational_unit
+        smtp_auth
+        ({ title
+         ; public_title
+         ; internal_description
+         ; public_description
+         ; language
+         ; cost_center
+         ; contact_email
+         ; direct_registration_disabled
+         ; registration_disabled
+         ; allow_uninvited_signup
+         ; external_data_required
+         ; show_external_data_id_links
+         ; experiment_type
+         ; online_experiment
+         ; email_session_reminder_lead_time
+         ; text_message_session_reminder_lead_time
+         } :
+          t)
     =
-    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
-    let* email_session_reminder_lead_time =
-      Reminder.EmailLeadTime.of_int_opt
-        command.email_session_reminder_lead_time
-        command.email_session_reminder_lead_time_unit
-    in
-    let* text_message_session_reminder_lead_time =
-      Reminder.TextMessageLeadTime.of_int_opt
-        command.text_message_session_reminder_lead_time
-        command.text_message_session_reminder_lead_time_unit
-    in
-    let online_experiment =
-      OnlineExperiment.create_opt ~assignment_without_session ~survey_url
-    in
+    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let* () =
       match
         CCBool.equal
           (assignment_without_session_value experiment)
-          (AssignmentWithoutSession.value assignment_without_session)
+          (CCOption.is_some online_experiment)
       with
       | false when session_count > 0 ->
-        Error
-          Pool_common.(Message.(CannotBeUpdated Field.AssignmentWithoutSession))
+        Error Pool_message.(Error.CannotBeUpdated Field.AssignmentWithoutSession)
       | true | false -> Ok ()
     in
-    let experiment =
-      { experiment with
-        Experiment.title = command.title
-      ; public_title = command.public_title
-      ; internal_description = command.internal_description
-      ; public_description = command.public_description
-      ; language = command.language
-      ; cost_center = command.cost_center
-      ; contact_email = command.contact_email
-      ; organisational_unit
-      ; online_experiment
-      ; smtp_auth_id =
-          CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id) smtp
-      ; direct_registration_disabled = command.direct_registration_disabled
-      ; registration_disabled = command.registration_disabled
-      ; allow_uninvited_signup = command.allow_uninvited_signup
-      ; external_data_required = command.external_data_required
-      ; show_external_data_id_links = command.show_external_data_id_links
-      ; experiment_type = command.experiment_type
-      ; email_session_reminder_lead_time
-      ; text_message_session_reminder_lead_time
-      }
+    let open CCResult in
+    let updated =
+      ({ experiment with
+         Experiment.title
+       ; public_title
+       ; internal_description
+       ; public_description
+       ; language
+       ; cost_center
+       ; contact_email
+       ; organisational_unit
+       ; online_experiment
+       ; smtp_auth_id = CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id) smtp_auth
+       ; direct_registration_disabled
+       ; registration_disabled
+       ; allow_uninvited_signup
+       ; external_data_required
+       ; show_external_data_id_links
+       ; experiment_type
+       ; email_session_reminder_lead_time
+       ; text_message_session_reminder_lead_time
+       }
+       : Experiment.t)
     in
-    Ok [ Experiment.Updated experiment |> Pool_event.experiment ]
+    Ok [ Experiment.Updated (experiment, updated) |> Pool_event.experiment ]
   ;;
 
   let decode data =
     Conformist.decode_and_validate (update_schema default_command) data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
+    |> CCResult.flat_map CCFun.id
   ;;
 
   let effects id = Experiment.Guard.Access.update id
@@ -346,9 +334,9 @@ module ResetInvitations : sig
 end = struct
   type t = Experiment.t
 
-  let handle ?(tags = Logs.Tag.empty) (experiment : t) =
+  let handle ?(tags = Logs.Tag.empty) reset =
     Logs.info ~src (fun m -> m "Handle command ResetInvitations" ~tags);
-    Ok [ Experiment.ResetInvitations experiment |> Pool_event.experiment ]
+    Ok [ Experiment.ResetInvitations reset |> Pool_event.experiment ]
   ;;
 
   let effects id = Experiment.Guard.Access.update id
@@ -370,7 +358,7 @@ module Delete : sig
     :  ?tags:Logs.Tag.set
     -> ?system_event_id:System_event.Id.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
@@ -386,15 +374,9 @@ end = struct
     }
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?system_event_id
-    { experiment
-    ; session_count
-    ; mailings
-    ; experimenters
-    ; assistants
-    ; templates
-    }
+        ?(tags = Logs.Tag.empty)
+        ?system_event_id
+        { experiment; session_count; mailings; experimenters; assistants; templates }
     =
     let open CCFun in
     let open CCResult in
@@ -402,32 +384,23 @@ end = struct
     let* () =
       session_count
       > 0
-      |> Utils.bool_to_result_not
-           Pool_common.Message.ExperimentSessionCountNotZero
+      |> Utils.bool_to_result_not Pool_message.Error.ExperimentSessionCountNotZero
     in
     let delete_mailing = Mailing.deleted %> Pool_event.mailing in
     let revoke_experimenter admin =
       BaseGuard.RolesRevoked
-        [ (admin |> to_actor, `Experimenter, Some (experiment |> to_target))
-          |> to_role
-        ]
+        [ (admin |> to_actor, `Experimenter, Some (experiment |> to_target)) |> to_role ]
       |> Pool_event.guard
     in
     let revoke_assistant admin =
       BaseGuard.RolesRevoked
-        [ (admin |> to_actor, `Assistant, Some (experiment |> to_target))
-          |> to_role
-        ]
+        [ (admin |> to_actor, `Assistant, Some (experiment |> to_target)) |> to_role ]
       |> Pool_event.guard
     in
     let filter_events =
-      CCOption.map_or
-        ~default:[]
-        (Filter.deleted %> Pool_event.filter %> CCList.return)
+      CCOption.map_or ~default:[] (Filter.deleted %> Pool_event.filter %> CCList.return)
     in
-    let delete_template =
-      Message_template.deleted %> Pool_event.message_template
-    in
+    let delete_template = Message_template.deleted %> Pool_event.message_template in
     Ok
       ([ Experiment.Deleted experiment.Experiment.id |> Pool_event.experiment ]
        @ (experiment.Experiment.filter |> filter_events)
@@ -452,9 +425,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command AssignAssistant" ~tags);
     Ok
       [ BaseGuard.RolesGranted
-          [ (admin |> to_actor, `Assistant, Some (experiment |> to_target))
-            |> to_role
-          ]
+          [ (admin |> to_actor, `Assistant, Some (experiment |> to_target)) |> to_role ]
         |> Pool_event.guard
       ; Common.guardian_cache_cleared_event ()
       ]
@@ -477,9 +448,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UnassignAssistant" ~tags);
     Ok
       [ BaseGuard.RolesRevoked
-          [ (admin |> to_actor, `Assistant, Some (experiment |> to_target))
-            |> to_role
-          ]
+          [ (admin |> to_actor, `Assistant, Some (experiment |> to_target)) |> to_role ]
         |> Pool_event.guard
       ; Common.guardian_cache_cleared_event ()
       ]
@@ -502,8 +471,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command AssignExperimenter" ~tags);
     Ok
       [ BaseGuard.RolesGranted
-          [ (admin |> to_actor, `Experimenter, Some (experiment |> to_target))
-            |> to_role
+          [ (admin |> to_actor, `Experimenter, Some (experiment |> to_target)) |> to_role
           ]
         |> Pool_event.guard
       ; Common.guardian_cache_cleared_event ()
@@ -527,8 +495,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UnassignExperimenter" ~tags);
     Ok
       [ BaseGuard.RolesRevoked
-          [ (admin |> to_actor, `Experimenter, Some (experiment |> to_target))
-            |> to_role
+          [ (admin |> to_actor, `Experimenter, Some (experiment |> to_target)) |> to_role
           ]
         |> Pool_event.guard
       ; Common.guardian_cache_cleared_event ()
@@ -549,14 +516,14 @@ module CreateFilter : sig
     -> Filter.Key.human list
     -> Filter.t list
     -> Filter.query
-    -> (Filter.t, Pool_common.Message.error) result
+    -> (Filter.t, Pool_message.Error.t) result
 
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
-    -> Assignment.event list * Email.job list
+    -> Assignment.event list * Email.dispatch list
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
@@ -568,30 +535,23 @@ end = struct
     Filter.create ~id None query |> return
   ;;
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    experiment
-    (assignment_events, emails)
-    (filter : Filter.t)
-    =
+  let handle ?(tags = Logs.Tag.empty) experiment (assignment_events, emails) filter =
     Logs.info ~src (fun m -> m "Handle command CreateFilter" ~tags);
     let open CCResult in
-    let experiment =
+    let updated =
       { experiment with
         Experiment.filter = Some filter
       ; matcher_notification_sent = MatcherNotificationSent.create false
       }
     in
-    let assignment_events =
-      assignment_events |> CCList.map Pool_event.assignment
-    in
-    let email_event = Email.BulkSent emails |> Pool_event.email in
+    let assignment_events = assignment_events |> Pool_event.(map assignment) in
+    let email_event = Email.bulksent_opt emails |> Pool_event.(map email) in
     Ok
       ([ Filter.Created filter |> Pool_event.filter
-       ; Experiment.Updated experiment |> Pool_event.experiment
+       ; Experiment.Updated (experiment, updated) |> Pool_event.experiment
        ]
        @ assignment_events
-       @ [ email_event ])
+       @ email_event)
   ;;
 
   let effects id =
@@ -610,14 +570,15 @@ module UpdateFilter : sig
     -> t list
     -> t
     -> Filter.query
-    -> (t, Pool_common.Message.error) result
+    -> (t, Pool_message.Error.t) result
 
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
-    -> Assignment.event list * Email.job list
+    -> Assignment.event list * Email.dispatch list
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> t
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Filter.Id.t -> BaseGuard.ValidationSet.t
 end = struct
@@ -630,27 +591,24 @@ end = struct
   ;;
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    experiment
-    (assignment_events, emails)
-    filter
+        ?(tags = Logs.Tag.empty)
+        experiment
+        (assignment_events, emails)
+        filter
+        updated_fitler
     =
     Logs.info ~src (fun m -> m "Handle command UpdateFilter" ~tags);
     let open CCResult in
-    let assignment_events =
-      assignment_events |> CCList.map Pool_event.assignment
+    let assignment_events = assignment_events |> Pool_event.(map assignment) in
+    let email_event = Email.bulksent_opt emails |> Pool_event.(map email) in
+    let updated_experiiment =
+      { experiment with matcher_notification_sent = MatcherNotificationSent.create false }
     in
-    let email_event = Email.BulkSent emails |> Pool_event.email in
     Ok
-      ([ Experiment.(
-           Updated
-             { experiment with
-               matcher_notification_sent = MatcherNotificationSent.create false
-             })
-         |> Pool_event.experiment
-       ; Filter.Updated filter |> Pool_event.filter
-       ; email_event
+      ([ Experiment.Updated (experiment, updated_experiiment) |> Pool_event.experiment
+       ; Filter.Updated (filter, updated_fitler) |> Pool_event.filter
        ]
+       @ email_event
        @ assignment_events)
   ;;
 
@@ -668,11 +626,7 @@ end
 module DeleteFilter : sig
   include Common.CommandSig with type t = Experiment.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
   val effects : Id.t -> Filter.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   type t = Experiment.t
@@ -681,10 +635,9 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
     let filter_event =
       experiment.Experiment.filter
-      |> CCOption.map_or ~default:[] (fun f ->
-        [ Filter.Deleted f |> Pool_event.filter ])
+      |> CCOption.map_or ~default:[] (fun f -> [ Filter.Deleted f |> Pool_event.filter ])
     in
-    let experiment =
+    let updated =
       Experiment.
         { experiment with
           filter = None
@@ -692,7 +645,8 @@ end = struct
         }
     in
     Ok
-      ([ Experiment.Updated experiment |> Pool_event.experiment ] @ filter_event)
+      ([ Experiment.Updated (experiment, updated) |> Pool_event.experiment ]
+       @ filter_event)
   ;;
 
   let effects experiment_id filter_id =

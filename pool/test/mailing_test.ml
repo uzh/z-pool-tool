@@ -1,16 +1,13 @@
 module MailingCommand = Cqrs_command.Mailing_command
-module Conformist = Pool_common.Utils.PoolConformist
-module Field = Pool_common.Message.Field
+module Conformist = Pool_conformist
+module Field = Pool_message.Field
 module Model = Test_utils.Model
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 module Data = struct
   let norm_ptime m =
-    m
-    |> Ptime.to_rfc3339
-    |> Pool_common.Utils.Time.parse_time
-    |> get_or_failwith
+    m |> Ptime.to_rfc3339 |> Pool_model.Time.parse_time |> get_or_failwith
   ;;
 
   module Mailing = struct
@@ -49,10 +46,7 @@ module Data = struct
       ; Field.(End |> show), [ end_at |> EndAt.value |> Ptime.to_rfc3339 ]
       ; Field.(Limit |> show), [ limit |> Limit.value |> CCInt.to_string ]
       ; ( Field.(Distribution |> show)
-        , [ distribution
-            |> Distribution.yojson_of_sorted
-            |> Yojson.Safe.to_string
-          ] )
+        , [ distribution |> Distribution.yojson_of_sorted |> Yojson.Safe.to_string ] )
       ]
     ;;
 
@@ -62,10 +56,7 @@ module Data = struct
       ; Field.(End |> show), [ start_at |> StartAt.value |> Ptime.to_rfc3339 ]
       ; Field.(Limit |> show), [ limit |> Limit.value |> CCInt.to_string ]
       ; ( Field.(Distribution |> show)
-        , [ distribution
-            |> Distribution.yojson_of_sorted
-            |> Yojson.Safe.to_string
-          ] )
+        , [ distribution |> Distribution.yojson_of_sorted |> Yojson.Safe.to_string ] )
       ]
     ;;
   end
@@ -79,14 +70,12 @@ let create_mailing () =
     ; end_at
     ; limit
     ; distribution = Some (distribution |> Distribution.create_sorted)
-    ; created_at = Pool_common.CreatedAt.create ()
-    ; updated_at = Pool_common.UpdatedAt.create ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
 ;;
 
-let mailing_boolean_fields =
-  Field.([ StartNow; RandomOrder ] |> CCList.map show)
-;;
+let mailing_boolean_fields = Field.([ StartNow; RandomOrder ] |> CCList.map show)
 
 let create () =
   let open MailingCommand.Create in
@@ -101,10 +90,7 @@ let create () =
     |> handle ~id:Data.Mailing.id experiment
   in
   let expected =
-    Ok
-      [ Mailing.Created (mailing, experiment.Experiment.id)
-        |> Pool_event.mailing
-      ]
+    Ok [ Mailing.Created (mailing, experiment.Experiment.id) |> Pool_event.mailing ]
   in
   Test_utils.check_result expected events
 ;;
@@ -117,13 +103,9 @@ let create_with_distribution () =
   let mailing = create_mailing () in
   let distribution =
     SortableField.
-      [ InvitationCount, SortOrder.Ascending
-      ; AssignmentCount, SortOrder.Descending
-      ]
+      [ InvitationCount, SortOrder.Ascending; AssignmentCount, SortOrder.Descending ]
   in
-  let mailing =
-    { mailing with distribution = Some (distribution |> create_sorted) }
-  in
+  let mailing = { mailing with distribution = Some (distribution |> create_sorted) } in
   let experiment = Model.create_experiment () in
   let show = Field.show in
   let urlencoded =
@@ -138,20 +120,14 @@ let create_with_distribution () =
       Format.asprintf "%s,%s" (SortableField.show field) (SortOrder.show sort))
     |> of_urlencoded_list
     >|= (function
-           | None -> urlencoded
-           | Some distribution ->
-             (show Field.Distribution, distribution) :: urlencoded)
+     | None -> urlencoded
+     | Some distribution -> (show Field.Distribution, distribution) :: urlencoded)
     >|= CCList.map (fun (field, value) -> field, [ value ])
     >|= Http_utils.format_request_boolean_values mailing_boolean_fields
   in
-  let events =
-    () |> urlencoded >>= decode >>= handle ~id:Data.Mailing.id experiment
-  in
+  let events = () |> urlencoded >>= decode >>= handle ~id:Data.Mailing.id experiment in
   let expected =
-    Ok
-      [ Mailing.Created (mailing, experiment.Experiment.id)
-        |> Pool_event.mailing
-      ]
+    Ok [ Mailing.Created (mailing, experiment.Experiment.id) |> Pool_event.mailing ]
   in
   Test_utils.check_result expected events
 ;;
@@ -167,7 +143,7 @@ let create_end_before_start () =
     |> get_or_failwith
     |> handle ~id:Data.Mailing.id experiment
   in
-  let expected = Error Pool_common.Message.EndBeforeStart in
+  let expected = Error Pool_message.Error.EndBeforeStart in
   Test_utils.check_result expected events
 ;;
 
@@ -190,11 +166,11 @@ let create_with_start_now () =
     |> urlencoded
     |> Create.decode
     >>= (fun { start_at; start_now; end_at; limit; distribution } ->
-          let* start_at = Start.create start_at start_now in
-          Mailing.create start_at end_at limit distribution)
+    let* start_at = Start.create start_at start_now in
+    Mailing.create start_at end_at limit distribution)
     |> CCResult.is_ok
   in
-  (* Only testing if mailing is Ok, as comparison of timestampts with
-     Ptime_clock.now () fails *)
+  (* Only testing if mailing is Ok, as comparison of timestampts with Ptime_clock.now ()
+     fails *)
   Alcotest.(check bool "succeeds" true res)
 ;;

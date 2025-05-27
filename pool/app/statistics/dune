@@ -9,7 +9,6 @@
   pool_common
   pool_database
   ptime
-  service
   settings
   sihl
   utils)

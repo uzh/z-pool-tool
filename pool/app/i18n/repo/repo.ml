@@ -30,9 +30,7 @@ module Sql = struct
     |> Pool_common.Repo.Id.t ->! RepoEntity.t
   ;;
 
-  let find pool =
-    Utils.Database.find (Pool_database.Label.value pool) find_request
-  ;;
+  let find pool = Database.find pool find_request
 
   let find_with_default_content_request =
     let open Caqti_request.Infix in
@@ -44,9 +42,7 @@ module Sql = struct
   ;;
 
   let find_with_default_content pool =
-    Utils.Database.find
-      (Pool_database.Label.value pool)
-      find_with_default_content_request
+    Database.find pool find_with_default_content_request
   ;;
 
   let find_by_key_request =
@@ -55,34 +51,23 @@ module Sql = struct
       WHERE i18n_key = ? AND language = ? AND content IS NOT NULL AND content != ''
     |sql}
     |> select_from_i18n_sql
-    |> Caqti_type.(t2 RepoEntity.Key.t Pool_common.Repo.Language.t)
-       ->! RepoEntity.t
+    |> Caqti_type.(t2 RepoEntity.Key.t Pool_common.Repo.Language.t) ->! RepoEntity.t
   ;;
 
   let find_by_key pool key language =
-    Utils.Database.find
-      (Pool_database.Label.value pool)
-      find_by_key_request
-      (key, language)
+    Database.find pool find_by_key_request (key, language)
   ;;
 
   let find_by_key_opt pool key language =
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_by_key_request
-      (key, language)
+    Database.find_opt pool find_by_key_request (key, language)
   ;;
 
   let find_all_request =
     let open Caqti_request.Infix in
-    ""
-    |> select_from_i18n_sql
-    |> Caqti_type.unit ->* RepoEntity.t_with_default_content
+    "" |> select_from_i18n_sql |> Caqti_type.unit ->* RepoEntity.t_with_default_content
   ;;
 
-  let find_all pool =
-    Utils.Database.collect (Pool_database.Label.value pool) find_all_request
-  ;;
+  let find_all pool = Database.collect pool find_all_request
 
   let insert_sql =
     {sql|
@@ -105,9 +90,7 @@ module Sql = struct
     insert_sql |> RepoEntity.t ->. Caqti_type.unit
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Pool_database.Label.value pool) insert_request
-  ;;
+  let insert pool = Database.exec pool insert_request
 
   let update_request =
     let open Caqti_request.Infix in
@@ -123,9 +106,7 @@ module Sql = struct
     |> RepoEntity.t ->. Caqti_type.unit
   ;;
 
-  let update pool =
-    Utils.Database.exec (Pool_database.Label.value pool) update_request
-  ;;
+  let update pool = Database.exec pool update_request
 
   let delete_by_key_request =
     let open Caqti_request.Infix in
@@ -136,9 +117,7 @@ module Sql = struct
     |> RepoEntity.Key.t ->. Caqti_type.unit
   ;;
 
-  let delete_by_key pool =
-    Utils.Database.exec (Pool_database.Label.value pool) delete_by_key_request
-  ;;
+  let delete_by_key pool = Database.exec pool delete_by_key_request
 
   let terms_and_conditions_last_updated_request =
     let open Caqti_request.Infix in
@@ -157,8 +136,8 @@ module Sql = struct
   ;;
 
   let terms_and_conditions_last_updated database_label =
-    Utils.Database.find
-      (Pool_database.Label.value database_label)
+    Database.find
+      database_label
       terms_and_conditions_last_updated_request
       Entity.Key.(show TermsAndConditions)
   ;;

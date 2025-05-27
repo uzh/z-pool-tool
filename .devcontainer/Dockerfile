@@ -1,6 +1,6 @@
 FROM node:lts AS node
 FROM hadolint/hadolint:latest-alpine AS hadolint
-FROM ocaml/opam:debian-12-ocaml-4.14
+FROM ocaml/opam:debian-11-ocaml-5.2
 
 USER root
 
@@ -18,8 +18,8 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 COPY --from=hadolint /bin/hadolint /bin/hadolint
 
 # Avoid warnings by switching to noninteractive
-ENV DEBIAN_FRONTEND noninteractive
-ENV SIHL_ENV development
+ENV DEBIAN_FRONTEND=noninteractive
+ENV SIHL_ENV=development
 
 # install packages
 # hadolint ignore=DL3008
@@ -29,12 +29,12 @@ RUN apt-get update -q && apt-get install -yqq --no-install-recommends \
   zsh \
   m4 \
   wget \
-  #
-  # build dependencies
+  python-is-python3 \
   #
   # build dependencies (would also be installed by opam depext)
   gcc \
   libev-dev \
+  libffi-dev \
   libgmp-dev \
   libmariadb-dev \
   libssl-dev \
@@ -51,6 +51,9 @@ RUN ln -fs /usr/share/zoneinfo/Europe/Zurich /etc/localtime
 # WTF: https://github.com/mirage/ocaml-cohttp/issues/675
 RUN bash -c 'echo "http		80/tcp	www		# WorldWideWeb HTTP" >> /etc/services' \
   && bash -c 'echo "https		443/tcp	www		# WorldWideWeb HTTPS" >> /etc/services'
+
+# link opam version
+RUN ln -fs /usr/bin/opam-2.2 /usr/bin/opam
 
 USER opam
 

@@ -1,51 +1,48 @@
 open Utils.Lwt_result.Infix
+open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
 module File = HttpUtils.File
-module Update = Root_tenant_update
-module Database = Pool_database
+module Database = Database
+module Response = Http_response
 
 let src = Logs.Src.create "handler.root.tenant"
-let tenants_path = "/root/tenants"
-let active_navigation = tenants_path
+let pool_path = Http_utils.Url.Root.pool_path
+let active_navigation = pool_path ()
 
 let tenants req =
   let context = Pool_context.find_exn req in
   let%lwt tenant_list = Pool_tenant.find_all () in
-  let flash_fetcher key = Sihl.Web.Flash.find key req in
-  Page.Root.Tenant.list tenant_list context flash_fetcher
+  Page.Root.Tenant.list tenant_list context
   |> General.create_root_layout ~active_navigation context
   ||> Sihl.Web.Response.of_html
 ;;
 
 let create req =
+  let open Database.Pool in
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt multipart_encoded =
     Sihl.Web.Request.to_multipart_form_data_exn req
     ||> HttpUtils.remove_empty_values_multiplart
   in
   let urlencoded =
-    multipart_encoded
-    |> HttpUtils.multipart_to_urlencoded Pool_tenant.file_fields
+    multipart_encoded |> HttpUtils.multipart_to_urlencoded Pool_tenant.file_fields
   in
-  let result (_ : Pool_context.t) =
-    Utils.Lwt_result.map_error (fun err ->
-      err, tenants_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+  let result { Pool_context.user; _ } =
+    Response.bad_request_on_error ~urlencoded tenants
     @@
     let events () =
       let open Cqrs_command.Pool_tenant_command in
       let* database =
-        let open Cqrs_command.Pool_tenant_command in
         let* { database_url; database_label } =
           decode_database urlencoded |> Lwt_result.lift
         in
-        Pool_database.test_and_create database_url database_label
+        create_tested database_label database_url
       in
       let* files =
         HttpUtils.File.upload_files
-          Database.root
-          (CCList.map Pool_common.Message.Field.show Pool_tenant.file_fields)
+          Root.label
+          (CCList.map Field.show Pool_tenant.file_fields)
           req
       in
       let* (decoded : create) =
@@ -55,103 +52,87 @@ let create req =
         |> Lwt_result.lift
       in
       let events = Create.handle ~tags database decoded |> Lwt_result.lift in
-      events >|> HttpUtils.File.cleanup_upload Database.root files
+      events >|> HttpUtils.File.cleanup_upload Root.label files
     in
-    let handle = Lwt_list.iter_s (Pool_event.handle_event Pool_database.root) in
+    let handle = Pool_event.handle_events Database.Pool.Root.label user in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
-        tenants_path
-        [ Message.set ~success:[ Pool_common.Message.(Created Field.Tenant) ] ]
+        (pool_path ())
+        [ Message.set ~success:[ Success.Created Field.Tenant ] ]
     in
     () |> events |>> handle |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let manage_operators req =
-  let open Sihl.Web in
   let result context =
-    Utils.Lwt_result.map_error (fun err -> err, tenants_path)
+    Response.bad_request_render_error context
     @@
     let id =
-      HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
-      |> Pool_tenant.Id.of_string
+      HttpUtils.get_field_router_param req Field.tenant |> Pool_tenant.Id.of_string
     in
     let* tenant = Pool_tenant.find id in
     let%lwt operators =
-      Admin.find_all_with_role
-        tenant.Pool_tenant.database_label
-        (`Operator, None)
+      Admin.find_all_with_role tenant.Pool_tenant.database_label (`Operator, None)
     in
     Page.Root.Tenant.manage_operators tenant operators context
     |> General.create_root_layout context
-    ||> Response.of_html
+    ||> Sihl.Web.Response.of_html
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let create_operator req =
   let tenant_id =
-    HttpUtils.get_field_router_param req Field.Tenant
-    |> Pool_tenant.Id.of_string
+    HttpUtils.get_field_router_param req Field.Tenant |> Pool_tenant.Id.of_string
   in
-  let redirect_path =
-    Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value tenant_id)
-  in
-  let result _ =
-    Lwt_result.map_error (fun err ->
-      err, Format.asprintf "%s/operator" redirect_path)
+  let redirect_path = pool_path ~id:tenant_id () in
+  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let result { Pool_context.user; _ } =
+    Response.bad_request_on_error ~urlencoded manage_operators
     @@
-    let open CCFun in
     let tags = Pool_context.Logger.Tags.req req in
-    let* tenant_db =
-      Pool_tenant.find_full tenant_id
-      >|+ fun { Pool_tenant.Write.database; _ } -> database.Database.label
-    in
+    let* tenant_db = Pool_tenant.(find_full tenant_id >|+ Write.database_label) in
     let validate_user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
-      ||> CCOption.to_result Pool_common.Message.EmailAddressMissingAdmin
+      ||> CCOption.to_result Error.EmailAddressMissingAdmin
+      >== Pool_user.EmailAddress.create
       >>= HttpUtils.validate_email_existance tenant_db
     in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Admin_command.CreateAdmin in
-      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-      urlencoded
-      |> decode
-      >>= handle ~roles:[ `Operator, None ] ~tags
-      |> Lwt_result.lift
+      urlencoded |> decode >>= handle ~roles:[ `Operator, None ] ~tags |> Lwt_result.lift
     in
-    let handle =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) %> Lwt_result.ok
+    let handle events =
+      events |> Pool_event.handle_events ~tags tenant_db user |> Lwt_result.ok
     in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ Message.set ~success:[ Pool_common.Message.Created Field.Operator ] ]
+        [ Message.set ~success:[ Success.Created Field.Operator ] ]
     in
     validate_user () >> events >>= handle |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let tenant_detail req =
   let result context =
-    Utils.Lwt_result.map_error (fun err -> err, tenants_path)
+    Response.bad_request_render_error context
     @@
     let id =
-      HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
-      |> Pool_tenant.Id.of_string
+      HttpUtils.get_field_router_param req Field.tenant |> Pool_tenant.Id.of_string
     in
     let* tenant = Pool_tenant.find id in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
-    Page.Root.Tenant.detail tenant context flash_fetcher
+    Page.Root.Tenant.detail tenant context
     |> General.create_root_layout context
     ||> Sihl.Web.Response.of_html
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 module Access : sig
@@ -165,17 +146,11 @@ end = struct
   module Guardian = Middleware.Guardian
   module TenantCommand = Cqrs_command.Pool_tenant_command
 
-  let tenant_effects = Guardian.id_effects Pool_tenant.Id.of_string Field.Tenant
+  let tenant_effects = Guardian.id_effects Pool_tenant.Id.validate Field.Tenant
   let index = Access.index |> Guardian.validate_admin_entity
   let create = Guardian.validate_admin_entity TenantCommand.Create.effects
-  let read = Access.read |> tenant_effects |> Guardian.validate_generic
-
-  let update =
-    TenantCommand.EditDetails.effects
-    |> tenant_effects
-    |> Guardian.validate_generic
-  ;;
-
+  let read = tenant_effects Access.read
+  let update = tenant_effects TenantCommand.EditDetails.effects
   let read_operator = Admin.Guard.Access.index |> Guardian.validate_admin_entity
 
   let create_operator =

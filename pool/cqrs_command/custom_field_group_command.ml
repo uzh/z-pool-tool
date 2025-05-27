@@ -1,4 +1,4 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 
 let src = Logs.Src.create "custom_field_group.cqrs"
 
@@ -19,7 +19,7 @@ module Create : sig
     -> Pool_common.Language.t list
     -> name_command
     -> Custom_field.Model.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Guard.ValidationSet.t
 end = struct
@@ -45,7 +45,7 @@ module Update : sig
     -> Custom_field.Group.t
     -> name_command
     -> Custom_field.Model.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Custom_field.Group.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -55,8 +55,8 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
     let* names = Custom_field.Name.create sys_languages names in
-    let group = Custom_field.Group.{ group with model; name = names } in
-    Ok Custom_field.[ GroupUpdated group |> Pool_event.custom_field ]
+    let updated = Custom_field.Group.{ group with model; name = names } in
+    Ok Custom_field.[ GroupUpdated (group, updated) |> Pool_event.custom_field ]
   ;;
 
   let effects = Custom_field.Guard.Access.Group.update
@@ -68,7 +68,7 @@ module Destroy : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Custom_field.Group.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Custom_field.Group.Id.t -> Guard.ValidationSet.t
 end = struct

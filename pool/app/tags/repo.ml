@@ -1,7 +1,7 @@
 open CCFun.Infix
 open Utils.Lwt_result.Infix
 open Entity
-module Label = Pool_database.Label
+module Label = Database.Label
 
 module RepoEntity = struct
   module Id = struct
@@ -29,10 +29,7 @@ module RepoEntity = struct
       Ok { id; title; description; model }
     in
     Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (t2 Id.t (t2 Title.t (t2 (option Description.t) Model.t))))
+      custom ~encode ~decode (t2 Id.t (t2 Title.t (t2 (option Description.t) Model.t))))
   ;;
 end
 
@@ -57,7 +54,7 @@ let sql_select_columns =
 
 module Sql = struct
   open Caqti_request.Infix
-  module Dynparam = Utils.Database.Dynparam
+  module Dynparam = Database.Dynparam
 
   let find_request_sql ?(count = false) where_fragment =
     let columns =
@@ -76,8 +73,8 @@ module Sql = struct
   ;;
 
   let find pool id =
-    Utils.Database.find_opt (Label.value pool) find_request id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tag)
+    Database.find_opt pool find_request id
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Tag)
   ;;
 
   let find_multiple_request ids =
@@ -103,7 +100,7 @@ module Sql = struct
         find_multiple_request ids
         |> pt ->* Caqti_type.(t2 RepoEntity.Id.t RepoEntity.Title.t)
       in
-      Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+      Database.collect pool request pv
   ;;
 
   let search_by_title_request ?model =
@@ -131,9 +128,7 @@ module Sql = struct
     function
     | [] -> base
     | ids ->
-      CCList.mapi
-        (fun i _ -> Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 2))
-        ids
+      CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 2)) ids
       |> CCString.concat ","
       |> Format.asprintf
            {sql|
@@ -156,7 +151,7 @@ module Sql = struct
       search_by_title_request ?model exclude
       |> pt ->* t2 RepoEntity.Id.t RepoEntity.Title.t
     in
-    Utils.Database.collect (Label.value pool) request pv
+    Database.collect pool request pv
   ;;
 
   let find_by ?query pool =
@@ -183,7 +178,7 @@ module Sql = struct
   ;;
 
   let find_all_with_model pool model =
-    Utils.Database.collect (Label.value pool) find_all_with_model_request model
+    Database.collect pool find_all_with_model_request model
   ;;
 
   let already_exists_request ?exclude_id () =
@@ -193,8 +188,7 @@ module Sql = struct
       CCOption.map_or
         ~default:""
         (Id.value
-         %> Format.asprintf
-              {|AND pool_tags.uuid != UNHEX(REPLACE('%s', '-', ''))|})
+         %> Format.asprintf {|AND pool_tags.uuid != UNHEX(REPLACE('%s', '-', ''))|})
         exclude_id
     in
     Format.asprintf
@@ -210,10 +204,7 @@ module Sql = struct
   ;;
 
   let already_exists pool ?exclude_id title model =
-    Utils.Database.find_opt
-      (Label.value pool)
-      (already_exists_request ?exclude_id ())
-      (title, model)
+    Database.find_opt pool (already_exists_request ?exclude_id ()) (title, model)
     ||> CCOption.value ~default:false
   ;;
 
@@ -231,17 +222,9 @@ module Sql = struct
 
   let find_all_validated ?(permission = Guard.Permission.Read) pool actor =
     let%lwt guardian =
-      Guard.sql_where_fragment
-        ~field:"pool_tags.uuid"
-        pool
-        permission
-        `Tag
-        actor
+      Guard.sql_where_fragment ~field:"pool_tags.uuid" pool permission `Tag actor
     in
-    Utils.Database.collect
-      (Label.value pool)
-      (find_all_validated_request ?guardian ())
-      ()
+    Database.collect pool (find_all_validated_request ?guardian ()) ()
   ;;
 
   let find_all_validated_with_model_request ?guardian () =
@@ -256,24 +239,12 @@ module Sql = struct
     |> RepoEntity.Model.t ->* RepoEntity.t
   ;;
 
-  let find_all_validated_with_model
-    ?(permission = Guard.Permission.Read)
-    pool
-    model
-    actor
+  let find_all_validated_with_model ?(permission = Guard.Permission.Read) pool model actor
     =
     let%lwt guardian =
-      Guard.sql_where_fragment
-        ~field:"pool_tags.uuid"
-        pool
-        permission
-        `Tag
-        actor
+      Guard.sql_where_fragment ~field:"pool_tags.uuid" pool permission `Tag actor
     in
-    Utils.Database.collect
-      (Label.value pool)
-      (find_all_validated_with_model_request ?guardian ())
-      model
+    Database.collect pool (find_all_validated_with_model_request ?guardian ()) model
   ;;
 
   let insert_request =
@@ -294,10 +265,8 @@ module Sql = struct
   ;;
 
   let insert pool tag =
-    try
-      Utils.Database.exec (Label.value pool) insert_request tag |> Lwt_result.ok
-    with
-    | _ -> Lwt.return_error Pool_common.Message.(Invalid Field.Tag)
+    try Database.exec pool insert_request tag |> Lwt_result.ok with
+    | _ -> Lwt.return_error Pool_message.(Error.Invalid Field.Tag)
   ;;
 
   let update_request =
@@ -314,7 +283,7 @@ module Sql = struct
     |> Caqti_type.(RepoEntity.t ->. unit)
   ;;
 
-  let update pool = Utils.Database.exec (Label.value pool) update_request
+  let update pool = Database.exec pool update_request
 
   let delete_request =
     {sql|
@@ -324,9 +293,7 @@ module Sql = struct
     |> RepoEntity.Id.t ->. Caqti_type.unit
   ;;
 
-  let delete pool ({ id; _ } : t) =
-    Utils.Database.exec (Label.value pool) delete_request id
-  ;;
+  let delete pool ({ id; _ } : t) = Database.exec pool delete_request id
 
   module Tagged = struct
     let insert_request =
@@ -344,11 +311,8 @@ module Sql = struct
     ;;
 
     let insert pool tagging =
-      try
-        Utils.Database.exec (Label.value pool) insert_request tagging
-        |> Lwt_result.ok
-      with
-      | _ -> Lwt.return_error Pool_common.Message.(Invalid Field.Tagging)
+      try Database.exec pool insert_request tagging |> Lwt_result.ok with
+      | _ -> Lwt.return_error Pool_message.(Error.Invalid Field.Tagging)
     ;;
 
     let delete_request =
@@ -360,9 +324,7 @@ module Sql = struct
       |> Tagged.t ->. Caqti_type.unit
     ;;
 
-    let delete pool tagging =
-      Utils.Database.exec (Label.value pool) delete_request tagging
-    ;;
+    let delete pool tagging = Database.exec pool delete_request tagging
 
     let select_tagging_sql =
       {sql|
@@ -386,9 +348,7 @@ module Sql = struct
       |sql}
     ;;
 
-    let join_tags =
-      {sql|JOIN pool_tags ON pool_tagging.tag_uuid = pool_tags.uuid|sql}
-    ;;
+    let join_tags = {sql|JOIN pool_tags ON pool_tagging.tag_uuid = pool_tags.uuid|sql}
 
     let create_find_all_tag_sql select_from_model join_model_tablename =
       Format.asprintf
@@ -416,10 +376,7 @@ module Sql = struct
     ;;
 
     let find_all_of_entity pool model id =
-      Utils.Database.collect
-        (Label.value pool)
-        find_all_of_entity_request
-        (model, id)
+      Database.collect pool find_all_of_entity_request (model, id)
     ;;
   end
 end

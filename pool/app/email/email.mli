@@ -21,7 +21,7 @@ end
 
 type email_unverified =
   { address : Pool_user.EmailAddress.t
-  ; user : Sihl_user.t
+  ; user : Pool_user.t
   ; token : Token.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -29,7 +29,7 @@ type email_unverified =
 
 type email_verified =
   { address : Pool_user.EmailAddress.t
-  ; user : Sihl_user.t
+  ; user : Pool_user.t
   ; verified_at : VerifiedAt.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -55,42 +55,41 @@ val show : 'state t -> string
 val token : unverified t -> string
 val verify : unverified t -> verified t
 val address : 'email t -> Pool_user.EmailAddress.t
-val user_id : 'email t -> Pool_common.Id.t
+val user_id : 'email t -> Pool_user.Id.t
 val user_is_confirmed : 'email t -> bool
-val create : Pool_user.EmailAddress.t -> Sihl_user.t -> Token.t -> unverified t
+val create : Pool_user.EmailAddress.t -> Pool_user.t -> Token.t -> unverified t
 
 val find_unverified_by_user
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
-  -> (unverified t, Pool_common.Message.error) result Lwt.t
+  -> (unverified t, Pool_message.Error.t) Lwt_result.t
 
 val find_verified_by_user
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_common.Id.t
-  -> (verified t, Pool_common.Message.error) result Lwt.t
+  -> (verified t, Pool_message.Error.t) Lwt_result.t
 
 val find_unverified_by_address
-  :  Pool_database.Label.t
+  :  Database.Label.t
   -> Pool_user.EmailAddress.t
-  -> (unverified t, Pool_common.Message.error) result Lwt.t
+  -> (unverified t, Pool_message.Error.t) Lwt_result.t
 
-val delete_unverified_by_user
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t
-  -> unit Lwt.t
+val delete_unverified_by_user : Database.Label.t -> Pool_user.Id.t -> unit Lwt.t
+val token_data : Pool_user.EmailAddress.t -> (string * string) list
+val create_token : Database.Label.t -> Pool_user.EmailAddress.t -> Token.t Lwt.t
 
-val create_token
-  :  Pool_database.Label.t
+val find_active_token
+  :  Database.Label.t
   -> Pool_user.EmailAddress.t
-  -> Token.t Lwt.t
+  -> Token.t option Lwt.t
 
 module SmtpAuth : sig
   module Id : module type of Pool_common.Id
-  module Label : Pool_common.Model.StringSig
-  module Server : Pool_common.Model.StringSig
-  module Port : Pool_common.Model.IntegerSig
-  module Username : Pool_common.Model.StringSig
-  module Password : Pool_common.Model.StringSig
+  module Label : Pool_model.Base.StringSig
+  module Server : Pool_model.Base.StringSig
+  module Port : Pool_model.Base.IntegerSig
+  module Username : Pool_model.Base.StringSig
+  module Password : Pool_model.Base.StringSig
 
   module RepoEntity : sig
     module Id : sig
@@ -111,10 +110,7 @@ module SmtpAuth : sig
     val yojson_of_t : t -> Yojson.Safe.t
     val read : string -> t
     val all : t list
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
   module Protocol : sig
@@ -130,14 +126,11 @@ module SmtpAuth : sig
     val yojson_of_t : t -> Yojson.Safe.t
     val read : string -> t
     val all : t list
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
   module Default : sig
-    include Pool_common.Model.BooleanSig
+    include Pool_model.Base.BooleanSig
   end
 
   type t =
@@ -189,28 +182,17 @@ module SmtpAuth : sig
       -> Mechanism.t
       -> Protocol.t
       -> Default.t
-      -> (t, Pool_common.Message.error) result
+      -> (t, Pool_message.Error.t) result
   end
 
-  val find
-    :  Pool_database.Label.t
-    -> Id.t
-    -> (t, Pool_common.Message.error) Lwt_result.t
-
-  val find_by_label : Pool_database.Label.t -> Label.t -> t option Lwt.t
-
-  val find_full
-    :  Pool_database.Label.t
-    -> Id.t
-    -> (Write.t, Pool_common.Message.error) Lwt_result.t
-
-  val find_default
-    :  Pool_database.Label.t
-    -> (t, Pool_common.Message.error) Lwt_result.t
-
-  val find_default_opt : Pool_database.Label.t -> t option Lwt.t
-  val find_all : Pool_database.Label.t -> t list Lwt.t
-  val find_by : Query.t -> Pool_database.Label.t -> (t list * Query.t) Lwt.t
+  val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+  val find_by_label : Database.Label.t -> Label.t -> t option Lwt.t
+  val find_full : Database.Label.t -> Id.t -> (Write.t, Pool_message.Error.t) Lwt_result.t
+  val find_default : Database.Label.t -> (t, Pool_message.Error.t) Lwt_result.t
+  val find_default_opt : Database.Label.t -> t option Lwt.t
+  val find_all : Database.Label.t -> t list Lwt.t
+  val find_by : Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+  val defalut_is_set : Database.Label.t -> bool Lwt.t
   val column_label : Query.Column.t
   val column_smtp_server : Query.Column.t
   val column_smtp_username : Query.Column.t
@@ -223,28 +205,10 @@ module SmtpAuth : sig
   val sortable_by : Query.Column.t list
 end
 
-type job =
-  { email : Sihl.Contract.Email.t
-  ; smtp_auth_id : SmtpAuth.Id.t option
-  ; message_history : Queue.History.create option
-  ; resent : Pool_common.Id.t option
-  }
-
-val parse_job_json : string -> (job, Pool_common.Message.error) result
-val yojson_of_job : job -> Yojson.Safe.t
-val job_message_history : job -> Queue.History.create option
-
-val create_job
-  :  ?smtp_auth_id:SmtpAuth.Id.t
-  -> ?message_history:Queue.History.create
-  -> Sihl.Contract.Email.t
-  -> job
-
 module Service : sig
-  module Queue : Sihl.Contract.Queue.Sig
-
   module Cache : sig
     val clear : unit -> unit
+    val find_default : Database.Label.t -> SmtpAuth.Write.t option
   end
 
   module Smtp : sig
@@ -261,31 +225,57 @@ module Service : sig
     val clear_inbox : unit -> unit
 
     val prepare
-      :  Pool_database.Label.t
+      :  Database.Label.t
       -> ?smtp_auth_id:SmtpAuth.Id.t
       -> Sihl_email.t
       -> prepared Lwt.t
   end
 
   module Job : sig
-    val send : job Sihl_queue.job
+    type t
+
+    val email : t -> Sihl_email.t
+    val smtp_auth_id : t -> SmtpAuth.Id.t option
+    val encode : t -> string
+    val decode : string -> (t, Pool_message.Error.t) result
+    val show_recipient : Pool_queue.Instance.t -> string
+    val create : ?smtp_auth_id:SmtpAuth.Id.t -> Sihl_email.t -> t
+
+    val update
+      :  ?new_email_address:Pool_user.EmailAddress.t
+      -> ?new_smtp_auth_id:SmtpAuth.Id.t
+      -> t
+      -> t
+
+    val send : t Pool_queue.Job.t
   end
 
-  val default_sender_of_pool
-    :  Pool_database.Label.t
-    -> Pool_user.EmailAddress.t Lwt.t
+  val default_sender_of_pool : Database.Label.t -> Pool_user.EmailAddress.t Lwt.t
+  val intercept_prepare : Job.t -> (Job.t, Pool_message.Error.t) result
 
-  val intercept_prepare : job -> (job, Pool_common.Message.error) result
-  val dispatch : Pool_database.Label.t -> job -> unit Lwt.t
-  val dispatch_all : Pool_database.Label.t -> job list -> unit Lwt.t
+  val dispatch
+    :  ?id:Pool_queue.Id.t
+    -> ?new_email_address:Pool_user.EmailAddress.t
+    -> ?new_smtp_auth_id:Pool_common.Id.t
+    -> ?message_template:string
+    -> ?job_ctx:Pool_queue.job_ctx
+    -> Database.Label.t
+    -> Job.t
+    -> unit Lwt.t
+
+  val dispatch_all
+    :  Database.Label.t
+    -> (Pool_queue.Id.t * Job.t * string option * Pool_queue.job_ctx option) list
+    -> unit Lwt.t
+
   val lifecycle : Sihl.Container.lifecycle
   val register : unit -> Sihl.Container.Service.t
 
   val test_smtp_config
-    :  Pool_database.Label.t
+    :  Database.Label.t
     -> SmtpAuth.Write.t
     -> Pool_user.EmailAddress.t
-    -> (unit, Pool_common.Message.error) Lwt_result.t
+    -> (unit, Pool_message.Error.t) Lwt_result.t
 end
 
 module Guard : sig
@@ -301,29 +291,63 @@ module Guard : sig
 end
 
 type verification_event =
-  | Created of Pool_user.EmailAddress.t * Token.t * Pool_common.Id.t
+  | Created of Pool_user.EmailAddress.t * Token.t * Pool_user.Id.t
   | EmailVerified of unverified t
 
-val handle_verification_event
-  :  Pool_database.Label.t
-  -> verification_event
-  -> unit Lwt.t
-
+val handle_verification_event : Database.Label.t -> verification_event -> unit Lwt.t
 val equal_verification_event : verification_event -> verification_event -> bool
 val pp_verification_event : Format.formatter -> verification_event -> unit
 
+type dispatch =
+  { job : Service.Job.t
+  ; id : Pool_queue.Id.t option
+  ; message_template : string option
+  ; job_ctx : Pool_queue.job_ctx option
+  }
+
+val equal_dispatch : dispatch -> dispatch -> bool
+val pp_dispatch : Format.formatter -> dispatch -> unit
+val yojson_of_dispatch : dispatch -> Yojson.Safe.t
+val job : dispatch -> Service.Job.t
+val id : dispatch -> Pool_queue.Id.t option
+val message_template : dispatch -> string option
+val job_ctx : dispatch -> Pool_queue.job_ctx option
+
+val create_dispatch
+  :  ?id:Pool_queue.Id.t
+  -> ?message_template:string
+  -> ?job_ctx:Pool_queue.job_ctx
+  -> Service.Job.t
+  -> dispatch
+
 type event =
-  | Sent of job
-  | BulkSent of job list
+  | Sent of (dispatch * Pool_user.EmailAddress.t option * SmtpAuth.Id.t option)
+  | BulkSent of dispatch list
   | SmtpCreated of SmtpAuth.Write.t
   | SmtpEdited of SmtpAuth.t
   | SmtpDeleted of SmtpAuth.Id.t
   | SmtpPasswordEdited of SmtpAuth.update_password
 
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val verification_event_name : verification_event -> string
-val sent : job -> event
-val bulksent : job list -> event
+
+val create_sent
+  :  ?id:Pool_queue.Id.t
+  -> ?message_template:string
+  -> ?job_ctx:Pool_queue.job_ctx
+  -> ?new_email_address:Pool_user.EmailAddress.t
+  -> ?new_smtp_auth_id:SmtpAuth.Id.t
+  -> Service.Job.t
+  -> event
+
+val sent
+  :  ?new_email_address:Pool_user.EmailAddress.t
+  -> ?new_smtp_auth_id:SmtpAuth.Id.t
+  -> dispatch
+  -> event
+
+val bulksent : dispatch list -> event
+val bulksent_opt : dispatch list -> event list

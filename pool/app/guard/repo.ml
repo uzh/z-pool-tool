@@ -1,12 +1,115 @@
 open CCFun
 module BaseRole = Role
-module Dynparam = Utils.Database.Dynparam
+module Dynparam = Database.Dynparam
 
-module Backend =
-  Guardian_backend.MariaDb.Make (Role.Actor) (Role.Role) (Role.Target)
-    (Pool_database.GuardBackend)
+let create_tag = Database.Logger.Tags.create
 
-include Backend
+include
+  Guardian_backend.MariaDb.Make (Role.Actor) (Role.Role) (Role.Target) (Database.Guard)
+
+let related_target_models = function
+  | `Assignment -> [ `Experiment; `Session; `Assignment; `Location ]
+  | `Contact -> [ `Contact; `ContactInfo; `Experiment; `Session; `Location ]
+  | `Filter -> [ `Experiment; `Filter ]
+  | `LocationFile -> [ `Location; `LocationFile ]
+  | `Mailing -> [ `Experiment; `Mailing ]
+  | `Session -> [ `Session; `Experiment; `Location ]
+  | `WaitingList -> [ `Experiment; `WaitingList ]
+  | target -> [ target ]
+;;
+
+let with_user_permission
+      ?(dyn = Dynparam.empty)
+      ?permissions
+      actor
+      uuid_column
+      target_model
+  =
+  let permissions =
+    let open Entity.Permission in
+    let format_conditon permissions =
+      permissions
+      |> CCList.map show
+      |> CCString.concat ", "
+      |> Format.asprintf "AND permission IN (%s)"
+    in
+    match permissions with
+    | None -> ""
+    | Some permissions ->
+      Manage :: permissions |> CCList.uniq ~eq:equal |> format_conditon
+  in
+  let models =
+    let open Role in
+    target_model
+    |> related_target_models
+    |> CCList.map CCFun.(Target.show %> Format.asprintf "'%s'")
+    |> CCString.concat ", "
+    |> Format.asprintf "(%s)"
+  in
+  let dyn =
+    let add =
+      let open Core in
+      Dynparam.add Caqti_type.string (actor.Actor.uuid |> Uuid.Actor.to_string)
+    in
+    dyn |> add |> add |> add
+  in
+  let joins =
+    Format.asprintf
+      {sql|
+        INNER JOIN user_permissions ON %s = user_permissions.target_uuid
+          OR user_permissions.target_uuid IS NULL
+      |sql}
+      uuid_column
+  in
+  let sql =
+    [%string
+      {sql|
+      WITH user_permissions AS (
+      -- GLOBAL ROLE PERMISSIONS
+        SELECT
+          permission,
+          target_model,
+          NULL as target_uuid
+        FROM guardian_actor_roles
+        INNER JOIN guardian_role_permissions
+          ON guardian_actor_roles.role = guardian_role_permissions.role
+          AND target_model IN %{models}
+        WHERE
+          actor_uuid = UNHEX(REPLACE(?, '-', ''))
+          AND guardian_role_permissions.mark_as_deleted IS NULL
+          AND guardian_actor_roles.mark_as_deleted IS NULL
+          %{permissions}
+      UNION
+      -- ENTITY SPECIFIC ROLE PERMISSION
+        SELECT
+          permission,
+          target_model,
+          target_uuid AS target_uuid
+        FROM guardian_actor_role_targets
+        INNER JOIN guardian_role_permissions
+          ON guardian_role_permissions.role = guardian_actor_role_targets.role
+        WHERE
+          actor_uuid = UNHEX(REPLACE(?, '-', ''))
+          AND guardian_actor_role_targets.mark_as_deleted IS NULL
+      		AND guardian_role_permissions.mark_as_deleted IS NULL
+          AND target_model IN %{models}
+          %{permissions}
+        UNION
+          -- USER SPECIFIC PERMISSION
+          SELECT
+            permission,
+            target_model,
+            target_uuid AS target_uuid
+          FROM guardian_actor_permissions
+          WHERE
+            actor_uuid = UNHEX(REPLACE(?, '-', ''))
+            AND guardian_actor_permissions.mark_as_deleted IS NULL
+            %{permissions}
+        )
+      |sql}]
+  in
+  dyn, sql, joins
+;;
 
 module ActorPermission = struct
   include ActorPermission
@@ -64,26 +167,21 @@ module ActorPermission = struct
 
   let expanded =
     Caqti_type.(
-      t4
-        Backend.Entity.ActorPermission.t
-        string
-        (option Backend.Entity.TargetModel.t)
-        (option string))
+      t4 Entity.ActorPermission.t string (option Entity.TargetModel.t) (option string))
   ;;
 
-  let find_by query pool =
-    Query.collect_and_count pool (Some query) ~select expanded
-  ;;
-
-  let insert pool = insert ~ctx:(Pool_database.to_ctx pool)
+  let find_by query pool = Query.collect_and_count pool (Some query) ~select expanded
+  let insert pool = insert ~ctx:(Database.to_ctx pool)
 end
 
 module RolePermission = struct
   include RolePermission
 
-  let from_sql = {sql|
+  let from_sql =
+    {sql|
     guardian_role_permissions AS role_permissions
   |sql}
+  ;;
 
   let std_filter_sql = {sql| role_permissions.mark_as_deleted IS NULL |sql}
 
@@ -101,13 +199,8 @@ module RolePermission = struct
   ;;
 
   let find_by query pool =
-    let where = std_filter_sql, Dynparam.(empty) in
-    Query.collect_and_count
-      pool
-      (Some query)
-      ~where
-      ~select
-      Backend.Entity.RolePermission.t
+    let where = std_filter_sql in
+    Query.collect_and_count pool (Some query) ~where ~select Entity.RolePermission.t
   ;;
 
   let query_by_role ?query ?(include_static_models = false) pool role =
@@ -115,7 +208,7 @@ module RolePermission = struct
       ( Format.asprintf "role_permissions.role = ? AND %s" std_filter_sql
       , Dynparam.(empty |> add Caqti_type.string (Role.Role.show role)) )
     in
-    let where =
+    let where, dyn =
       match include_static_models with
       | false ->
         let open Role.Target in
@@ -124,29 +217,21 @@ module RolePermission = struct
           static
           |> CCList.map (CCFun.const "?")
           |> CCString.concat ","
-          |> Format.asprintf
-               "%s AND role_permissions.target_model NOT IN (%s)"
-               sql
+          |> Format.asprintf "%s AND role_permissions.target_model NOT IN (%s)" sql
         in
         let dyn =
           CCList.fold_left
-            (fun dyn target ->
-              dyn |> Dynparam.add Caqti_type.string (show target))
+            (fun dyn target -> dyn |> Dynparam.add Caqti_type.string (show target))
             dyn
             Role.Target.static
         in
         sql, dyn
       | true -> where
     in
-    Query.collect_and_count
-      pool
-      query
-      ~where
-      ~select
-      Backend.Entity.RolePermission.t
+    Query.collect_and_count pool query ~where ~dyn ~select Entity.RolePermission.t
   ;;
 
-  let insert pool = insert ~ctx:(Pool_database.to_ctx pool)
+  let insert pool = insert ~ctx:(Database.to_ctx pool)
 
   let find_by_target_and_permissions_request permissions =
     let select_from_actor_roles =
@@ -227,14 +312,13 @@ module RolePermission = struct
       |> add_string (Role.Target.show target)
       |> flip
            (CCList.fold_left (fun dyn permission ->
-              dyn |> add_string (permission |> Backend.Guard.Permission.show)))
+              dyn |> add_string (permission |> Entity.Permission.show)))
            permissions
     in
     let request =
-      find_by_target_and_permissions_request permissions
-      |> pt ->* Pool_common.Repo.Id.t
+      find_by_target_and_permissions_request permissions |> pt ->* Pool_common.Repo.Id.t
     in
-    Utils.Database.collect (Pool_database.Label.value pool) request pv
+    Database.collect pool request pv
   ;;
 
   let permissions_by_role_and_target_request =
@@ -249,12 +333,12 @@ module RolePermission = struct
         AND target_model = ?
         AND mark_as_deleted IS NULL
     |}
-    |> Caqti_type.(t2 string string ->* Backend.Entity.Permission.t)
+    |> Caqti_type.(t2 string string ->* Entity.Permission.t)
   ;;
 
   let permissions_by_role_and_target database_label role target =
-    Utils.Database.collect
-      (Pool_database.Label.value database_label)
+    Database.collect
+      database_label
       permissions_by_role_and_target_request
       (Role.Role.show role, Role.Target.show target)
   ;;
@@ -263,17 +347,16 @@ end
 let src = Logs.Src.create "guard"
 
 module Cache = struct
-  (* TODO: Once the guardian package has a cached version, this implementation
-     can be updated/removed (Issue:
-     https://github.com/uzh/guardian/issues/11) *)
+  (* TODO: Once the guardian package has a cached version, this implementation can be
+     updated/removed (Issue: https://github.com/uzh/guardian/issues/11) *)
   open CCCache
 
   let equal_find_actor (l1, a1) (l2, a2) =
-    Pool_database.Label.equal l1 l2 && Core.Uuid.Actor.equal a1 a2
+    Database.Label.equal l1 l2 && Core.Uuid.Actor.equal a1 a2
   ;;
 
   let equal_validation (l1, s1, any1, a1) (l2, s2, any2, a2) =
-    Pool_database.Label.equal l1 l2
+    Database.Label.equal l1 l2
     && Core.ValidationSet.equal s1 s2
     && CCBool.equal any1 any2
     && Core.Uuid.Actor.equal a1.Core.Actor.uuid a2.Core.Actor.uuid
@@ -291,8 +374,7 @@ module Cache = struct
   ;;
 
   let log_cache_size cache label =
-    Logs.info ~src (fun m ->
-      m "Updated size of guard cache %s: %i" label (size cache))
+    Logs.info ~src (fun m -> m "Updated size of guard cache %s: %i" label (size cache))
   ;;
 end
 
@@ -303,19 +385,19 @@ module Actor = struct
     let cb ~in_cache _ _ =
       if in_cache
       then (
-        let tags = Pool_database.Logger.Tags.create database_label in
+        let tags = create_tag database_label in
         Logs.debug ~src (fun m ->
           m ~tags "Found in cache: Actor %s" (id |> Core.Uuid.Actor.to_string)))
       else Cache.log_cache_size Cache.lru_find_actor "lru_find_actor"
     in
-    let find' (label, id) = find ~ctx:(Pool_database.to_ctx label) id in
+    let find' (label, id) = find ~ctx:(Database.to_ctx label) id in
     (database_label, id) |> CCCache.(with_cache ~cb Cache.lru_find_actor find')
   ;;
 
   let can_assign_roles database_label actor =
     let open Utils.Lwt_result.Infix in
     ActorRole.permissions_of_actor
-      ~ctx:(Pool_database.to_ctx database_label)
+      ~ctx:(Database.to_ctx database_label)
       actor.Core.Actor.uuid
     ||> CCList.filter_map
           (fun { Core.PermissionOnTarget.permission; model; target_uuid } ->
@@ -332,8 +414,7 @@ module Actor = struct
              then
                model
                |> Utils.find_assignable_role
-               |> CCResult.map_or ~default:None (fun model ->
-                 Some (model, target_uuid))
+               |> CCResult.map_or ~default:None (fun model -> Some (model, target_uuid))
              else None)
   ;;
 
@@ -346,7 +427,7 @@ module Actor = struct
     in
     if CCList.mem ~eq role possible_assigns
     then Lwt.return_ok role
-    else Lwt.return_error Pool_common.Message.PermissionDeniedGrantRole
+    else Lwt.return_error Pool_message.Error.PermissionDeniedGrantRole
   ;;
 end
 
@@ -395,38 +476,35 @@ module ActorRole = struct
     let cb ~in_cache _ _ =
       if in_cache
       then (
-        let tags = Pool_database.Logger.Tags.create database_label in
+        let tags = create_tag database_label in
         Logs.debug ~src (fun m ->
           m ~tags "Found in cache: Actor %s" (actor |> Core.Uuid.Actor.to_string)))
       else Cache.log_cache_size Cache.lru_find_by_actor "lru_find_by_actor"
     in
     let find_by_actor' (label, actor) =
-      Utils.Database.collect
-        (Pool_database.Label.value label)
-        find_by_actor_request
-        actor
+      Database.collect label find_by_actor_request actor
     in
     (database_label, actor)
     |> CCCache.(with_cache ~cb Cache.lru_find_by_actor find_by_actor')
   ;;
 
   let permissions_of_actor database_label =
-    permissions_of_actor ~ctx:(Pool_database.to_ctx database_label)
+    permissions_of_actor ~ctx:(Database.to_ctx database_label)
   ;;
 end
 
 let validate
-  ?(any_id = false)
-  database_label
-  validation_set
-  ({ Core.Actor.uuid; _ } as actor)
+      ?(any_id = false)
+      database_label
+      validation_set
+      ({ Core.Actor.uuid; _ } as actor)
   =
   let cb ~in_cache _ _ =
     if in_cache
     then
       Logs.debug ~src (fun m ->
         m
-          ~tags:(Pool_database.Logger.Tags.create database_label)
+          ~tags:(create_tag database_label)
           "Found in cache: Actor %s\nValidation set %s"
           (uuid |> Core.Uuid.Actor.to_string)
           ([%show: Core.ValidationSet.t] validation_set))
@@ -434,9 +512,9 @@ let validate
   in
   let validate' (label, set, any_id, actor) =
     validate
-      ~ctx:(Pool_database.to_ctx label)
+      ~ctx:(Database.to_ctx label)
       ~any_id
-      Pool_common.Message.authorization
+      Pool_message.Error.authorization
       set
       actor
   in
@@ -446,16 +524,14 @@ let validate
 
 module Role = struct
   let find_by_actor_and_permission_request permissions role_targets =
-    let add_arguments list =
-      CCList.map (fun _ -> "?") list |> CCString.concat ","
-    in
+    let add_arguments list = CCList.map (fun _ -> "?") list |> CCString.concat "," in
     Format.asprintf
       {sql|
         SELECT
           target_model
         FROM
           guardian_role_permissions
-          INNER JOIN guardian_actor_roles 
+          INNER JOIN guardian_actor_roles
             ON guardian_role_permissions.role = guardian_actor_roles.role
             AND guardian_actor_roles.mark_as_deleted IS NULL
         WHERE
@@ -475,8 +551,7 @@ module Role = struct
       Entity.Permission.(Manage :: permissions |> CCList.uniq ~eq:equal)
     in
     let targets =
-      Role.Role.(
-        customizable |> CCList.map Core.Utils.find_assignable_target_role)
+      Role.Role.(customizable |> CCList.map Core.Utils.find_assignable_target_role)
     in
     let open Dynparam in
     let (Pack (pt, pv)) =
@@ -485,7 +560,7 @@ module Role = struct
       |> add_string (Pool_common.Id.value actor_id)
       |> flip
            (CCList.fold_left (fun dyn permission ->
-              dyn |> add_string (permission |> Backend.Guard.Permission.show)))
+              dyn |> add_string (permission |> Entity.Permission.show)))
            permissions
       |> flip
            (CCList.fold_left (fun dyn target ->
@@ -494,9 +569,9 @@ module Role = struct
     in
     let request =
       find_by_actor_and_permission_request permissions targets
-      |> pt ->* Backend.Entity.TargetModel.t
+      |> pt ->* Entity.TargetModel.t
     in
-    Utils.Database.collect (Pool_database.Label.value pool) request pv
+    Database.collect pool request pv
     ||> CCList.map Core.Utils.find_assignable_role
     ||> CCList.all_ok
   ;;

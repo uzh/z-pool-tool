@@ -1,11 +1,11 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module Utils = Pool_common.Utils
-module Message = Pool_common.Message
-module Field = Message.Field
+module Message = Pool_message
+module Field = Pool_message.Field
 
 module Mail = struct
   module Room = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Field.Room
     let schema () = schema field ()
@@ -13,7 +13,7 @@ module Mail = struct
   end
 
   module Institution = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Field.Institution
     let schema () = schema field ()
@@ -21,7 +21,7 @@ module Mail = struct
   end
 
   module Building = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Field.Building
     let schema () = schema field ()
@@ -29,7 +29,7 @@ module Mail = struct
   end
 
   module Street = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Field.Street
     let schema () = schema field ()
@@ -37,18 +37,15 @@ module Mail = struct
   end
 
   module Zip = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Field.Zip
 
     let create zip =
       let regex =
-        Re.(
-          seq [ repn (alt [ digit; set "_-" ]) 4 (Some 10) ]
-          |> whole_string
-          |> compile)
+        Re.(seq [ repn (alt [ digit; set "_-" ]) 4 (Some 10) ] |> whole_string |> compile)
       in
-      if Re.execp regex zip then Ok zip else Error Message.(Invalid field)
+      if Re.execp regex zip then Ok zip else Error Message.(Error.Invalid field)
     ;;
 
     let schema = schema ~validation:create field
@@ -56,7 +53,7 @@ module Mail = struct
   end
 
   module City = struct
-    include Pool_common.Model.String
+    include Pool_model.Base.String
 
     let field = Field.City
     let schema () = schema field ()
@@ -64,14 +61,14 @@ module Mail = struct
   end
 
   type t =
-    { institution : Institution.t option
-    ; room : Room.t option
-    ; building : Building.t option
+    { institution : Institution.t option [@yojson.option]
+    ; room : Room.t option [@yojson.option]
+    ; building : Building.t option [@yojson.option]
     ; street : Street.t
     ; zip : Zip.t
     ; city : City.t
     }
-  [@@deriving eq, show]
+  [@@deriving eq, show, yojson]
 
   let create institution room building street zip city =
     let open CCResult in
@@ -110,7 +107,7 @@ end
 type t =
   | Virtual
   | Physical of Mail.t
-[@@deriving eq, show, variants]
+[@@deriving eq, show, variants, yojson]
 
 let virtual_detail language =
   Pool_common.Utils.field_to_string language Field.Virtual

@@ -1,3 +1,4 @@
+open CCFun.Infix
 open Entity
 
 let create_public_url = Pool_tenant.create_public_url
@@ -18,21 +19,15 @@ type opt_out_link =
 let opt_out_link_url { link; _ } = function
   | Verified -> Format.asprintf "%s/user/pause-account" link
   | Unverified token ->
-    Format.asprintf
-      "%s/unsubscribe?%s=%s"
-      link
-      Pool_common.Message.Field.(show Token)
-      token
+    Format.asprintf "%s/unsubscribe?%s=%s" link Pool_message.Field.(show Token) token
 ;;
 
-let create_public_url_with_params pool_url path params =
-  params
-  |> Pool_common.Message.add_field_query_params path
-  |> create_public_url pool_url
+let create_public_url_with_params pool_url path =
+  Pool_message.add_field_query_params path %> create_public_url pool_url
 ;;
 
 let prepend_root_directory pool url =
-  match Pool_database.is_root pool with
+  match Database.Pool.is_root pool with
   | true -> Format.asprintf "/root%s" url
   | false -> url
 ;;
@@ -40,12 +35,14 @@ let prepend_root_directory pool url =
 let layout_from_tenant (tenant : Pool_tenant.t) =
   let open Pool_tenant in
   let logo_src =
-    tenant.logos
-    |> Logos.value
-    |> CCList.head_opt
-    |> CCOption.map_or
-         ~default:""
-         CCFun.(Pool_common.File.path %> create_public_url tenant.url)
+    let file_url = Pool_common.File.path %> create_public_url tenant.url in
+    match tenant.email_logo with
+    | Some logo -> EmailLogo.value logo |> file_url
+    | None ->
+      tenant.logos
+      |> Logos.value
+      |> CCList.head_opt
+      |> CCOption.map_or ~default:"" file_url
   in
   let logo_alt = tenant.title |> Title.value |> Format.asprintf "Logo %s" in
   let link = tenant.url |> Url.value |> Format.asprintf "https://%s" in
@@ -99,16 +96,13 @@ let render_email_params params ({ Sihl_email.text; html; subject; _ } as email) 
     }
 ;;
 
-let html_to_string html =
-  Format.asprintf "%a" (Tyxml.Html.pp_elt ~indent:true ()) html
-;;
+let html_to_string html = Format.asprintf "%a" (Tyxml.Html.pp_elt ~indent:true ()) html
 
 let opt_out_texts language =
   let open Pool_common in
   match language with
   | Language.En ->
-    ( "If you no longer wish to participate in any studies, you can "
-    , "unsubscribe here." )
+    "If you no longer wish to participate in any studies, you can ", "unsubscribe here."
   | Language.De ->
     ( "Falls Sie an keinen weiteren Studien teilnehmen möchten, können Sie sich "
     , "hier abmelden." )
@@ -118,33 +112,20 @@ let opt_out_html language layout opt_out =
   let text, control = opt_out_texts language in
   let url = opt_out_link_url layout opt_out in
   let open Tyxml.Html in
-  p
-    ~a:[ a_style "margin-top: 0;" ]
-    [ txt text; a ~a:[ a_href url ] [ txt control ] ]
+  p ~a:[ a_style "margin-top: 0;" ] [ txt text; a ~a:[ a_href url ] [ txt control ] ]
 ;;
 
 let combine_html ?optout_link language layout html_title =
   let open Tyxml.Html in
   let opt_out_html =
-    optout_link
-    |> CCOption.map_or ~default:(txt "") (opt_out_html language layout)
+    optout_link |> CCOption.map_or ~default:(txt "") (opt_out_html language layout)
   in
   let current_year = () |> Ptime_clock.now |> Ptime.to_year in
   let email_header =
     head
       (title (txt (CCOption.value ~default:"" html_title)))
-      [ meta
-          ~a:
-            [ a_http_equiv "Content-Type"
-            ; a_content "text/html; charset=UTF-8"
-            ]
-          ()
-      ; meta
-          ~a:
-            [ a_name "viewport"
-            ; a_content "width=device-width, initial-scale=1"
-            ]
-          ()
+      [ meta ~a:[ a_http_equiv "Content-Type"; a_content "text/html; charset=UTF-8" ] ()
+      ; meta ~a:[ a_name "viewport"; a_content "width=device-width, initial-scale=1" ] ()
       ; meta ~a:[ a_http_equiv "X-UA-Compatible"; a_content "IE=edge" ] ()
       ; style
           ~a:[ a_mime_type "text/css" ]
@@ -152,6 +133,9 @@ let combine_html ?optout_link language layout html_title =
               {css| body { font-family:sans-serif, Arial; line-height: 1.4; } |css}
           ]
       ]
+  in
+  let logo_style =
+    [ "display: block"; "width: 300px"; "height: auto" ] |> CCString.concat ";"
   in
   let email_body =
     body
@@ -165,35 +149,22 @@ let combine_html ?optout_link language layout html_title =
                   [ img
                       ~src:"{logoSrc}"
                       ~alt:"{logoAlt}"
-                      ~a:
-                        [ a_style "width: 300px; height: auto; max-width: 100%;"
-                        ]
+                      ~a:[ a_style logo_style; a_title "{logoAlt}" ]
                       ()
                   ]
               ]
+          ; div ~a:[ a_style "padding-top: 16px; color: #383838;" ] [ txt "{emailText}" ]
           ; div
-              ~a:[ a_style "padding-top: 16px; color: #383838;" ]
-              [ txt "{emailText}" ]
-          ; div
-              ~a:
-                [ a_style "margin-top: 48px; color: #7f7f7f; font-size: 0.8rem;"
-                ]
+              ~a:[ a_style "margin-top: 48px; color: #7f7f7f; font-size: 0.8rem;" ]
               [ opt_out_html
               ; p
                   ~a:[ a_style "text-align: center; margin-bottom: 0;" ]
-                  [ txt
-                      (Format.asprintf
-                         "Copyright © %i {siteTitle}"
-                         current_year)
-                  ]
+                  [ txt (Format.asprintf "Copyright © %i {siteTitle}" current_year) ]
               ]
           ]
       ]
   in
-  html
-    ~a:[ a_lang (Pool_common.Language.show language) ]
-    email_header
-    email_body
+  html ~a:[ a_lang (Pool_common.Language.show language) ] email_header email_body
   |> html_to_string
 ;;
 
@@ -208,15 +179,14 @@ let combine_plain_text language email_layout plain_text =
 ;;
 
 let find_template_by_language templates lang =
-  let open Pool_common in
   CCList.find_opt
-    (fun { language; _ } -> Language.equal language lang)
+    (fun { language; _ } -> Pool_common.Language.equal language lang)
     templates
   |> (function
-        | None -> templates |> CCList.head_opt
-        | Some template -> Some template)
+   | None -> templates |> CCList.head_opt
+   | Some template -> Some template)
   |> CCOption.map (fun ({ language; _ } as t) -> language, t)
-  |> CCOption.to_result (Message.NotFound Field.MessageTemplate)
+  |> CCOption.to_result Pool_message.(Error.NotFound Field.MessageTemplate)
 ;;
 
 let with_default_language sys_langs language =
@@ -233,21 +203,18 @@ let contact_language sys_langs (contact : Contact.t) =
 ;;
 
 let experiment_or_contact_lang sys_langs contact = function
-  | Some experiment_language ->
-    with_default_language sys_langs experiment_language
+  | Some experiment_language -> with_default_language sys_langs experiment_language
   | None -> contact_language sys_langs contact
 ;;
 
 let experiment_message_language
-  sys_langs
-  ({ Experiment.language; _ } : Experiment.t)
-  contact
+      sys_langs
+      ({ Experiment.language; _ } : Experiment.t)
+      contact
   =
   experiment_or_contact_lang sys_langs contact language
 ;;
 
 let public_experiment_message_language sys_langs experiment contact =
-  experiment
-  |> Experiment.Public.language
-  |> experiment_or_contact_lang sys_langs contact
+  experiment |> Experiment.Public.language |> experiment_or_contact_lang sys_langs contact
 ;;

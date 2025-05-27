@@ -1,6 +1,7 @@
 (library
  (name custom_field)
  (libraries
+  changelog
   contact
   guardian
   guard
@@ -8,10 +9,8 @@
   pool_context
   ptime
   role
-  service
   settings
   sihl
-  sihl-user
   utils)
  (preprocess
   (pps
@@ -21,6 +20,7 @@
    ppx_deriving.ord
    ppx_deriving.show
    ppx_sexp_conv
+   ppx_string
    ppx_variants_conv
    ppx_yojson_conv)))
 

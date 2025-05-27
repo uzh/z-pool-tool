@@ -1,8 +1,7 @@
-module Database = Pool_database
+module Database = Database
 
 let has_options field_type m =
-  Entity.FieldType.(
-    equal Select (field_type m) || equal MultiSelect (field_type m))
+  Entity.FieldType.(equal Select (field_type m) || equal MultiSelect (field_type m))
 ;;
 
 let to_entity pool to_entity field_type id m =
@@ -15,8 +14,7 @@ let to_entity pool to_entity field_type id m =
 
 let get_options_of_multiple pool field_type id fields =
   fields
-  |> CCList.filter_map (fun m ->
-    if has_options field_type m then Some (id m) else None)
+  |> CCList.filter_map (fun m -> if has_options field_type m then Some (id m) else None)
   |> Repo_option.find_by_multiple_fields pool
 ;;
 
@@ -70,7 +68,8 @@ module Sql = struct
         pool_custom_fields.prompt_on_registration,
         pool_custom_fields.published_at,
         pool_custom_fields.show_on_session_close_screen,
-        pool_custom_fields.show_on_session_detail_screen
+        pool_custom_fields.show_on_session_detail_screen,
+        pool_custom_fields.possible_duplicates_weight
       FROM pool_custom_fields
       %s
       %s
@@ -88,10 +87,7 @@ module Sql = struct
 
   let find_by_model pool model =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.collect
-      (Database.Label.value pool)
-      find_by_model_request
-      (Entity.Model.show model)
+    Database.collect pool find_by_model_request (Entity.Model.show model)
     >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 
@@ -104,10 +100,7 @@ module Sql = struct
 
   let find_by_group pool group =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.collect
-      (Database.Label.value pool)
-      find_by_group_request
-      (group |> Entity.Group.Id.value)
+    Database.collect pool find_by_group_request (group |> Entity.Group.Id.value)
     >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 
@@ -123,10 +116,7 @@ module Sql = struct
 
   let find_ungrouped_by_model pool model =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.collect
-      (Database.Label.value pool)
-      find_ungrouped_by_model_request
-      (Entity.Model.show model)
+    Database.collect pool find_ungrouped_by_model_request (Entity.Model.show model)
     >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 
@@ -139,11 +129,8 @@ module Sql = struct
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Database.Label.value pool)
-      find_request
-      (id |> Entity.Id.value)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.CustomField)
+    Database.find_opt pool find_request (id |> Entity.Id.value)
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.CustomField)
     |>> to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 
@@ -166,6 +153,7 @@ module Sql = struct
         prompt_on_registration,
         show_on_session_close_screen,
         show_on_session_detail_screen,
+        possible_duplicates_weight,
         position
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
@@ -184,6 +172,7 @@ module Sql = struct
         $14,
         $15,
         $16,
+        $17,
         (SELECT
           COUNT(*)
           FROM pool_custom_fields AS f
@@ -197,12 +186,7 @@ module Sql = struct
     insert_sql |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
-  let insert pool t =
-    Utils.Database.exec
-      (Database.Label.value pool)
-      insert_request
-      (t |> Repo_entity.Write.of_entity)
-  ;;
+  let insert pool t = Database.exec pool insert_request (t |> Repo_entity.Write.of_entity)
 
   let update_request =
     let open Caqti_request.Infix in
@@ -223,19 +207,15 @@ module Sql = struct
         admin_input_only = $13,
         prompt_on_registration = $14,
         show_on_session_close_screen = $15,
-        show_on_session_detail_screen = $16
+        show_on_session_detail_screen = $16,
+        possible_duplicates_weight = $17
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
-  let update pool t =
-    Utils.Database.exec
-      (Database.Label.value pool)
-      update_request
-      (t |> Repo_entity.Write.of_entity)
-  ;;
+  let update pool t = Database.exec pool update_request (t |> Repo_entity.Write.of_entity)
 
   let publish_request =
     let open Caqti_request.Infix in
@@ -250,12 +230,7 @@ module Sql = struct
   ;;
 
   let publish pool t =
-    let%lwt () =
-      Utils.Database.exec
-        (Database.Label.value pool)
-        publish_request
-        (t |> Entity.id |> Entity.Id.value)
-    in
+    let%lwt () = Database.exec pool publish_request (t |> Entity.id |> Entity.Id.value) in
     Repo_option.publish_by_custom_field pool (Entity.id t)
   ;;
 
@@ -282,12 +257,7 @@ module Sql = struct
   ;;
 
   let delete pool t =
-    let%lwt () =
-      Utils.Database.exec
-        (Database.Label.value pool)
-        delete_request
-        (t |> Entity.id |> Entity.Id.value)
-    in
+    let%lwt () = Database.exec pool delete_request (t |> Entity.id |> Entity.Id.value) in
     Repo_option.destroy_by_custom_field pool (Entity.id t)
   ;;
 
@@ -310,10 +280,25 @@ module Sql = struct
 
   let find_by_table_view pool table_view =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.collect
-      (Database.Label.value pool)
+    Database.collect
+      pool
       (find_by_table_view_request table_view)
       Entity.Model.(show Contact)
+    >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
+  ;;
+
+  let find_for_duplicate_check pool =
+    let open Utils.Lwt_result.Infix in
+    let open Caqti_request.Infix in
+    let where =
+      {sql|
+      WHERE pool_custom_fields.published_at IS NOT NULL
+      AND pool_custom_fields.model = ?
+      AND pool_custom_fields.possible_duplicates_weight > 0
+      |sql}
+    in
+    let request = select_sql where |> Repo_entity.Model.t ->* Repo_entity.t in
+    Database.collect pool request Entity.Model.Contact
     >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 end
@@ -331,10 +316,7 @@ let sort_fields pool ids =
   let open Utils.Lwt_result.Infix in
   Lwt_list.mapi_s
     (fun index id ->
-      Utils.Database.exec
-        (Database.Label.value pool)
-        Sql.update_position_request
-        (index, Entity.Id.value id))
+       Database.exec pool Sql.update_position_request (index, Entity.Id.value id))
     ids
   ||> CCFun.const ()
 ;;

@@ -1,8 +1,7 @@
-open CCFun
 open Containers
 open Tyxml.Html
 open Component.Input
-module Message = Pool_common.Message
+module Message = Pool_message
 
 let base_path = "/admin/locations"
 
@@ -23,8 +22,7 @@ let make_statistics ?year year_range language location_id t =
     ; AssignmentCount.(field, t |> assignment_count |> value |> int_to_txt)
     ; ShowUpCount.(field, t |> showup_count |> value |> int_to_txt)
     ; NoShowCount.(field, t |> noshow_count |> value |> int_to_txt)
-    ; ParticipationCount.(
-        field, t |> participation_count |> value |> int_to_txt)
+    ; ParticipationCount.(field, t |> participation_count |> value |> int_to_txt)
     ]
     |> Component.Table.vertical_table ~classnames:[ "fixed" ] `Striped language
   in
@@ -42,15 +40,14 @@ let make_statistics ?year year_range language location_id t =
   div
     ~a:[ a_id id ]
     [ h3
-        [ Pool_common.(Utils.text_to_string language I18n.LocationStatistics)
-          |> txt
-        ]
+        ~a:[ a_class [ "has-gap" ] ]
+        [ Pool_common.(Utils.text_to_string language I18n.LocationStatistics) |> txt ]
     ; div
         ~a:[ a_class [ "stack" ] ]
         [ selector
             ~attributes:htmx
             language
-            Message.Field.Year
+            Pool_message.Field.Year
             CCInt.to_string
             year_range
             year
@@ -60,66 +57,60 @@ let make_statistics ?year year_range language location_id t =
     ]
 ;;
 
-let descriptions_all_languages (location : Pool_location.t) =
+let descriptions_all_languages ?(classnames = []) (location : Pool_location.t) =
   let open Pool_location in
   location.description
   |> CCOption.map (fun desc ->
     desc
     |> Description.value
     |> CCList.map (fun (lang, value) ->
-      div
-        [ strong [ txt Pool_common.Language.(show lang) ]
-        ; div [ Unsafe.data value ]
-        ]))
+      div [ strong [ txt Pool_common.Language.(show lang) ]; div [ Unsafe.data value ] ]))
   |> CCOption.value ~default:[]
   |> Utils.Html.concat_html
-  |> div
+  |> div ~a:[ a_class classnames ]
 ;;
 
 let list Pool_context.{ language; _ } location_list query =
   let url = Uri.of_string base_path in
   let data_table =
-    Component.DataTable.create_meta
-      ~search:Pool_location.searchable_by
-      url
-      query
-      language
+    Component.DataTable.create_meta ~search:Pool_location.searchable_by url query language
   in
   let cols =
-    let create_filter : [ | Html_types.flow5 ] elt =
+    let create_btn : [ | Html_types.flow5 ] elt =
       Component.Input.link_as_button
         ~style:`Success
         ~icon:Component.Icon.Add
-        ~classnames:[ "small"; "nobr" ]
-        ~control:(language, Pool_common.Message.(Add (Some Field.Location)))
+        ~classnames:[ "small"; "nowrap" ]
+        ~control:(language, Pool_message.(Control.Add (Some Field.Location)))
         (Format.asprintf "%s/create" base_path)
     in
     [ `column Pool_location.column_name
     ; `column Pool_location.column_description
     ; `custom
         (span
-           Pool_common.
-             [ Utils.text_to_string language I18n.Address
-               |> CCString.capitalize_ascii
-               |> txt
-             ])
-    ; `custom create_filter
+           Pool_common.[ Utils.field_to_string_capitalized language Field.Address |> txt ])
+    ; `mobile create_btn
     ]
   in
   let th_class = [ "w-3"; "w-4"; "w-4"; "w-1" ] in
   let row (location : Pool_location.t) =
     let open Pool_location in
-    [ txt (Name.value location.name)
-    ; descriptions_all_languages location
-    ; Component.Partials.address_to_html language location.address
-    ; location_specific_path location.id
-      |> Component.Input.link_as_button ~icon:Component.Icon.Eye
+    let open Pool_message in
+    [ txt (Name.value location.name), Some Field.Name
+    ; ( descriptions_all_languages ~classnames:[ "word-wrap-break" ] location
+      , Some Field.Description )
+    ; Component.Partials.address_to_html language location.address, Some Field.Address
+    ; ( location_specific_path location.id
+        |> Component.Input.link_as_button ~icon:Component.Icon.Eye
+      , None )
     ]
-    |> CCList.map (CCList.return %> td)
+    |> CCList.map (fun (html, field) ->
+      td ~a:(Component.Table.data_label_opt language field) [ html ])
     |> tr
   in
   Component.DataTable.make
     ~align_top:true
+    ~break_mobile:true
     ~target_id:"location-table"
     ~th_class
     ~cols
@@ -132,33 +123,31 @@ let index (Pool_context.{ language; _ } as context) location_list query =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ txt Pool_common.(Utils.text_to_string language I18n.LocationListTitle)
-        ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
+        [ txt Pool_common.(Utils.text_to_string language I18n.LocationListTitle) ]
     ; p
         Pool_common.
-          [ Utils.hint_to_string language I18n.LocationsIndex
-            |> HttpUtils.add_line_breaks
+          [ Utils.hint_to_string language I18n.LocationsIndex |> HttpUtils.add_line_breaks
           ]
     ; list context location_list query
     ]
 ;;
 
 let file_form
-  (labels : Pool_location.Mapping.Label.t list)
-  (languages : Pool_common.Language.t list)
-  (location : Pool_location.t)
-  Pool_context.{ language; csrf; _ }
+      (labels : Pool_location.File.Label.t list)
+      (languages : Pool_common.Language.t list)
+      (location : Pool_location.t)
+      Pool_context.{ language; csrf; _ }
   =
   let open Pool_location in
   let action = location_specific_path ~suffix:"files" location.id in
   let label_select =
-    let open Mapping.Label in
-    selector language Message.Field.Label show labels None ()
+    let open File.Label in
+    selector language Pool_message.Field.Label show labels None ()
   in
   let language_select =
     let open Pool_common.Language in
-    selector language Message.Field.Language show languages None ()
+    selector language Pool_message.Field.Language show languages None ()
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "narrow"; "stack" ] ]
@@ -184,13 +173,13 @@ let file_form
             language
             ~allow_multiple:false
             ~required:true
-            Message.Field.FileMapping
+            Pool_message.Field.FileMapping
         ; div
             ~a:[ a_class [ "flexrow" ] ]
             [ submit_element
                 ~classnames:[ "push" ]
                 language
-                Message.(Add (Some Field.File))
+                Message.(Control.Add (Some Field.File))
                 ~submit_type:`Primary
                 ()
             ]
@@ -199,18 +188,16 @@ let file_form
 ;;
 
 let form
-  ?(location : Pool_location.t option)
-  ?(states : Pool_location.Status.t list = [])
-  Pool_context.{ language; csrf; _ }
-  tenant_languages
-  flash_fetcher
+      ?(location : Pool_location.t option)
+      ?(states : Pool_location.Status.t list = [])
+      Pool_context.{ language; csrf; flash_fetcher; _ }
+      tenant_languages
   =
   let open Pool_location in
   let default = "" in
   let action =
     location
-    |> CCOption.map_or ~default:base_path (fun { id; _ } ->
-      location_specific_path id)
+    |> CCOption.map_or ~default:base_path (fun { id; _ } -> location_specific_path id)
   in
   let value field_fcn decode_fcn =
     let open CCOption.Infix in
@@ -225,7 +212,7 @@ let form
     | Some { status; _ } ->
       selector
         language
-        Message.Field.Status
+        Pool_message.Field.Status
         Status.show
         states
         (Some status)
@@ -253,7 +240,7 @@ let form
       ~a:
         ([ a_id "toggle-address"
          ; a_input_type `Checkbox
-         ; a_name Message.Field.(Virtual |> show)
+         ; a_name Pool_message.Field.(Virtual |> show)
          ]
          @ checked)
       ()
@@ -268,16 +255,15 @@ let form
         description >>= Description.find_opt description_language
       in
       let value =
-        flash_fetcher name <+> current |> CCOption.get_or ~default:""
+        CCOption.bind flash_fetcher (fun flash_fetcher -> flash_fetcher name <+> current)
+        |> CCOption.get_or ~default:""
       in
       div
         ~a:[ a_class [ "form_group" ] ]
         [ label
             ~a:[ a_label_for name ]
             [ txt (Pool_common.Language.show description_language) ]
-        ; textarea
-            ~a:[ a_id name; a_name name; a_class [ "rich-text" ] ]
-            (txt value)
+        ; textarea ~a:[ a_id name; a_name name; a_class [ "rich-text" ] ] (txt value)
         ]
     in
     tenant_languages
@@ -288,7 +274,7 @@ let form
       [ h3
           [ txt
               Pool_common.(
-                Utils.field_to_string language Message.Field.description
+                Utils.field_to_string language Pool_message.Field.description
                 |> CCString.capitalize_ascii)
           ]
       ; div ~a:[ a_class [ "grid-col-2" ] ] textareas
@@ -296,10 +282,7 @@ let form
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1
-        [ txt
-            Pool_common.(Utils.text_to_string Language.En I18n.LocationNewTitle)
-        ]
+    [ h1 [ txt Pool_common.(Utils.text_to_string Language.En I18n.LocationNewTitle) ]
     ; form
         ~a:
           [ a_method `Post
@@ -313,16 +296,16 @@ let form
              [ input_element
                  language
                  `Text
-                 Message.Field.Name
+                 Pool_message.Field.Name
                  ~value:(value (fun m -> m.name) Name.value)
-                 ~flash_fetcher
+                 ?flash_fetcher
                  ~required:true
              ; input_element
                  language
                  `Text
-                 Message.Field.Link
+                 Pool_message.Field.Link
                  ~value:(value_opt (fun m -> m.link) Link.value)
-                 ~flash_fetcher
+                 ?flash_fetcher
              ; description_html
              ; status_select_opt
              ]
@@ -331,7 +314,7 @@ let form
                [ h4
                    ~a:[ a_class [ "heading-4" ] ]
                    [ txt
-                       (Message.Field.Location
+                       (Pool_message.Field.Location
                         |> Pool_common.Utils.field_to_string language
                         |> CCString.capitalize_ascii)
                    ]
@@ -341,34 +324,29 @@ let form
                    ; label
                        ~a:[ a_label_for "toggle-address" ]
                        [ txt
-                           Message.Field.(
+                           Pool_message.Field.(
                              Virtual |> show |> CCString.capitalize_ascii)
                        ]
                    ; div
-                       ~a:
-                         [ a_id "address-subform"
-                         ; a_class [ "stack"; "flexcolumn" ]
-                         ]
+                       ~a:[ a_id "address-subform"; a_class [ "stack"; "flexcolumn" ] ]
                        [ input_element
                            language
                            `Text
-                           Message.Field.Institution
-                           ~flash_fetcher
+                           Pool_message.Field.Institution
+                           ?flash_fetcher
                            ~value:
                              (address_value
                                 Address.Mail.(
                                   fun { institution; _ } ->
                                     institution
-                                    |> CCOption.map_or
-                                         ~default:""
-                                         Institution.value))
+                                    |> CCOption.map_or ~default:"" Institution.value))
                        ; div
                            ~a:[ a_class [ "switcher"; "flex-gap" ] ]
                            [ input_element
                                language
                                `Text
-                               Message.Field.Room
-                               ~flash_fetcher
+                               Pool_message.Field.Room
+                               ?flash_fetcher
                                ~value:
                                  (address_value
                                     Address.Mail.(
@@ -377,49 +355,44 @@ let form
                            ; input_element
                                language
                                `Text
-                               Message.Field.Building
-                               ~flash_fetcher
+                               Pool_message.Field.Building
+                               ?flash_fetcher
                                ~value:
                                  (address_value
                                     Address.Mail.(
                                       fun { building; _ } ->
                                         building
-                                        |> CCOption.map_or
-                                             ~default:""
-                                             Building.value))
+                                        |> CCOption.map_or ~default:"" Building.value))
                            ]
                        ; input_element
                            language
                            `Text
-                           Message.Field.Street
+                           Pool_message.Field.Street
                            ~required:true
-                           ~flash_fetcher
+                           ?flash_fetcher
                            ~value:
                              Address.Mail.(
-                               address_value (fun { street; _ } ->
-                                 Street.value street))
+                               address_value (fun { street; _ } -> Street.value street))
                        ; div
                            ~a:[ a_class [ "switcher"; "flex-gap" ] ]
                            [ input_element
                                language
                                `Text
-                               Message.Field.Zip
+                               Pool_message.Field.Zip
                                ~required:true
-                               ~flash_fetcher
+                               ?flash_fetcher
                                ~value:
                                  Address.Mail.(
-                                   address_value (fun { zip; _ } ->
-                                     Zip.value zip))
+                                   address_value (fun { zip; _ } -> Zip.value zip))
                            ; input_element
                                language
                                `Text
-                               Message.Field.City
+                               Pool_message.Field.City
                                ~required:true
-                               ~flash_fetcher
+                               ?flash_fetcher
                                ~value:
                                  Address.Mail.(
-                                   address_value (fun { city; _ } ->
-                                     City.value city))
+                                   address_value (fun { city; _ } -> City.value city))
                            ]
                        ]
                    ]
@@ -429,7 +402,7 @@ let form
                [ submit_element
                    ~classnames:[ "push" ]
                    language
-                   Message.(
+                   Message.Control.(
                      let field = Some Field.location in
                      match location with
                      | None -> Create field
@@ -475,8 +448,7 @@ module FileList = struct
           |> Sihl.Web.externalize_path
           |> a_href
         ]
-      Message.
-        [ Add (Some Field.File) |> Utils.control_to_string language |> txt ]
+      Message.[ Control.Add (Some Field.File) |> Utils.control_to_string language |> txt ]
   ;;
 
   let add_file_btn language id =
@@ -484,22 +456,16 @@ module FileList = struct
       ~style:`Success
       ~icon:Icon.Create
       ~classnames:[ "small" ]
-      ~control:(language, Message.(Add (Some Field.File)))
+      ~control:(language, Message.(Control.Add (Some Field.File)))
       (location_specific_path ~suffix:"files/create" id)
   ;;
 
   let thead language location_id =
-    (Pool_common.Message.Field.[ Label; Language ]
-     |> Component.Table.fields_to_txt language)
+    (Pool_message.Field.[ Label; Language ] |> Component.Table.fields_to_txt language)
     @ [ add_file_btn language location_id ]
   ;;
 
-  let row
-    page_language
-    csrf
-    location_id
-    (Mapping.{ id; label; language; _ } as file)
-    =
+  let row page_language csrf location_id (File.{ id; label; language; _ } as file) =
     let delete_form =
       Tyxml.Html.form
         ~a:
@@ -508,22 +474,21 @@ module FileList = struct
               (Format.asprintf
                  "/admin/locations/%s/mapping/%s/delete"
                  (Id.value location_id)
-                 (Mapping.Id.value id)
+                 (File.Id.value id)
                |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
-              Pool_common.(
-                Utils.confirmable_to_string page_language I18n.DeleteFile)
+              Pool_common.(Utils.confirmable_to_string page_language I18n.DeleteFile)
           ]
         [ csrf_element csrf ()
         ; submit_element
             page_language
-            Message.(Delete (Some Field.File))
+            Message.(Control.Delete (Some Field.File))
             ~submit_type:`Error
             ()
         ]
     in
-    [ label |> Mapping.Label.show |> txt
+    [ label |> File.Label.show |> txt
     ; language |> Pool_common.Language.show |> txt
     ; div
         ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
@@ -531,16 +496,13 @@ module FileList = struct
     ]
   ;;
 
-  (* TODO: add link and message, if list is empty *)
-  let create csrf language ({ id; files; _ } : Pool_location.t) =
+  let create csrf language ({ id; _ } : Pool_location.t) files =
     let form =
       match CCList.is_empty files with
       | true ->
         div
           [ p
-              [ Pool_common.(
-                  I18n.LocationNoFiles |> Utils.text_to_string language)
-                |> txt
+              [ Pool_common.(I18n.LocationNoFiles |> Utils.text_to_string language) |> txt
               ]
           ; div [ add_file_btn language id ]
           ]
@@ -554,7 +516,7 @@ module FileList = struct
     in
     div
       [ h2
-          ~a:[ a_class [ "heading-3" ] ]
+          ~a:[ a_class [ "has-gap" ] ]
           [ txt Pool_common.(Utils.text_to_string language I18n.Files) ]
       ; p
           Pool_common.
@@ -570,47 +532,47 @@ module SessionList = struct
   let session_title (session : Session.Public.t) =
     session.Session.Public.start
     |> Session.Start.value
-    |> Pool_common.Utils.Time.formatted_date_time
+    |> Pool_model.Time.formatted_date_time
     |> Format.asprintf "Session at %s"
   ;;
 
   let rows sessions =
     CCList.map
       (fun (session, (experiment_id, experiment_title)) ->
-        let open Session.Public in
-        [ session |> session_title |> txt
-        ; experiment_title |> txt
-        ; session.duration
-          |> Session.Duration.value
-          |> Pool_common.Utils.Time.formatted_timespan
-          |> txt
-        ; session.canceled_at
-          |> CCOption.map_or ~default:"" (fun t ->
-            Pool_common.Utils.Time.formatted_date_time t)
-          |> txt
-        ; Format.asprintf
-            "/admin/experiments/%s/sessions/%s"
-            (Experiment.Id.value experiment_id)
-            Session.(session.id |> Id.value)
-          |> edit_link
-        ])
+         let open Session.Public in
+         [ session |> session_title |> txt
+         ; experiment_title |> txt
+         ; session.duration
+           |> Session.Duration.value
+           |> Pool_model.Time.formatted_timespan
+           |> txt
+         ; session.canceled_at
+           |> CCOption.map_or ~default:"" (fun t -> Pool_model.Time.formatted_date_time t)
+           |> txt
+         ; Format.asprintf
+             "/admin/experiments/%s/sessions/%s"
+             (Experiment.Id.value experiment_id)
+             Session.(session.id |> Id.value)
+           |> edit_link
+         ])
       sessions
   ;;
 end
 
 let detail
-  (location : Pool_location.t)
-  statistics
-  statistics_year_range
-  Pool_context.{ csrf; language; _ }
+      (location : Pool_location.t)
+      files
+      statistics
+      statistics_year_range
+      Pool_context.({ csrf; language; _ } as context)
   =
   let open Pool_location in
   let location_details =
-    let open Pool_common.Message in
+    let open Pool_message in
     [ Field.Name, location.name |> Name.value |> txt
-    ; Field.Description, descriptions_all_languages location
-    ; ( Field.Location
-      , Component.Partials.address_to_html language location.address )
+    ; ( Field.Description
+      , descriptions_all_languages ~classnames:[ "word-wrap-break" ] location )
+    ; Field.Location, Component.Partials.address_to_html language location.address
     ; Field.Link, location.link |> CCOption.map_or ~default:"" Link.value |> txt
     ; Field.Status, location.status |> Status.show |> txt (* TODO: Show files *)
     ]
@@ -625,23 +587,25 @@ let detail
     link_as_button
       ~icon:Icon.Create
       ~classnames:[ "small" ]
-      ~control:(language, Pool_common.Message.(Edit (Some Field.Location)))
+      ~control:(language, Pool_message.(Control.Edit (Some Field.Location)))
       (location_specific_path ~suffix:"edit" location.Pool_location.id)
+  in
+  let changelog_url =
+    HttpUtils.Url.Admin.location_path ~suffix:"changelog" ~id:location.id ()
+    |> Uri.of_string
   in
   let public_page_link =
     p
       [ a
           ~a:
             [ a_href
-                (Format.asprintf
-                   "/location/%s"
-                   (location.Pool_location.id |> Id.value)
+                (Format.asprintf "/location/%s" (location.Pool_location.id |> Id.value)
                  |> Sihl.Web.externalize_path)
             ; a_target "_blank"
             ]
           [ txt
               Pool_common.(
-                Utils.control_to_string language Message.PublicPage
+                Utils.control_to_string language Message.Control.PublicPage
                 |> CCString.capitalize_ascii)
           ]
       ]
@@ -654,12 +618,10 @@ let detail
             ~a:[ a_class [ "stack" ] ]
             [ div
                 [ div
-                    ~a:
-                      [ a_class [ "flexrow"; "justify-between"; "align-center" ]
-                      ]
+                    ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
                     [ div
                         [ h1
-                            ~a:[ a_class [ "heading-1" ] ]
+                            ~a:[ a_class [ "heading-1"; "has-gap" ] ]
                             [ txt (location.name |> Name.value) ]
                         ]
                     ; div [ edit_button ]
@@ -670,8 +632,7 @@ let detail
                         ~a:[ a_class [ "grid-col-3" ] ]
                         [ div ~a:[ a_class [ "span-2" ] ] [ location_details ]
                         ; div
-                            ~a:
-                              [ a_class [ "inset"; "border"; "bg-grey-light" ] ]
+                            ~a:[ a_class [ "inset"; "border"; "bg-grey-lightest" ] ]
                             [ make_statistics
                                 statistics_year_range
                                 language
@@ -682,9 +643,51 @@ let detail
                     ]
                 ]
             ; public_page_link
-            ; FileList.create csrf language location
             ]
+        ; FileList.create csrf language location files
         ; Component.Calendar.(create (Location location.Pool_location.id))
+        ; Component.Changelog.list context changelog_url None
         ]
+    ]
+;;
+
+let assignment_list context location session =
+  let url =
+    HttpUtils.Url.Admin.location_session_path
+      location.Pool_location.id
+      session.Session.id
+      ()
+  in
+  Page_admin_assignments.data_table
+    ~table_context:`LocationSession
+    ~access_contact_profiles:false
+    ~view_contact_name:true
+    ~view_contact_info:false
+    ~send_direct_message:false
+    ~url
+    context
+    (`Session session)
+    false
+;;
+
+let session ({ Pool_context.language; _ } as context) location session assignments =
+  let assignments =
+    div
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Assignments) ]
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ Page_admin_assignments.Partials.table_legend language
+          ; assignment_list context location session assignments
+          ]
+      ]
+  in
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ h1 [ txt (Session.Id.value session.Session.id) ]
+    ; div
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ Page_admin_session.session_details context session; assignments ]
     ]
 ;;

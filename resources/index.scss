@@ -1,15 +1,22 @@
 @use "sass:color";
-$font-path: "../node_modules/@econ/frontend-framework/dist/font";
-@import "../node_modules/@econ/frontend-framework/dist/main.scss";
-@import "./admin/calendar";
+@use "sass:math";
+@use "@econ/frontend-framework/dist/main" with ($notification-position: 7rem 0 auto 0,
+    $font-path: "../node_modules/@econ/frontend-framework/dist/font",
+    $header-height: 124px,
+    $header-height-mobile: 96px,
+);
+@use "@econ/frontend-framework/dist/sass/colors" as c;
+@use "@econ/frontend-framework/dist/sass/variables" as vars;
+@use "@econ/frontend-framework/dist/sass/breakpoints";
 
-$green-lighter: color.adjust($green, $lightness: $color-shades-ratio * 3);
-$red-lighter: color.adjust($red, $lightness: $color-shades-ratio * 3);
-
-$green-light: color.adjust($green, $lightness: $color-shades-ratio * 2);
-$red-light: color.adjust($red, $lightness: $color-shades-ratio * 2);
+@use "./admin/calendar";
 
 $orange: rgb(226, 117, 0) !default;
+
+.color-orange,
+[class*="orange-on-"] {
+    color: $orange;
+}
 
 // Typography
 h1,
@@ -17,43 +24,34 @@ h1,
     word-wrap: break-word;
 }
 
-@include mobile {
-    *+h1, h1+*, *+h2, *+.heading-1, .heading-1+*, *+.heading-2{
-        margin-top: $space-md;
-    }  
+.font-size-xl {
+    font-size: 1.5rem;
 }
 
-
-.word-wrap-break {
-    -ms-word-break: break-word;
-    
-    /* Non standard for webkit */
-    word-break: break-word;
-    -webkit-hyphens: auto;
-    -moz-hyphens: auto;
-    -ms-hyphens: auto;
-    hyphens: auto;
+.visible-only-child:not(:only-child) {
+    display: none;
 }
 
-.color-orange,
-[class*="orange-on-"] {
-    color: $orange;
+// Experimental
+.btn {
+    white-space: nowrap
 }
 
-ul.no-style {
-    list-style: none;
-    padding: 0;
+@include breakpoints.econ-mobile {
+
+    *+h1,
+    h1+*,
+    *+h2,
+    *+.heading-1,
+    .heading-1+*,
+    *+.heading-2 {
+        margin-top: vars.$space-md;
+    }
 }
 
-[class*="inset"].top {
-    padding-left: 0;
-    padding-bottom: 0;
-    padding-right: 0;
-}
-
-@include mobile {
+@include breakpoints.econ-mobile {
     .sm-inset-lg {
-        padding: $space-lg;
+        padding: vars.$space-lg;
     }
 }
 
@@ -74,34 +72,37 @@ form[class*="stack"] input[type="hidden"]+* {
 }
 
 .grouped-input {
-    border-radius: $border-radius;
-    border: 1px solid $grey;
+    border-radius: vars.$border-radius;
+    border: 1px solid c.$grey-light;
     overflow: hidden;
 
-    select, input {
+    select,
+    input {
         border: none;
         border-radius: 0;
     }
 
-    & > * {
+    &>* {
         width: auto;
     }
 
-    & > .select select {
-        padding-right: $space-base * 2;
+    &>.select select {
+        padding-right: vars.$space-base * 2;
         width: auto;
-        background-color: $grey-light;
-        border-left: 1px solid $grey;
+        min-width: 7.5rem;
+        background-color: c.$grey-lighter;
+        border-left: 1px solid c.$grey-lighter;
     }
 }
 
-input[readonly], select[readonly] {
-    background-color: $grey-light;
-    color: $grey-dark;
+input[readonly],
+select[readonly] {
+    background-color: c.$grey-light;
+    color: c.$grey-dark;
     cursor: not-allowed;
 
     &:hover {
-      background-color: $grey-light;
+        background-color: c.$grey-light;
     }
 }
 
@@ -111,7 +112,7 @@ input[readonly], select[readonly] {
     flex-shrink: 0;
 }
 
-@include mobile {
+@include breakpoints.econ-mobile {
     .index-page {
         flex-direction: column;
     }
@@ -132,11 +133,11 @@ input[readonly], select[readonly] {
     label,
     input,
     select {
-        font-size: $small-font-size;
+        font-size: vars.$font-size-sm;
     }
 
     .key-select {
-        flex-basis: calc(calc(100% - (2 * $space-base)) / 3);
+        flex-basis: calc(calc(100% - (2 * vars.$space-base)) / 3);
     }
 
     .border {
@@ -150,42 +151,34 @@ input[readonly], select[readonly] {
         &[data-predicate="and"],
         &[data-predicate="or"] {
             &>.predicate-inner>.predicate-wrapper {
-                padding-left: $space-sm;
-                border-left: 2px solid $grey-border;
+                padding-left: vars.$space-sm;
+                border-left: 2px solid c.$grey-border;
             }
         }
     }
 
     [data-delete-predicate] {
-        color: $red;
+        color: c.$red;
         cursor: pointer;
-    }
-
-    [data-new-predicate] button {
-        padding: $space-xs $space-sm;
     }
 }
 
 .filter-bar-reset {
     grid-column: 4;
 
-    @include until($desktop-breakpoint) {
+    @include breakpoints.econ-until(breakpoints.$desktop-breakpoint) {
         grid-column: 2;
     }
-    
-    @include until($tablet-breakpoint) {
+
+    @include breakpoints.econ-until(breakpoints.$tablet-breakpoint) {
         grid-column: 1;
     }
 }
 
-@include until($tablet-breakpoint) {
+@include breakpoints.econ-until(breakpoints.$tablet-breakpoint) {
     [class*="grid-"] .search-bar {
         grid-column: span 1;
     }
-}
-
-.hide-empty:empty {
-    display: none;
 }
 
 #filter-form,
@@ -198,10 +191,10 @@ input[readonly], select[readonly] {
 
     .data-list>[data-selection-item] {
         @extend .has-icon;
-        padding: $space-sm;
+        padding: vars.$space-sm;
 
         &:hover {
-            background-color: $grey-light;
+            background-color: c.$grey-light;
         }
 
         .toggle-item {
@@ -215,8 +208,8 @@ input[readonly], select[readonly] {
 }
 
 [data-search-selection] {
-    row-gap: $space-xs;
-    column-gap: $space-sm;
+    row-gap: vars.$space-xs;
+    column-gap: vars.$space-sm;
 }
 
 // Flex
@@ -225,7 +218,7 @@ input[readonly], select[readonly] {
         flex-basis: 50%;
     }
 
-    @include until($tablet-breakpoint) {
+    @include breakpoints.econ-until(breakpoints.$tablet-breakpoint) {
         flex-direction: column-reverse;
     }
 }
@@ -236,32 +229,19 @@ abbr[title] {
 
 // CK Editor
 .form-group:not(.horizontal)>*~.ck {
-    margin-top: $space-xs;
+    margin-top: vars.$space-xs;
 }
 
 .ck-content {
     @extend textarea;
 }
 
-// Typography
-.nobr {
-    white-space: nowrap;
+// This z-index is required to make sure button dropdowns work despite the mouseover js event
+#chronological-session-list .has-dropdown {
+    z-index: 5;
 }
 
-.word-break-all {
-    word-break: break-all;
-}
-
-// Color
-.table.striped tr:nth-child(1n).bg-green-lighter {
-    background-color: $green-lighter;
-}
-
-.table.striped tr:nth-child(1n).bg-red-lighter {
-    background-color: $red-lighter;
-}
-
-.table tr.highlighted {
+#chronological-session-list tr.highlighted {
     position: relative;
 
     &:after {
@@ -271,8 +251,9 @@ abbr[title] {
         right: 0;
         top: 0;
         bottom: 0;
-        background-color: $black;
+        background-color: c.$black;
         opacity: 0.05;
+        z-index: 0;
     }
 
     a,
@@ -282,7 +263,7 @@ abbr[title] {
 }
 
 .legend-item {
-    width: $space-base;
+    width: vars.$space-base;
     display: flex;
 }
 
@@ -293,11 +274,11 @@ abbr[title] {
 button.as-link {
     padding: 0;
     border: none;
-    color: $color-primary;
+    color: c.$color-primary;
     background-color: transparent;
 
     &:hover {
-        color: $color-primary;
+        color: c.$color-primary;
         background-color: transparent;
     }
 }
@@ -316,17 +297,6 @@ button.as-link {
     }
 }
 
-// Logo
-.app-title {
-    font-weight: $font-weight-bold;
-    font-size: ms-font-size(2);
-
-    a {
-        color: $color-text-dark;
-        text-decoration: none;
-    }
-}
-
 // Table
 table.fixed {
     table-layout: fixed;
@@ -336,9 +306,9 @@ table.width-auto {
     width: auto;
 }
 
-@include mobile {
+@include breakpoints.econ-mobile {
     .table.break-mobile th {
-        display: none;
+        width: 100%;
     }
 }
 
@@ -366,70 +336,71 @@ table.width-auto {
 
 table.simple {
     tbody tr:not(:last-child) th {
-        border-bottom: $border-width solid $grey-border;
+        border-bottom: vars.$border-width solid c.$grey-border;
     }
 }
 
 [data-statistics] .table.simple th {
-    font-weight: $font-weight-normal;
+    font-weight: vars.$font-weight-normal;
     padding-left: 0;
 }
 
 .session-close-checkboxes {
-    @extend .flexrow;
-    @extend .flex-gap;
-    width: 5rem;
-    align-items: flex-start;
-    padding-top: $space-xs;
+    display: flex;
+    width: 9rem;
+    justify-content: flex-end;
+    padding-top: vars.$space-xs;
     margin-left: auto;
+
     &>* {
-        flex-basis: 50%;
+        flex-basis: 3rem;
         display: flex;
         justify-content: center;
     }
 }
 
+.session-close-box {
+    width: 3rem;
+}
+
 #session-close-table .custom-data {
     display: flex;
-    & > * {
+    flex-direction: column;
+    align-self: flex-start;
+
+    &>* {
+        flex-direction: row;
         flex-basis: 100%;
+    }
+
+    &>*+* {
+        margin-top: vars.$space-xs;
+    }
+
+    [data-label]:before {
+        content: attr(data-label);
+        width: 50%;
+        font-weight: 600;
     }
 }
 
-@include mobile { 
-    
-    .session-close-header .custom-data > * {
+@include breakpoints.econ-mobile {
+
+    .session-close-header .custom-data>* {
         display: none;
     }
 
-    #session-close-table .striped {      
-        & > * {
+    #session-close-table .striped {
+        &>* {
             flex-direction: column;
-            & > * + * {
-                margin-top: $space-sm;
+
+            &>*+* {
+                margin-top: vars.$space-sm;
             }
         }
 
-        & > * > * {
+        &>*>* {
             width: 100%;
-        }
-    }
-
-    .custom-data {
-        flex-direction: column;
-        
-        & > * + * {
-            margin-top: $space-xs;
-        }
-        
-        & > * {
-            flex-direction: row;
-        }
-
-        [data-label]:before {
-            content: attr(data-label);
-            width: 30%;
-            font-weight: $font-weight-bold;    
         }
     }
 }
@@ -454,7 +425,7 @@ table.simple {
 
     &,
     &:hover {
-        background-color: $red-lighter;
+        background-color: c.$red-lighter;
     }
 }
 
@@ -479,12 +450,38 @@ table.simple {
     z-index: 12;
 }
 
+.mobile-nav {
+    height: calc(100dvh - #{vars.$header-height-mobile + 1px});
+}
+
+.mobile-nav-inner h2 {
+    margin-bottom: vars.$space-lg;
+}
+
+.app-header {
+    z-index: 10;
+}
+
+body.nav-open {
+    padding-top: vars.$header-height;
+
+    @include breakpoints.econ-mobile {
+        padding-top: vars.$header-height-mobile;
+    }
+
+    .app-header {
+        top: 0;
+        position: fixed;
+    }
+}
+
+
 .note+* {
-    margin-top: $space-base;
+    margin-top: vars.$space-base;
 }
 
 .collapsible.note .collapsible-title {
-    gap: $space-base;
+    gap: vars.$space-base;
 }
 
 .note.active .collapsible-header i[class*="icon-help"] {
@@ -492,29 +489,11 @@ table.simple {
 }
 
 .has-icon.flex-gap-xs {
-    gap: $space-xs;
+    gap: vars.$space-xs;
 }
 
-// Session list
-@include mobile {
-    .session-list.break-mobile {
-        td>.inset.left {
-            padding: 0;
-        }
-
-        td[data-label] {
-            flex-direction: row;
-            gap: $space-sm;
-
-            &:before {
-                width: 50%;
-            }
-        }
-
-        .follow-up {
-            padding-left: $space-base;
-        }
-
+@include breakpoints.econ-mobile {
+    .table.break-mobile {
         .button-list {
             margin: 0;
 
@@ -546,7 +525,7 @@ table.simple {
             }
 
             li+li {
-                margin-top: $space-sm;
+                margin-top: vars.$space-sm;
             }
         }
     }
@@ -554,29 +533,145 @@ table.simple {
 
 // Display EMail Template rich text
 .force-normalize-fonts {
-    h1, h2, h3, h4, h5 {
-        font-size: $body-font-size;
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5 {
+        font-size: vars.$body-font-size;
     }
 }
 
+// WORKAROUND: Could be added to the framework
 // Width base classes
 $i: 1;
 $n: 12;
 
-@while $i < $n + 1 {
+@while $i < ($n + 1) {
     .w-#{$i} {
-        width: percentage(calc(1 / $n) * $i);
+        width: math.percentage(calc(1 / $n) * $i);
     }
 
     $i: $i + 1;
 }
 
-@include until($tablet-breakpoint) {
+@include breakpoints.econ-until(breakpoints.$tablet-breakpoint) {
     [class*='grid-col-'] [class*='span-'] {
         grid-column: span 1;
     }
 }
 
-[class*='grid-col-'].stretch-only-child  > *:only-child{
+[class*='grid-col-'].stretch-only-child>*:only-child {
     grid-column: 1 / -1;
+}
+
+.break-grid {
+    grid-column: 1;
+}
+
+
+input[type="checkbox"][readonly] {
+    filter: grayscale(1);
+    opacity: 0.8;
+}
+
+
+// Changelog
+.changes-cell {
+    div {
+        display: flex;
+    }
+
+    div:last-child {
+        flex-grow: 1;
+    }
+
+    .changelog-separator {
+        padding-left: vars.$space-xs;
+        padding-right: vars.$space-xs;
+    }
+
+    .changelog-key {
+        text-transform: capitalize;
+    }
+}
+
+.change-row {
+    @include breakpoints.econ-mobile {
+        flex-direction: column;
+        padding-bottom: vars.$space-xs;
+        margin-bottom: vars.$space-xs;
+        border-bottom: 1px solid c.$grey-border;
+
+        .change-row,
+        .changelog-changes {
+            flex-direction: column;
+        }
+    }
+}
+
+// Statistics
+
+.stretch-table-cells .table tr {
+
+    td,
+    th {
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+// Grid
+@supports (display: grid) {
+    [class*="grid-"] {
+        &.grid-row-gap-sm {
+            row-gap: vars.$space-sm;
+        }
+
+        &.grid-row-gap-md {
+            row-gap: vars.$space-md;
+        }
+
+        &.grid-row-gap-lg {
+            row-gap: vars.$space-lg;
+        }
+
+        &.grid-row-gap-xl {
+            row-gap: vars.$space-xl;
+        }
+    }
+}
+
+.truncate-6 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    line-clamp: 6;
+    -webkit-box-orient: vertical;
+}
+
+.panel-list {
+    &>.panel+.panel {
+        border-top: 0;
+    }
+}
+
+.panel {
+    border: 1px solid c.$grey-border;
+
+    .counter {
+        font-size: 1.5rem;
+        font-weight: bold;
+        padding: 0 vars.$space-sm;
+    }
+}
+
+a.panel {
+    color: inherit;
+}
+
+.notification.align-stretch {
+    align-items: stretch;
 }

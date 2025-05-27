@@ -2,6 +2,7 @@ include Entity
 include Event
 module Guard = Entity_guard
 module Human = Entity_human
+module VersionHistory = Version_history
 module UtilsF = Filter_utils
 
 let find = Repo.find
@@ -50,10 +51,7 @@ let rec t_to_human key_list subquery_list (t : query) =
   | Pred { Predicate.key; operator; value } ->
     Human.Pred
       Predicate.
-        { key = Key.to_human key_list key
-        ; operator = Some operator
-        ; value = Some value
-        }
+        { key = Key.to_human key_list key; operator = Some operator; value = Some value }
   | Template filter_id ->
     subquery_list
     |> CCList.find_opt (fun filter -> Pool_common.Id.equal filter.id filter_id)
@@ -88,7 +86,7 @@ let toggle_predicate_type (filter : Human.t) predicate_type =
   | "not" -> Ok (Not (Pred (find_predicate filter)))
   | "pred" -> Ok (Pred (find_predicate filter) : t)
   | "template" -> Ok (Template None)
-  | _ -> Error Pool_common.Message.(Invalid Field.Filter)
+  | _ -> Error Pool_message.(Error.Invalid Field.Filter)
 ;;
 
 let all_in_query_fcn fcn { query; _ } =
@@ -104,8 +102,7 @@ let all_in_query_fcn fcn { query; _ } =
 let[@warning "-4"] all_query_experiments =
   let open Entity.Key in
   all_in_query_fcn (function
-    | Hardcoded Participation, Entity.Lst lst ->
-      lst |> Filter_utils.single_val_to_id
+    | Hardcoded Participation, Entity.Lst lst -> lst |> Filter_utils.single_val_to_id
     | _, _ -> [])
 ;;
 

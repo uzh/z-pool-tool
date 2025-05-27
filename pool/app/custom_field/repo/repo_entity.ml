@@ -1,135 +1,7 @@
 open CCFun
 open Entity
-open Ppx_yojson_conv_lib.Yojson_conv
-module Common = Pool_common
+include Repo_entity_base
 module Answer = Repo_entity_answer
-
-let encode_yojson of_t t = t |> of_t |> Yojson.Safe.to_string |> CCResult.return
-
-let decode_yojson t_of_yojson field t =
-  let read s = s |> Yojson.Safe.from_string |> t_of_yojson in
-  try Ok (read t) with
-  | _ ->
-    Error
-      Pool_common.(Utils.error_to_string Language.En Message.(Invalid field))
-;;
-
-type multi_select_answer = SelectOption.Id.t list [@@deriving yojson]
-
-module Model = Pool_common.Repo.Model.SelectorType (Model)
-
-module Name = struct
-  include Name
-
-  let t =
-    let encode = encode_yojson yojson_of_t in
-    let decode = decode_yojson t_of_yojson Pool_common.Message.Field.Name in
-    Caqti_type.(custom ~encode ~decode string)
-  ;;
-end
-
-module Hint = struct
-  include Hint
-
-  let t =
-    let encode = encode_yojson yojson_of_t in
-    let decode = decode_yojson t_of_yojson Pool_common.Message.Field.Hint in
-    Caqti_type.(custom ~encode ~decode string)
-  ;;
-end
-
-module FieldType = struct
-  include Pool_common.Repo.Model.SelectorType (FieldType)
-  include FieldType
-end
-
-module Validation = struct
-  include Validation
-
-  let t =
-    let encode = encode_yojson CCFun.id in
-    let decode = decode_yojson CCFun.id Pool_common.Message.Field.Validation in
-    Caqti_type.(custom ~encode ~decode string)
-  ;;
-end
-
-module Required = struct
-  include Required
-
-  let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
-  ;;
-end
-
-module Disabled = struct
-  include Disabled
-
-  let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
-  ;;
-end
-
-module PublishedAt = struct
-  include PublishedAt
-
-  let t = Pool_common.Repo.make_caqti_type Caqti_type.ptime create value
-end
-
-module AdminHint = struct
-  include AdminHint
-
-  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
-end
-
-module AdminOverride = struct
-  include AdminOverride
-
-  let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
-  ;;
-end
-
-module AdminViewOnly = struct
-  include AdminViewOnly
-
-  let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
-  ;;
-end
-
-module AdminInputOnly = struct
-  include AdminInputOnly
-
-  let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
-  ;;
-end
-
-module PromptOnRegistration = struct
-  include PromptOnRegistration
-
-  let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
-  ;;
-end
 
 module Option = struct
   open Entity.SelectOption
@@ -148,9 +20,7 @@ module Option = struct
   type repo = Pool_common.Id.t * t
 
   let t =
-    let encode ((field_id, m) : repo) =
-      Ok (field_id, (m.id, (m.name, m.published_at)))
-    in
+    let encode ((field_id, m) : repo) = Ok (field_id, (m.id, (m.name, m.published_at))) in
     let decode (field_id, (id, (name, published_at))) =
       Ok (field_id, { id; name; published_at })
     in
@@ -169,8 +39,7 @@ module Option = struct
     let t =
       let encode ((field_id, m) : repo) = Ok (field_id, (m.id, m.name)) in
       let decode (field_id, (id, name)) = Ok (field_id, { id; name }) in
-      Caqti_type.(
-        custom ~encode ~decode (t2 Pool_common.Repo.Id.t (t2 Id.t Name.t)))
+      Caqti_type.(custom ~encode ~decode (t2 Pool_common.Repo.Id.t (t2 Id.t Name.t)))
     ;;
 
     let to_entity = snd
@@ -183,11 +52,7 @@ module Option = struct
   module Insert = struct
     let t =
       let encode ((field_id, m) : repo) = Ok (field_id, (m.id, m.name)) in
-      let decode _ =
-        failwith
-          Pool_common.(
-            Message.WriteOnlyModel |> Utils.error_to_string Language.En)
-      in
+      let decode _ = Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith in
       Caqti_type.(
         custom
           ~encode
@@ -199,11 +64,7 @@ module Option = struct
   module Update = struct
     let t =
       let encode m = Ok (m.SelectOption.id, m.name) in
-      let decode _ =
-        failwith
-          Pool_common.(
-            Message.WriteOnlyModel |> Utils.error_to_string Language.En)
-      in
+      let decode _ = Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith in
       Caqti_type.(custom ~encode ~decode (t2 Pool_common.Repo.Id.t Name.t))
     ;;
   end
@@ -228,6 +89,7 @@ module Write = struct
       ; prompt_on_registration = prompt_on_registration t
       ; show_on_session_close_page = show_on_session_close_page t
       ; show_on_session_detail_page = show_on_session_detail_page t
+      ; duplicate_weighting = duplicate_weighting t
       }
   ;;
 
@@ -250,20 +112,17 @@ module Write = struct
                               , ( m.admin_input_only
                                 , ( m.prompt_on_registration
                                   , ( m.show_on_session_close_page
-                                    , m.show_on_session_detail_page ) ) ) ) ) )
-                        ) ) ) ) ) ) ) ) )
+                                    , ( m.show_on_session_detail_page
+                                      , m.duplicate_weighting ) ) ) ) ) ) ) ) ) ) ) ) ) )
+          ) )
     in
-    let decode _ =
-      failwith
-        Pool_common.(
-          Message.WriteOnlyModel |> Utils.error_to_string Language.En)
-    in
+    let decode _ = Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith in
     Caqti_type.(
       custom
         ~encode
         ~decode
         (t2
-           Common.Repo.Id.t
+           Pool_common.Repo.Id.t
            (t2
               Model.t
               (t2
@@ -279,7 +138,7 @@ module Write = struct
                              (t2
                                 Disabled.t
                                 (t2
-                                   (option Common.Repo.Id.t)
+                                   (option Pool_common.Repo.Id.t)
                                    (t2
                                       (option AdminHint.t)
                                       (t2
@@ -290,7 +149,7 @@ module Write = struct
                                                AdminInputOnly.t
                                                (t2
                                                   PromptOnRegistration.t
-                                                  (t2 bool bool))))))))))))))))
+                                                  (t2 bool (t2 bool (option int))))))))))))))))))
   ;;
 end
 
@@ -316,13 +175,13 @@ module Public = struct
   [@@deriving show, eq]
 
   let create_answer
-    id
-    entity_uuid
-    ~is_admin
-    ~admin_override
-    ~answer_value
-    ~answer_admin_value
-    parse_value
+        id
+        entity_uuid
+        ~is_admin
+        ~admin_override
+        ~answer_value
+        ~answer_admin_value
+        parse_value
     =
     let open CCOption.Infix in
     match id, entity_uuid with
@@ -330,38 +189,34 @@ module Public = struct
     | Some id, Some entity_uuid ->
       let value = answer_value >>= parse_value in
       let admin_value =
-        if is_admin && admin_override
-        then answer_admin_value >>= parse_value
-        else None
+        if is_admin && admin_override then answer_admin_value >>= parse_value else None
       in
       Entity_answer.create ~id ?admin_value entity_uuid value |> CCOption.pure
   ;;
 
   let to_entity
-    is_admin
-    select_options
-    { id
-    ; name
-    ; hint
-    ; validation
-    ; field_type
-    ; required
-    ; admin_override
-    ; admin_input_only
-    ; prompt_on_registration
-    ; answer_id
-    ; answer_entity_uuid
-    ; answer_value
-    ; answer_admin_value
-    ; version
-    ; admin_version
-    ; _
-    }
+        is_admin
+        select_options
+        { id
+        ; name
+        ; hint
+        ; validation
+        ; field_type
+        ; required
+        ; admin_override
+        ; admin_input_only
+        ; prompt_on_registration
+        ; answer_id
+        ; answer_entity_uuid
+        ; answer_value
+        ; answer_admin_value
+        ; version
+        ; admin_version
+        ; _
+        }
     =
     let open CCOption.Infix in
-    let validation_schema schema =
-      Validation.(validation |> raw_of_yojson |> schema)
-    in
+    let validation_schema schema = Validation.(validation |> raw_of_yojson |> schema) in
     let version =
       (if is_admin then admin_version else version)
       |> CCOption.value ~default:(Pool_common.Version.create ())
@@ -460,7 +315,7 @@ module Public = struct
       let options =
         CCList.filter_map
           (fun (field_id, option) ->
-            if Pool_common.Id.equal field_id id then Some option else None)
+             if Pool_common.Id.equal field_id id then Some option else None)
           select_options
       in
       Public.Select
@@ -480,7 +335,7 @@ module Public = struct
       let select_options =
         CCList.filter_map
           (fun (field_id, option) ->
-            if Pool_common.Id.equal field_id id then Some option else None)
+             if Pool_common.Id.equal field_id id then Some option else None)
           select_options
       in
       let validation = validation_schema Validation.MultiSelect.schema in
@@ -488,9 +343,7 @@ module Public = struct
         let open SelectOption in
         let create value =
           let options =
-            try
-              value |> Yojson.Safe.from_string |> multi_select_answer_of_yojson
-            with
+            try value |> Yojson.Safe.from_string |> multi_select_answer_of_yojson with
             | _ -> []
           in
           match options with
@@ -556,27 +409,25 @@ module Public = struct
     let partition_map fields { Group.id; _ } =
       CCList.partition_filter_map
         (fun (field : repo) ->
-          match
-            field.custom_field_group_id
-            |> CCOption.map_or ~default:false (Id.equal id)
-          with
-          | true -> `Left (to_entity field)
-          | false -> `Right field)
+           match
+             field.custom_field_group_id |> CCOption.map_or ~default:false (Id.equal id)
+           with
+           | true -> `Left (to_entity field)
+           | false -> `Right field)
         fields
     in
     let grouped, ungrouped =
       CCList.fold_left
         (fun (groups, fields) group ->
-          let of_group, rest = partition_map fields group in
-          let group =
-            Group.{ Public.id = group.id; name = group.name; fields = of_group }
-          in
-          CCList.append groups [ group ], rest)
+           let of_group, rest = partition_map fields group in
+           let group =
+             Group.{ Public.id = group.id; name = group.name; fields = of_group }
+           in
+           CCList.append groups [ group ], rest)
         ([], fields)
         groups
     in
-    ( grouped
-      |> CCList.filter (fun g -> CCList.is_empty g.Group.Public.fields |> not)
+    ( grouped |> CCList.filter (fun g -> CCList.is_empty g.Group.Public.fields |> not)
     , ungrouped |> CCList.map to_entity )
   ;;
 
@@ -585,26 +436,23 @@ module Public = struct
   ;;
 
   let t =
-    let encode _ =
-      failwith
-        Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
-    in
+    let encode _ = Pool_message.Error.ReadOnlyModel |> Pool_common.Utils.failwith in
     let decode
-      ( id
-      , ( name
-        , ( hint
-          , ( validation
-            , ( field_type
-              , ( required
-                , ( custom_field_group_id
-                  , ( admin_override
-                    , ( admin_input_only
-                      , ( prompt_on_registration
-                        , ( answer_id
-                          , ( answer_entity_uuid
-                            , ( answer_value
-                              , (answer_admin_value, (version, admin_version))
-                              ) ) ) ) ) ) ) ) ) ) ) ) )
+          ( id
+          , ( name
+            , ( hint
+              , ( validation
+                , ( field_type
+                  , ( required
+                    , ( custom_field_group_id
+                      , ( admin_override
+                        , ( admin_input_only
+                          , ( prompt_on_registration
+                            , ( answer_id
+                              , ( answer_entity_uuid
+                                , ( answer_value
+                                  , (answer_admin_value, (version, admin_version)) ) ) )
+                            ) ) ) ) ) ) ) ) ) )
       =
       Ok
         { id
@@ -630,7 +478,7 @@ module Public = struct
         ~encode
         ~decode
         (t2
-           Common.Repo.Id.t
+           Pool_common.Repo.Id.t
            (t2
               Name.t
               (t2
@@ -642,7 +490,7 @@ module Public = struct
                        (t2
                           Required.t
                           (t2
-                             (option Common.Repo.Id.t)
+                             (option Pool_common.Repo.Id.t)
                              (t2
                                 AdminOverride.t
                                 (t2
@@ -650,18 +498,16 @@ module Public = struct
                                    (t2
                                       PromptOnRegistration.t
                                       (t2
-                                         (option Common.Repo.Id.t)
+                                         (option Pool_common.Repo.Id.t)
                                          (t2
-                                            (option Common.Repo.Id.t)
+                                            (option Pool_common.Repo.Id.t)
                                             (t2
                                                (option Caqti_type.string)
                                                (t2
                                                   (option Caqti_type.string)
                                                   (t2
-                                                     (option
-                                                        Common.Repo.Version.t)
-                                                     (option
-                                                        Common.Repo.Version.t)))))))))))))))))
+                                                     (option Pool_common.Repo.Version.t)
+                                                     (option Pool_common.Repo.Version.t)))))))))))))))))
   ;;
 end
 
@@ -683,32 +529,30 @@ type repo =
   ; published_at : PublishedAt.t option
   ; show_on_session_close_page : bool
   ; show_on_session_detail_page : bool
+  ; duplicate_weighting : int option
   }
 
 let t =
-  let encode _ =
-    failwith
-      Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
-  in
+  let encode _ = Pool_message.Error.ReadOnlyModel |> Pool_common.Utils.failwith in
   let decode
-    ( id
-    , ( model
-      , ( name
-        , ( hint
-          , ( field_type
-            , ( validation
-              , ( required
-                , ( disabled
-                  , ( custom_field_group_id
-                    , ( admin_hint
-                      , ( admin_override
-                        , ( admin_view_only
-                          , ( admin_input_only
-                            , ( prompt_on_registration
-                              , ( published_at
-                                , ( show_on_session_close_page
-                                  , show_on_session_detail_page ) ) ) ) ) ) ) )
-                  ) ) ) ) ) ) ) )
+        ( id
+        , ( model
+          , ( name
+            , ( hint
+              , ( field_type
+                , ( validation
+                  , ( required
+                    , ( disabled
+                      , ( custom_field_group_id
+                        , ( admin_hint
+                          , ( admin_override
+                            , ( admin_view_only
+                              , ( admin_input_only
+                                , ( prompt_on_registration
+                                  , ( published_at
+                                    , ( show_on_session_close_page
+                                      , (show_on_session_detail_page, duplicate_weighting)
+                                      ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -729,6 +573,7 @@ let t =
       ; published_at
       ; show_on_session_close_page
       ; show_on_session_detail_page
+      ; duplicate_weighting
       }
   in
   Caqti_type.(
@@ -736,7 +581,7 @@ let t =
       ~encode
       ~decode
       (t2
-         Common.Repo.Id.t
+         Pool_common.Repo.Id.t
          (t2
             Model.t
             (t2
@@ -752,7 +597,7 @@ let t =
                            (t2
                               Disabled.t
                               (t2
-                                 (option Common.Repo.Id.t)
+                                 (option Pool_common.Repo.Id.t)
                                  (t2
                                     (option AdminHint.t)
                                     (t2
@@ -765,80 +610,17 @@ let t =
                                                 PromptOnRegistration.t
                                                 (t2
                                                    (option PublishedAt.t)
-                                                   (t2 bool bool)))))))))))))))))
+                                                   (t2 bool (t2 bool (option int)))))))))))))))))))
 ;;
 
 let to_entity
-  select_options
-  { id
-  ; model
-  ; name
-  ; hint
-  ; validation
-  ; field_type
-  ; required
-  ; disabled
-  ; custom_field_group_id
-  ; admin_hint
-  ; admin_override
-  ; admin_view_only
-  ; admin_input_only
-  ; prompt_on_registration
-  ; published_at
-  ; show_on_session_close_page
-  ; show_on_session_detail_page
-  }
-  =
-  let validation_schema schema =
-    Validation.(validation |> raw_of_yojson |> schema)
-  in
-  match field_type with
-  | FieldType.Boolean ->
-    Boolean
-      { id
-      ; model
-      ; name
-      ; hint
-      ; validation = Validation.pure
-      ; required
-      ; disabled
-      ; custom_field_group_id
-      ; admin_hint
-      ; admin_override
-      ; admin_view_only
-      ; admin_input_only
-      ; prompt_on_registration
-      ; published_at
-      ; show_on_session_close_page
-      ; show_on_session_detail_page
-      }
-  | FieldType.Date ->
-    Date
-      { id
-      ; model
-      ; name
-      ; hint
-      ; validation = Validation.pure
-      ; required
-      ; disabled
-      ; custom_field_group_id
-      ; admin_hint
-      ; admin_override
-      ; admin_view_only
-      ; admin_input_only
-      ; prompt_on_registration
-      ; published_at
-      ; show_on_session_close_page
-      ; show_on_session_detail_page
-      }
-  | FieldType.Number ->
-    let validation = validation_schema Validation.Number.schema in
-    Number
+      select_options
       { id
       ; model
       ; name
       ; hint
       ; validation
+      ; field_type
       ; required
       ; disabled
       ; custom_field_group_id
@@ -850,78 +632,54 @@ let to_entity
       ; published_at
       ; show_on_session_close_page
       ; show_on_session_detail_page
+      ; duplicate_weighting
       }
+  =
+  let validation_schema schema = Validation.(validation |> raw_of_yojson |> schema) in
+  let make_field validation =
+    { id
+    ; model
+    ; name
+    ; hint
+    ; validation
+    ; required
+    ; disabled
+    ; custom_field_group_id
+    ; admin_hint
+    ; admin_override
+    ; admin_view_only
+    ; admin_input_only
+    ; prompt_on_registration
+    ; published_at
+    ; show_on_session_close_page
+    ; show_on_session_detail_page
+    ; duplicate_weighting
+    }
+  in
+  match field_type with
+  | FieldType.Boolean -> Boolean (make_field Validation.pure)
+  | FieldType.Date -> Date (make_field Validation.pure)
+  | FieldType.Number ->
+    let validation = validation_schema Validation.Number.schema in
+    Number (make_field validation)
   | FieldType.Select ->
     let options =
       CCList.filter_map
         (fun (field_id, option) ->
-          if Pool_common.Id.equal field_id id then Some option else None)
+           if Pool_common.Id.equal field_id id then Some option else None)
         select_options
     in
-    Select
-      ( { id
-        ; model
-        ; name
-        ; hint
-        ; validation = Validation.pure
-        ; required
-        ; disabled
-        ; custom_field_group_id
-        ; admin_hint
-        ; admin_override
-        ; admin_view_only
-        ; admin_input_only
-        ; prompt_on_registration
-        ; published_at
-        ; show_on_session_close_page
-        ; show_on_session_detail_page
-        }
-      , options )
+    Select (make_field Validation.pure, options)
   | FieldType.MultiSelect ->
     let options =
       CCList.filter_map
         (fun (field_id, option) ->
-          if Pool_common.Id.equal field_id id then Some option else None)
+           if Pool_common.Id.equal field_id id then Some option else None)
         select_options
     in
     let validation = validation_schema Validation.MultiSelect.schema in
-    MultiSelect
-      ( { id
-        ; model
-        ; name
-        ; hint
-        ; validation
-        ; required
-        ; disabled
-        ; custom_field_group_id
-        ; admin_hint
-        ; admin_override
-        ; admin_view_only
-        ; admin_input_only
-        ; prompt_on_registration
-        ; published_at
-        ; show_on_session_close_page
-        ; show_on_session_detail_page
-        }
-      , options )
+    MultiSelect (make_field validation, options)
   | FieldType.Text ->
     let validation = validation_schema Validation.Text.schema in
-    Text
-      { id
-      ; model
-      ; name
-      ; hint
-      ; validation
-      ; required
-      ; disabled
-      ; custom_field_group_id
-      ; admin_hint
-      ; admin_override
-      ; admin_view_only
-      ; admin_input_only
-      ; prompt_on_registration
-      ; published_at
-      ; show_on_session_close_page
-      ; show_on_session_detail_page
-      }
+    Text (make_field validation)
 ;;

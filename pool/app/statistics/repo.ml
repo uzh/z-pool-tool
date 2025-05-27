@@ -20,12 +20,7 @@ let active_contacts_request =
   count_contacts_select |> Caqti_type.(unit ->! int)
 ;;
 
-let active_contacts pool =
-  Utils.Database.find
-    (Pool_database.Label.value pool)
-    active_contacts_request
-    ()
-;;
+let active_contacts pool = Database.find pool active_contacts_request ()
 
 let pending_contact_imports_request =
   let open Caqti_request.Infix in
@@ -43,12 +38,7 @@ let pending_contact_imports_request =
   |> Caqti_type.(unit ->! int)
 ;;
 
-let pending_contact_imports pool =
-  Utils.Database.find
-    (Pool_database.Label.value pool)
-    pending_contact_imports_request
-    ()
-;;
+let pending_contact_imports pool = Database.find pool pending_contact_imports_request ()
 
 let login_count_request period =
   let open Caqti_request.Infix in
@@ -65,12 +55,7 @@ let login_count_request period =
   |> Caqti_type.(unit ->! int)
 ;;
 
-let login_count pool period =
-  Utils.Database.find
-    (Pool_database.Label.value pool)
-    (login_count_request period)
-    ()
-;;
+let login_count pool period = Database.find pool (login_count_request period) ()
 
 let sign_up_count_request period =
   let open Caqti_request.Infix in
@@ -93,12 +78,7 @@ let sign_up_count_request period =
   |> Caqti_type.(unit ->! int)
 ;;
 
-let sign_up_count pool period =
-  Utils.Database.find
-    (Pool_database.Label.value pool)
-    (sign_up_count_request period)
-    ()
-;;
+let sign_up_count pool period = Database.find pool (sign_up_count_request period) ()
 
 let assignments_created_request period =
   let open Caqti_request.Infix in
@@ -118,10 +98,7 @@ let assignments_created_request period =
 ;;
 
 let assignments_created pool period =
-  Utils.Database.find
-    (Pool_database.Label.value pool)
-    (assignments_created_request period)
-    ()
+  Database.find pool (assignments_created_request period) ()
 ;;
 
 let invitations_sent_request period =
@@ -134,12 +111,7 @@ let invitations_sent_request period =
   |> Caqti_type.(unit ->! int)
 ;;
 
-let invitations_sent pool period =
-  Utils.Database.find
-    (Pool_database.Label.value pool)
-    (invitations_sent_request period)
-    ()
-;;
+let invitations_sent pool period = Database.find pool (invitations_sent_request period) ()
 
 let reminders_sent_request period =
   let open Caqti_request.Infix in
@@ -159,12 +131,7 @@ let reminders_sent_request period =
   |> Caqti_type.(unit ->! int)
 ;;
 
-let reminders_sent pool period =
-  Utils.Database.find
-    (Pool_database.Label.value pool)
-    (reminders_sent_request period)
-    ()
-;;
+let reminders_sent pool period = Database.find pool (reminders_sent_request period) ()
 
 let terms_accepted_count_request period =
   let open Caqti_request.Infix in
@@ -179,26 +146,20 @@ let terms_accepted_count_request period =
 ;;
 
 let terms_accepted_count pool period =
-  Utils.Database.find
-    (Pool_database.Label.value pool)
-    (terms_accepted_count_request period)
-    ()
+  Database.find pool (terms_accepted_count_request period) ()
 ;;
 
 let total_emails_sent_request period =
   let open Caqti_request.Infix in
   Format.asprintf
     {sql|
-      SELECT COUNT(*) FROM queue_jobs
-      WHERE last_error_at >= (NOW() - INTERVAL %s)
+      SELECT COUNT(*) FROM pool_queue_jobs_history
+      WHERE handled_at >= (NOW() - INTERVAL %s)
     |sql}
     (Entity.period_to_sql period)
   |> Caqti_type.(unit ->! int)
 ;;
 
 let total_emails_sent pool period =
-  Utils.Database.find
-    (Pool_database.Label.value pool)
-    (total_emails_sent_request period)
-    ()
+  Database.find pool (total_emails_sent_request period) ()
 ;;

@@ -23,7 +23,7 @@ let grant_role ctx admin (role, target_uuid) =
   let open Guard in
   ActorRole.create
     ?target_uuid
-    (Uuid.Actor.of_string_exn admin.Admin.user.Sihl_user.id)
+    (Uuid.actor_of Pool_user.Id.value admin.Admin.user.Pool_user.id)
     role
   |> Persistence.ActorRole.upsert ~ctx
   ||> CCFun.tap (fun _ -> Persistence.Cache.clear ())
@@ -31,28 +31,20 @@ let grant_role ctx admin (role, target_uuid) =
 
 let create =
   let create_and_grant_role_exn pool email password given_name name role =
-    let ctx = Pool_database.to_ctx pool in
-    match%lwt Service.User.find_by_email_opt ~ctx email with
+    let email = Pool_user.EmailAddress.create email |> get_or_failwith in
+    match%lwt Pool_user.find_by_email_opt pool email with
     | None ->
-      let open Pool_user in
-      let email = EmailAddress.create email |> get_or_failwith in
-      let firstname = Firstname.create given_name |> get_or_failwith in
-      let lastname = Lastname.create name |> get_or_failwith in
-      let password = Password.create password |> get_or_failwith in
+      let firstname = Pool_user.Firstname.create given_name |> get_or_failwith in
+      let lastname = Pool_user.Lastname.create name |> get_or_failwith in
+      let password = Pool_user.Password.Plain.create password in
       let admin : Admin.create =
-        { id = None
-        ; Admin.email
-        ; password
-        ; firstname
-        ; lastname
-        ; roles = [ role ]
-        }
+        { id = None; Admin.email; password; firstname; lastname; roles = [ role ] }
       in
       let%lwt () =
-        Admin.Created admin |> Pool_event.(admin %> handle_event pool)
+        Admin.Created admin |> Pool_event.(admin %> handle_system_event pool)
       in
       Lwt.return_some ()
-    | Some user when Sihl_user.is_admin user ->
+    | Some user when Pool_user.is_admin user ->
       failwith "The user already exists as admin, use the 'grant_role' command."
     | Some _ -> failwith "The user already exists as contact."
   in
@@ -74,11 +66,7 @@ NOTE: There is NO check if the UUID of a role is correct for CLI commands.
 Example: admin.create econ-uzh example@mail.com securePassword Max Muster RecruiterAll
         |}
   in
-  Sihl.Command.make
-    ~name:"admin.create"
-    ~description:"New admin"
-    ~help
-    (function
+  Sihl.Command.make ~name:"admin.create" ~description:"New admin" ~help (function
     | [ db_pool; email; password; given_name; name; role ] ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
       (role_of_string role, None)
@@ -93,24 +81,24 @@ Example: admin.create econ-uzh example@mail.com securePassword Max Muster Recrui
 
 let create_root_admin =
   let create_exn email password given_name name =
-    let ctx = Pool_database.to_ctx Pool_database.root in
-    match%lwt Service.User.find_by_email_opt ~ctx email with
+    let email = email |> Pool_user.EmailAddress.of_string in
+    match%lwt Pool_user.find_by_email_opt Database.Pool.Root.label email with
     | None ->
       let%lwt () =
         let open Admin in
-        let open Pool_user in
-        let admin_id = Id.create () in
+        let admin_id = Admin.Id.create () in
         Created
           { id = Some admin_id
-          ; email = email |> EmailAddress.of_string
-          ; password = password |> Password.create |> CCResult.get_exn
-          ; firstname = given_name |> Firstname.of_string
-          ; lastname = name |> Lastname.of_string
+          ; email
+          ; password = password |> Pool_user.Password.Plain.create
+          ; firstname = given_name |> Pool_user.Firstname.of_string
+          ; lastname = name |> Pool_user.Lastname.of_string
           ; roles = [ `Operator, None ]
           }
-        |> handle_event
-             ~tags:Pool_database.(Logger.Tags.create root)
-             Pool_database.root
+        |> Pool_event.admin
+        |> Pool_event.handle_system_event
+             ~tags:Database.(Logger.Tags.create Database.Pool.Root.label)
+             Database.Pool.Root.label
       in
       Lwt.return_some ()
     | Some _ -> failwith "The user already exists."
@@ -127,13 +115,9 @@ Provide all fields to sign up a new contact:
 Example: admin.root.create example@mail.com securePassword Max Muster
         |}
   in
-  Sihl.Command.make
-    ~name:"admin.root.create"
-    ~description:"New admin"
-    ~help
-    (function
+  Sihl.Command.make ~name:"admin.root.create" ~description:"New admin" ~help (function
     | [ email; password; given_name; name ] ->
-      let%lwt () = Database.Root.setup () in
+      let%lwt () = Database.Pool.Root.setup () in
       create_exn email password given_name name
     | _ -> Command_utils.failwith_missmatch help)
 ;;
@@ -141,7 +125,7 @@ Example: admin.root.create example@mail.com securePassword Max Muster
 let grant_role =
   let grant_if_admin pool email role =
     let open Utils.Lwt_result.Infix in
-    let ctx = Pool_database.to_ctx pool in
+    let ctx = Database.to_ctx pool in
     let%lwt admin =
       email
       |> Pool_user.EmailAddress.of_string

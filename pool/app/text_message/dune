@@ -1,20 +1,24 @@
 (library
  (name text_message)
  (libraries
-  database
   email
+  gtx_config
   pool_common
-  pool_database
   pool_tenant
   pool_user
-  service
+  pool_queue
   utils)
  (preprocess
   (pps
    lwt_ppx
+   ppx_deriving.enum
    ppx_deriving.eq
+   ppx_deriving.ord
    ppx_deriving.show
+   ppx_fields_conv
+   ppx_sexp_conv
    ppx_variants_conv
-   ppx_yojson_conv)))
+   ppx_yojson_conv
+   ppx_string)))
 
 (include_subdirs unqualified)

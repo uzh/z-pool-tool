@@ -3,14 +3,25 @@ include Event
 include Default
 module Repo = Repo
 module Guard = Entity_guard
+module VersionHistory = Version_history
 
 let find = Repo.find
-let find_all = Repo.find_all
-let find_by = Repo.find_by
+let all = Repo.all
+let list_by_user = Repo.list_by_user
 let find_location_file = Repo_file_mapping.find
 let search = Repo.search
 let search_multiple_by_id = Repo.search_multiple_by_id
-let find_targets_grantable_by_admin = Repo.find_targets_grantable_by_admin
+let files_by_location = Repo_file_mapping.find_by_location
+let find_targets_grantable_by_target = Repo.find_targets_grantable_by_target
+let file_path file = Format.asprintf "files/%s" (File.Id.value file.File.id)
+
+let contact_file_path id file =
+  Format.asprintf "/location/%s/%s" (Id.value id) (file_path file)
+;;
+
+let admin_file_path id file =
+  Format.asprintf "/admin/locations/%s/%s" (Id.value id) (file_path file)
+;;
 
 module Statistics = struct
   include Entity_statistics
@@ -19,9 +30,7 @@ module Statistics = struct
   let create ?(year = current_year ()) = Repo_statistics.statistics year
 
   let year_select database_label =
-    let%lwt fist_year =
-      Repo_statistics.find_statistics_starting_year database_label
-    in
+    let%lwt fist_year = Repo_statistics.find_statistics_starting_year database_label in
     let current_year = current_year () in
     CCList.range current_year fist_year |> Lwt.return
   ;;

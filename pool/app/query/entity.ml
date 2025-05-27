@@ -1,9 +1,9 @@
+open Ppx_yojson_conv_lib.Yojson_conv
 module Common = Pool_common
-module Message = Common.Message
-module Dynparam = Utils.Database.Dynparam
+module Dynparam = Database.Dynparam
 
 module Column = struct
-  type t = Common.Message.Field.t * string [@@deriving eq, show]
+  type t = Pool_message.Field.t * string [@@deriving eq, show]
 
   let field m = fst m
   let to_sql m = snd m
@@ -11,34 +11,34 @@ module Column = struct
   let create m = m
 
   let to_query_parts (field, _value) =
-    [ Common.Message.Field.Order, Common.Message.Field.show field ]
+    [ Pool_message.Field.Order, Pool_message.Field.show field ]
   ;;
 end
 
 module Pagination = struct
   module Limit = struct
-    include Common.Model.Integer
+    include Pool_model.Base.Integer
 
     let default = 20
-    let field = Message.Field.Limit
-    let create m = if m >= 0 then Ok m else Error (Message.Invalid field)
+    let field = Pool_message.Field.Limit
+    let create m = if m >= 0 then Ok m else Error (Pool_message.Error.Invalid field)
     let schema = schema field create
   end
 
   module Page = struct
-    include Common.Model.Integer
+    include Pool_model.Base.Integer
 
     let default = 1
-    let field = Message.Field.Page
-    let create m = if m > 0 then Ok m else Error (Message.Invalid field)
+    let field = Pool_message.Field.Page
+    let create m = if m > 0 then Ok m else Error (Pool_message.Error.Invalid field)
     let schema = schema field create
   end
 
   module PageCount = struct
-    include Common.Model.Integer
+    include Pool_model.Base.Integer
 
-    let field = Message.Field.PageCount
-    let create m = if m >= 0 then Ok m else Error (Message.Invalid field)
+    let field = Pool_message.Field.PageCount
+    let create m = if m >= 0 then Ok m else Error (Pool_message.Error.Invalid field)
     let schema = schema field create
   end
 
@@ -46,17 +46,18 @@ module Pagination = struct
     { limit : Limit.t
     ; page : Page.t
     ; page_count : PageCount.t
+    ; item_count : int
     }
-  [@@deriving eq, show]
+  [@@deriving eq, show, yojson]
 
-  let to_query_parts { limit; page; page_count } =
-    [ Common.Message.Field.Limit, Limit.to_string limit
-    ; Common.Message.Field.Page, Page.to_string page
-    ; Common.Message.Field.PageCount, PageCount.to_string page_count
+  let to_query_parts { limit; page; page_count; _ } =
+    [ Pool_message.Field.Limit, Limit.to_string limit
+    ; Pool_message.Field.Page, Page.to_string page
+    ; Pool_message.Field.PageCount, PageCount.to_string page_count
     ]
   ;;
 
-  let create ?limit ?page ?(page_count = 1) () =
+  let create ?limit ?page ?(page_count = 1) ?(item_count = 0) () =
     let open CCOption in
     let open CCFun in
     let build input create default =
@@ -64,15 +65,13 @@ module Pagination = struct
     in
     let page = Page.(build page create default) in
     let limit = value ~default:Limit.default limit in
-    { limit; page; page_count }
+    { limit; page; page_count; item_count }
   ;;
 
   let set_page_count row_count t =
     let open CCFloat in
-    let page_count =
-      ceil (of_int row_count /. of_int t.limit) |> to_int |> CCInt.max 1
-    in
-    { t with page_count }
+    let page_count = ceil (of_int row_count /. of_int t.limit) |> to_int |> CCInt.max 1 in
+    { t with page_count; item_count = row_count }
   ;;
 
   let to_sql { limit; page; _ } =
@@ -83,9 +82,9 @@ end
 
 module Search = struct
   module Query = struct
-    include Common.Model.String
+    include Pool_model.Base.String
 
-    let field = Common.Message.Field.Search
+    let field = Pool_message.Field.Search
     let schema = schema ?validation:None field
     let of_string m = m
   end
@@ -107,11 +106,11 @@ module Search = struct
         |> CCList.map Column.to_sql
         |> CCList.fold_left
              (fun (dyn, columns) column ->
-               ( dyn
-                 |> Dynparam.add
-                      Caqti_type.string
-                      ("%" ^ CCString.(split ~by:" " query |> concat "%") ^ "%")
-               , Format.asprintf "%s LIKE ? " column :: columns ))
+                ( dyn
+                  |> Dynparam.add
+                       Caqti_type.string
+                       ("%" ^ CCString.(split ~by:" " query |> concat "%") ^ "%")
+                , Format.asprintf "%s LIKE ? " column :: columns ))
              (dyn, [])
       in
       where
@@ -121,7 +120,7 @@ module Search = struct
   ;;
 
   let query_string t = t.query |> Query.value
-  let to_query_parts t = [ Common.Message.Field.Search, query_string t ]
+  let to_query_parts t = [ Pool_message.Field.Search, query_string t ]
 end
 
 module Sort = struct
@@ -132,8 +131,8 @@ module Sort = struct
       let open CCFun in
       let open Pool_common in
       (function
-        | Ascending -> Message.Ascending
-        | Descending -> Message.Descending)
+        | Ascending -> Pool_message.Control.Ascending
+        | Descending -> Pool_message.Control.Descending)
       %> Utils.control_to_string lang
     ;;
   end
@@ -145,9 +144,7 @@ module Sort = struct
   [@@deriving eq, show]
 
   let create sortable_by ?(order = SortOrder.default) field =
-    CCList.find_opt
-      CCFun.(fst %> Pool_common.Message.Field.equal field)
-      sortable_by
+    CCList.find_opt CCFun.(fst %> Pool_message.Field.equal field) sortable_by
     |> CCOption.map (fun column -> { column; order })
   ;;
 
@@ -213,7 +210,7 @@ module Filter = struct
     t
     |> CCList.map (function
       | Checkbox (col, active) ->
-        Column.field col, Pool_common.Model.Boolean.stringify active
+        Column.field col, Pool_model.Base.Boolean.stringify active
       | Select (col, option) -> Column.field col, SelectOption.value option)
   ;;
 
@@ -221,14 +218,14 @@ module Filter = struct
     m
     |> CCList.fold_left
          (fun default conditon ->
-           let dyn, sql = default in
-           let open Condition in
-           match conditon with
-           | Checkbox (col, active) ->
-             if active then dyn, sql @ [ Column.to_sql col ] else default
-           | Select (col, option) ->
-             ( dyn |> Dynparam.add Caqti_type.string (SelectOption.value option)
-             , sql @ [ Format.asprintf "%s = ?" (Column.to_sql col) ] ))
+            let dyn, sql = default in
+            let open Condition in
+            match conditon with
+            | Checkbox (col, active) ->
+              if active then dyn, sql @ [ Column.to_sql col ] else default
+            | Select (col, option) ->
+              ( dyn |> Dynparam.add Caqti_type.string (SelectOption.value option)
+              , sql @ [ Format.asprintf "%s = ?" (Column.to_sql col) ] ))
          (dyn, [])
     |> fun (dyn, sql) ->
     match sql with
@@ -251,39 +248,34 @@ type t =
 
 let to_uri_query ?(additional_params = []) { filter; pagination; search; sort } =
   [ filter |> CCOption.map Filter.to_query_parts
-  ; pagination |> Option.map Pagination.to_query_parts
-  ; search |> Option.map Search.to_query_parts
-  ; sort |> Option.map Sort.to_query_parts
+  ; pagination |> CCOption.map Pagination.to_query_parts
+  ; search |> CCOption.map Search.to_query_parts
+  ; sort |> CCOption.map Sort.to_query_parts
   ]
-  |> List.map (Option.value ~default:[])
-  |> List.flatten
+  |> CCList.map (Option.value ~default:[])
+  |> CCList.flatten
   |> CCList.append additional_params
-  |> List.map (fun (k, v) -> Common.Message.Field.show k, [ Uri.pct_encode v ])
+  |> CCList.map (fun (k, v) -> Pool_message.Field.show k, [ v ])
 ;;
 
 let filter { filter; _ } = filter
 let pagination { pagination; _ } = pagination
 let search { search; _ } = search
 let sort { sort; _ } = sort
-
-let create ?filter ?pagination ?search ?sort () =
-  { filter; pagination; search; sort }
-;;
+let create ?filter ?pagination ?search ?sort () = { filter; pagination; search; sort }
 
 let with_sort_order order t =
-  let sort = t.sort |> Option.map (fun sort -> Sort.{ sort with order }) in
+  let sort = t.sort |> CCOption.map (fun sort -> Sort.{ sort with order }) in
   { t with sort }
 ;;
 
 let with_sort_column column t =
-  let sort = t.sort |> Option.map (fun sort -> Sort.{ sort with column }) in
+  let sort = t.sort |> CCOption.map (fun sort -> Sort.{ sort with column }) in
   { t with sort }
 ;;
 
 let set_page_count ({ pagination; _ } as t) row_count =
-  let pagination =
-    pagination |> CCOption.map (Pagination.set_page_count row_count)
-  in
+  let pagination = pagination |> CCOption.map (Pagination.set_page_count row_count) in
   { t with pagination }
 ;;
 

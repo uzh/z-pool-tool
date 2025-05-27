@@ -1,48 +1,47 @@
-module PoolError = Pool_common.Message
 module Id = Pool_common.Id
 
 let print = Utils.ppx_printer
 
 module Label = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = PoolError.Field.SmtpLabel
+  let field = Pool_message.Field.SmtpLabel
   let schema () = schema field ()
 end
 
 module Server = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = PoolError.Field.SmtpServer
+  let field = Pool_message.Field.SmtpServer
   let schema () = schema field ()
 end
 
 module Port = struct
-  include Pool_common.Model.Integer
+  include Pool_model.Base.Integer
 
-  let field = PoolError.Field.SmtpPort
+  let field = Pool_message.Field.SmtpPort
   let create port = Ok port
   let schema = schema field create
 end
 
 module Username = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = PoolError.Field.SmtpUsername
+  let field = Pool_message.Field.SmtpUsername
   let schema () = schema field ()
 end
 
 module Password = struct
-  include Pool_common.Model.String
+  include Pool_model.Base.String
 
-  let field = PoolError.Field.SmtpPassword
+  let field = Pool_message.Field.SmtpPassword
   let schema () = schema field ()
   let show _ = "<opaque>"
 end
 
 module Mechanism = struct
   module Core = struct
-    let field = Pool_common.Message.Field.SmtpMechanism
+    let field = Pool_message.Field.SmtpMechanism
 
     (* Open NTLM protocol issue: https://github.com/mirage/colombe/issues/63 *)
     type t =
@@ -51,7 +50,7 @@ module Mechanism = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 
   let to_sendmail = function
@@ -62,7 +61,7 @@ end
 
 module Protocol = struct
   module Core = struct
-    let field = Pool_common.Message.Field.SmtpProtocol
+    let field = Pool_message.Field.SmtpProtocol
 
     type t =
       | STARTTLS [@name "STARTTLS"] [@printer print "STARTTLS"]
@@ -70,15 +69,15 @@ module Protocol = struct
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
-  include Pool_common.Model.SelectorType (Core)
+  include Pool_model.Base.SelectorType (Core)
   include Core
 end
 
 module Default = struct
-  include Pool_common.Model.Boolean
+  include Pool_model.Base.Boolean
 
   let init = false
-  let schema = schema Pool_common.Message.Field.DefaultSmtpServer
+  let schema = schema Pool_message.Field.DefaultSmtpServer
 end
 
 type t =
@@ -102,13 +101,14 @@ type update_password =
 [@@deriving eq, show]
 
 let validate_mechanism
-  mechanism
-  (username : Username.t option)
-  (password : Password.t option)
+      mechanism
+      (username : Username.t option)
+      (password : Password.t option)
   =
-  if Mechanism.(equal LOGIN) mechanism
-     && (CCOption.is_none username || CCOption.is_none password)
-  then Error Pool_common.Message.SmtpLoginMissingCredentials
+  if
+    Mechanism.(equal LOGIN) mechanism
+    && (CCOption.is_none username || CCOption.is_none password)
+  then Error Pool_message.Error.SmtpLoginMissingCredentials
   else Ok mechanism
 ;;
 
@@ -155,13 +155,10 @@ module Write = struct
   ;;
 end
 
-open Pool_common.Message
+open Pool_message
 
 let column_label = (Field.Label, "pool_smtp.label") |> Query.Column.create
-
-let column_smtp_server =
-  (Field.SmtpServer, "pool_smtp.server") |> Query.Column.create
-;;
+let column_smtp_server = (Field.SmtpServer, "pool_smtp.server") |> Query.Column.create
 
 let column_smtp_username =
   (Field.SmtpUsername, "pool_smtp.username") |> Query.Column.create
@@ -179,9 +176,7 @@ let column_smtp_default_account =
   (Field.DefaultSmtpServer, "pool_smtp.default_account") |> Query.Column.create
 ;;
 
-let column_created_at =
-  (Field.CreatedAt, "pool_smtp.created_at") |> Query.Column.create
-;;
+let column_created_at = (Field.CreatedAt, "pool_smtp.created_at") |> Query.Column.create
 
 let searchable_by =
   [ column_label
@@ -193,10 +188,7 @@ let searchable_by =
 ;;
 
 let default_sort_column = column_created_at
-
-let sortable_by =
-  [ column_created_at; column_smtp_default_account ] @ searchable_by
-;;
+let sortable_by = [ column_created_at; column_smtp_default_account ] @ searchable_by
 
 let default_sort =
   Query.Sort.{ column = default_sort_column; order = SortOrder.Descending }

@@ -1,4 +1,4 @@
-module Conformist = Pool_common.Utils.PoolConformist
+module Conformist = Pool_conformist
 module User = Pool_user
 module Id = Pool_common.Id
 
@@ -7,7 +7,7 @@ let src = Logs.Src.create "root.cqrs"
 module Create : sig
   type t =
     { email : User.EmailAddress.t
-    ; password : User.Password.t
+    ; password : User.Password.Plain.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
     }
@@ -16,31 +16,26 @@ module Create : sig
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Guard.ValidationSet.t
 end = struct
   type t =
     { email : User.EmailAddress.t
-    ; password : User.Password.t [@opaque]
+    ; password : User.Password.Plain.t [@opaque]
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
     }
 
-  let command email password firstname lastname =
-    { email; password; firstname; lastname }
-  ;;
+  let command email password firstname lastname = { email; password; firstname; lastname }
 
   let schema =
     Conformist.(
       make
         Field.
           [ User.EmailAddress.schema ()
-          ; User.Password.(schema create ())
+          ; User.Password.Plain.schema ()
           ; User.Firstname.schema ()
           ; User.Lastname.schema ()
           ]
@@ -50,9 +45,7 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) ?allowed_email_suffixes command =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
-    let* () =
-      Pool_user.EmailAddress.validate allowed_email_suffixes command.email
-    in
+    let* () = Pool_user.EmailAddress.validate allowed_email_suffixes command.email in
     let admin : Admin.create =
       { id = None
       ; Admin.email = command.email
@@ -67,7 +60,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+    |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
   let effects =
@@ -84,14 +77,14 @@ module ToggleStatus : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Admin.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = Admin.t
 
   let handle ?(tags = Logs.Tag.empty) (admin : Admin.t) =
     Logs.info ~src (fun m -> m "Handle command ToggleStatus" ~tags);
-    let open Sihl.Contract.User in
-    match (admin |> Admin.user).status with
+    let open Pool_user.Status in
+    match (admin |> Admin.user).Pool_user.status with
     | Active -> Ok [ Admin.Disabled admin |> Pool_event.admin ]
     | Inactive -> Ok [ Admin.Enabled admin |> Pool_event.admin ]
   ;;

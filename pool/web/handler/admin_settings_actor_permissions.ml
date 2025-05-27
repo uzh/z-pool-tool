@@ -1,16 +1,16 @@
 open CCFun.Infix
 open Utils.Lwt_result.Infix
+open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.settings_actor_permissions"
 let active_navigation = "/admin/settings/actor-permission"
 
 let show req =
-  HttpUtils.Htmx.handler
+  Response.Htmx.index_handler
     ~active_navigation
-    ~error_path:"/"
     ~query:(module Guard.ActorPermission)
     ~create_layout:General.create_tenant_layout
     req
@@ -18,9 +18,7 @@ let show req =
   let%lwt permissions, query =
     Guard.Persistence.ActorPermission.find_by query database_label
   in
-  let%lwt hint =
-    I18n.(find_by_key database_label Key.ActorPermissionHint) language
-  in
+  let%lwt hint = I18n.(find_by_key database_label Key.ActorPermissionHint) language in
   let open Page.Admin.Settings.ActorPermission in
   (if HttpUtils.Htmx.is_hx_request req then list else index ~hint)
     context
@@ -30,63 +28,54 @@ let show req =
 ;;
 
 let delete req =
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let tags = Pool_context.Logger.Tags.req req in
+    Response.bad_request_on_error show
+    @@
     let permission =
       Sihl.Web.Request.to_urlencoded req
       ||> HttpUtils.find_in_urlencoded Field.Permission
       >== fun permission ->
       let read = Yojson.Safe.from_string %> Guard.ActorPermission.of_yojson in
       CCResult.map_err
-        Pool_common.Message.authorization
+        Error.authorization
         (try read permission with
          | _ -> Error "Undefined Yojson for actor permission.")
     in
-    let events =
-      Cqrs_command.Guardian_command.DeleteActorPermission.handle ~tags
-    in
+    let events = Cqrs_command.Guardian_command.DeleteActorPermission.handle ~tags in
     let handle = function
       | Ok events ->
-        let%lwt () =
-          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-        in
+        let%lwt () = Pool_event.handle_events ~tags database_label user events in
         Http_utils.redirect_to_with_actions
           active_navigation
-          [ Message.set
-              ~success:[ Pool_common.Message.(Deleted Field.Permission) ]
-          ]
+          [ Message.set ~success:[ Success.Deleted Field.Permission ] ]
       | Error _ ->
         Http_utils.redirect_to_with_actions
           active_navigation
-          [ Message.set
-              ~error:[ Pool_common.Message.(NotFound Field.Permission) ]
-          ]
+          [ Message.set ~error:[ Error.NotFound Field.Permission ] ]
     in
     permission >== events >|> handle |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let new_form req =
-  let result ({ Pool_context.csrf; database_label; language; _ } as context) =
-    let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
+  let result
+        ({ Pool_context.csrf; database_label; language; flash_fetcher; _ } as context)
+    =
+    Response.bad_request_render_error context
+    @@
     let%lwt hint =
       I18n.(find_by_key database_label Key.ActorPermissionCreateHint) language
     in
     Page.Admin.Settings.ActorPermission.create
       ~hint
       context
-      [ Component.Role.ActorPermissionSearch.input_form
-          ~flash_fetcher
-          csrf
-          language
-          ()
-      ]
+      (Component.Role.ActorPermissionSearch.input_form ?flash_fetcher csrf language ())
     |> General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html
-    >|- fun err -> err, Format.asprintf "%s/new" active_navigation
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let handle_toggle_target req =
@@ -99,36 +88,32 @@ let handle_toggle_target req =
     CCResult.both (find Field.Permission) (find Field.Model)
     |> Lwt_result.lift
     >== (fun (permission, model) ->
-          let permission = Guard.Permission.of_string_res permission in
-          let model =
-            Role.Target.of_string_res model
-            |> CCResult.map_err Message.authorization
-          in
-          CCResult.both permission model)
+    let permission = Guard.Permission.of_string_res permission in
+    let model = Role.Target.of_string_res model |> CCResult.map_err Error.authorization in
+    CCResult.both permission model)
     >|+ fun (permission, model) ->
     Component.Role.ActorPermissionSearch.value_form
       ~empty:(equal Create permission)
       Language.En
       model
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  Response.Htmx.handle ~src req result
 ;;
 
 let create req =
   let open Utils.Lwt_result.Infix in
   let lift = Lwt_result.lift in
-  let result { Pool_context.database_label; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, active_navigation)
+  let result { Pool_context.database_label; user; _ } =
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    Response.bad_request_on_error ~urlencoded new_form
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let find = CCFun.flip HttpUtils.find_in_urlencoded urlencoded in
     let* actors =
       HttpUtils.htmx_urlencoded_list Field.(ValueOf Admin |> array_key) req
       ||> CCList.map
-            (Guard.Uuid.Actor.of_string
-             %> CCOption.to_result Pool_common.Message.(Decode Field.Id))
+            (Guard.Uuid.Actor.of_string %> CCOption.to_result (Error.Decode Field.Id))
       ||> CCResult.flatten_l
     in
     let%lwt actors =
@@ -137,20 +122,16 @@ let create req =
       |> Lwt_list.filter_s (fun id ->
         id |> to_id |> Admin.find database_label ||> CCResult.is_ok)
     in
-    let* permission =
-      find Field.Permission |> lift >== Guard.Permission.of_string_res
-    in
+    let* permission = find Field.Permission |> lift >== Guard.Permission.of_string_res in
     let* model =
       find Field.Model
       |> lift
-      >== Role.Target.of_string_res
-          %> CCResult.map_err Pool_common.Message.authorization
+      >== Role.Target.of_string_res %> CCResult.map_err Error.authorization
     in
     let* targets =
       HttpUtils.htmx_urlencoded_list Field.(Value |> array_key) req
       ||> CCList.map
-            (Guard.Uuid.Target.of_string
-             %> CCOption.to_result Pool_common.Message.(Decode Field.Id))
+            (Guard.Uuid.Target.of_string %> CCOption.to_result (Error.Decode Field.Id))
       ||> CCResult.flatten_l
     in
     let expand_targets =
@@ -167,7 +148,7 @@ let create req =
       | _, model ->
         Logs.err (fun m ->
           m "Admin handler: Missing role %s" ([%show: Role.Target.t] model));
-        Lwt.return_error Pool_common.Message.(NotFound Field.Role)
+        Lwt.return_error (Error.NotFound Field.Role)
         ||> Pool_common.Utils.with_log_result_error ~src ~tags CCFun.id
     in
     let events =
@@ -181,29 +162,24 @@ let create req =
       in
       let open CCList in
       flat_map (fun target ->
-        actors
-        |> map (create permission target %> CreateActorPermission.handle ~tags))
+        actors |> map (create permission target %> CreateActorPermission.handle ~tags))
       %> CCResult.flatten_l
       %> CCResult.map flatten
     in
-    let handle events =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-    in
+    let handle events = Pool_event.handle_events ~tags database_label user events in
     let* () = expand_targets >== events |>> handle in
     Lwt_result.ok
       (Http_utils.redirect_to_with_actions
          active_navigation
-         [ Message.set ~success:[ Pool_common.Message.Created Field.Role ] ])
+         [ Message.set ~success:[ Success.Created Field.Role ] ])
   in
-  result |> HttpUtils.extract_happy_path req
+  Response.handle ~src req result
 ;;
 
 module Access : module type of Helpers.Access = struct
   include Helpers.Access
 
-  let index =
-    Guard.Access.Permission.read |> Middleware.Guardian.validate_admin_entity
-  ;;
+  let index = Guard.Access.Permission.read |> Middleware.Guardian.validate_admin_entity
 
   let create =
     Cqrs_command.Guardian_command.CreateActorPermission.effects

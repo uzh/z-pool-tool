@@ -3,12 +3,11 @@
  (libraries
   assignment
   conformist
-  database
   guard
+  gtx_config
   email
   i18n
   pool_common
-  pool_database
   pool_tenant
   ppx_deriving_yojson.runtime
   schedule
@@ -22,6 +21,7 @@
    ppx_deriving.ord
    ppx_deriving.show
    ppx_sexp_conv
+   ppx_string
    ppx_variants_conv
    ppx_yojson_conv)))
 

@@ -1,5 +1,4 @@
 module Countries = Countries
-module Database = Database
 module LanguageCodes = Language_codes
 module PhoneCodes = Phone_codes
 module Json = Json
@@ -25,16 +24,8 @@ module Lwt_result : sig
       -> ('a -> ('c, 'b) result)
       -> ('c, 'b) Lwt_result.t
 
-    val ( >> )
-      :  ('a, 'b) Lwt_result.t
-      -> ('c, 'b) Lwt_result.t
-      -> ('c, 'b) Lwt_result.t
-
-    val ( |>> )
-      :  ('a, 'b) Lwt_result.t
-      -> ('a -> 'c Lwt.t)
-      -> ('c, 'b) Lwt_result.t
-
+    val ( >> ) : ('a, 'b) Lwt_result.t -> ('c, 'b) Lwt_result.t -> ('c, 'b) Lwt_result.t
+    val ( |>> ) : ('a, 'b) Lwt_result.t -> ('a -> 'c Lwt.t) -> ('c, 'b) Lwt_result.t
     val ( >|+ ) : ('a, 'b) Lwt_result.t -> ('a -> 'c) -> ('c, 'b) Lwt_result.t
     val ( >|- ) : ('a, 'b) Lwt_result.t -> ('b -> 'c) -> ('a, 'c) Lwt_result.t
   end
@@ -46,6 +37,7 @@ end =
 module Crypto = Crypto
 module Ptime = Utils_ptime
 
+let flat_unit (_ : unit list) = ()
 let todo _ = failwith "todo"
 let equal_key (a, _) (b, _) = CCString.equal a b
 let ppx_printer m fmt _ = Format.pp_print_string fmt m
@@ -61,11 +53,18 @@ let group_tuples data =
   let tbl = create 20 in
   data
   |> CCList.iter (fun (key, item) ->
-    find_opt tbl key
-    >|= CCList.cons item
-    |> value ~default:[ item ]
-    |> replace tbl key)
+    find_opt tbl key >|= CCList.cons item |> value ~default:[ item ] |> replace tbl key)
   |> CCFun.const (fold (fun key items acc -> (key, items) :: acc) tbl [])
+;;
+
+let remove_whitespaces =
+  let open Re in
+  replace_string (space |> compile) ~by:""
+;;
+
+let ignore_res = function
+  | Ok () -> ()
+  | Error _ -> ()
 ;;
 
 module Url = struct
@@ -110,22 +109,16 @@ end
 module Html = struct
   open Tyxml.Html
 
-  (* placed here due to circular dependency between email and http_utils
-     library *)
+  (* placed here due to circular dependency between email and http_utils library *)
   let handle_line_breaks finally_fcn str =
     finally_fcn
     @@
     match
-      str
-      |> CCString.split ~by:"\n"
-      |> CCList.flat_map (CCString.split ~by:"\\n")
+      str |> CCString.split ~by:"\n" |> CCList.flat_map (CCString.split ~by:"\\n")
     with
     | [] -> []
     | head :: tail ->
-      CCList.fold_left
-        (fun html str -> html @ [ br (); txt str ])
-        [ txt head ]
-        tail
+      CCList.fold_left (fun html str -> html @ [ br (); txt str ]) [ txt head ] tail
   ;;
 
   let concat_html ?(by = br ()) (elements : [> `P | `Div ] elt list) =

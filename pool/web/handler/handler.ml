@@ -1,4 +1,5 @@
-module Root = Root_handlers
 module Admin = Admin_handlers
-module Public = Public
 module Contact = Contact_handlers
+module Helpers = Helpers
+module Public = Public
+module Root = Root_handlers

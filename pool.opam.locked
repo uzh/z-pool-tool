@@ -1,192 +1,206 @@
 opam-version: "2.0"
-version: "0.7.1"
+name: "pool"
+version: "0.11.1"
 synopsis: "The Z-Pool tool"
-description: """
-
-TODO
-"""
-maintainer: ["engineering@uzh.econ.ch"]
-authors: ["Department of Economics, University of Zurich"]
+description: "TODO"
+maintainer: "engineering@uzh.econ.ch"
+authors: "Department of Economics, University of Zurich"
 license: "GPL-2.0-or-later"
-homepage: "https://gitlab.uzh.ch/econ/study-coordination/pool"
-doc: "https://gitlab.uzh.ch/econ/study-coordination/pool/doc"
-bug-reports: "https://gitlab.uzh.ch/econ/study-coordination/pool"
+homepage: "https://github.com/uzh/z-pool-tool"
+doc: "https://uzh.github.io/z-pool-tool-documentation/"
+bug-reports: "https://github.com/uzh/z-pool-tool"
 depends: [
-  "angstrom" {= "0.16.0"}
-  "asn1-combinators" {= "0.2.6"}
+  "alcotest" {= "1.9.0" & with-test}
+  "alcotest-lwt" {= "1.9.0" & with-test}
+  "angstrom" {= "0.16.1"}
+  "asn1-combinators" {= "0.3.2"}
   "astring" {= "0.8.5"}
-  "base" {= "v0.16.3"}
+  "base" {= "v0.17.2"}
+  "base-bigarray" {= "base"}
   "base-bytes" {= "base"}
+  "base-domains" {= "base"}
+  "base-nnp" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
   "base64" {= "3.5.1"}
   "bigarray-compat" {= "1.1.0"}
   "bigarray-overlap" {= "0.2.1"}
-  "bigstringaf" {= "0.9.1"}
+  "bigstringaf" {= "0.10.0"}
   "bos" {= "0.2.1"}
-  "ca-certs" {= "0.2.3"}
+  "ca-certs" {= "1.0.1"}
   "camlp-streams" {= "5.0.1"}
   "canary" {= "0.0.3"}
-  "caqti" {= "2.1.1"}
-  "caqti-driver-mariadb" {= "2.1.1"}
-  "caqti-lwt" {= "2.1.1"}
-  "cmdliner" {= "1.2.0"}
-  "cohttp" {= "5.3.1"}
-  "cohttp-lwt" {= "5.3.0"}
-  "cohttp-lwt-unix" {= "5.3.0"}
+  "caqti" {= "2.2.4"}
+  "caqti-driver-mariadb" {= "2.2.4"}
+  "caqti-lwt" {= "2.2.4"}
+  "cmdliner" {= "1.3.0"}
+  "cohttp" {= "6.1.0"}
+  "cohttp-lwt" {= "6.1.0"}
+  "cohttp-lwt-unix" {= "6.1.0"}
   "coin" {= "0.1.4"}
-  "colombe" {= "0.8.0"}
-  "conduit" {= "6.2.1"}
-  "conduit-lwt" {= "6.2.1"}
-  "conduit-lwt-unix" {= "6.2.1"}
-  "conf-bash" {= "1"}
+  "colombe" {= "0.11.0"}
+  "conduit" {= "8.0.0"}
+  "conduit-lwt" {= "8.0.0"}
+  "conduit-lwt-unix" {= "8.0.0"}
   "conf-gcc" {= "1.0"}
-  "conf-gmp" {= "4"}
-  "conf-gmp-powm-sec" {= "3"}
-  "conf-libev" {= "4-12"}
+  "conf-gmp" {= "5"}
+  "conf-gmp-powm-sec" {= "4"}
   "conf-libssl" {= "4"}
   "conf-mariadb" {= "2"}
-  "conf-pkg-config" {= "3"}
+  "conf-pkg-config" {= "4"}
   "conformist" {= "0.8.1"}
-  "containers" {= "3.13.1"}
-  "containers-data" {= "3.13.1"}
-  "cppo" {= "1.6.9"}
+  "containers" {= "3.15"}
+  "containers-data" {= "3.15"}
+  "cppo" {= "1.8.0"}
+  "crunch" {= "4.0.0" & with-doc}
   "csexp" {= "1.5.2"}
   "cstruct" {= "6.2.0"}
-  "ctypes" {= "0.20.2"}
-  "digestif" {= "1.2.0"}
-  "domain-name" {= "0.4.0"}
-  "dune" {= "3.14.2"}
-  "dune-build-info" {= "3.14.2"}
-  "dune-configurator" {= "3.14.2"}
-  "dune-private-libs" {= "3.14.2"}
-  "dune-site" {= "3.14.2"}
+  "ctypes" {= "0.23.0"}
+  "digestif" {= "1.3.0"}
+  "domain-name" {= "0.4.1"}
+  "dune" {= "3.18.2"}
+  "dune-build-info" {= "3.18.2"}
+  "dune-configurator" {= "3.18.2"}
+  "dune-private-libs" {= "3.18.2"}
+  "dune-site" {= "3.18.2"}
   "duration" {= "0.2.1"}
-  "dyn" {= "3.14.2"}
+  "dyn" {= "3.18.2"}
   "either" {= "1.0.0"}
   "emile" {= "1.1"}
-  "eqaf" {= "0.9"}
+  "eqaf" {= "0.10"}
   "faraday" {= "0.8.2"}
   "faraday-lwt" {= "0.8.2"}
   "faraday-lwt-unix" {= "0.8.2"}
-  "fieldslib" {= "v0.16.0"}
-  "fix" {= "20230505"}
-  "fmt" {= "0.9.0"}
+  "fieldslib" {= "v0.17.0"}
+  "fix" {= "20250428"}
+  "fmt" {= "0.10.0"}
   "fpath" {= "0.7.3"}
   "gmap" {= "0.3.0"}
   "guardian" {= "0.3.2"}
-  "hkdf" {= "1.0.4"}
   "hmap" {= "0.8.1"}
+  "http" {= "6.1.0"}
   "httpaf" {= "0.7.1"}
   "httpaf-lwt-unix" {= "0.7.1"}
+  "hxd" {= "0.3.3"}
   "integers" {= "0.7.0"}
-  "ipaddr" {= "5.5.0"}
-  "ipaddr-sexp" {= "5.5.0"}
-  "jsonm" {= "1.0.2"}
+  "ipaddr" {= "5.6.0"}
+  "ipaddr-sexp" {= "5.6.0"}
+  "jane-street-headers" {= "v0.17.0" & with-test}
+  "jst-config" {= "v0.17.0" & with-test}
   "jwto" {= "0.4.0"}
+  "kdf" {= "1.0.0"}
   "ke" {= "0.6"}
-  "letters" {= "0.3.3"}
-  "logs" {= "0.7.0"}
-  "lwt" {= "5.7.0"}
-  "lwt-dllist" {= "1.0.1"}
-  "lwt_ppx" {= "2.1.0"}
+  "letters" {= "0.4.0"}
+  "logs" {= "0.8.0"}
+  "lru" {= "0.3.1"}
+  "lwt" {= "5.9.1"}
+  "lwt-dllist" {= "1.1.0"}
+  "lwt_ppx" {= "5.9.1"}
   "lwt_ssl" {= "1.2.0"}
-  "macaddr" {= "5.5.0"}
+  "macaddr" {= "5.6.0"}
   "magic-mime" {= "1.3.1"}
-  "mariadb" {= "1.1.6"}
+  "mariadb" {= "1.2.0"}
   "markup" {= "1.0.3"}
-  "menhir" {= "20231231"}
-  "menhirCST" {= "20231231"}
-  "menhirLib" {= "20231231"}
-  "menhirSdk" {= "20231231"}
-  "mirage-crypto" {= "0.11.3"}
-  "mirage-crypto-ec" {= "0.11.3"}
-  "mirage-crypto-pk" {= "0.11.3"}
-  "mirage-crypto-rng" {= "0.11.3"}
-  "mirage-crypto-rng-lwt" {= "0.11.3"}
-  "mrmime" {= "0.6.0"}
-  "mtime" {= "2.0.0"}
+  "menhir" {= "20240715"}
+  "menhirCST" {= "20240715"}
+  "menhirLib" {= "20240715"}
+  "menhirSdk" {= "20240715"}
+  "mirage-crypto" {= "2.0.0"}
+  "mirage-crypto-ec" {= "2.0.0"}
+  "mirage-crypto-pk" {= "2.0.0"}
+  "mirage-crypto-rng" {= "2.0.0"}
+  "mrmime" {= "0.7.0"}
+  "mtime" {= "2.1.0"}
   "multipart-form-data" {= "0.3.0"}
-  "num" {= "1.5"}
-  "ocaml" {= "4.14.1"}
-  "ocaml-compiler-libs" {= "v0.12.4"}
+  "num" {= "1.5-1"}
+  "ocaml" {= "5.2.0"}
+  "ocaml-base-compiler" {= "5.2.0"}
+  "ocaml-compiler-libs" {= "v0.17.0"}
+  "ocaml-config" {= "3"}
+  "ocaml-options-vanilla" {= "1"}
   "ocaml-syntax-shims" {= "1.0.0"}
-  "ocaml-version" {= "3.6.5"}
-  "ocamlbuild" {= "0.14.3"}
-  "ocamlfind" {= "1.9.6"}
-  "ocamlformat" {= "0.26.1"}
-  "ocamlformat-lib" {= "0.26.1"}
+  "ocaml-version" {= "4.0.0"}
+  "ocaml_intrinsics_kernel" {= "v0.17.1"}
+  "ocamlbuild" {= "0.16.1"}
+  "ocamlfind" {= "1.9.8"}
+  "ocamlformat" {= "0.27.0"}
+  "ocamlformat-lib" {= "0.27.0"}
   "ocp-indent" {= "1.8.1"}
   "ocplib-endian" {= "1.2"}
   "octavius" {= "1.2.2"}
+  "odoc" {= "3.0.0" & with-doc}
+  "odoc-parser" {= "3.0.0" & with-doc}
+  "ohex" {= "0.2.0"}
   "opium" {= "0.20.0"}
-  "ordering" {= "3.14.2"}
-  "parsexp" {= "v0.16.0"}
-  "pbkdf" {= "1.2.0"}
-  "pecu" {= "0.6"}
-  "pp" {= "1.2.0"}
-  "ppx_base" {= "v0.16.0"}
-  "ppx_cold" {= "v0.16.0"}
-  "ppx_compare" {= "v0.16.0"}
+  "ordering" {= "3.18.2"}
+  "parsexp" {= "v0.17.0"}
+  "pecu" {= "0.7"}
+  "pp" {= "2.0.0"}
+  "ppx_assert" {= "v0.17.0" & with-test}
+  "ppx_base" {= "v0.17.0"}
+  "ppx_cold" {= "v0.17.0"}
+  "ppx_compare" {= "v0.17.0"}
   "ppx_derivers" {= "1.2.1"}
-  "ppx_deriving" {= "5.2.1"}
-  "ppx_deriving_yojson" {= "3.7.0"}
-  "ppx_enumerate" {= "v0.16.0"}
-  "ppx_fields_conv" {= "v0.16.0"}
-  "ppx_globalize" {= "v0.16.0"}
-  "ppx_hash" {= "v0.16.0"}
-  "ppx_js_style" {= "v0.16.0"}
-  "ppx_sexp_conv" {= "v0.16.0"}
-  "ppx_string" {= "v0.16.0"}
-  "ppx_variants_conv" {= "v0.16.0"}
-  "ppx_yojson_conv" {= "v0.16.0"}
-  "ppx_yojson_conv_lib" {= "v0.16.0"}
-  "ppxlib" {= "0.32.0"}
+  "ppx_deriving" {= "6.0.3"}
+  "ppx_deriving_yojson" {= "3.9.1"}
+  "ppx_enumerate" {= "v0.17.0"}
+  "ppx_fields_conv" {= "v0.17.0"}
+  "ppx_globalize" {= "v0.17.0"}
+  "ppx_hash" {= "v0.17.0"}
+  "ppx_here" {= "v0.17.0" & with-test}
+  "ppx_inline_test" {= "v0.17.0" & with-test}
+  "ppx_js_style" {= "v0.17.0"}
+  "ppx_optcomp" {= "v0.17.0" & with-test}
+  "ppx_sexp_conv" {= "v0.17.0"}
+  "ppx_string" {= "v0.17.0"}
+  "ppx_variants_conv" {= "v0.17.0"}
+  "ppx_yojson_conv" {= "v0.17.0"}
+  "ppx_yojson_conv_lib" {= "v0.17.0"}
+  "ppxlib" {= "0.35.0"}
+  "ppxlib_jane" {= "v0.17.0"}
   "prettym" {= "0.0.3"}
-  "ptime" {= "1.1.0"}
-  "re" {= "1.11.0"}
+  "psq" {= "0.2.1"}
+  "ptime" {= "1.2.0"}
+  "re" {= "1.12.0"}
   "result" {= "1.5"}
   "rock" {= "0.20.0"}
   "rosetta" {= "0.3.0"}
   "rresult" {= "0.7.0"}
   "safepass" {= "3.1"}
-  "sendmail" {= "0.8.0"}
+  "sendmail" {= "0.11.0"}
   "seq" {= "base"}
-  "sexplib" {= "v0.16.0"}
-  "sexplib0" {= "v0.16.0"}
+  "sexplib" {= "v0.17.0"}
+  "sexplib0" {= "v0.17.0"}
   "sihl" {= "4.0.0"}
-  "sihl-cache" {= "4.0.0"}
   "sihl-email" {= "4.0.0"}
-  "sihl-queue" {= "4.0.0"}
   "sihl-storage" {= "4.0.0"}
-  "sihl-token" {= "4.0.0"}
-  "sihl-user" {= "4.0.0"}
   "ssl" {= "0.7.0"}
-  "stdio" {= "v0.16.0"}
+  "stdio" {= "v0.17.0"}
   "stdlib-shims" {= "0.3.0"}
-  "stdune" {= "3.14.2"}
+  "stdune" {= "3.18.2"}
   "stringext" {= "1.6.0"}
-  "tls" {= "0.17.3"}
-  "tls-lwt" {= "0.17.3"}
-  "topkg" {= "1.0.7"}
-  "tsort" {= "2.1.0"}
+  "time_now" {= "v0.17.0" & with-test}
+  "tls" {= "2.0.1"}
+  "tls-lwt" {= "2.0.1"}
+  "topkg" {= "1.0.8"}
+  "tsort" {= "2.2.0"}
   "tyxml" {= "4.6.0"}
   "tyxml-ppx" {= "4.6.0"}
   "tyxml-syntax" {= "4.6.0"}
   "uchar" {= "0.0.2"}
-  "unstrctrd" {= "0.3"}
+  "unstrctrd" {= "0.4"}
   "uri" {= "4.4.0"}
   "uri-sexp" {= "4.4.0"}
-  "uucp" {= "15.1.0"}
-  "uuidm" {= "0.9.8"}
-  "uuseg" {= "15.1.0"}
-  "uutf" {= "1.0.3"}
+  "uucp" {= "16.0.0"}
+  "uuidm" {= "0.9.10"}
+  "uuseg" {= "16.0.0"}
+  "uutf" {= "1.0.4"}
   "uuuu" {= "0.3.0"}
-  "variantslib" {= "v0.16.0"}
-  "x509" {= "0.16.5"}
-  "yojson" {= "2.1.2"}
+  "variantslib" {= "v0.17.0"}
+  "x509" {= "1.0.6"}
+  "yojson" {= "2.2.2"}
   "yuscii" {= "0.3.0"}
-  "zarith" {= "1.13"}
+  "zarith" {= "1.14"}
 ]
 build: [
   ["dune" "subst"] {dev}
@@ -202,48 +216,40 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://gitlab.uzh.ch/econ/study-coordination/pool"
-name: "pool"
+dev-repo: "git+https://github.com/uzh/z-pool-tool"
 pin-depends: [
-  [
-    "sihl-user.4.0.0"
-    "git+https://github.com/oxidizing/sihl.git#d1250a2ff807dd1731f6ccd6250061215cdf73bf"
-  ]
-  [
-    "sihl-token.4.0.0"
-    "git+https://github.com/oxidizing/sihl.git#d1250a2ff807dd1731f6ccd6250061215cdf73bf"
-  ]
-  [
-    "sihl-storage.4.0.0"
-    "git+https://github.com/oxidizing/sihl.git#d1250a2ff807dd1731f6ccd6250061215cdf73bf"
-  ]
-  [
-    "sihl-queue.4.0.0"
-    "git+https://github.com/oxidizing/sihl.git#d1250a2ff807dd1731f6ccd6250061215cdf73bf"
-  ]
-  [
-    "sihl-email.4.0.0"
-    "git+https://github.com/oxidizing/sihl.git#d1250a2ff807dd1731f6ccd6250061215cdf73bf"
-  ]
-  [
-    "sihl-cache.4.0.0"
-    "git+https://github.com/oxidizing/sihl.git#d1250a2ff807dd1731f6ccd6250061215cdf73bf"
-  ]
-  [
-    "guardian.0.3.2"
-    "git+https://github.com/uzh/guardian.git#87214e65f5e50f2ad9209ef9d407ec28a7004498"
-  ]
   ["canary.0.0.3" "git+https://github.com/uzh/canary.git#0.0.3"]
-  [
-    "letters.0.3.3"
-    "git+https://github.com/oxidizing/letters.git#c38446b15c9e68cab0f77814f6509cae9861efeb"
-  ]
-  [
-    "sihl.4.0.0"
-    "git+https://github.com/oxidizing/sihl.git#d1250a2ff807dd1731f6ccd6250061215cdf73bf"
-  ]
   [
     "conformist.0.8.1"
     "git+https://github.com/oxidizing/conformist.git#aa7b95d1f39215cdaab8cf96d765d63e41d5f8a6"
+  ]
+  [
+    "guardian.0.3.2"
+    "git+https://github.com/uzh/guardian.git#287bab9baf9b346efe47999e8b7f456bfefe8c13"
+  ]
+  ["letters.0.4.0" "git+https://github.com/oxidizing/letters.git#0.4.0"]
+  [
+    "ocaml-base-compiler.5.2.0"
+    "https://github.com/ocaml/ocaml/archive/5.2.0.tar.gz"
+  ]
+  [
+    "opium.0.20.0"
+    "git+https://github.com/rgrinberg/opium.git#73b16f0487497e02750c1123ead377a56be3be43"
+  ]
+  [
+    "rock.0.20.0"
+    "git+https://github.com/rgrinberg/opium.git#73b16f0487497e02750c1123ead377a56be3be43"
+  ]
+  [
+    "sihl.4.0.0"
+    "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"
+  ]
+  [
+    "sihl-email.4.0.0"
+    "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"
+  ]
+  [
+    "sihl-storage.4.0.0"
+    "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"
   ]
 ]

@@ -1,9 +1,6 @@
 include Repo_entity
 module RepoFileMapping = Repo_file_mapping
-module Dynparam = Utils.Database.Dynparam
-
-let to_entity = to_entity
-let of_entity = of_entity
+module Dynparam = Database.Dynparam
 
 let sql_select_columns =
   [ Entity.Id.sql_select_fragment ~field:"pool_locations.uuid"
@@ -62,13 +59,18 @@ module Sql = struct
       where_fragment
   ;;
 
-  let find_request_sql ?(count = false) where_fragment =
-    let columns =
-      if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
-    in
+  let find_request_sql
+        ?(distinct = true)
+        ?(count = false)
+        ?(additional_joins = "")
+        where_fragment
+    =
+    let columns = if count then "COUNT(*)" else CCString.concat ", " sql_select_columns in
     Format.asprintf
-      {sql|SELECT %s FROM pool_locations %s|sql}
+      {sql|SELECT %s %s FROM pool_locations %s %s|sql}
+      (if distinct then "DISTINCT" else "")
       columns
+      additional_joins
       where_fragment
   ;;
 
@@ -99,19 +101,8 @@ module Sql = struct
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt (Pool_database.Label.value pool) find_request id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Location)
-  ;;
-
-  let find_all_request =
-    let open Caqti_request.Infix in
-    {sql|ORDER BY pool_locations.name|sql}
-    |> Format.asprintf "%s\n%s" select_sql
-    |> Caqti_type.unit ->* t
-  ;;
-
-  let find_all pool =
-    Utils.Database.collect (Pool_database.Label.value pool) find_all_request ()
+    Database.find_opt pool find_request id
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Location)
   ;;
 
   let insert_request =
@@ -152,9 +143,7 @@ module Sql = struct
     |> t ->. Caqti_type.unit
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Pool_database.Label.value pool) insert_request
-  ;;
+  let insert pool = Database.exec pool insert_request
 
   let update_request =
     let open Caqti_request.Infix in
@@ -180,15 +169,13 @@ module Sql = struct
            Id.t
            (t2
               Name.t
-              (t2
-                 (option Description.t)
-                 (t2 Address.t (t2 (option Link.t) Status.t))))
+              (t2 (option Description.t) (t2 Address.t (t2 (option Link.t) Status.t))))
          ->. unit)
   ;;
 
   let update pool { Entity.id; name; description; address; link; status; _ } =
-    Utils.Database.exec
-      (Pool_database.Label.value pool)
+    Database.exec
+      pool
       update_request
       (id, (name, (description, (address, (link, status)))))
   ;;
@@ -196,10 +183,7 @@ module Sql = struct
   let search_request ?joins ?conditions ~limit () =
     let default_contidion = "pool_locations.name LIKE ?" in
     let joined_select =
-      CCOption.map_or
-        ~default:search_select
-        (Format.asprintf "%s %s" search_select)
-        joins
+      CCOption.map_or ~default:search_select (Format.asprintf "%s %s" search_select) joins
     in
     let where =
       CCOption.map_or
@@ -210,19 +194,9 @@ module Sql = struct
     Format.asprintf "%s WHERE %s LIMIT %i" joined_select where limit
   ;;
 
-  let search
-    ?conditions
-    ?(dyn = Dynparam.empty)
-    ?exclude
-    ?joins
-    ?(limit = 20)
-    pool
-    query
-    =
+  let search ?conditions ?(dyn = Dynparam.empty) ?exclude ?joins ?(limit = 20) pool query =
     let open Caqti_request.Infix in
-    let exclude_ids =
-      Utils.Database.exclude_ids "pool_locations.uuid" Entity.Id.value
-    in
+    let exclude_ids = Database.exclude_ids "pool_locations.uuid" Entity.Id.value in
     let dyn = Dynparam.(dyn |> add Caqti_type.string ("%" ^ query ^ "%")) in
     let dyn, exclude =
       exclude |> CCOption.map_or ~default:(dyn, None) (exclude_ids dyn)
@@ -236,10 +210,9 @@ module Sql = struct
     in
     let (Dynparam.Pack (pt, pv)) = dyn in
     let request =
-      search_request ?joins ?conditions ~limit ()
-      |> pt ->* Caqti_type.t2 Id.t Name.t
+      search_request ?joins ?conditions ~limit () |> pt ->* Caqti_type.t2 Id.t Name.t
     in
-    Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+    Database.collect pool request pv
   ;;
 
   let search_multiple_by_id_request ids =
@@ -261,7 +234,7 @@ module Sql = struct
       let dyn =
         CCList.fold_left
           (fun dyn id ->
-            dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+             dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
           Dynparam.empty
           ids
       in
@@ -270,10 +243,10 @@ module Sql = struct
         search_multiple_by_id_request ids
         |> pt ->* Caqti_type.(Repo_entity.(t2 Id.t Name.t))
       in
-      Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+      Database.collect pool request pv
   ;;
 
-  let find_targets_grantable_by_admin ?exclude database_label admin query =
+  let find_targets_grantable_by_target ?exclude database_label target_id query =
     let joins =
       {sql|
       LEFT JOIN guardian_actor_role_targets t ON t.target_uuid = pool_locations.uuid
@@ -281,47 +254,39 @@ module Sql = struct
         AND t.role = ?
     |sql}
     in
-    let conditions = "t.role IS NULL" in
+    let conditions = "(t.role IS NULL OR t.mark_as_deleted IS NOT NULL)" in
     let dyn =
+      let open Pool_common in
       Dynparam.(
         empty
-        |> add Caqti_type.string Admin.(id admin |> Id.value)
+        |> add Repo.Id.t (Guard.Uuid.Target.to_string target_id |> Id.of_string)
         |> add Caqti_type.string Role.Role.(show `LocationManager))
     in
     search ~conditions ~joins ~dyn ?exclude database_label query
   ;;
 end
 
-let files_to_location pool ({ id; _ } as location) =
-  let open Utils.Lwt_result.Infix in
-  RepoFileMapping.find_by_location pool id ||> to_entity location
+let find = Sql.find
+
+let all pool =
+  let open Caqti_request.Infix in
+  let request = Sql.find_request_sql "" |> Caqti_type.unit ->* Repo_entity.t in
+  Database.collect pool request ()
 ;;
 
-let find pool id =
-  let open Utils.Lwt_result.Infix in
-  Sql.find pool id |>> files_to_location pool
-;;
-
-let find_all pool =
-  let open Utils.Lwt_result.Infix in
-  Sql.find_all pool >|> Lwt_list.map_s (files_to_location pool)
-;;
-
-let find_by query pool =
-  let open Lwt.Syntax in
-  let* locations, query =
-    Query.collect_and_count pool (Some query) ~select:Sql.find_request_sql t
+let list_by_user ?query pool actor =
+  let open CCFun.Infix in
+  let dyn, sql, joins =
+    Guard.Persistence.with_user_permission actor "pool_locations.uuid" `Location
   in
-  let* locations = Lwt_list.map_s (files_to_location pool) locations in
-  Lwt.return (locations, query)
+  let select ?count =
+    Sql.find_request_sql ?count ~additional_joins:joins %> Format.asprintf "%s %s" sql
+  in
+  Query.collect_and_count pool query ~select ~dyn t
 ;;
 
-let insert pool location files =
-  let%lwt () = location |> of_entity |> Sql.insert pool in
-  files |> Lwt_list.iter_s (RepoFileMapping.insert pool)
-;;
-
+let insert = Sql.insert
 let update = Sql.update
 let search = Sql.search
 let search_multiple_by_id = Sql.search_multiple_by_id
-let find_targets_grantable_by_admin = Sql.find_targets_grantable_by_admin
+let find_targets_grantable_by_target = Sql.find_targets_grantable_by_target

@@ -2,18 +2,15 @@
  (name command)
  (libraries
   cqrs_command
-  database
+  duplicate_contacts
   guard
   matcher
   pool_event
   pool_user
-  queue
   reminder
   seed
-  service
   settings
   sihl
-  tenant
   utils
   user_import
   system_event

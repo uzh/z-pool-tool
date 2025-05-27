@@ -2,11 +2,7 @@ open Test_utils
 module Command = Cqrs_command.Session_command
 
 let database_label = Data.database_label
-
-let date_to_ptime date =
-  date |> Ptime.of_date |> CCOption.get_exn_or "Invalid date"
-;;
-
+let date_to_ptime date = date |> Ptime.of_date |> CCOption.get_exn_or "Invalid date"
 let create_start date = date |> date_to_ptime |> Session.Start.create
 let create_end date = date |> date_to_ptime |> Session.End.create
 
@@ -17,7 +13,7 @@ let check_result ?(msg = "succeeds") =
 
 module Data = struct
   open Session
-  module Field = Pool_common.Message.Field
+  open Pool_message
 
   let start = create_start (2024, 04, 01)
   let end_at = create_end (2024, 05, 01)
@@ -50,14 +46,9 @@ let find_overlapping _ () =
     let start = create_start start in
     let end_at = create_end end_at in
     let%lwt result =
-      Time_window.find_overlapping
-        database_label
-        experiment.Experiment.id
-        ~start
-        ~end_at
+      Time_window.find_overlapping database_label experiment.Experiment.id ~start ~end_at
     in
-    Alcotest.(check (list time_window_testable) "succeeds") expected result
-    |> Lwt.return
+    Alcotest.(check (list time_window_testable) "succeeds") expected result |> Lwt.return
   in
   let start_earlier = 2024, 3, 30 in
   let start_later = 2024, 4, 5 in
@@ -112,6 +103,6 @@ let create_timewindow () =
     let overlapps = [ Model.create_timewindow ~experiment () ] in
     Data.urlencoded |> decode >>= handle ~id ~overlapps experiment
   in
-  let expected = Error Pool_common.Message.SessionOverlap in
+  let expected = Error Pool_message.Error.SessionOverlap in
   check_result expected events
 ;;

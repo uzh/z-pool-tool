@@ -1,14 +1,14 @@
 open Tyxml.Html
 open Component
 open Input
-module Message = Pool_common.Message
+module Message = Pool_message
 module HttpUtils = Http_utils
 
 let contact_profile_layout language title html =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "has-gap" ] ]
         [ txt (Pool_common.Utils.nav_link_to_string language title) ]
     ; html
     ]
@@ -19,29 +19,31 @@ let grouped_custom_fields_form language custom_fields to_html =
   let groups, ungrouped_fields = custom_fields in
   [ div
       ~a:[ a_class [ "stack-lg" ] ]
-      (div ~a:[ a_class [ "grid-col-2" ] ] (CCList.map to_html ungrouped_fields)
+      (div
+         ~a:[ a_class [ "grid-col-2"; "grid-gap-lg" ] ]
+         (CCList.map to_html ungrouped_fields)
        :: CCList.map
             (fun (Group.Public.{ fields; _ } as group) ->
-              div
-                [ h2
-                    ~a:[ a_class [ "heading-2" ] ]
-                    [ txt Group.(Public.name language group) ]
-                ; div
-                    ~a:[ a_class [ "grid-col-2" ] ]
-                    (fields |> CCList.map to_html)
-                ])
+               div
+                 [ h2
+                     ~a:[ a_class [ "heading-2"; "has-gap" ] ]
+                     [ txt Group.(Public.name language group) ]
+                 ; div
+                     ~a:[ a_class [ "grid-col-2"; "grid-gap-lg" ] ]
+                     (fields |> CCList.map to_html)
+                 ])
             groups)
   ]
 ;;
 
 let personal_details_form
-  csrf
-  language
-  query_language
-  form_context
-  tenant_languages
-  contact
-  custom_fields
+      csrf
+      language
+      query_parameters
+      form_context
+      tenant_languages
+      contact
+      custom_fields
   =
   let open Contact in
   let action, is_admin =
@@ -49,48 +51,36 @@ let personal_details_form
     | `Contact -> Htmx.contact_profile_hx_post, false
     | `Admin -> Htmx.admin_profile_hx_post (Contact.id contact), true
   in
-  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let externalize = HttpUtils.externalize_path_with_params query_parameters in
   let htmx_action = externalize action in
-  let form_attrs =
-    [ a_method `Post; a_action htmx_action; a_class [ "stack" ] ]
-  in
+  let form_attrs = [ a_method `Post; a_action htmx_action; a_class [ "stack" ] ] in
   let htmx_create field =
     Htmx.create ~required:true field language ~hx_post:htmx_action ()
   in
   let custom_field_to_html field =
     let hx_delete =
-      Htmx.admin_profile_hx_delete
-        (Contact.id contact)
-        (Custom_field.Public.id field)
+      Htmx.admin_profile_hx_delete (Contact.id contact) (Custom_field.Public.id field)
     in
-    Htmx.custom_field_to_htmx
-      language
-      is_admin
-      ~hx_post:htmx_action
-      ~hx_delete
-      field
-      ()
+    Htmx.custom_field_to_htmx language is_admin ~hx_post:htmx_action ~hx_delete field ()
   in
   let open Message in
   let admin_hint =
     match is_admin with
     | true ->
-      [ Pool_common.(
-          Utils.hint_to_string language I18n.AdminOverwriteContactValues)
+      [ Pool_common.(Utils.hint_to_string language I18n.AdminOverwriteContactValues)
         |> HttpUtils.add_line_breaks
       ]
-      |> Component.Notification.notification language `Warning
+      |> Component.Notification.create language `Warning
     | false -> txt ""
   in
   let static_fields =
     let fields =
       div
-        ~a:[ a_class [ "grid-col-2" ] ]
+        ~a:[ a_class [ "grid-col-2"; "grid-gap-lg" ] ]
         (csrf_element csrf ()
          :: CCList.map
               (fun (version, field, label, value, help) ->
-                Htmx.create_entity ?help ?label version field value
-                |> htmx_create)
+                 Htmx.create_entity ?help ?label version field value |> htmx_create)
               Htmx.
                 [ ( contact.firstname_version
                   , Field.Firstname
@@ -105,10 +95,7 @@ let personal_details_form
                   , Field.Lastname
                   , None
                   , Text
-                      (contact
-                       |> Contact.lastname
-                       |> User.Lastname.value
-                       |> CCOption.pure)
+                      (contact |> Contact.lastname |> User.Lastname.value |> CCOption.pure)
                   , None )
                 ; ( contact.language_version
                   , Field.Language
@@ -125,13 +112,11 @@ let personal_details_form
     match is_admin with
     | true ->
       div
-        ~a:[ a_class [ "inset"; "border"; "bg-grey-light" ] ]
+        ~a:[ a_class [ "inset"; "border"; "bg-grey-lightest" ] ]
         [ p
             [ txt
                 Pool_common.(
-                  Utils.hint_to_string
-                    language
-                    I18n.ContactProfileVisibleOverride)
+                  Utils.hint_to_string language I18n.ContactProfileVisibleOverride)
             ]
         ; fields
         ]
@@ -139,13 +124,10 @@ let personal_details_form
   in
   div
     ~a:[ a_class [ "flexcolumn"; "stack-lg" ] ]
-    [ Notification.notification
+    [ Notification.create
         language
         `Default
-        [ p
-            [ txt Pool_common.(Utils.hint_to_string language I18n.PartialUpdate)
-            ]
-        ]
+        [ p [ txt Pool_common.(Utils.hint_to_string language I18n.PartialUpdate) ] ]
     ; form
         ~a:form_attrs
         [ static_fields
@@ -154,147 +136,85 @@ let personal_details_form
             [ div
                 ~a:[ a_class [ "stack-lg" ] ]
                 (admin_hint
-                 :: grouped_custom_fields_form
-                      language
-                      custom_fields
-                      custom_field_to_html)
+                 :: grouped_custom_fields_form language custom_fields custom_field_to_html
+                )
             ]
         ]
     ]
 ;;
 
-let status_form
-  ?(additional = [])
-  csrf
-  language
-  query_language
-  contact
-  form_context
-  =
-  let open Pool_common in
-  let action, hint =
-    match form_context with
-    | `Contact -> Htmx.contact_profile_hx_post, I18n.PauseAccountContact
-    | `Admin ->
-      Htmx.admin_profile_hx_post (Contact.id contact), I18n.PauseAccountAdmin
-  in
-  let externalize = HttpUtils.externalize_path_with_lang query_language in
-  let control, confirmable, submit_type =
-    let open Message in
-    let open Pool_common in
-    let confirmable_str = Utils.confirmable_to_string language in
-    match contact.Contact.paused |> Pool_user.Paused.value with
-    | true ->
-      ReactivateAccount, confirmable_str I18n.ReactivateAccount, `Success
-    | false -> PauseAccount, confirmable_str I18n.PauseAccount, `Error
-  in
-  div
-    ~a:[ a_class [ "stack-md" ] ]
-    ([ h2
-         ~a:[ a_class [ "heading-2" ] ]
-         [ txt
-             Pool_common.(
-               Utils.field_to_string language Message.Field.Status
-               |> CCString.capitalize_ascii)
-         ]
-     ; div
-         ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
-         [ form
-             ~a:
-               [ a_method `Post
-               ; a_action (externalize (Format.asprintf "%s/pause" action))
-               ; a_user_data "confirmable" confirmable
-               ]
-             [ csrf_element csrf ()
-             ; submit_element
-                 ~classnames:[ "nobr" ]
-                 ~submit_type
-                 language
-                 control
-                 ()
-             ]
-         ; div
-             ~a:[ a_class [ "grow" ] ]
-             [ txt Pool_common.(Utils.hint_to_string language hint) ]
-         ]
-     ]
-     @ additional)
-;;
-
 let personal_details
-  contact
-  custom_fields
-  tenant_languages
-  Pool_context.{ language; query_language; csrf; _ }
+      contact
+      custom_fields
+      tenant_languages
+      Pool_context.{ language; query_parameters; csrf; _ }
   =
   let form_context = `Contact in
+  let pause_form =
+    let open Page_contact_partials in
+    pause_form csrf language query_parameters contact form_context
+    |> CCList.return
+    |> status_form_table language
+  in
   div
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
         [ personal_details_form
             csrf
             language
-            query_language
+            query_parameters
             form_context
             tenant_languages
             contact
             custom_fields
-        ; status_form csrf language query_language contact form_context
+        ; pause_form
         ]
     ]
   |> contact_profile_layout language Pool_common.I18n.PersonalDetails
 ;;
 
 let login_information
-  (contact : Contact.t)
-  Pool_context.{ language; query_language; csrf; _ }
-  password_policy
+      (contact : Contact.t)
+      Pool_context.{ language; query_parameters; csrf; _ }
+      password_policy
   =
   let open Contact in
-  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let open Message.Control in
+  let externalize = HttpUtils.externalize_path_with_params query_parameters in
   let form_attrs action =
     [ a_method `Post; a_action (externalize action); a_class [ "stack" ] ]
   in
   let email_form =
     div
       [ h2
-          ~a:[ a_class [ "heading-2" ] ]
+          ~a:[ a_class [ "heading-2"; "has-gap" ] ]
           Pool_common.
-            [ Utils.control_to_string
-                language
-                Message.(Update (Some Field.email))
-              |> txt
-            ]
+            [ Utils.control_to_string language (Update (Some Field.email)) |> txt ]
       ; form
           ~a:(form_attrs "/user/update-email")
           [ csrf_element csrf ()
           ; input_element
               language
               `Email
-              Message.Field.Email
-              ~value:contact.user.Sihl_user.email
+              Pool_message.Field.Email
+              ~value:(contact.user.Pool_user.email |> Pool_user.EmailAddress.value)
           ; div
               ~a:[ a_class [ "flexrow" ] ]
               [ submit_element
                   ~classnames:[ "push" ]
                   language
-                  Message.(Update (Some Field.Email))
+                  (Update (Some Field.Email))
                   ()
               ]
           ]
       ]
   in
   let password_form =
-    let open Message in
     div
       [ h2
-          ~a:[ a_class [ "heading-2" ] ]
+          ~a:[ a_class [ "heading-2"; "has-gap" ] ]
           Pool_common.
-            [ Utils.control_to_string
-                language
-                Message.(Update (Some Field.password))
-              |> txt
-            ]
+            [ Utils.control_to_string language (Update (Some Field.password)) |> txt ]
       ; form
           ~a:(form_attrs "/user/update-password")
           [ csrf_element csrf ()
@@ -307,8 +227,7 @@ let login_information
           ; input_element
               language
               ~hints:
-                Pool_common.I18n.
-                  [ I18nText (password_policy |> I18n.content_to_string) ]
+                Pool_common.I18n.[ I18nText (password_policy |> I18n.content_to_string) ]
               `Password
               ~value:""
               Field.NewPassword
@@ -324,29 +243,26 @@ let login_information
               [ submit_element
                   ~classnames:[ "push" ]
                   language
-                  Message.(Update (Some Field.password))
+                  (Update (Some Field.password))
                   ()
               ]
           ]
       ]
   in
-  div
-    [ div
-        ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ]
-        [ email_form; password_form ]
-    ]
+  div [ div ~a:[ a_class [ "grid-col-2"; "grid-gap-lg" ] ] [ email_form; password_form ] ]
   |> contact_profile_layout language Pool_common.I18n.LoginInformation
 ;;
 
 let contact_information
-  contact
-  Pool_context.{ language; query_language; csrf; _ }
-  (verification : Pool_user.UnverifiedCellPhone.t option)
-  was_reset
+      contact
+      Pool_context.{ language; query_parameters; csrf; _ }
+      (verification : Pool_user.UnverifiedCellPhone.t option)
+      was_reset
   =
   let open Contact in
   let open Pool_common in
-  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let open Message.Control in
+  let externalize = HttpUtils.externalize_path_with_params query_parameters in
   let form_attrs action =
     [ a_method `Post; a_action (externalize action); a_class [ "stack" ] ]
   in
@@ -355,13 +271,10 @@ let contact_information
   in
   let email_hint =
     let link =
-      HttpUtils.path_with_language query_language "/user/login-information"
+      HttpUtils.url_with_field_params query_parameters "/user/login-information"
     in
-    [ txt
-        Pool_common.(
-          Utils.hint_to_string language I18n.ContactInformationEmailHint)
-    ]
-    |> Notification.notification
+    [ txt Pool_common.(Utils.hint_to_string language I18n.ContactInformationEmailHint) ]
+    |> Notification.create
          language
          ~link:(link, Pool_common.I18n.LoginInformation)
          `Warning
@@ -384,10 +297,10 @@ let contact_information
       | false -> txt ""
       | true ->
         [ I18n.ContactPhoneNumberVerificationWasReset |> hint_to_html ]
-        |> Component.Notification.notification language `Success
+        |> Component.Notification.create language `Success
     in
     div
-      [ form_title Message.(Add (Some Field.CellPhone))
+      [ form_title (Add (Some Field.CellPhone))
       ; div
           ~a:[ a_class [ "stack" ] ]
           [ current_hint
@@ -401,7 +314,7 @@ let contact_information
                   [ submit_element
                       ~classnames:[ "push" ]
                       language
-                      Message.(Update (Some Field.CellPhone))
+                      (Update (Some Field.CellPhone))
                       ()
                   ]
               ]
@@ -411,43 +324,38 @@ let contact_information
   let form_as_link url i18n =
     form
       ~a:[ a_method `Post; a_action (externalize url) ]
-      [ csrf_element csrf ()
-      ; submit_element ~classnames:[ "as-link" ] language i18n ()
-      ]
+      [ csrf_element csrf (); submit_element ~classnames:[ "as-link" ] language i18n () ]
   in
   let verify_form cell_phone =
     div
-      [ form_title Message.(Verify (Some Field.CellPhone))
+      [ form_title (Verify (Some Field.CellPhone))
       ; div
           ~a:[ a_class [ "stack" ] ]
-          [ [ I18n.ContactEnterCellPhoneToken
-                (Pool_user.CellPhone.value cell_phone)
+          [ [ I18n.ContactEnterCellPhoneToken (Pool_user.CellPhone.value cell_phone)
               |> Utils.hint_to_string language
               |> txt
             ]
-            |> Component.Notification.notification language `Warning
+            |> Component.Notification.create language `Warning
           ; form
               ~a:(form_attrs "/user/phone/verify")
               [ csrf_element csrf ()
               ; input_element (* TODO: Add 2 part input (pre and nr) *)
                   language
                   `Text
-                  Message.Field.Token
+                  Pool_message.Field.Token
               ; div
                   ~a:[ a_class [ "flexrow" ] ]
                   [ submit_element
                       ~classnames:[ "push" ]
                       language
-                      Message.(Verify (Some Field.CellPhone))
+                      (Verify (Some Field.CellPhone))
                       ()
                   ]
               ]
           ; div
               ~a:[ a_class [ "flexrow"; "flex-gap"; "gap"; "justify-end" ] ]
-              [ form_as_link
-                  "/user/phone/resend-token"
-                  Message.(Resend (Some Field.Token))
-              ; form_as_link "/user/phone/reset" Message.EnterNewCellPhone
+              [ form_as_link "/user/phone/resend-token" (Resend (Some Field.Token))
+              ; form_as_link "/user/phone/reset" EnterNewCellPhone
               ]
           ]
       ]
@@ -455,36 +363,35 @@ let contact_information
   let form =
     match verification with
     | None -> new_form ()
-    | Some { Pool_user.UnverifiedCellPhone.cell_phone; _ } ->
-      verify_form cell_phone
+    | Some { Pool_user.UnverifiedCellPhone.cell_phone; _ } -> verify_form cell_phone
   in
   div [ email_hint; div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ form ] ]
   |> contact_profile_layout language Pool_common.I18n.ContactInformation
 ;;
 
-let pause_account Pool_context.{ language; query_language; csrf; _ } ?token () =
+let pause_account Pool_context.{ language; query_parameters; csrf; _ } ?token () =
   let open Pool_common in
-  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let externalize = HttpUtils.externalize_path_with_params query_parameters in
   let action =
     match token with
     | None -> "/user/update/pause" |> externalize
     | Some token ->
       Message.add_field_query_params
         "/unsubscribe"
-        [ Message.Field.Token, User_import.Token.value token ]
+        [ Pool_message.Field.Token, User_import.Token.value token ]
       |> externalize
   in
   let open Utils in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 [ txt (control_to_string language Message.PauseAccount) ]
+    [ h1 [ txt (control_to_string language Message.Control.PauseAccount) ]
     ; p [ txt (hint_to_string language I18n.PauseAccountContact) ]
     ; p [ txt (confirmable_to_string language I18n.PauseAccount) ]
     ; form
         ~a:[ a_method `Post; a_action action ]
         Component.Input.
           [ csrf_element csrf ()
-          ; submit_element language Message.PauseAccount ()
+          ; submit_element language Message.Control.PauseAccount ()
           ]
     ]
 ;;

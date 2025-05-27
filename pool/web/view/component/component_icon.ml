@@ -12,8 +12,7 @@ type t =
   | CheckmarkCircle [@name "checkmark-circle"] [@printer prt "checkmark-circle"]
   | CheckmarkCircleOutline [@name "checkmark-circle-outline"]
   [@printer prt "checkmark-circle-outline"]
-  | ChevronBack [@name "chevron-back-outline"]
-  [@printer prt "chevron-back-outline"]
+  | ChevronBack [@name "chevron-back-outline"] [@printer prt "chevron-back-outline"]
   | ChevronBackCircle [@name "chevron-back-circle-outline"]
   [@printer prt "chevron-back-circle-outline"]
   | ChevronForward [@name "chevron-forward-outline"]
@@ -28,8 +27,7 @@ type t =
   | DownloadOutline [@name "download-outline"] [@printer prt "download-outline"]
   | Earth [@name "earth"] [@printer prt "earth"]
   | EarthOutline [@name "earth-outline"] [@printer prt "earth-outline"]
-  | EllipsisVertical [@name "ellipsis-vertical"]
-  [@printer prt "ellipsis-vertical"]
+  | EllipsisVertical [@name "ellipsis-vertical"] [@printer prt "ellipsis-vertical"]
   | EllipsisVerticalOutline [@name "ellipsis-vertical-outline"]
   [@printer prt "ellipsis-vertical-outline"]
   | Eye [@name "eye"] [@printer prt "eye"]
@@ -38,8 +36,7 @@ type t =
   | HelpOutline [@name "help-outline"] [@printer prt "help-outline"]
   | InformationCircle [@name "information-circle-outline"]
   [@printer prt "information-circle-outline"]
-  | InformationOutline [@name "information-outline"]
-  [@printer prt "information-outline"]
+  | InformationOutline [@name "information-outline"] [@printer prt "information-outline"]
   | Leaf [@name "leaf"] [@printer prt "leaf"]
   | LeafOutline [@name "leaf-outline"] [@printer prt "leaf-outline"]
   | Location [@name "location"] [@printer prt "location"]
@@ -49,12 +46,10 @@ type t =
   | MailError [@name "mail-error"] [@printer prt "mail-error"]
   | MailOutline [@name "mail-outline"] [@printer prt "mail-outline"]
   | MenuOutline [@name "menu-outline"] [@printer prt "menu-outline"]
-  | NextCircleOutline [@name "next-circle-outline"]
-  [@printer prt "next-circle-outline"]
+  | NextCircleOutline [@name "next-circle-outline"] [@printer prt "next-circle-outline"]
   | NextOutline [@name "next-outline"] [@printer prt "next-outline"]
   | Notifications [@name "notifications"] [@printer prt "notifications"]
-  | NotificationsOff [@name "notifications-off"]
-  [@printer prt "notifications-off"]
+  | NotificationsOff [@name "notifications-off"] [@printer prt "notifications-off"]
   | NotificationsOffOutline [@name "notifications-off-outline"]
   [@printer prt "notifications-off-outline"]
   | NotificationsOutline [@name "notifications-outline"]
@@ -62,8 +57,7 @@ type t =
   | OpenOutline [@name "open-outline"] [@printer prt "open-outline"]
   | Person [@name "person"] [@printer prt "person"]
   | PersonOutline [@name "person-outline"] [@printer prt "person-outline"]
-  | PrevCircleOutline [@name "prev-circle-outline"]
-  [@printer prt "prev-circle-outline"]
+  | PrevCircleOutline [@name "prev-circle-outline"] [@printer prt "prev-circle-outline"]
   | PrevOutline [@name "prev-outline"] [@printer prt "prev-outline"]
   | Print [@name "print"] [@printer prt "print"]
   | PrintOutline [@name "print-outline"] [@printer prt "print-outline"]
@@ -82,16 +76,22 @@ type t =
   | UploadOutline [@name "upload-outline"] [@printer prt "upload-outline"]
 [@@deriving eq, show]
 
-let to_html ?title ?(classnames = []) icon =
+let to_html ?title ?(attributes = []) ?(classnames = []) icon =
   let open CCFun in
-  i
-    ~a:
-      ([ a_class ([ Format.asprintf "icon-%s" (show icon) ] @ classnames) ]
-       @ CCOption.map_or ~default:[] (a_title %> CCList.return) title)
-    []
+  let attributes =
+    let title = CCOption.map_or ~default:[] (a_title %> CCList.return) title in
+    [ a_class ([ Format.asprintf "icon-%s" (show icon) ] @ classnames) ]
+    @ title
+    @ attributes
+  in
+  i ~a:attributes []
 ;;
 
-let bool_to_icon = function
-  | false -> to_html Close
-  | true -> to_html Checkmark
+let bool_to_icon ?(colored = false) ?(outlined = false) ?(classnames = []) = function
+  | false ->
+    let icon = if outlined then CloseCircle else Close in
+    to_html ~classnames:(classnames @ if colored then [ "color-red" ] else []) icon
+  | true ->
+    let icon = if outlined then CheckmarkCircle else Checkmark in
+    to_html ~classnames:(classnames @ if colored then [ "color-green" ] else []) icon
 ;;

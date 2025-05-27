@@ -1,5 +1,5 @@
-module Conformist = Pool_common.Utils.PoolConformist
-module Message = Pool_common.Message
+module Conformist = Pool_conformist
+module Message = Pool_message
 
 let src = Logs.Src.create "tags.cqrs"
 
@@ -13,7 +13,7 @@ let default_command title description model = { title; description; model }
 
 let assignment_schema =
   let open Conformist in
-  make Field.[ Tags.Id.schema ~field:Message.Field.Tag () ] CCFun.id
+  make Field.[ Tags.Id.schema ~field:Pool_message.Field.Tag () ] CCFun.id
 ;;
 
 let default_schema =
@@ -30,19 +30,19 @@ let default_schema =
 let validate expected { Tags.id; model; _ } =
   if Tags.Model.(equal expected model)
   then Ok id
-  else Error Message.(Invalid Field.Tag)
+  else Error Message.(Error.Invalid Field.Tag)
 ;;
 
 module Create : sig
   include Common.CommandSig with type t = decoded
 
-  val decode : (string * string list) list -> (t, Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 
   val handle
     :  ?id:Tags.Id.t
     -> ?tags:Logs.Tag.set
     -> t
-    -> (Pool_event.t list, Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 end = struct
   type t = decoded
 
@@ -64,13 +64,13 @@ end
 module Update : sig
   include Common.CommandSig with type t = decoded
 
-  val decode : (string * string list) list -> (t, Message.error) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 
   val handle
     :  ?tags:Logs.Tag.set
     -> Tags.t
     -> t
-    -> (Pool_event.t list, Message.error) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Tags.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -80,12 +80,12 @@ end = struct
     let open Tags in
     if Model.equal tag.Tags.model command.model
     then (
-      let tag : t =
+      let updated : t =
         { tag with title = command.title; description = command.description }
       in
       Logs.info ~src (fun m -> m "Handle command edit" ~tags);
-      Ok [ Updated tag |> Pool_event.tags ])
-    else Error Pool_common.Message.(Invalid Field.Model)
+      Ok [ Updated (tag, updated) |> Pool_event.tags ])
+    else Error Pool_message.(Error.Invalid Field.Model)
   ;;
 
   let decode data =
@@ -103,10 +103,10 @@ module AssignTagToContact : sig
     :  ?tags:Logs.Tag.set
     -> Contact.t
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val validate : Tags.t -> (t, Conformist.error_msg) result
-  val decode : (string * string list) list -> (t, Message.error) result
+  val validate : Tags.t -> (t, Pool_message.Error.t) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Tags.Id.t
@@ -114,7 +114,9 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) contact (tag_uuid : t) =
     Logs.info ~src (fun m -> m "Handle command AssignTagToContact" ~tags);
     Ok
-      [ Tags.(Tagged { Tagged.model_uuid = Contact.id contact; tag_uuid })
+      [ Tags.(
+          Tagged
+            { Tagged.model_uuid = Contact.id contact |> Contact.Id.to_common; tag_uuid })
         |> Pool_event.tags
       ]
   ;;
@@ -136,7 +138,7 @@ module RemoveTagFromContact : sig
     :  ?tags:Logs.Tag.set
     -> Contact.t
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -146,7 +148,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command RemoveTagFromContact" ~tags);
     let open CCResult in
     let* tag_uuid = validate Tags.Model.Contact tag in
-    let model_uuid = Contact.id contact in
+    let model_uuid = Contact.id contact |> Contact.Id.to_common in
     Ok [ Tags.(Untagged { Tagged.model_uuid; tag_uuid }) |> Pool_event.tags ]
   ;;
 
@@ -160,10 +162,10 @@ module AssignTagToExperiment : sig
     :  ?tags:Logs.Tag.set
     -> Experiment.t
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val validate : Tags.t -> (t, Conformist.error_msg) result
-  val decode : (string * string list) list -> (t, Message.error) result
+  val validate : Tags.t -> (t, Pool_message.Error.t) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Tags.Id.t
@@ -191,7 +193,7 @@ module RemoveTagFromExperiment : sig
     :  ?tags:Logs.Tag.set
     -> Experiment.t
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
@@ -215,17 +217,16 @@ module AssignParticipationTagToEntity : sig
     :  ?tags:Logs.Tag.set
     -> Tags.ParticipationTags.entity
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
-  val validate : Tags.t -> (t, Conformist.error_msg) result
-  val decode : (string * string list) list -> (t, Message.error) result
+  val validate : Tags.t -> (t, Pool_message.Error.t) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Tags.Id.t
 
   let handle ?(tags = Logs.Tag.empty) entity (tag_uuid : t) =
-    Logs.info ~src (fun m ->
-      m "Handle command AssignParticipationTagToEntity" ~tags);
+    Logs.info ~src (fun m -> m "Handle command AssignParticipationTagToEntity" ~tags);
     Ok Tags.[ ParticipationTagAssigned (entity, tag_uuid) |> Pool_event.tags ]
   ;;
 
@@ -246,15 +247,14 @@ module RemoveParticipationTagFromEntity : sig
     :  ?tags:Logs.Tag.set
     -> Tags.ParticipationTags.entity
     -> t
-    -> (Pool_event.t list, Conformist.error_msg) result
+    -> (Pool_event.t list, Pool_message.Error.t) result
 
   val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Tags.t
 
   let handle ?(tags = Logs.Tag.empty) entity tag =
-    Logs.info ~src (fun m ->
-      m "Handle command RemoveParticipationTagFromEntity" ~tags);
+    Logs.info ~src (fun m -> m "Handle command RemoveParticipationTagFromEntity" ~tags);
     Ok Tags.[ ParticipationTagRemoved (entity, tag.Tags.id) |> Pool_event.tags ]
   ;;
 

@@ -1,4 +1,4 @@
-module Database = Pool_database
+module Database = Database
 open Entity
 
 let src = Logs.Src.create "user_import.event"

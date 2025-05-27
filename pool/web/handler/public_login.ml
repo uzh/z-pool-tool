@@ -1,12 +1,14 @@
+open CCFun.Infix
+open Utils.Lwt_result.Infix
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Response = Http_response
 
 let src = Logs.Src.create "handler.public.login"
-let to_ctx = Pool_database.to_ctx
+let to_ctx = Database.to_ctx
 let create_layout req = General.create_tenant_layout req
 
 let increase_sign_in_count ~tags database_label user =
-  let open Utils.Lwt_result.Infix in
   let open Pool_context in
   let open Cqrs_command in
   let events =
@@ -15,156 +17,212 @@ let increase_sign_in_count ~tags database_label user =
     | Contact contact -> Contact_command.UpdateSignInCount.handle ~tags contact
     | Guest -> Ok []
   in
-  events |> Lwt_result.lift |>> Pool_event.handle_events database_label
+  events |> Lwt_result.lift |>> Pool_event.handle_events database_label user
 ;;
 
 let login_get req =
-  let open Utils.Lwt_result.Infix in
-  let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
   let result context =
-    Utils.Lwt_result.map_error (fun err -> err, "/index")
+    Response.bad_request_render_error context
     @@
     let open Sihl.Web in
-    Page.Public.login
-      ?intended:(HttpUtils.find_intended_opt req)
-      context
-      flash_fetcher
+    Page.Public.login ?intended:(HttpUtils.find_intended_opt req) context
     |> create_layout req ~active_navigation:"/login" context
     >|+ Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
+;;
+
+let login_token_confirmation req =
+  let tags = Pool_context.Logger.Tags.req req in
+  let open Response in
+  let result ({ Pool_context.database_label; _ } as context) =
+    let* user, auth, (_ : Authentication.Token.t) =
+      Helpers_login.decode_2fa_confirmation database_label req ~tags
+      |> bad_request_on_error login_get
+    in
+    Response.bad_request_render_error context
+    @@ (Page.Public.login_token_confirmation
+          ~authentication_id:auth.Authentication.id
+          ?intended:(HttpUtils.find_intended_opt req)
+          ~email:(Pool_user.email user)
+          context
+        |> create_layout req ~active_navigation:"/login" context
+        >|+ Sihl.Web.Response.of_html)
+  in
+  Response.handle ~src req result
 ;;
 
 let login_post req =
+  let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let to_sihl_user =
-    let open Pool_context in
-    function
-    | Admin { Admin.user; _ } -> Ok user
-    | Contact { Contact.user; _ } -> Ok user
-    | Guest -> Error Pool_common.Message.(NotFound Field.User)
+  let result ({ Pool_context.database_label; user; _ } as context) =
+    Response.bad_request_on_error ~urlencoded login_get
+    @@
+    let handle_events = Pool_event.handle_events database_label user in
+    let* user, auth, events =
+      Helpers_login.create_2fa_login ~tags req context urlencoded
+    in
+    let success () =
+      Page.Public.login_token_confirmation
+        ~authentication_id:auth.Authentication.id
+        ?intended:(HttpUtils.find_intended_opt req)
+        ~email:(Pool_user.email user)
+        context
+      |> create_layout req ~active_navigation:"/login" context
+      >|+ Sihl.Web.Response.of_html
+    in
+    events |> handle_events >|> success
   in
-  let result { Pool_context.database_label; query_language; _ } =
-    let open Utils.Lwt_result.Infix in
-    Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , "/login" |> HttpUtils.intended_of_request req
-      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
-    @@ let* user = Helpers.Login.login req urlencoded database_label in
-       let login user ?(set_completion_cookie = false) path actions =
-         let* sihl_user = to_sihl_user user |> Lwt_result.lift in
-         let tags = Pool_context.Logger.Tags.req req in
-         let* () = increase_sign_in_count ~tags database_label user in
-         HttpUtils.(
-           redirect_to_with_actions
-             (path_with_language query_language path)
-             ([ Sihl.Web.Session.set [ "user_id", sihl_user.Sihl_user.id ] ]
-              @ actions))
-         ||> (fun res ->
-               if set_completion_cookie
-               then
-                 Sihl.Web.Session.set_value
-                   ~key:Contact.profile_completion_cookie
-                   "true"
-                   req
-                   res
-               else res)
-         |> Lwt_result.ok
-       in
-       let redirect path =
-         HttpUtils.(redirect_to (path_with_language query_language path))
-         |> Lwt_result.ok
-       in
-       let success user () =
-         let path =
-           match HttpUtils.find_intended_opt req with
-           | Some intended -> intended
-           | None -> user |> Pool_context.dashboard_path
-         in
-         login user path []
-       in
-       let find_contact user =
-         Contact.find
-           database_label
-           (user.Sihl_user.id |> Pool_common.Id.of_string)
-       in
-       let find_admin user =
-         user.Sihl_user.id
-         |> Admin.Id.of_string
-         |> Admin.find database_label
-         >|+ Pool_context.admin
-       in
-       match user.Sihl_user.confirmed with
-       | false ->
-         redirect
-           (Http_utils.path_with_language query_language "/email-confirmation")
-       | true ->
-         user
-         |> Admin.user_is_admin database_label
-         >|> (function
-          | true ->
-            let* admin = find_admin user in
-            success admin ()
-          | false ->
-            let* contact = user |> find_contact in
-            let%lwt required_answers_given =
-              Custom_field.all_required_answered
-                database_label
-                (Contact.id contact)
-            in
-            let contact = contact |> Pool_context.contact in
-            (match required_answers_given with
-             | true -> success contact ()
-             | false ->
-               login
-                 contact
-                 ~set_completion_cookie:true
-                 "/user/completion"
-                 [ Message.set
-                     ~error:[ Pool_common.Message.(RequiredFieldsMissing) ]
-                 ]))
+  Response.handle ~src req result
+;;
+
+let login_cofirmation req =
+  let open Response in
+  let open HttpUtils in
+  let tags = Pool_context.Logger.Tags.req req in
+  let result { Pool_context.database_label; query_parameters; _ } =
+    let* user, auth, token =
+      Helpers_login.decode_2fa_confirmation database_label req ~tags
+      |> bad_request_on_error login_get
+    in
+    bad_request_on_error login_token_confirmation
+    @@
+    let* user, events = Helpers_login.confirm_2fa_login ~tags user auth token req in
+    let success_and_redirect
+          ?(set_completion_cookie = false)
+          ?redirect
+          ?(actions = [])
+          context_user
+      =
+      let redirect =
+        let open CCOption in
+        redirect
+        <+> find_intended_opt req
+        |> value ~default:(Pool_context.dashboard_path context_user)
+        |> url_with_field_params query_parameters
+      in
+      let tags = Pool_context.Logger.Tags.req req in
+      let%lwt () = Pool_event.handle_events database_label context_user events in
+      let* () = increase_sign_in_count ~tags database_label context_user in
+      redirect_to_with_actions
+        redirect
+        ([ Sihl.Web.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ] ]
+         @ actions)
+      ||> (fun res ->
+      if set_completion_cookie
+      then
+        Sihl.Web.Session.set_value ~key:Contact.profile_completion_cookie "true" req res
+      else res)
+      |> Lwt_result.ok
+    in
+    let handle_admin_login user =
+      user.Pool_user.id
+      |> Admin.(Id.of_user %> find database_label)
+      >|+ Pool_context.admin
+      >>= success_and_redirect
+    in
+    let handle_contact_login user =
+      let* contact = user.Pool_user.id |> Contact.(Id.of_user %> find database_label) in
+      let%lwt required_answers_given =
+        Custom_field.all_required_answered database_label (Contact.id contact)
+      in
+      let contact = contact |> Pool_context.contact in
+      match required_answers_given with
+      | true -> success_and_redirect contact
+      | false ->
+        success_and_redirect
+          ~set_completion_cookie:true
+          ~redirect:"/user/completion"
+          ~actions:[ Message.set ~error:[ Pool_message.Error.RequiredFieldsMissing ] ]
+          contact
+    in
+    match user |> Pool_user.is_confirmed with
+    | false ->
+      redirect_to (url_with_field_params query_parameters "/email-confirmation")
+      |> Lwt_result.ok
+    | true ->
+      user
+      |> Admin.user_is_admin database_label
+      >|> (function
+       | true -> handle_admin_login user
+       | false -> handle_contact_login user)
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let request_reset_password_get req =
   let result context =
-    Utils.Lwt_result.map_error (fun err -> err, "/index")
+    Response.bad_request_render_error context
     @@
-    let open Utils.Lwt_result.Infix in
     let open Sihl.Web in
     Page.Public.request_reset_password context
     |> create_layout req ~active_navigation:"/request-reset-password" context
     >|+ Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let request_reset_password_post req =
   let open HttpUtils in
   let open Cqrs_command.Common_command.ResetPassword in
   let open Message_template in
-  let result ({ Pool_context.database_label; query_language; _ } as context) =
+  let result ({ Pool_context.database_label; query_parameters; _ } as context) =
     let redirect_path =
-      path_with_language query_language "/request-reset-password"
+      url_with_field_params query_parameters "/request-reset-password"
     in
-    Lwt_result.map_error (fun err ->
-      err, redirect_path, [ (fun res -> Message.set ~error:[ err ] res) ])
+    Response.bad_request_on_error request_reset_password_get
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let open Utils.Lwt_result.Infix in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
+    let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let* user =
       Sihl.Web.Request.to_urlencoded req
       ||> decode
-      |>> Pool_user.find_active_user_by_email_opt database_label
+      |>> Pool_user.find_active_by_email_opt database_label
     in
-    let* () =
+    let make_message message_language user =
+      let email_address = Pool_user.email user in
+      let reset_message () =
+        PasswordReset.create database_label message_language (Tenant tenant) user
+      in
+      let verification_message () =
+        let make_message token =
+          let open Pool_user in
+          Message_template.SignUpVerification.create
+            database_label
+            message_language
+            tenant
+            email_address
+            token
+            (firstname user)
+            (lastname user)
+            (id user)
+        in
+        let open Email in
+        user
+        |> Pool_user.email
+        |> find_active_token database_label
+        >|> function
+        | None -> Lwt_result.fail Pool_message.(Error.NotFound Field.Token)
+        | Some token -> make_message token |> Lwt_result.ok
+      in
+      let make_message = function
+        | None -> verification_message ()
+        | Some (_ : Pool_user.EmailVerified.t) -> reset_message ()
+      in
+      let open Pool_context in
+      let%lwt user = context_user_of_user database_label user in
+      match user with
+      | Guest -> Lwt_result.fail Pool_message.(Error.NotFound Field.User)
+      | Admin { Admin.email_verified; _ } -> make_message email_verified
+      | Contact { Contact.email_verified; _ } -> make_message email_verified
+    in
+    let handle () =
       match user with
       | None -> Lwt_result.return ()
       | Some user ->
         let%lwt message_language =
-          match query_language with
+          match Pool_context.Utils.query_language tenant_languages query_parameters with
           | Some lang -> Lwt.return lang
           | None ->
             (match%lwt Admin.user_is_admin database_label user with
@@ -176,132 +234,111 @@ let request_reset_password_post req =
                ||> fun Contact.{ language; _ } ->
                CCOption.value ~default:context.Pool_context.language language)
         in
-        PasswordReset.create
-          database_label
-          message_language
-          (Tenant tenant)
-          user
+        make_message message_language user
         >== handle ~tags
-        |>> Pool_event.handle_events ~tags database_label
+        |>> Pool_event.handle_events ~tags database_label context.Pool_context.user
     in
-    redirect_to_with_actions
-      redirect_path
-      [ Message.set ~success:[ Pool_common.Message.PasswordResetSuccessMessage ]
-      ]
-    >|> Lwt_result.return
+    let redirect () =
+      redirect_to_with_actions
+        redirect_path
+        [ Message.set ~success:[ Pool_message.Success.PasswordResetSuccessMessage ] ]
+      >|> Lwt_result.return
+    in
+    handle ()
+    ||> CCResult.get_lazy (fun err ->
+      let (_ : Pool_message.Error.t) = Pool_common.Utils.with_log_error err in
+      ())
+    >|> redirect
   in
-  result |> extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let reset_password_get req =
   let result ({ Pool_context.database_label; language; _ } as context) =
-    let open Utils.Lwt_result.Infix in
-    let error_path = "/request-reset-password/" in
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
+    Response.bad_request_render_error context
     @@
-    let token =
-      Sihl.Web.Request.query Pool_common.Message.Field.(Token |> show) req
-    in
+    let token = Sihl.Web.Request.query Pool_message.Field.(Token |> show) req in
     let%lwt password_policy =
       I18n.find_by_key database_label I18n.Key.PasswordPolicyText language
     in
     match token with
     | None ->
       HttpUtils.redirect_to_with_actions
-        error_path
-        [ Message.set ~error:[ Pool_common.Message.(NotFound Field.Token) ] ]
+        "/request-reset-password/"
+        [ Message.set ~error:[ Pool_message.(Error.NotFound Field.Token) ] ]
       |> Lwt_result.ok
     | Some token ->
       Page.Public.reset_password token context password_policy
       |> create_layout req ~active_navigation:"/reset-password" context
       >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let reset_password_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result { Pool_context.database_label; query_language; _ } =
-    let open Utils.Lwt_result.Infix in
-    let open Pool_common.Message in
-    let redirect = "/reset-password/" in
+  let result { Pool_context.database_label; query_parameters; user; _ } =
+    let open Pool_message in
+    Response.bad_request_on_error reset_password_get
+    @@
     let tags = Pool_context.Logger.Tags.req req in
     let* params =
       Field.[ Token; Password; PasswordConfirmation ]
       |> CCList.map Field.show
       |> HttpUtils.urlencoded_to_params urlencoded
-      |> CCOption.to_result (PasswordResetInvalidData, redirect)
+      |> CCOption.to_result Error.PasswordResetInvalidData
       |> Lwt_result.lift
     in
-    let go field = field |> Field.show |> CCFun.flip List.assoc params in
+    let go field = field |> Field.show |> CCFun.flip (CCList.assoc ~eq:( = )) params in
     let token = go Field.Token in
-    let redirect_with_param =
-      add_field_query_params redirect [ Field.Token, token ]
-    in
-    let ctx = to_ctx database_label in
-    let* (_ : Pool_user.Password.t) =
-      let open Pool_user.Password in
-      Field.Password
-      |> go
-      |> create
-      |> Lwt_result.lift
-      >|- fun err -> err, redirect_with_param
+    let password = Field.Password |> go |> Pool_user.Password.Plain.create in
+    let password_confirmed =
+      let open Pool_user.Password.Confirmation in
+      Field.PasswordConfirmation |> go |> create
     in
     let* user_uuid =
-      Service.Token.read ~ctx token ~k:"user_id"
-      ||> CCOption.to_result Pool_common.Message.(Invalid Field.Token)
-      >|- (fun err -> err, redirect)
-      >|+ Pool_common.Id.of_string
+      Pool_token.read database_label token ~k:"user_id"
+      ||> CCOption.to_result Pool_message.(Error.Invalid Field.Token)
+      >|+ Pool_user.Id.of_string
     in
     let%lwt reset =
-      Service.PasswordReset.reset_password
-        ~ctx
+      Pool_user.Password.Reset.reset_password
+        database_label
         ~token
-        (go Field.Password)
-        (go Field.PasswordConfirmation)
-      >|- CCFun.const (passwordresetinvaliddata, redirect_with_param)
+        password
+        password_confirmed
+      >|- CCFun.const Error.PasswordResetInvalidData
     in
     let* import_events =
-      Lwt_result.map_error (fun err -> err, redirect)
-      @@
-      let%lwt import =
-        User_import.find_pending_by_user_id_opt database_label user_uuid
-      in
+      let%lwt import = User_import.find_pending_by_user_id_opt database_label user_uuid in
       import
       |> function
       | None -> Lwt_result.return []
       | Some import ->
         let%lwt user =
-          Service.User.find ~ctx (Pool_common.Id.value user_uuid)
-          >|> Pool_context.user_of_sihl_user database_label
+          Pool_user.find_exn database_label user_uuid
+          >|> Pool_context.context_user_of_user database_label
         in
-        Cqrs_command.User_import_command.DisableImport.handle
-          ~tags
-          (user, import)
+        Cqrs_command.User_import_command.DisableImport.handle ~tags (user, import)
         |> Lwt_result.lift
     in
     match reset with
     | Ok () ->
-      let%lwt () =
-        Service.Token.deactivate
-          ~ctx:(Pool_database.to_ctx database_label)
-          token
-      in
-      let%lwt () = import_events |> Pool_event.handle_events database_label in
+      let%lwt () = Pool_token.deactivate database_label token in
+      let%lwt () = import_events |> Pool_event.handle_events database_label user in
       HttpUtils.(
         redirect_to_with_actions
-          (path_with_language query_language "/login")
-          [ Message.set ~success:[ PasswordReset ] ])
+          (url_with_field_params query_parameters "/login")
+          [ Message.set ~success:[ Success.PasswordReset ] ])
       |> Lwt_result.ok
     | Error err -> err |> Lwt_result.fail
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let logout req =
-  let query_lang = Http_utils.find_query_lang req in
   HttpUtils.(
     redirect_to_with_actions
-      (HttpUtils.path_with_language query_lang "/login")
+      (HttpUtils.retain_url_params req "/login" |> Uri.to_string)
       [ Sihl.Web.Session.set [ "user_id", "" ] ])
 ;;

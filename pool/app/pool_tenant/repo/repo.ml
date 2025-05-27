@@ -1,306 +1,196 @@
+open Caqti_request.Infix
 module RepoEntity = Repo_entity
-module Database = Pool_database
 module Id = Pool_common.Id
 module LogoMapping = Entity_logo_mapping
 module LogoMappingRepo = Repo_logo_mapping
 
+module Cache : sig
+  val add : string -> Entity.t -> unit
+  val find_by_url : string -> Entity.t option
+  val clear : unit -> unit
+end = struct
+  open Hashtbl
+
+  let tbl : (Entity.Url.t, Entity.t) t = create 10
+  let add = add tbl
+  let find_by_url = find_opt tbl
+  let clear () = clear tbl
+end
+
 module Sql = struct
   let update_request =
-    let open Caqti_request.Infix in
     {sql|
       UPDATE pool_tenant
+      JOIN pool_tenant_databases ON pool_tenant_databases.label = pool_tenant.database_label
       SET
-        title = $2,
-        description = $3,
-        url = $4,
-        database_url = $5,
-        database_label = $6,
-        gtx_api_key = $7,
-        styles = UNHEX(REPLACE($8, '-', '')),
-        icon = UNHEX(REPLACE($9, '-', '')),
-        mainenance = $10,
-        disabled = $11,
-        default_language = $12,
-        created_at = $13,
-        updated_at = $14
+        pool_tenant.title = $2,
+        pool_tenant.description = $3,
+        pool_tenant.url = $4,
+        pool_tenant.default_language = $5,
+        pool_tenant.created_at = $6,
+        pool_tenant.updated_at = $7,
+        pool_tenant.database_label = $8,
+        pool_tenant.styles = UNHEX(REPLACE($9, '-', '')),
+        pool_tenant.icon = UNHEX(REPLACE($10, '-', '')),
+        pool_tenant.email_logo = UNHEX(REPLACE($11, '-', ''))
       WHERE
-      pool_tenant.uuid = UNHEX(REPLACE($1, '-', ''))
+        pool_tenant.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     |> RepoEntity.Write.t ->. Caqti_type.unit
   ;;
 
-  let update pool =
-    Utils.Database.exec (Database.Label.value pool) update_request
+  let update pool = Database.exec pool update_request
+
+  let sql_select_storage_handle_columns ~alias =
+    let uuid = Id.sql_select_fragment ~field:[%string "%{alias}.uuid"] in
+    let prefix field = CCString.concat "." [ alias; field ] in
+    function
+    | `Write -> [ uuid ]
+    | `Read ->
+      [ uuid
+      ; prefix "filename"
+      ; prefix "filesize"
+      ; prefix "mime"
+      ; prefix "created"
+      ; prefix "updated"
+      ]
   ;;
 
-  let select_from_tenants_sql where_fragment full =
-    let database_fragment =
-      match full with
-      | true ->
-        {sql|
-          pool_tenant.database_url,
-          pool_tenant.database_label,
-        |sql}
-      | false -> {sql|
-          pool_tenant.database_label,
-        |sql}
+  let sql_select_columns =
+    let base =
+      [ Id.sql_select_fragment ~field:"pool_tenant.uuid"
+      ; "pool_tenant.title"
+      ; "pool_tenant.description"
+      ; "pool_tenant.url"
+      ; "pool_tenant.default_language"
+      ; "pool_tenant.created_at"
+      ; "pool_tenant.updated_at"
+      ]
     in
-    let styles_fragment =
-      match full with
-      | true ->
-        {sql|
-          LOWER(CONCAT(
-            SUBSTR(HEX(styles.uuid), 1, 8), '-',
-            SUBSTR(HEX(styles.uuid), 9, 4), '-',
-            SUBSTR(HEX(styles.uuid), 13, 4), '-',
-            SUBSTR(HEX(styles.uuid), 17, 4), '-',
-            SUBSTR(HEX(styles.uuid), 21)
-          )),
-        |sql}
-      | false ->
-        {sql|
-          LOWER(CONCAT(
-            SUBSTR(HEX(styles.uuid), 1, 8), '-',
-            SUBSTR(HEX(styles.uuid), 9, 4), '-',
-            SUBSTR(HEX(styles.uuid), 13, 4), '-',
-            SUBSTR(HEX(styles.uuid), 17, 4), '-',
-            SUBSTR(HEX(styles.uuid), 21)
-          )),
-          styles.filename,
-          styles.filesize,
-          styles.mime,
-          styles.created,
-          styles.updated,
-        |sql}
+    function
+    | `Read -> base @ [ "pool_tenant_databases.status" ]
+    | `Write -> base
+  ;;
+
+  let joins =
+    let database_join =
+      Database.Repo.sql_database_join_on_label
+        ~status:`All
+        ~join_prefix:"INNER"
+        "pool_tenant.database_label"
     in
-    let icon_fragment =
-      match full with
-      | true ->
-        {sql|
-          LOWER(CONCAT(
-            SUBSTR(HEX(icon.uuid), 1, 8), '-',
-            SUBSTR(HEX(icon.uuid), 9, 4), '-',
-            SUBSTR(HEX(icon.uuid), 13, 4), '-',
-            SUBSTR(HEX(icon.uuid), 17, 4), '-',
-            SUBSTR(HEX(icon.uuid), 21)
-          )),
-        |sql}
-      | false ->
-        {sql|
-          LOWER(CONCAT(
-            SUBSTR(HEX(icon.uuid), 1, 8), '-',
-            SUBSTR(HEX(icon.uuid), 9, 4), '-',
-            SUBSTR(HEX(icon.uuid), 13, 4), '-',
-            SUBSTR(HEX(icon.uuid), 17, 4), '-',
-            SUBSTR(HEX(icon.uuid), 21)
-          )),
-          icon.filename,
-          icon.filesize,
-          icon.mime,
-          icon.created,
-          icon.updated,
-        |sql}
+    [%string
+      {sql|
+        %{database_join}
+        LEFT JOIN storage_handles styles
+          ON pool_tenant.styles = styles.uuid
+        LEFT JOIN storage_handles icon
+          ON pool_tenant.icon = icon.uuid
+        LEFT JOIN storage_handles email_logo
+          ON pool_tenant.email_logo = email_logo.uuid
+      |sql}]
+  ;;
+
+  let select_from_tenants_sql where_fragment kind =
+    let columns =
+      sql_select_columns kind
+      @ [ Database.Repo.sql_select_label ]
+      @ sql_select_storage_handle_columns ~alias:"styles" kind
+      @ sql_select_storage_handle_columns ~alias:"icon" kind
+      @ sql_select_storage_handle_columns ~alias:"email_logo" kind
+      |> CCString.concat ",\n"
     in
-    let select_from =
-      let api_key =
-        match full with
-        | true -> "pool_tenant.gtx_api_key,"
-        | false ->
-          {|gtx_api_key IS NOT NULL AND gtx_api_key <> "" AS text_messages_enabled,|}
-      in
-      Format.asprintf
-        {sql|
-          SELECT
-            LOWER(CONCAT(
-              SUBSTR(HEX(pool_tenant.uuid), 1, 8), '-',
-              SUBSTR(HEX(pool_tenant.uuid), 9, 4), '-',
-              SUBSTR(HEX(pool_tenant.uuid), 13, 4), '-',
-              SUBSTR(HEX(pool_tenant.uuid), 17, 4), '-',
-              SUBSTR(HEX(pool_tenant.uuid), 21)
-            )),
-            pool_tenant.title,
-            pool_tenant.description,
-            pool_tenant.url,
-            %s
-            %s
-            %s
-            %s
-            pool_tenant.mainenance,
-            pool_tenant.disabled,
-            pool_tenant.default_language,
-            pool_tenant.created_at,
-            pool_tenant.updated_at
-          FROM pool_tenant
-          LEFT JOIN storage_handles styles
-            ON pool_tenant.styles = styles.uuid
-          LEFT JOIN storage_handles icon
-            ON pool_tenant.icon = icon.uuid
-        |sql}
-        database_fragment
-        api_key
-        styles_fragment
-        icon_fragment
-    in
-    Format.asprintf "%s %s" select_from where_fragment
+    [%string
+      {sql|
+        SELECT
+          %{columns}
+        FROM pool_tenant
+        %{joins}
+        %{where_fragment}
+      |sql}]
   ;;
 
   let find_fragment =
-    {sql|
-      WHERE pool_tenant.uuid = UNHEX(REPLACE(?, '-', ''))
-    |sql}
+    [%string {sql| WHERE pool_tenant.uuid = %{Id.sql_value_fragment "?"} |sql}]
   ;;
 
   let find_request =
-    let open Caqti_request.Infix in
-    select_from_tenants_sql find_fragment false
-    |> Caqti_type.string ->! RepoEntity.t
+    select_from_tenants_sql find_fragment `Read |> Pool_common.Repo.Id.t ->! RepoEntity.t
   ;;
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Database.Label.value pool)
-      find_request
-      (Id.value id)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
+    Database.find_opt pool find_request id
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Tenant)
   ;;
 
   let find_full_request =
-    let open Caqti_request.Infix in
-    select_from_tenants_sql find_fragment true
-    |> Caqti_type.string ->! RepoEntity.Write.t
+    select_from_tenants_sql find_fragment `Write |> RepoEntity.Id.t ->! RepoEntity.Write.t
   ;;
 
   let find_full pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Database.Label.value pool)
-      find_full_request
-      (Id.value id)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
+    Database.find_opt pool find_full_request id
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Tenant)
   ;;
 
   let find_by_label_request =
-    let open Caqti_request.Infix in
-    select_from_tenants_sql
-      {sql| WHERE pool_tenant.database_label = ? |sql}
-      false
-    |> Caqti_type.string ->! RepoEntity.t
+    select_from_tenants_sql {sql| WHERE pool_tenant.database_label = ? |sql} `Read
+    |> Database.Repo.Label.t ->! RepoEntity.t
   ;;
 
   let find_by_label pool label =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Database.Label.value pool)
-      find_by_label_request
-      (Database.Label.value label)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
+    Database.find_opt pool find_by_label_request label
+    ||> CCOption.to_result Pool_message.(Error.NotFound Field.Tenant)
   ;;
+
+  let find_by_url_request =
+    select_from_tenants_sql {sql| WHERE pool_tenant.url = ? |sql} `Read
+    |> RepoEntity.(Url.t ->! t)
+  ;;
+
+  let find_by_url pool = Database.find_opt pool find_by_url_request
 
   let find_all_request =
-    let open Caqti_request.Infix in
-    select_from_tenants_sql "" false |> Caqti_type.unit ->* RepoEntity.t
+    select_from_tenants_sql "" `Read |> Caqti_type.unit ->* RepoEntity.t
   ;;
 
-  let find_all pool =
-    Utils.Database.collect (Database.Label.value pool) find_all_request
-  ;;
-
-  let find_databases_request =
-    let open Caqti_request.Infix in
-    {sql|
-        SELECT
-          database_url,
-          database_label
-        FROM pool_tenant
-        WHERE NOT disabled
-      |sql}
-    |> Caqti_type.unit ->* Database.Repo.t
-  ;;
-
-  let find_databases pool =
-    Utils.Database.collect (Database.Label.value pool) find_databases_request
-  ;;
-
-  let find_database_by_label_request =
-    let open Caqti_request.Infix in
-    {sql|
-        SELECT
-          database_url,
-          database_label
-        FROM pool_tenant
-        WHERE database_label = $1
-        AND NOT disabled
-      |sql}
-    |> Caqti_type.(string) ->! Database.Repo.t
-  ;;
-
-  let find_database_by_label pool label =
-    let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Database.Label.value pool)
-      find_database_by_label_request
-      (Database.Label.value label)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Database)
-  ;;
+  let find_all pool = Database.collect pool find_all_request
 
   let insert_request =
-    let open Caqti_request.Infix in
-    {sql|
-      INSERT INTO pool_tenant (
-        uuid,
-        title,
-        description,
-        url,
-        database_url,
-        database_label,
-        gtx_api_key,
-        styles,
-        icon,
-        mainenance,
-        disabled,
-        default_language,
-        created_at,
-        updated_at
-      ) VALUES (
-        UNHEX(REPLACE(?, '-', '')),
-        ?,
-        ?,
-        ?,
-        ?,
-        ?,
-        ?,
-        UNHEX(REPLACE(?, '-', '')),
-        UNHEX(REPLACE(?, '-', '')),
-        ?,
-        ?,
-        ?,
-        ?,
-        ?
-      )
-    |sql}
+    [%string
+      {sql|
+        INSERT INTO pool_tenant (
+          uuid,
+          title,
+          description,
+          url,
+          default_language,
+          created_at,
+          updated_at,
+          database_label,
+          styles,
+          icon,
+          email_logo
+        ) VALUES (
+          %{Id.sql_value_fragment "$1"},
+          $2,
+          $3,
+          $4,
+          $5,
+          $6,
+          $7,
+          $8,
+          %{Id.sql_value_fragment "$9"},
+          %{Id.sql_value_fragment "$10"},
+          %{Id.sql_value_fragment "$11"}
+        )
+      |sql}]
     |> RepoEntity.Write.t ->. Caqti_type.unit
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Database.Label.value pool) insert_request
-  ;;
-
-  let find_selectable_request =
-    let open Caqti_request.Infix in
-    {sql|
-      SELECT
-        url,
-        database_label
-      FROM pool_tenant
-      WHERE NOT disabled
-    |sql}
-    |> Caqti_type.unit ->* RepoEntity.Selection.t
-  ;;
-
-  let find_selectable pool =
-    Utils.Database.collect (Database.Label.value pool) find_selectable_request
-  ;;
+  let insert pool = Database.exec pool insert_request
 end
 
 let set_logos tenant logos =
@@ -308,9 +198,9 @@ let set_logos tenant logos =
     let open LogoMapping.LogoType in
     CCList.partition_filter_map
       (fun l ->
-        match l.LogoMapping.logo_type with
-        | TenantLogo -> `Left l.LogoMapping.file
-        | PartnerLogo -> `Right l.LogoMapping.file)
+         match l.LogoMapping.logo_type with
+         | TenantLogo -> `Left l.LogoMapping.file
+         | PartnerLogo -> `Right l.LogoMapping.file)
       logos
   in
   let open Entity.Read in
@@ -324,10 +214,9 @@ let set_logos tenant logos =
     ; icon = tenant.icon
     ; logos = tenant_logos
     ; partner_logo
-    ; maintenance = tenant.maintenance
-    ; disabled = tenant.disabled
+    ; email_logo = tenant.email_logo
+    ; status = tenant.status
     ; default_language = tenant.default_language
-    ; text_messages_enabled = tenant.text_messages_enabled
     ; created_at = tenant.created_at
     ; updated_at = tenant.updated_at
     }
@@ -347,6 +236,30 @@ let find_by_label pool label =
   set_logos tenant logos |> Lwt.return_ok
 ;;
 
+let find_by_url ?should_cache pool url =
+  let open Utils.Lwt_result.Infix in
+  let tags = Database.Logger.Tags.create pool in
+  let should_cache = CCOption.get_or ~default:(fun _ -> true) should_cache in
+  Cache.find_by_url url
+  |> function
+  | Some tenant ->
+    Logs.debug (fun m -> m ~tags "Found in cache: Tenant %s" ([%show: Entity.Url.t] url));
+    Lwt_result.return tenant
+  | None ->
+    let combine ({ Entity.Read.id; _ } as tenant) =
+      Database.collect pool Repo_logo_mapping.Sql.find_request id ||> set_logos tenant
+    in
+    let%lwt tenant =
+      Database.find_opt pool Sql.find_by_url_request url
+      >|> CCOption.map_or ~default:Lwt.return_none (fun tenant ->
+        let%lwt tenant = combine tenant in
+        let () = if should_cache tenant then Cache.add url tenant else () in
+        Lwt.return_some tenant)
+      ||> CCOption.to_result Pool_message.Error.SessionTenantNotFound
+    in
+    Lwt.return tenant
+;;
+
 let find_full = Sql.find_full
 
 let find_all pool () =
@@ -359,35 +272,27 @@ let find_all pool () =
   |> Lwt.return
 ;;
 
-let find_databases = Sql.find_databases
-let find_database_by_label = Sql.find_database_by_label
-let find_selectable = Sql.find_selectable
-let insert = Sql.insert
+let insert pool (tenant, database) =
+  let open Database in
+  transaction_iter
+    pool
+    [ exec_query Repo.insert_request database; exec_query Sql.insert_request tenant ]
+;;
+
 let update = Sql.update
-let destroy = Utils.todo
 
-let find_gtx_api_key_by_label_request =
-  let open Caqti_request.Infix in
-  {sql|
-    SELECT
-      gtx_api_key
-    FROM
-      pool_tenant
-    WHERE
-    pool_tenant.database_label = ?
-  |sql}
-  |> Caqti_type.(string ->! RepoEntity.GtxApiKey.t)
+let update_database pool (tenant, database) =
+  let open Database in
+  transaction_iter
+    pool
+    [ exec_query
+        Database.Repo.update_request
+        (tenant.Entity.Write.database_label, database)
+    ; exec_query
+        Sql.update_request
+        { tenant with
+          Entity.Write.database_label = Database.label database
+        ; updated_at = Pool_common.UpdatedAt.create_now ()
+        }
+    ]
 ;;
-
-let find_gtx_api_key_by_label pool database_label =
-  let open Utils.Lwt_result.Infix in
-  Utils.Database.find_opt
-    (Pool_database.Label.value pool)
-    find_gtx_api_key_by_label_request
-    (Pool_database.Label.value database_label)
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.GtxApiKey)
-;;
-
-module Url = struct
-  let of_pool = RepoEntity.Url.of_pool
-end

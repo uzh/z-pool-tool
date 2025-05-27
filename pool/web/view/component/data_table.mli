@@ -20,20 +20,25 @@
 type data_table =
   { url : Uri.t (** the URL to which to make the sort requests *)
   ; query : Query.t (** the current URL query string *)
-  ; language : Pool_common.Language.t
-  (** the language in which to show the table *)
-  ; filter : Query.Filter.human option
-  (** the columns that can be filtered by *)
-  ; search : Query.Column.t list option
-  (** the columns that can be searched for *)
+  ; language : Pool_common.Language.t (** the language in which to show the table *)
+  ; filter : Query.Filter.human option (** the columns that can be filtered by *)
+  ; search : Query.Column.t list option (** the columns that can be searched for *)
   ; push_url : bool
-  (** determines if the url of the HTMX request is pushed to the browser history. Defaults to true *)
-  ; additional_url_params : (Pool_common.Message.Field.t * string) list option
-  (** additional url parameters that will be added to the dynamic parameters of the query, e.g. the language *)
+    (** determines if the url of the HTMX request is pushed to the browser history. Defaults to true
+    *)
+  ; additional_url_params : (Pool_message.Field.t * string) list option
+    (** additional url parameters that will be added to the dynamic parameters of the query, e.g. the language
+    *)
   }
 
+val hx_get
+  :  url:string
+  -> target_id:string
+  -> push_url:bool
+  -> [> `User_data ] Tyxml.Html.attrib list
+
 val create_meta
-  :  ?additional_url_params:(Pool_common.Message.Field.t * string) list
+  :  ?additional_url_params:(Pool_message.Field.t * string) list
   -> ?filter:Query.Filter.human
   -> ?search:Query.Column.t list
   -> ?push_url:bool
@@ -42,18 +47,22 @@ val create_meta
   -> Pool_common.Language.t
   -> data_table
 
-(** A column in the table. Use [`column] for actual database columns, and use [`custom] for arbitrary elements. *)
+(** A column in the table. Use [`column] for actual database columns, and use [`custom] for arbitrary elements. Use [`mobile] for custom elements that are not hidden on mobile devices.
+*)
 type col =
   [ `column of Query.Column.t
   | `custom of [ | Html_types.flow5 ] Tyxml_html.elt
-  | `field of Pool_common.Message.Field.t * Query.Column.t
+  | `field of Pool_message.Field.t * Query.Column.t
   | `empty
+  | `mobile of [ | Html_types.flow5 ] Tyxml_html.elt
   ]
 
 val make
   :  ?align_last_end:bool
   -> ?align_top:bool
+  -> ?break_mobile:bool
   -> ?classnames:string list
+  -> ?execute_onload:bool
   -> ?layout:[ `Striped | `Simple ]
   -> ?prepend_html:[ | Html_types.flow5 ] Tyxml_html.elt
   -> ?th_class:string list

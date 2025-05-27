@@ -1,10 +1,12 @@
 (library
  (name page)
  (libraries
+  authentication
   assignment
   component
   contact
   custom_field
+  duplicate_contacts
   experiment
   htmx
   http_utils
@@ -17,15 +19,14 @@
   pool_location
   pool_tenant
   schedule
-  service
   session
+  signup_code
   sihl
   tags
-  tenant
   time_window
   tyxml
   utils
   version
   waiting_list)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_yojson_conv)))
+  (pps ppx_deriving.eq ppx_deriving.show ppx_string ppx_yojson_conv)))

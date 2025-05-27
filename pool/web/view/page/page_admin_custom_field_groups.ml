@@ -1,15 +1,14 @@
 open Tyxml.Html
 open Component.Input
+open Pool_message
 module Partials = Component.Partials
-module Message = Pool_common.Message
 module Url = Page_admin_custom_fields.Url
 
 let form
-  ?custom_field_group
-  current_model
-  Pool_context.{ language; csrf; _ }
-  tenant_languages
-  flash_fetcher
+      ?custom_field_group
+      current_model
+      Pool_context.{ language; csrf; flash_fetcher; _ }
+      tenant_languages
   =
   let open Custom_field in
   let action =
@@ -20,18 +19,15 @@ let form
   let input_by_lang ?required =
     Page_admin_custom_fields.input_by_lang
       ?required
+      ?flash_fetcher
       language
       tenant_languages
-      flash_fetcher
       custom_field_group
   in
   let name_inputs =
-    input_by_lang ~required:true Message.Field.Name (fun lang (g, _) ->
+    input_by_lang ~required:true Field.Name (fun lang (g, _) ->
       let open CCOption in
-      g.Group.name
-      |> Name.find_opt lang
-      >|= Name.value_name
-      |> value ~default:"")
+      g.Group.name |> Name.find_opt lang >|= Name.value_name |> value ~default:"")
   in
   let sort_fields_form =
     match custom_field_group with
@@ -40,17 +36,15 @@ let form
       let open Custom_field in
       div
         [ h2
-            ~a:[ a_class [ "heading-2" ] ]
+            ~a:[ a_class [ "heading-2"; "has-gap" ] ]
             [ txt
-                (Message.Field.CustomField
+                (Field.CustomField
                  |> Pool_common.Utils.field_to_string language
                  |> CCString.capitalize_ascii)
             ]
         ; p
             Pool_common.
-              [ Utils.hint_to_string
-                  language
-                  I18n.(CustomFieldSort Message.Field.CustomFields)
+              [ Utils.hint_to_string language I18n.(CustomFieldSort Field.CustomFields)
                 |> txt
               ]
         ; form
@@ -66,29 +60,24 @@ let form
             [ csrf_element csrf ()
             ; CCList.map
                 (fun field ->
-                  div
-                    ~a:
-                      [ a_class
-                          [ "flexrow"
-                          ; "flex-gap"
-                          ; "justify-between"
-                          ; "align-center"
-                          ]
-                      ]
-                    [ div
-                        [ txt (field |> name |> Name.find_opt_or language "-") ]
-                    ; div
-                        [ input
-                            ~a:
-                              [ a_input_type `Hidden
-                              ; a_name Message.Field.(CustomField |> array_key)
-                              ; a_value (field |> id |> Id.value)
-                              ]
-                            ()
-                        ]
-                    ; Url.Field.edit_path (model field, id field)
-                      |> edit_link ~classnames:[ "small" ]
-                    ])
+                   div
+                     ~a:
+                       [ a_class
+                           [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ]
+                       ]
+                     [ div [ txt (field |> name |> Name.find_opt_or language "-") ]
+                     ; div
+                         [ input
+                             ~a:
+                               [ a_input_type `Hidden
+                               ; a_name Field.(CustomField |> array_key)
+                               ; a_value (field |> id |> Id.value)
+                               ]
+                             ()
+                         ]
+                     ; Url.Field.edit_path (model field, id field)
+                       |> edit_link ~classnames:[ "small" ]
+                     ])
                 fields
               |> Component.Sortable.create_sortable
             ; div
@@ -96,7 +85,7 @@ let form
                 [ submit_element
                     ~classnames:[ "push" ]
                     language
-                    Message.UpdateOrder
+                    Control.UpdateOrder
                     ~submit_type:`Primary
                     ()
                 ]
@@ -104,7 +93,7 @@ let form
         ]
   in
   div
-    ~a:[ a_class [ "stack-lg" ] ]
+    ~a:[ a_class [ "gap" ] ]
     [ form
         ~a:
           [ a_method `Post
@@ -115,11 +104,10 @@ let form
         [ csrf_element csrf ()
         ; div
             ~a:[ a_class [ "stack" ] ]
-            [ h4
-                ~a:[ a_class [ "heading-4" ] ]
+            [ strong
                 [ txt
                     Pool_common.(
-                      Message.Field.Name
+                      Field.Name
                       |> Utils.field_to_string language
                       |> CCString.capitalize_ascii)
                 ]
@@ -130,7 +118,7 @@ let form
             [ submit_element
                 ~classnames:[ "push" ]
                 language
-                Message.(
+                Control.(
                   let field = Some Field.CustomFieldGroup in
                   match custom_field_group with
                   | None -> Create field
@@ -144,19 +132,33 @@ let form
 ;;
 
 let detail
-  ?custom_field_group
-  current_model
-  (Pool_context.{ language; _ } as context)
-  sys_langauges
-  flash_fetcher
+      ?custom_field_group
+      current_model
+      (Pool_context.{ language; _ } as context)
+      sys_langauges
   =
+  let changelog_html =
+    match custom_field_group with
+    | None -> txt ""
+    | Some ({ Custom_field.Group.id; _ }, _) ->
+      let url =
+        HttpUtils.Url.Admin.custom_field_groups_path
+          current_model
+          ~suffix:"changelog"
+          ~id
+          ()
+        |> Uri.of_string
+      in
+      Component.Changelog.list context url None
+  in
   div
-    ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ Partials.form_title
-        language
-        Message.Field.CustomFieldGroup
-        custom_field_group
-    ; Page_admin_custom_fields.model_subtitle language current_model
-    ; form ?custom_field_group current_model context sys_langauges flash_fetcher
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ div
+        [ Partials.form_title language Field.CustomFieldGroup custom_field_group
+        ; Page_admin_custom_fields.model_subtitle language current_model
+        ]
+    ; div
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ form ?custom_field_group current_model context sys_langauges; changelog_html ]
     ]
 ;;

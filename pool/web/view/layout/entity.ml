@@ -10,6 +10,7 @@ type validation =
   | AlwaysOn
   | OnChildren
   | Set of Guard.ValidationSet.t
+[@@deriving show, eq]
 
 type raw =
   | Single of string * I18n.nav_link * validation
@@ -33,14 +34,15 @@ module NavElement = struct
     ; validation : validation
     ; children : t list
     }
+  [@@deriving show, eq]
 
   let rec create ?icon =
     let build
-      ?icon
-      ?(children = [])
-      ?(validation = Set Guard.ValidationSet.empty)
-      ?url
-      label
+          ?icon
+          ?(children = [])
+          ?(validation = Set Guard.ValidationSet.empty)
+          ?url
+          label
       =
       { icon; children; validation; url; label }
     in

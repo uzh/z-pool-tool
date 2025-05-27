@@ -1,19 +1,14 @@
 module LocationCommand = Cqrs_command.Location_command
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 
 module Data = struct
   module Location = struct
     let id = Pool_location.Id.create ()
-
-    let name =
-      Pool_location.Name.create "Online" |> Pool_common.Utils.get_or_failwith
-    ;;
-
+    let name = Pool_location.Name.create "Online" |> Pool_common.Utils.get_or_failwith
     let description : Pool_location.Description.t option = None
     let link = None
     let address = Pool_location.Address.Virtual
     let status = Pool_location.Status.Active
-    let files = []
 
     let create =
       let open Pool_location in
@@ -35,9 +30,8 @@ let create_location () =
     ; link
     ; address
     ; status
-    ; files
-    ; created_at = Pool_common.CreatedAt.create ()
-    ; updated_at = Pool_common.UpdatedAt.create ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
 ;;
 
@@ -51,8 +45,6 @@ let create () =
     |> Pool_common.Utils.get_or_failwith
     |> handle ~id:Data.Location.id
   in
-  let expected =
-    Ok [ Pool_location.Created location |> Pool_event.pool_location ]
-  in
+  let expected = Ok [ Pool_location.Created location |> Pool_event.pool_location ] in
   Test_utils.check_result expected events
 ;;

@@ -1,23 +1,28 @@
-open Entity_message
+module Ptime = Utils.Ptime
+open Pool_message
 
 let rec field_to_string =
+  let open Field in
   let combine one two =
     CCString.concat ": " [ field_to_string one; field_to_string two ]
   in
-  let open Field in
   function
   | Action -> "Aktion"
-  | Actor -> "Akteur"
+  | Active -> "Aktiv"
   | ActiveContactsCount -> "Anzahl aktive Kontakte"
+  | Actor -> "Akteur"
+  | Address -> "Addresse"
   | Admin -> "Administrator"
   | AdminComment -> "Adminkommentar"
-  | AdminInput -> "Admineingabe"
   | AdminHint -> "Hint für Administratoren"
+  | AdminInput -> "Admineingabe"
   | AdminInputOnly -> "Eingabe nur durch Admins"
   | AdminViewOnly -> "Nur für Admins ersichtlich"
   | AllowUninvitedSignup -> "Einschreiben aller Kontakte erlauben"
+  | Announcement -> "Ankündigung"
   | Answer -> "Antwort"
   | AreaCode -> "Vorwahl"
+  | ApiKey -> "API Key"
   | Argument -> "Argument"
   | AssetId -> "Anlagen Identifier"
   | AssignableRole -> "zuweisbare Rolle"
@@ -32,9 +37,14 @@ let rec field_to_string =
   | CanceledAt -> "Abgesagt am"
   | CallbackUrl -> "Callback-URL"
   | CellPhone -> "Mobiltelefon"
+  | Changes -> "Änderungen"
+  | Channel -> "Kanal"
+  | Changelog -> "Changelog"
   | Chronological -> "chronologisch"
   | City -> "Ort"
   | ClosedAt -> "Geschlossen am"
+  | Code -> "Code"
+  | Confirmed -> "Bestätigt"
   | ConfirmedAt -> "Bestätigt am"
   | Contact -> "Kontakt"
   | ContactCount -> "Anzahl Kontakte"
@@ -48,6 +58,7 @@ let rec field_to_string =
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
   | CustomField -> "Feld"
+  | CustomFieldAnswer -> "Antwort"
   | CustomFieldGroup -> "Gruppe"
   | CustomFieldGroups -> "Gruppen"
   | CustomFieldOption -> "Option"
@@ -61,17 +72,21 @@ let rec field_to_string =
   | DateTime -> "Datum und Uhrzeit"
   | DefaultLanguage -> "Standard Sprache"
   | DefaultSmtpServer -> "Standardserver"
+  | DeliveryReport -> "Übermittlungsbericht"
   | Description -> "Beschreibung"
   | DirectRegistrationDisabled -> "Direkte Registrierung deaktiviert"
   | Disabled -> "Gesperrt"
   | Distribution -> "Verteilung"
   | DistributionField -> "Feld"
   | Duration -> "Dauer"
+  | Duplicate -> "Mögliches Duplikat"
+  | DuplicateWeighting -> "Gewichtung bezüglich Duplikaten"
   | Email -> "E-Mail"
   | EmailAddress -> "E-Mail-Adresse"
   | EmailAddressUnverified -> "Unverifizierte E-Mail-Adresse"
   | EmailAddressVerified -> "Verifizierte E-Mail-Adresse"
   | EmailLeadTime -> "Email Vorlaufzeit"
+  | EmailLogo -> "Email Logo"
   | EmailRemindersSentAt -> "Email Erinnerungen verschickt am"
   | EmailSubject -> "E-Mail Betreff"
   | EmailSuffix -> "E-Mail Endung"
@@ -79,21 +94,19 @@ let rec field_to_string =
   | EmailsSent -> "Insgesamt gesendete E-Mails"
   | End -> "Ende"
   | Exclude -> "Ausgenommen"
+  | ExampleValue -> "Beispielwert"
   | ExcludeRolesOf -> "Ausgenommen (Rollen von jmd)"
   | Experiment -> "Experiment"
   | ExperimentCount -> "Anz. Experimente"
   | Experiments -> "Experimente"
   | Experimenter -> "Experimenter"
   | ExperimentEmailReminderLeadTime ->
-    Format.asprintf
-      "Experimentspezifische Erinnerungsemail %s"
-      (field_to_string LeadTime)
+    Format.asprintf "Experimentspezifische Erinnerungsemail %s" (field_to_string LeadTime)
   | ExperimentTextMessageReminderLeadTime ->
-    Format.asprintf
-      "Experimentspezifische Erinnerungs-SMS %s"
-      (field_to_string LeadTime)
+    Format.asprintf "Experimentspezifische Erinnerungs-SMS %s" (field_to_string LeadTime)
   | ExperimentType -> "Experimenttyp"
   | ExternalDataIdAbbr -> "EID"
+  | ExpiresAt -> "Läuft ab am"
   | ExternalDataId -> "Externer Daten Identifikator"
   | ExternalDataRequired -> "Externe Daten müssen angegeben werden"
   | Failed -> "Fehlgeschlagen"
@@ -110,14 +123,18 @@ let rec field_to_string =
   | FirstReminder -> "Erste Erinnerung"
   | FollowUpSession -> "Folgesession"
   | GtxApiKey -> "GTX Api Key"
+  | GtxConfig -> "GTX Konfiguration"
+  | GtxSender -> "GTX Absender"
   | HideCanceled -> "Abgesagte ausblenden"
   | HideClosed -> "Geschlossene ausblenden"
   | HideMakedAsDeleted -> "Als gelöscht markerte ausblenden"
   | HidePaused -> "Pausierte ausblenden"
   | HideInactive -> "Inaktive ausblenden"
+  | HideIgnored -> "Hide ignored"
   | HidePast -> "Vergangene ausblenden"
   | HideUnverified -> "Unverifizierte ausblenden"
   | Hint -> "Hint"
+  | History -> "Verlauf"
   | Host -> "Host"
   | I18n -> "Übersetzung"
   | Icon -> "Icon"
@@ -125,6 +142,8 @@ let rec field_to_string =
   | ImportPending -> "Import pendent"
   | InactiveUserDisableAfter -> "Deaktiviere inaktiven Benutzer nach"
   | InactiveUserWarning -> "Warnung an inaktiven Benutzer"
+  | InactiveUserDisableService ->
+    "Service deaktivieren (Kontakte werden weder erinnert noch deaktiviert)"
   | Inactive -> "Inaktiv"
   | Input -> "Input"
   | Institution -> "Institution"
@@ -137,6 +156,7 @@ let rec field_to_string =
   | InvitationsSent -> "Gesendete Einladungen"
   | InvitationSubject -> "Einladungsbetreff"
   | InvitationText -> "Einladungstext"
+  | IsAdmin -> "Ist Administrator"
   | Key -> "Schlüssel"
   | Label -> "Label"
   | Language -> "Sprache"
@@ -160,6 +180,7 @@ let rec field_to_string =
   | MainSession -> "Hauptsession"
   | MarkedAsDeleted -> "Als gelöscht markiert"
   | MatchingFilterCount -> "Anzahl passender Kontakte"
+  | MatchingFilterCountShort -> "Anz. Passende"
   | MaxParticipants -> "Maximum an Teilnehmern"
   | MaxTries -> "Maximum an Versuchen"
   | Message -> "Nachricht"
@@ -189,6 +210,8 @@ let rec field_to_string =
   | Override -> "Überschreiben"
   | Page -> "Seite"
   | PageCount -> "Anzahl Seiten"
+  | PageScriptsHead -> "Seiten Head Scripts"
+  | PageScriptsBody -> "Seiten Body Scripts"
   | Participant | Participants -> "Teilnehmer"
   | ParticipantCount -> "Teilnehmer"
   | Participated -> "teilgenommen"
@@ -207,11 +230,14 @@ let rec field_to_string =
       "Berechtiung %s von %s"
       (CCString.capitalize_ascii target)
       (CCString.capitalize_ascii role)
+  | Placeholder -> "Platzhalter"
   | PlainText -> "Klartext"
+  | Pool -> "Pool"
   | Predicate -> "Prädikat"
   | Profile -> "Profil"
   | PublicDescription -> "Öffentliche Beschreibung"
   | PromptOnRegistration -> "Eingabeaufforderung bei der Registrierung"
+  | PrimaryUser | PrimaryUsers -> "Primärbenutzer"
   | PublicTitle -> "Öffentlicher Titel"
   | PublishedAt -> "Veröffentlicht"
   | Query -> "Query"
@@ -220,6 +246,7 @@ let rec field_to_string =
   | Reason -> "Grund"
   | Recipient -> "Empfänger"
   | Redirect -> "Weiterleitung"
+  | Redirected -> "Weitergeleitet"
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | RegistrationPossible -> "Registrierung möglich"
   | Reminder -> "Erinnerung"
@@ -227,12 +254,15 @@ let rec field_to_string =
   | RemindersSent -> "Gesendete reminders"
   | Required -> "Benötigt"
   | ResentAt -> "Erneut verschickt"
+  | Resource -> "Ressource"
   | Role -> "Rolle"
   | Room -> "Raum"
   | Root -> "Root"
   | Rule -> "Regel"
+  | RunAt -> "Läuft um"
   | ScheduledTime -> "Geplante Zeit"
   | ScheduledTimeSpan -> "Wiederholungs Interval"
+  | Score -> "Score"
   | Search -> "Suche"
   | SearchOf field -> combine Search field
   | SecondReminder -> "Zweite Erinnerung"
@@ -240,13 +270,17 @@ let rec field_to_string =
   | SendingInvitations -> "Verschickt Einladungen"
   | SentAt -> "Verschickt am"
   | SessionCount -> "Anz. Sessions"
+  | SessionMinMaxOverbook -> "Min / Max (Überbuchung)"
   | Session -> "Session"
   | Sessions -> "Sessions"
   | Setting -> "Einstellung"
   | Settings -> "Einstellungen"
   | ShowUpCount -> "Anwesende"
+  | ShowToAdmins -> "Den Administratoren anzeigen"
+  | ShowToContacts -> "Den Kontakten anzeigen"
   | ShowExteralDataIdLinks -> "Link zu externen Datenidentifikatoren anzeigen"
   | SignedUpAt -> "Eingeschrieben am"
+  | SignUpCode -> "Registrierungscode"
   | SignUpCount -> "Neuregistrierungen"
   | SMS -> "SMS"
   | SmsText -> "SMS Text"
@@ -282,8 +316,11 @@ let rec field_to_string =
   | TermsAccepted -> "Akzeptieren"
   | TermsAcceptedCount -> "Teilnahmebedingungen akzeptiert"
   | TermsAndConditions -> "Teilnahmebedingungen"
+  | TermsAndConditionsLastAccepted -> "Teilnahmebedingungen zuletzt akzeptiert"
   | TestPhoneNumber -> "Testtelefonnummer"
+  | Text -> "Text"
   | TextMessage -> "SMS"
+  | TextMessageDlrStatus -> "SMS Status"
   | TextMessageLeadTime -> "SMS Vorlaufzeit"
   | TextMessageRemindersSentAt -> "SMS Erinnerungen verschickt am"
   | Time -> "Uhrzeit"
@@ -298,11 +335,14 @@ let rec field_to_string =
   | Translation -> "Übersetzung"
   | Tries -> "Versuche"
   | TriggerProfileUpdateAfter -> "Aufforderung zur Kontrolle des Profils"
+  | UpdatedAt -> "aktualisiert am"
   | Url -> "Url"
   | User -> "Benutzer"
   | Validation -> "Validierung"
   | Value -> "Wert"
   | ValueOf field -> combine Value field
+  | VerificationCode -> "Verifizierungs Code"
+  | VerificationCount -> "Anz. Verifizierungen"
   | Verified -> "Verifiziert"
   | Version -> "Version"
   | Virtual -> "Virtuell"
@@ -311,11 +351,15 @@ let rec field_to_string =
   | Zip -> "PLZ"
 ;;
 
-let info_to_string : info -> string = function
+let info_to_string =
+  let open Info in
+  function
   | Info s -> s
 ;;
 
-let success_to_string : success -> string = function
+let success_to_string =
+  let open Success in
+  function
   | AddedToWaitingList -> "Sie wurden der Warteliste hinzugefügt."
   | AssignmentCreated -> "Sie wurden erfolgreich angemeldet."
   | Canceled field ->
@@ -323,21 +367,21 @@ let success_to_string : success -> string = function
   | Closed field ->
     field_message "" (field_to_string field) "wurde erfolgreich geschlossen."
   | ContactPromoted -> "Der Kontakt wurde erfolgreich zum Admin befördert."
+  | ContactMarkedAsDeleted -> "Der Kontakt wurde erfolgreich gelöscht."
   | Created field ->
     field_message "" (field_to_string field) "wurde erfolgreich erstellt."
   | Deleted field ->
     field_message "" (field_to_string field) "wurde erfolgreich gelöscht."
   | EmailConfirmationMessage ->
-    "Eine E-Mail wurde an deine E-Mail-Adresse zur Verifizierung gesendet, \
-     falls die angegebene E-Mail-Adresse verfügbar ist."
+    "Eine E-Mail wurde an deine E-Mail-Adresse zur Verifizierung gesendet, falls die \
+     angegebene E-Mail-Adresse verfügbar ist."
   | EmailUpdateConfirmationMessage ->
     {|Falls die angegebene E-Mail-Adresse verfügbar ist, wurde eine E-Mail mit einem Bestätigungslink an diese Adresse geschickt. Bitte bestätige die Adresse mit dem Öffnen dieses Links.
 
 Solange die neue E-Mail-Adresse nicht bestätigt ist, wird weiterhin die aktuelle Adresse verwendet.|}
   | EmailVerified -> "E-Mail erfolgreich verifiziert."
   | FileDeleted -> "File wurde erfolgreich gelöscht."
-  | ImportCompleted ->
-    "Der Import Ihres Kontos wurde erfolgreich abgeschlossen."
+  | ImportCompleted -> "Der Import Ihres Kontos wurde erfolgreich abgeschlossen."
   | MarkedAsDeleted field ->
     field_message "" (field_to_string field) "wurde als gelöscht markiert."
   | PausedToggled paused ->
@@ -347,11 +391,11 @@ Solange die neue E-Mail-Adresse nicht bestätigt ist, wird weiterhin die aktuell
   | PasswordChanged -> "Passwort wurde geändert."
   | PasswordReset -> "Passwort ist zurückgesetzt, du kannst dich nun einloggen."
   | PasswordResetSuccessMessage ->
-    "Falls ein Account zu der von dir eingegebenen E-Mail-Adresse existiert,  \
-     wird dir ein E-Mail mit einem Link zur Passwort zurücksetzung gesendet."
+    "Falls ein Account zu der von dir eingegebenen E-Mail-Adresse existiert,  wird dir \
+     ein E-Mail mit einem Link zur Passwort zurücksetzung gesendet."
   | CellPhoneTokenSent ->
-    "Es wurde eine Textnachricht zur Überprüfung an Ihr Telefon gesendet. \
-     Bitte geben Sie den angegebenen Code ein."
+    "Es wurde eine Textnachricht zur Überprüfung an Ihr Telefon gesendet. Bitte geben \
+     Sie den angegebenen Code ein."
   | CellPhoneVerified -> "Ihre Telefonnummer wurde erfolgreich geprüft."
   | Published field ->
     field_message "" (field_to_string field) "wurde erfolgreich veröffentlicht."
@@ -359,52 +403,50 @@ Solange die neue E-Mail-Adresse nicht bestätigt ist, wird weiterhin die aktuell
   | RemindersResent -> "Die Erinnerungen wirden erneut versendet."
   | Rescheduled field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschoben."
-  | Resent field ->
-    field_message "" (field_to_string field) "wurden erneut verschickt."
+  | Resent field -> field_message "" (field_to_string field) "wurden erneut verschickt."
   | ResetInvitations ->
-    "Einladungsversand zurückgesetzt. Bei kommenden versanden werden frühere \
-     Einladungen ignoriert respektive die Einladung erneut versendet."
+    "Einladungsversand zurückgesetzt. Bei kommenden versanden werden frühere Einladungen \
+     ignoriert respektive die Einladung erneut versendet."
   | RoleAssigned -> "Rolle wurde zugewiesen."
   | RoleUnassigned -> "Rolle wurde entzogen."
   | SentList field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschickt."
-  | Sent field ->
-    field_message "" (field_to_string field) "wurde erfolgreich verschickt."
+  | Sent field -> field_message "" (field_to_string field) "wurde erfolgreich verschickt."
   | SettingsUpdated -> "Die Einstellungen wurden erfolgreich gespeichert."
-  | SmtpConfigurationAdded ->
-    "Die SMTP Konfiguration wurde erfolgreich hinzugefügt."
-  | SmtpDetailsUpdated ->
-    "Die SMTP Einstellungen wurden erfolgreich gespeichert."
+  | SmtpConfigurationAdded -> "Die SMTP Konfiguration wurde erfolgreich hinzugefügt."
+  | SmtpDetailsUpdated -> "Die SMTP Einstellungen wurden erfolgreich gespeichert."
   | SmtpPasswordUpdated -> "Das SMTP Passwort wurde erfolgreich gespeichert."
   | Stopped field ->
     field_message "" (field_to_string field) "wurde erfolgreich gestoppt."
   | TagAssigned -> "Der Tag wurde hinzugefügt."
   | TagRemoved -> "Der Tag wurde entfernt."
-  | TenantUpdateDatabase ->
-    "Datenbank Informationen wurden erfolgreich upgedated."
+  | TenantUpdateDatabase -> "Datenbank Informationen wurden erfolgreich upgedated."
   | TenantUpdateDetails -> "Tenant wurde erfolgreich upgedated."
+  | UserUnblocked -> "Der Benutzer wurde erfolgreich entsperrt."
   | Updated field ->
     field_message "" (field_to_string field) "wurde erfolgreich upgedated."
   | Validated field ->
     field_message "" (field_to_string field) "wurde erfolgreich validiert."
-  | VerificationMessageResent ->
-    "Die Verifizierungsnachricht wurde erneut verschickt."
+  | VerificationMessageResent -> "Die Verifizierungsnachricht wurde erneut verschickt."
 ;;
 
-let warning_to_string : warning -> string = function
+let warning_to_string =
+  let open Warning in
+  function
   | Warning string -> string
 ;;
 
-let rec error_to_string = function
+let rec error_to_string =
+  let open Error in
+  function
   | AccountTemporarilySuspended ptime ->
     ptime
-    |> Utils.Ptime.formatted_date_time
+    |> Ptime.formatted_date_time
     |> Format.asprintf
-         "Zu viele fehlgeschlagene Anmeldeversuche. Diese E-Mail-Adresse ist \
-          gesperrt, bis %s"
+         "Zu viele fehlgeschlagene Anmeldeversuche. Diese E-Mail-Adresse ist gesperrt, \
+          bis %s"
   | AccessDenied -> "Zugriff verweigert"
-  | AccessDeniedMessage ->
-    "Der Zugriff auf die gewünschte Seite ist nicht möglich."
+  | AccessDeniedMessage -> "Der Zugriff auf die gewünschte Seite ist nicht möglich."
   | AllLanguagesRequired field ->
     field_message
       "Bitte geben Sie '"
@@ -415,8 +457,7 @@ let rec error_to_string = function
       "Die Daten zum Feld '"
       (field |> field_to_string |> CCString.trim)
       "' existieren bereits."
-  | AlreadyInPast ->
-    "Mindestens der Startzeitpunkt liegt bereits in der Vergangenheit."
+  | AlreadyInPast -> "Mindestens der Startzeitpunkt liegt bereits in der Vergangenheit."
   | AlreadySignedUpForExperiment ->
     "Sie haben sich für dieses Experiment bereits angemeldet."
   | AlreadyPublished field ->
@@ -428,53 +469,65 @@ let rec error_to_string = function
   | AssignmentIsClosed -> "Anmeldung wurde bereits geschlossen."
   | AssignmentsHaveErrors ->
     "Einige Anmeldungen haben Fehler. Bitte korrigieren Sie diese zuerst."
-  | AlreadyStarted ->
-    "Bereits gestarted oder beendet, aktion nicht mehr möglich."
+  | AlreadyStarted -> "Bereits gestarted oder beendet, aktion nicht mehr möglich."
   | AssignmentAlreadySubmitted -> "Die Teilnahme wurde bereits abgeschlossen."
+  | AtLeastOneLanguageRequired field ->
+    field
+    |> field_to_string
+    |> CCString.trim
+    |> Format.asprintf "%s muss in mindestens einer Sprache angegeben werden."
+    |> CCString.capitalize_ascii
+  | AtLeastOneSelected (field1, field2) ->
+    Format.asprintf
+      "Mindestens eines der Felder '%s' oder '%s' muss ausgewählt werden."
+      (field_to_string field1)
+      (field_to_string field2)
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
-      "Die folgenden Kontakte wurden bereits zu diesem Experiment eingeladen: \
-       %s"
+      "Die folgenden Kontakte wurden bereits zu diesem Experiment eingeladen: %s"
       (CCString.concat ", " names)
-  | Authorization message ->
-    field_message "Autorisierung nicht möglich: " message ""
+  | Authorization message -> field_message "Autorisierung nicht möglich: " message ""
+  | BadRequest -> "Fehlerhafte Anfrage"
   | CannotBeDeleted field ->
     Format.asprintf "%s kann nicht gelöscht werden." (field_to_string field)
   | CannotBeUpdated field ->
     Format.asprintf "%s kann nicht angepasst werden." (field_to_string field)
+  | CaqtiError err -> err
+  | Connection err -> [%string "Verbindungsfehler: %{err}"]
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->
-        Format.asprintf
-          "%s: %s"
-          (field_to_string field |> CCString.capitalize_ascii)
-          (error_to_string err))
+         Format.asprintf
+           "%s: %s"
+           (field_to_string field |> CCString.capitalize_ascii)
+           (error_to_string err))
       errs
     |> CCString.concat "\n"
   | ConformistModuleErrorType -> failwith "Do not use"
   | ContactDoesNotMatchFilter ->
     "Der Kontakt erfüllt die im Filter bestimmten Kriterien nicht."
   | ContactExperimentNotFound ->
-    "Derzeit gibt es keine freien Plätze für die Teilnahme an diesem \
-     Experiment."
+    "Derzeit gibt es keine freien Plätze für die Teilnahme an diesem Experiment."
   | ContactIsInactive -> "Dieser Kontakt ist inaktiv."
   | ContactSignupInvalidEmail ->
     "Bitte eine valide und nicht bereits verwendete E-Mail-Adresse verwenden."
   | ContactUnconfirmed -> "Teilnehmer noch nicht verifiziert!"
   | CustomFieldNoOptions -> "Es muss mindestens eine Option existieren."
-  | CustomFieldTypeChangeNotAllowed ->
-    "Sie können den Typ des Feldes nicht ändern."
+  | CustomFieldTypeChangeNotAllowed -> "Sie können den Typ des Feldes nicht ändern."
+  | DatabaseAddPoolFirst pool ->
+    Format.asprintf
+      "Unbekannter Pool '%s': Bitte fügen sie den pool erst hinzu ('add_pool')."
+      pool
   | Decode field ->
-    field_message
-      ""
-      (field_to_string field)
-      "konnte nicht entschlüsselt werden."
+    field_message "" (field_to_string field) "konnte nicht entschlüsselt werden."
   | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
   | DefaultMustNotBeUnchecked -> "'Standard' kann nicht deaktiviert werden."
+  | DeleteContactUpcomingSessions ->
+    "Kontakt kann nicht gelöscht werden. Dieser Kontakt ist an kommenden Sessions \
+     angemeldet. Diese Anmeldungen müssen zuerst gelöscht werden."
   | DirectRegistrationIsDisabled ->
     "Sie können sich nicht selbst für dieses Experiment anmelden."
-  | Disabled field ->
-    field_message "" (field_to_string field) "ist deaktiviert."
+  | Disabled field -> field_message "" (field_to_string field) "ist deaktiviert."
   | EmailAddressMissingAdmin -> "Bitte Admin E-Mail-Adresse angeben."
   | EmailAddressMissingRoot -> "Bitte Root E-Mail-Adresse angeben."
   | EmailAlreadyInUse -> "E-Mail-Adresse wird bereits verwendet."
@@ -483,28 +536,23 @@ let rec error_to_string = function
   | EmailIdenticalToCurrent ->
     "Die angegebene E-Mail-Adresse ist identisch mit der aktuellen."
   | EmailMalformed -> "Fehlerhafte E-Mail-Adresse"
-  | EmailInterceptionError error ->
-    Format.asprintf "Email interception error: %s" error
+  | EmailInterceptionError error -> Format.asprintf "Email interception error: %s" error
   | EndBeforeStart -> "Das Ende liegt vor oder dem Start."
   | ExperimentSessionCountNotZero ->
-    "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  \
-     werden."
+    "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  werden."
   | FieldRequired field ->
     Format.asprintf
       "%s wird benötigt."
       (field_to_string field |> CCString.capitalize_ascii)
   | FilterMustNotContainTemplate -> "Filter darf keine Template enthalten."
-  | FilterAndOrMustNotBeEmpty ->
-    "'And' und 'Or' Prädikate dürfen nicht leer sein."
-  | FilterListValueMustNotBeEmpty ->
-    "Es muss mindestens eine Option angewählt werden."
-  | FollowUpIsEarlierThanMain ->
-    "Folgesession kann nicht vor Hauptsession starten."
+  | FilterAndOrMustNotBeEmpty -> "'And' und 'Or' Prädikate dürfen nicht leer sein."
+  | FilterListValueMustNotBeEmpty -> "Es muss mindestens eine Option angewählt werden."
+  | FollowUpIsEarlierThanMain -> "Folgesession kann nicht vor Hauptsession starten."
   | HtmxVersionNotFound field ->
     Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
   | ImportPending ->
-    "Der Import Ihres Users ist noch nicht abgeschlossen. Bitte kontrollieren \
-     Sie Ihren Posteingang oder kontaktieren Sie einen Administrator."
+    "Der Import Ihres Users ist noch nicht abgeschlossen. Bitte kontrollieren Sie Ihren \
+     Posteingang oder kontaktieren Sie einen Administrator."
   | Invalid field -> field_message "" (field_to_string field) "ist ungültig!"
   | InvalidEmailSuffix suffixes ->
     Format.asprintf
@@ -512,8 +560,13 @@ let rec error_to_string = function
       (error_to_string (Invalid Field.EmailSuffix))
       (CCString.concat ", " suffixes)
   | InvalidJson exn -> Format.asprintf "Ungültiges Json: %s" exn
+  | InvalidPasswordHashingCount ->
+    "Die Anzahl der Hashwerte für das Passwort muss zwischen 4 und 31 liegen."
   | InvalidOptionSelected -> "Ungültige Option ausgewählt."
   | InvalidRequest | InvalidHtmxRequest -> "Ungültige Anfrage."
+  | InvalidWithInfo (field, info) ->
+    Format.asprintf "%s ist ungültig (%s)!" (field_to_string field) info
+  | InternalServerError -> "Interner Serverfehler"
   | IsMarkedAsDeleted field ->
     field_message
       ""
@@ -521,17 +574,15 @@ let rec error_to_string = function
       "wurde als gelöscht markiert."
   | JobCannotBeRetriggered -> "Dieser Auftrag kann nicht neu ausgelöst werden."
   | JobPending -> "Der Auftrag ist noch pendent."
+  | LoginInvalidEmailPassword -> "Ungültige E-Mail-Adresse oder Passwort."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
+  | MaintenancePending -> "Es sind Wartungsarbeiten im Gange."
+  | MaxLength max -> Format.asprintf "Darf nicht länger als %i Zeichen sein." max
   | MeantimeUpdate field ->
-    field_message
-      ""
-      (field_to_string field)
-      "wurde in der Zwischenzeit bearbeitet!"
+    field_message "" (field_to_string field) "wurde in der Zwischenzeit bearbeitet!"
+  | MigrationFailed exn -> Format.asprintf "Migration ist fehlgeschlagen: %s" exn
   | Missing field ->
-    field_message
-      "Das Feld"
-      (field_to_string field)
-      "fehlt oder ist nicht ausgefüllt."
+    field_message "Das Feld" (field_to_string field) "fehlt oder ist nicht ausgefüllt."
   | MutuallyExclusive (f1, f2) ->
     Format.asprintf
       "%s und %s schliessen sich gegenseitig aus."
@@ -543,8 +594,7 @@ let rec error_to_string = function
   | NotADatetime (time, err) ->
     Format.asprintf "%s: '%s' ist kein valides Datum." err time
   | NotANumber field -> Format.asprintf "'%s' ist keine Nummer." field
-  | NoTenantsRegistered ->
-    "Es sind keine Tenants auf der Root Datenbank registriert!"
+  | NoTenantsRegistered -> "Es sind keine Tenants auf der Root Datenbank registriert!"
   | NotEligible -> "Sie sind nicht befugt, diese Aktuion durchzuführen."
   | NotFound field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden!"
@@ -552,11 +602,8 @@ let rec error_to_string = function
     field_message
       "Folgende"
       (field_to_string field)
-      (Format.asprintf
-         "konnten nicht gefunden werden: %s"
-         (CCString.concat "," items))
-  | NotHandled field ->
-    Format.asprintf "Feld '%s' wird nicht verarbeitet." field
+      (Format.asprintf "konnten nicht gefunden werden: %s" (CCString.concat "," items))
+  | NotHandled field -> Format.asprintf "Feld '%s' wird nicht verarbeitet." field
   | NotInTimeRange -> "Nicht im angegebenen Zeitfenster."
   | NoValue -> "Kein Wert angegeben"
   | NumberMax i -> Format.asprintf "Darf nicht grösser als %i sein." i
@@ -566,29 +613,26 @@ let rec error_to_string = function
       "%s oder %s"
       (error_to_string err1)
       (err2 |> error_to_string |> CCString.uncapitalize_ascii)
+  | OutOfRange (min, max) -> Format.asprintf "Muss zwischen %i und %i liegen." min max
   | PasswordConfirmationDoesNotMatch ->
     "Passwortbestätigung stimmt nicht mit dem neuen Passwort überein."
   | PasswordPolicyMinLength n ->
     Format.asprintf "Das Passwort muss mindestens %i Zeichen lang sein." n
-  | PasswordPolicyCapitalLetter ->
-    "Das Passwort muss einen Grossbuchstaben enthalten."
+  | PasswordPolicyCapitalLetter -> "Das Passwort muss einen Grossbuchstaben enthalten."
   | PasswordPolicyNumber -> "Das Passwort muss eine Zahl enthalten."
   | PasswordPolicySpecialChar chars ->
     Format.asprintf
       "Das Passwort muss eines der folgenden Zeichen enthalten: %s"
       (chars |> CCList.map CCString.of_char |> CCString.concat " ")
   | PasswordResetFailMessage ->
-    "Falls ein Account zu der von dir eingegebenen E-Mail-Adresse existiert,  \
-     wird dir ein E-Mail mit einem Link zur Passwort zurücksetzung gesendet."
+    "Falls ein Account zu der von dir eingegebenen E-Mail-Adresse existiert,  wird dir \
+     ein E-Mail mit einem Link zur Passwort zurücksetzung gesendet."
   | PasswordResetInvalidData -> "Ungültiges Token oder Passwort."
-  | PermissionDeniedCreateRule ->
-    "Berechtigung zur Erstellung der Regel verweigert."
+  | PermissionDeniedCreateRule -> "Berechtigung zur Erstellung der Regel verweigert."
   | PermissionDeniedGrantRole -> "Berechtigung der Rollenzuweisung verweigert."
-  | PermissionDeniedRevokeRole ->
-    "Berechtigung für den Widerruf der Rolle verweigert."
+  | PermissionDeniedRevokeRole -> "Berechtigung für den Widerruf der Rolle verweigert."
   | PickMessageChannel ->
-    "Kein Nachrichtenkanal wurde ausgewählt für die Benachrichtigung der \
-     Kontakte."
+    "Kein Nachrichtenkanal wurde ausgewählt für die Benachrichtigung der Kontakte."
   | PoolContextNotFound -> "Kontext konnte nicht gefunden werden."
   | QueryNotCompatible (f1, f2) ->
     Format.asprintf
@@ -598,33 +642,27 @@ let rec error_to_string = function
   | ReadOnlyModel -> "Model ausschliesslich um von der Datenbank zu lesen!"
   | RegistrationDisabled -> "Registrierung ist deaktiviert."
   | RequestRequiredFields -> "Bitte alle notwendigen Felder ausfüllen."
-  | RequiredFieldsMissing ->
-    "Bitte beantworten Sie die folgenden Fragen um fortzufahren."
+  | RequiredFieldsMissing -> "Bitte beantworten Sie die folgenden Fragen um fortzufahren."
   | Retrieve field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden."
   | SessionFullyBooked -> "Session ist ausgebucht"
   | SessionHasAssignments ->
-    "Es existieren bereits Anmeldungen für diese Session. Sie kann nicht \
-     gelöscht werden."
+    "Es existieren bereits Anmeldungen für diese Session. Sie kann nicht gelöscht werden."
   | SessionHasFollowUps ->
-    "Es existieren bereits Folgesessions für diese Session. Sie kann nicht \
-     gelöscht werden."
+    "Es existieren bereits Folgesessions für diese Session. Sie kann nicht gelöscht \
+     werden."
+  | SessionIsFollowup -> "Die Hauptsession ist eine Folgesession."
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
   | SelectedOptionsCountMax i ->
-    let verb, noun =
-      if i == 1 then "darf", "Option" else "dürfen", "Optionen"
-    in
+    let verb, noun = if i == 1 then "darf", "Option" else "dürfen", "Optionen" in
     Format.asprintf "Es %s höchstens %i %s ausgewählt werden." verb i noun
   | SelectedOptionsCountMin i ->
-    let verb, noun =
-      if i == 1 then "muss", "Option" else "müssen", "Optionen"
-    in
+    let verb, noun = if i == 1 then "muss", "Option" else "müssen", "Optionen" in
     Format.asprintf "Es %s mindestens %i %s ausgewählt werden." verb i noun
+  | ServiceUnavailable -> "Service zur Zeit nicht verfügbar"
   | SessionRegistrationViaParent -> "Einschreibung via Hauptsession."
   | SessionTenantNotFound ->
-    "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \
-     versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator  \
-     kontaktieren."
+    "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals versuchen."
   | SessionAlreadyCanceled date ->
     CCFormat.asprintf "Diese Session wurde bereits abgesagt am %s." date
   | SessionAlreadyClosed date ->
@@ -633,38 +671,33 @@ let rec error_to_string = function
   | SessionInPast -> "Diese Session ist beendet."
   | SessionNotStarted -> "Diese Session kann noch nicht geschlossen werden."
   | Smaller (field1, field2) ->
-    Format.asprintf
-      "%s kleiner als %s"
-      (field_to_string field1)
-      (field_to_string field2)
+    Format.asprintf "%s kleiner als %s" (field_to_string field1) (field_to_string field2)
   | SessionOverlap -> "Dieses Zeitfenster überschneidet sich mit einem anderen."
   | SmtpException exn -> exn
   | SmtpLoginMissingCredentials ->
-    "Der SMTP-Authentifizierungsmechanismus kann nicht auf LOGIN gesetzt \
-     werden, wenn kein Benutzername oder Passwort festgelegt ist."
+    "Der SMTP-Authentifizierungsmechanismus kann nicht auf LOGIN gesetzt werden, wenn \
+     kein Benutzername oder Passwort festgelegt ist."
   | TerminatoryTenantError | TerminatoryRootError ->
     "Bitte versuchen Sie es später erneut."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
     "Ein Fehler is aufgetreten."
-  | TermsAndConditionsMissing ->
-    "Die Teilnamhebedingungen müssen zuerst erfasst werden."
+  | TermsAndConditionsMissing -> "Die Teilnamhebedingungen müssen zuerst erfasst werden."
   | TermsAndConditionsNotAccepted ->
     "Die Teilnahmebedingungen sind noch nicht akzeptiert."
-  | TextLengthMax i ->
-    Format.asprintf "Darf nicht länger als %i Zeichen sein." i
-  | TextLengthMin i ->
-    Format.asprintf "Darf nicht kürzer als %i Zeichen sein." i
+  | TextLengthMax i -> Format.asprintf "Darf nicht länger als %i Zeichen sein." i
+  | TextLengthMin i -> Format.asprintf "Darf nicht kürzer als %i Zeichen sein." i
+  | TextMessageError error -> Format.asprintf "Text message error: %s" error
   | TextMessageInterceptionError error ->
     Format.asprintf "Text message interception error: %s" error
+  | TextMessageDlrAlreadyReceived -> "SMS Übermittlingsbeicht bereits erhalten."
   | TimeInPast -> "Zeitpunkt liegt in der Vergangenheint!"
   | TimeSpanPositive -> "Zeitspanne muss grösser als 0 sein!"
   | TokenAlreadyUsed -> "Das Token wurde bereits verwendet."
   | TokenInvalidFormat -> "Ungültiges Token Format!"
   | TooShort -> "Die angegebene Dauer ist zu kurz."
-  | Undefined field ->
-    field_message "" (field_to_string field) "ist undefiniert."
-  | Uniqueness field ->
-    field_message "" (field_to_string field) "muss einzigartig sein."
+  | Undefined field -> field_message "" (field_to_string field) "ist undefiniert."
+  | Uniqueness field -> field_message "" (field_to_string field) "muss einzigartig sein."
+  | Unsupported text -> [%string "'%{text}' ist nicht supportet."]
   | WriteOnlyModel -> "Model ausschliesslich zum auf die Datenbank schreiben!"
 ;;
 
@@ -675,16 +708,20 @@ let format_submit submit field =
   field_message (field_opt_message field) submit ""
 ;;
 
-let control_to_string = function
+let control_to_string =
+  let open Control in
+  function
   | Accept field -> format_submit "akzeptieren" field
   | Add field -> format_submit "hinzufügen" field
   | AddToWaitingList -> "Ich möchte mich zur Warteliste hinzufügen"
+  | AllSessions -> "Alle Sessions"
+  | AllAvailableExperiments -> "Alle verfügbaren Experimente"
   | Ascending -> "aufsteigend"
   | Apply -> "anwenden"
   | Assign field -> format_submit "zuweisen" field
   | Back -> format_submit "zurück" None
   | Cancel field -> format_submit "absagen" field
-  | ChangeSession -> format_submit "ändern" (Some Entity_message_field.Session)
+  | ChangeSession -> format_submit "ändern" (Some Field.Session)
   | Choose field -> format_submit "wählen" field
   | Close field -> format_submit "schliessen" field
   | Create field -> format_submit "erstellen" field
@@ -699,7 +736,10 @@ let control_to_string = function
   | Enroll -> format_submit "einschreiben" None
   | EnterNewCellPhone -> "eine andere Nummer eingeben"
   | Filter field -> format_submit "filtern" field
+  | Hide field -> format_submit "verbergen" field
+  | Ignore field -> format_submit "ignorieren" field
   | Login -> format_submit "login" None
+  | Generate -> format_submit "generieren" None
   | LoadDefaultTemplate -> format_submit "Standardtemplate laden" None
   | Manage field -> format_submit "manage" (Some field)
   | MarkAsDeleted -> format_submit "als gelöscht markieren" None
@@ -735,11 +775,13 @@ let control_to_string = function
   | Send field -> format_submit "senden" field
   | SendResetLink -> format_submit "link senden" None
   | Show -> "anzeigen"
-  | SignUp -> format_submit "anmelden" None
+  | SignUp -> format_submit "registrieren" None
   | Start field -> format_submit "starten" field
   | Stop field -> format_submit "stoppen" field
   | ToggleAll -> "alle umschalten"
   | Unassign field -> format_submit "entfernen" field
+  | Unblock -> format_submit "entsperren" None
+  | Unverify -> "Als unverifiziert markieren"
   | Update field -> format_submit "aktualisieren" field
   | UpdateAssignmentsMatchFilter -> format_submit "Filter erneut ausführen" None
   | UpdateOrder -> "Reihenfolge anpassen"

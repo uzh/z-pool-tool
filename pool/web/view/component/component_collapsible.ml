@@ -3,9 +3,12 @@ open Tyxml.Html
 let chevron_icon = Component_icon.(to_html ChevronForward)
 let info_icon = Component_icon.(to_html HelpOutline)
 
-let create title html =
+let create ?(active = false) title html =
   div
-    ~a:[ a_class [ "collapsible"; "note"; "standalone" ] ]
+    ~a:
+      [ a_class
+          ([ "collapsible"; "note"; "standalone" ] @ if active then [ "active" ] else [])
+      ]
     [ div
         ~a:
           [ a_class [ "collapsible-header" ]
@@ -22,8 +25,7 @@ let create title html =
 let create_note ?(icon = Some info_icon) ?title language =
   let title =
     title
-    |> CCOption.value
-         ~default:Pool_common.(Utils.text_to_string language I18n.Note)
+    |> CCOption.value ~default:Pool_common.(Utils.text_to_string language I18n.Note)
     |> fun title ->
     span
       ~a:[ a_class [ "has-icon"; "flex-gap-xs" ] ]

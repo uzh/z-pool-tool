@@ -1,6 +1,6 @@
-(* This module exists to add useful monadic infix operators and to ensure all
-   monadic actions are implemented using the lwt ppx to always present clean
-   stack/back traces (https://ocsigen.org/lwt/latest/manual/manual and
+(* This module exists to add useful monadic infix operators and to ensure all monadic
+   actions are implemented using the lwt ppx to always present clean stack/back traces
+   (https://ocsigen.org/lwt/latest/manual/manual and
    https://github.com/ocsigen/lwt/blob/6ce3d557798d2b5736fb458b697cc3eaa13c461e/src/core/lwt.ml#L1694) *)
 
 module Infix = struct

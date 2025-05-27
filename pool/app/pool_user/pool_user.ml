@@ -1,31 +1,73 @@
+open Utils.Lwt_result.Infix
 include Entity
-module Repo = Repo
+include Event
+include Repo
+include Pool_user_service
 
-let find_active_user_by_email_opt database_label email =
-  let open Utils.Lwt_result.Infix in
-  let open Service.User in
-  let ctx = Pool_database.to_ctx database_label in
-  email
-  |> EmailAddress.value
-  |> find_by_email_opt ~ctx
-  ||> CCFun.flip CCOption.bind (fun ({ status; _ } as user) ->
-    match status with
-    | Active -> Some user
-    | Inactive -> None)
+module Password = struct
+  include Entity_password
+
+  let validate_current label (user_id : Id.t) password =
+    Repo_password.find label user_id
+    ||> CCResult.to_opt
+    ||> CCOption.map_or ~default:false (CCFun.flip validate password)
+  ;;
+
+  let define label (user_id : Id.t) password password_confirmation =
+    let* (_ : t) = Repo_password.find label user_id in
+    let* password = create password password_confirmation |> Lwt_result.lift in
+    let%lwt () = Repo_password.update label (user_id, password) in
+    Lwt.return_ok ()
+  ;;
+
+  let update = Event.update_password
+
+  module Reset = struct
+    let create_token label email =
+      let%lwt user = Repo.find_by_email_opt label email in
+      match user with
+      | Some { id; _ } ->
+        let expires_in = Sihl.Time.OneDay in
+        Pool_token.create label ~expires_in [ "user_id", Id.value id ]
+        |> Lwt.map CCOption.return
+      | None ->
+        let tags = Database.Logger.Tags.create label in
+        Logs.warn (fun m -> m ~tags "No user found with email %a" EmailAddress.pp email);
+        Lwt.return_none
+    ;;
+
+    let reset_password ~token label password password_confirmation =
+      let%lwt user_id = Pool_token.read label token ~k:"user_id" in
+      match user_id with
+      | None -> Lwt.return_error Pool_message.(Error.Invalid Field.Token)
+      | Some user_id -> define label (Id.of_string user_id) password password_confirmation
+    ;;
+
+    let lifecycle =
+      Sihl.Container.create_lifecycle
+        Sihl.Contract.Password_reset.name
+        ~dependencies:(fun () -> [ Pool_token.lifecycle; lifecycle ])
+    ;;
+
+    let register () = Sihl.Container.Service.create lifecycle
+  end
+end
+
+let login label email password =
+  let open Pool_message in
+  match%lwt Repo_password.find_by_email_opt label email with
+  | Some hash when Password.validate hash password ->
+    find_by_email_exn label email |> Lwt_result.ok
+  | Some _ -> Lwt.return_error Error.LoginInvalidEmailPassword
+  | None -> Lwt.return_error Error.LoginInvalidEmailPassword
 ;;
 
-let create_session database_label email ~password =
-  let open Utils.Lwt_result.Infix in
-  let open Service.User in
-  login
-    ~ctx:(Pool_database.to_ctx database_label)
-    (EmailAddress.value email)
-    ~password
-  >== fun ({ status; _ } as user) ->
-  match status with
-  | Inactive -> Error `Does_not_exist
-  | Active -> Ok user
-;;
+module Web = Pool_user_web
+
+module Repo = struct
+  include Repo_entity
+  include Repo
+end
 
 module FailedLoginAttempt = struct
   include Login_attempt_entity

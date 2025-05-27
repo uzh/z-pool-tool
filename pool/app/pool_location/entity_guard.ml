@@ -9,29 +9,25 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun Entity.{ id; _ } ->
-        Target.create `Location (id |> Uuid.target_of Entity.Id.value))
+         Target.create `Location (id |> Uuid.target_of Entity.Id.value))
       t
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 end
 
 module FileTarget = struct
-  type t = Entity.Mapping.file [@@deriving eq, show]
+  type t = Entity.File.t [@@deriving eq, show]
 
   let decorate ?ctx id =
     Persistence.Target.decorate
       ?ctx
-      (Uuid.target_of Entity.Mapping.Id.value
-       %> Guard.Target.create `LocationFile)
+      (Uuid.target_of Entity.File.Id.value %> Guard.Target.create `LocationFile)
       id
-    >|- Pool_common.Message.authorization
+    >|- Pool_message.Error.authorization
   ;;
 
-  let to_authorizable ?ctx { Entity.Mapping.id; _ } = decorate ?ctx id
-
-  let to_authorizable_of_write ?ctx { Entity.Mapping.Write.id; _ } =
-    decorate ?ctx id
-  ;;
+  let to_authorizable ?ctx { Entity.File.id; _ } = decorate ?ctx id
+  let to_authorizable_of_write ?ctx { Entity.File.Write.id; _ } = decorate ?ctx id
 end
 
 module Access = struct
@@ -43,7 +39,8 @@ module Access = struct
     one_of_tuple (action, model, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
-  let index = one_of_tuple (Read, `Location, None)
+  let index_permission = Read
+  let index = one_of_tuple (index_permission, `Location, None)
   let create = one_of_tuple (Create, `Location, None)
   let read ?model = location ?model Read
   let update ?model = location ?model Update
@@ -52,9 +49,7 @@ module Access = struct
   module File = struct
     let file action uuid =
       one_of_tuple
-        ( action
-        , `LocationFile
-        , Some (uuid |> Uuid.target_of Entity.Mapping.Id.value) )
+        (action, `LocationFile, Some (uuid |> Uuid.target_of Entity.File.Id.value))
     ;;
 
     let index = one_of_tuple (Read, `LocationFile, None)

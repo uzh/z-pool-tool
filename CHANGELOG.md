@@ -4,6 +4,260 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.11.1](https://github.com/uzh/z-pool-tool/tree/0.11.1) - 2025-04-28
+
+### Added
+
+- functionality to unblock users that were temporarily blocked due to too many failed login attempts
+
+### Fixed
+
+- experiment descriptions are no longer truncated on the detail page
+
+## [0.11.0](https://github.com/uzh/z-pool-tool/tree/0.11.0) - 2025-04-16
+
+### Added
+
+- descriptions for role permissions
+- display warning if no email (SMTP) config is specified
+
+### Fixed
+
+- usage of multiple search bars on same page
+- dropdowns outside of page
+- flatpicker behaviour
+- cancel undeliverable emails on worker startup
+- usage of time windows
+- hide links if insufficent permission
+
+### Changed
+
+- adjust UI on University regulations
+- responsive design, optimizations for mobile
+- page scripts are now html (not JS anymore)
+- default sorting of invitations (new: created at)
+- move api keys from root database to each tenant
+- default welcome text
+
+### Removed
+
+- unused 'Admin' role
+
+## [0.9.5](https://github.com/uzh/z-pool-tool/tree/0.9.4) - 2025-03-17
+
+### Fixed
+
+- merging of contacts with disabled custom fields
+
+## [0.9.4](https://github.com/uzh/z-pool-tool/tree/0.9.4) - 2025-03-13
+
+### Fixed
+
+- occurances of internal server errors when merging duplicate contacts
+- always exclude globally assigned assistants and experimenter
+- allow queue job to be mapped to multiple entities
+
+## [0.9.3](https://github.com/uzh/z-pool-tool/tree/0.9.3) - 2025-02-27
+
+### Added
+
+- search bar for "find duplicates" overview
+
+### Fixed
+
+- password reset for admins
+
+## [0.9.2](https://github.com/uzh/z-pool-tool/tree/0.9.2) - 2025-02-27
+
+### Added
+
+- store all invitation resets
+- possibility to assign assistants per session
+
+### Changed
+
+- refactor statistics
+
+### Fixed
+
+- csrf middleware on error pages
+- missing default permissions
+- update changelog when merging contacts
+- fix session links in calendar view
+
+## [0.9.1](https://github.com/uzh/z-pool-tool/tree/0.9.1) - 2025-02-10
+
+### Added
+
+- allow contact deactivation service to be disabled
+
+### Fixed
+
+- some anonymous exception
+- text message dlr error codes
+
+## [0.9.0](https://github.com/uzh/z-pool-tool/tree/0.9.0) - 2025-02-06
+
+### Added
+
+- service to detect possibly duplicated contacts, and merge them
+- utility functions, authorization and logging for API
+- settings to add JavaScript snippets to head or body
+- allow contacts to be signed of from a session on the contact page
+- automatically warn and disable inactive users
+- add changelog history for entities (e.g. experiments, sessions, contacts)
+
+### Changed
+
+- run tenant migrations in parallel
+- improve information of filter statistics
+- improve worker reconnection with databases
+- reduce unneeded empty bulk sent events
+
+### Fixed
+
+- update filter statistics after every change
+- paused condition for filters
+- shown error message typos
+- text message DLR
+
+## [0.8.3](https://github.com/uzh/z-pool-tool/tree/0.8.3) - 2024-10-24
+
+### Fixed
+
+- handling of lost database connection in schedule
+- filtering of locations on location index page
+
+## [0.8.2](https://github.com/uzh/z-pool-tool/tree/0.8.2) - 2024-10-24
+
+### Added
+
+- creation of announcement banners on tenants for admins and/or contacts
+- keep track of sign up codes of newly registered contacts
+- enable verification of contacts
+- creation of release note pages
+
+### Changed
+
+- sort participation history on contact profile by session start
+
+### Fixed
+
+- fix tenant middleware to retry database connection after a connection issue occurred
+
+## [0.8.1](https://github.com/uzh/z-pool-tool/tree/0.8.1) - 2024-10-09
+
+### Added
+
+- validation of uuids in guardian middleware
+- warnings to mailings form if no invitations will be sent
+
+### Changed
+
+- standradized page width for all pages
+- matcher sends invitations to online experiment with upcoming time windows
+
+### Fixed
+
+- `experimentSurveyRedirectUrl` text template typo
+- resending of queue jobs
+- experiment detail view middleware
+
+## [0.8.0](https://github.com/uzh/z-pool-tool/tree/0.8.0) - 2024-09-11
+
+### Added
+
+- mark a contact as deleted
+- marked as deleted column to waiting list, incl. handling of it
+- register DLR for text messages
+- persistent multitenant job queue, incl. history as mapping
+- additional hints (e.g. custom fields)
+- survey url for text templates
+
+### Changed
+
+- allow customization of dashboard subtitles
+- change migration handling, only preset to "dirty" for open migrations
+- some error messages
+- naming for registration, login and sign up
+- start worker for active tenants only
+- explicit mark jobs when they should run on root database as well
+- separate job counts per tenant in status route
+- database connection handling: increase stability for connection issues
+- link backend of guardian to pool database
+- split upcoming and history of jobs
+- rework startup process of root an tenant, decrease downtime on startup
+
+### Fixed
+
+- list cancelled sessions separately
+- schedule table layout
+- experiment statistics using temporary table
+- statistict without previous data
+- duplicate url parameter encoding
+- t&c routes
+- optimize regex for finding tenant
+- fix email logo on gmail web client
+
+### Removed
+
+- package read token (as publicly accessible now)
+
+## [0.7.6](https://github.com/uzh/z-pool-tool/tree/0.7.6) - 2024-06-10
+
+### Added
+
+- tenant database column for sms sender name
+- display 'terms last accepted at' on contact details page
+
+### Fixed
+
+- clear tenant cache after tenant details update
+
+## [0.7.5](https://github.com/uzh/z-pool-tool/tree/0.7.5) - 2024-06-03
+
+### Added
+
+- additional hints for text placeholders and its example values
+
+### Changed
+
+- `callbackUrl` for online experiments is now optional
+
+### Fixed
+
+- login with previously failed login attempt
+
+## [0.7.4](https://github.com/uzh/z-pool-tool/tree/0.7.4) - 2024-05-16
+
+### Fixed
+
+- matcher does not consider online experiments to be fully booked
+
+## [0.7.3](https://github.com/uzh/z-pool-tool/tree/0.7.3) - 2024-05-15
+
+### Fixed
+
+- validate email address process
+
+## [0.7.2](https://github.com/uzh/z-pool-tool/tree/0.7.2) - 2024-05-15
+
+### Added
+
+- sessionless experiments with callback for participation (used for online experiments)
+- location link to location overview text element
+
+### Changed
+
+- allow tenant databases to be unreachable and show info page
+- increase minimum of interval for service status
+
+### Fixed
+
+- UI navigation elements for invitations
+- continously check filter service registration
+- login process with unanswered custom fields
+
 ## [0.7.1](https://github.com/uzh/z-pool-tool/tree/0.7.1) - 2024-04-30
 
 ### Fixed

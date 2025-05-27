@@ -1,3 +1,12 @@
+@use "@econ/frontend-framework/dist/sass/colors" as c;
+@use "@econ/frontend-framework/dist/sass/variables" as vars;
+@use "@econ/frontend-framework/dist/sass/breakpoints";
+
+
+:root {
+    --fc-today-bg-color: #fefad1;
+}
+
 .fc {
     [class*=grid-] {
         gap: 0;
@@ -40,7 +49,7 @@
     }
 
     .fc-toolbar-title {
-        @extend .heading-3
+        @extend .heading-3 !optional
     }
 
     .fc-event-time {
@@ -80,7 +89,7 @@
 
     .arrow {
         width: 1rem;
-        fill: $grey-dark;
+        fill: c.$grey-dark;
     }
 }
 
@@ -93,10 +102,49 @@
 }
 
 :root {
-    --fc-button-bg-color: #{$color-primary};
-    --fc-button-border-color: #{$color-primary-dark};
-    --fc-button-hover-bg-color: #{$color-primary-light};
-    --fc-button-hover-border-color: #{$color-primary-dark};
-    --fc-button-active-bg-color: #{$color-primary-light};
-    --fc-button-active-border-color: #{$color-primary-dark};
+    --fc-button-bg-color: #{c.$color-primary};
+    --fc-button-border-color: #{c.$color-primary-dark};
+    --fc-button-hover-bg-color: #{c.$color-primary-light};
+    --fc-button-hover-border-color: #{c.$color-primary-dark};
+    --fc-button-active-bg-color: #{c.$color-primary-light};
+    --fc-button-active-border-color: #{c.$color-primary-dark};
+}
+
+@include breakpoints.econ-until(breakpoints.$desktop-breakpoint) {
+    .fc-header-toolbar {
+        flex-direction: column;
+
+        .fc-toolbar-title {
+            font-size: vars.$base-font-size;
+        }
+
+        .fc-button {
+            font-size: vars.$font-size-sm;
+        }
+
+        &>.fc-toolbar-chunk {
+            margin-top: vars.$space-md;
+        }
+
+        &>.fc-toolbar-chunk:nth-child(2) {
+            order: -1;
+        }
+    }
+
+    .fc-list-day-cushion {
+        display: flex;
+        gap: vars.$space-lg;
+    }
+}
+
+@include breakpoints.econ-until(breakpoints.$tablet-breakpoint) {
+    .fc-tooltip {
+        .arrow {
+            display: none;
+        }
+    }
+
+    .fc .fc-list-event[aria-expanded="true"] td {
+        background-color: var(--fc-today-bg-color);
+    }
 }

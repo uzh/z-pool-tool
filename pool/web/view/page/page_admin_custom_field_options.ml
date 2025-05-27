@@ -1,15 +1,14 @@
 open Tyxml.Html
 open Component.Input
+open Pool_message
 module Partials = Component.Partials
-module Message = Pool_common.Message
 module Url = Page_admin_custom_fields.Url
 
 let option_form
-  ?(custom_field_option : Custom_field.SelectOption.t option)
-  custom_field
-  Pool_context.{ language; csrf; _ }
-  tenant_languages
-  flash_fetcher
+      ?(custom_field_option : Custom_field.SelectOption.t option)
+      custom_field
+      Pool_context.{ language; csrf; flash_fetcher; _ }
+      tenant_languages
   =
   let open Custom_field in
   let action =
@@ -21,11 +20,11 @@ let option_form
   let name_inputs =
     Page_admin_custom_fields.input_by_lang
       ~required:true
+      ?flash_fetcher
       language
       tenant_languages
-      flash_fetcher
       custom_field_option
-      Message.Field.Name
+      Field.Name
       (fun lang o ->
          let open CCOption in
          o.SelectOption.name
@@ -35,10 +34,7 @@ let option_form
   in
   form
     ~a:
-      [ a_method `Post
-      ; a_action (Sihl.Web.externalize_path action)
-      ; a_class [ "stack" ]
-      ]
+      [ a_method `Post; a_action (Sihl.Web.externalize_path action); a_class [ "stack" ] ]
     [ csrf_element csrf ()
     ; div ~a:[ a_class [ "stack" ] ] name_inputs
     ; div
@@ -46,7 +42,7 @@ let option_form
         [ submit_element
             ~classnames:[ "push" ]
             language
-            Message.(
+            Control.(
               let field = Some Field.CustomFieldOption in
               match custom_field_option with
               | None -> Create field
@@ -61,9 +57,7 @@ let field_buttons language csrf custom_field option =
   let open Custom_field in
   let open Pool_common in
   let action option appendix =
-    Url.Option.detail_path
-      (model custom_field, custom_field |> id)
-      option.SelectOption.id
+    Url.Option.detail_path (model custom_field, custom_field |> id) option.SelectOption.id
     |> (fun base -> Format.asprintf "%s/%s" base appendix)
     |> Sihl.Web.externalize_path
   in
@@ -85,55 +79,59 @@ let field_buttons language csrf custom_field option =
      | Some published_at ->
        div
          [ txt
-             (Utils.field_to_string language Message.Field.PublishedAt
+             (Utils.field_to_string language Field.PublishedAt
               |> CCString.capitalize_ascii)
          ; txt ": "
-         ; txt
-             (published_at
-              |> PublishedAt.value
-              |> Utils.Time.formatted_date_time)
+         ; txt (published_at |> PublishedAt.value |> Pool_model.Time.formatted_date_time)
          ]
      | None ->
        div
          ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
          [ make_form
              (action option "delete")
-             Message.(Delete (Some Field.CustomFieldOption))
+             Control.(Delete (Some Field.CustomFieldOption))
              `Error
              I18n.DeleteCustomFieldOption
          ; make_form
              (action option "publish")
-             Pool_common.Message.(Publish (Some Field.CustomFieldOption))
+             Control.(Publish (Some Field.CustomFieldOption))
              `Success
              I18n.PublishCustomFieldOption
          ])
 ;;
 
 let detail
-  ?custom_field_option
-  custom_field
-  (Pool_context.{ language; csrf; _ } as context)
-  sys_languages
-  flash_fetcher
+      ?custom_field_option
+      custom_field
+      (Pool_context.{ language; csrf; _ } as context)
+      sys_languages
   =
-  let buttons_form =
-    field_buttons language csrf custom_field custom_field_option
+  let changelog_html =
+    let open Custom_field in
+    match custom_field_option with
+    | None -> txt ""
+    | Some option ->
+      let model = model custom_field in
+      let url =
+        HttpUtils.Url.Admin.custom_field_option_path
+          model
+          (id custom_field)
+          ~suffix:"changelog"
+          ~id:option.SelectOption.id
+          ()
+        |> Uri.of_string
+      in
+      Component.Changelog.list context url None
   in
+  let buttons_form = field_buttons language csrf custom_field custom_field_option in
   div
-    ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ Partials.form_title
-        language
-        Message.Field.CustomFieldOption
-        custom_field_option
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ Partials.form_title language Field.CustomFieldOption custom_field_option
     ; div
-        ~a:[ a_class [ "stack" ] ]
+        ~a:[ a_class [ "stack-lg" ] ]
         [ buttons_form
-        ; option_form
-            ?custom_field_option
-            custom_field
-            context
-            sys_languages
-            flash_fetcher
+        ; option_form ?custom_field_option custom_field context sys_languages
+        ; changelog_html
         ]
     ]
 ;;

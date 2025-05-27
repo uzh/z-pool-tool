@@ -1,14 +1,16 @@
 (library
  (name email)
  (libraries
+  database
   i18n
+  pool.conformist
   pool_common
-  pool_database
   pool_tenant
+  pool_token
   pool_user
-  queue
+  pool_queue
   query
-  service
+  sihl-email
   utils)
  (preprocess
   (pps

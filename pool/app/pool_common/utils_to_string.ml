@@ -1,3 +1,4 @@
+open CCFun.Infix
 open Entity
 
 let to_string = function
@@ -36,9 +37,7 @@ let confirmable_to_string = function
   | Language.En -> I18n_en.confirmable_to_string
 ;;
 
-let field_to_string_capitalized l m =
-  field_to_string l m |> CCString.capitalize_ascii
-;;
+let field_to_string_capitalized l m = field_to_string l m |> CCString.capitalize_ascii
 
 let control_to_string = function
   | Language.De -> Locales_de.control_to_string
@@ -61,12 +60,11 @@ let hint_to_string = function
 ;;
 
 let get_or_failwith m =
-  m
-  |> CCResult.map_err (error_to_string Language.En)
-  |> CCResult.get_or_failwith
+  let open CCResult in
+  m |> map_err (error_to_string Language.En) |> get_or_failwith
 ;;
 
-let failwith = CCFun.(error_to_string Language.En %> failwith)
+let failwith = error_to_string Language.En %> failwith
 
 let bool_to_string lang m =
   match lang with

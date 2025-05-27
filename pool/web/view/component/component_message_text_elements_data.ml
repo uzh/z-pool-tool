@@ -5,23 +5,14 @@ let create_contact () =
   let open Pool_user in
   Contact.
     { user =
-        Sihl_user.
-          { id = Id.(create () |> value)
-          ; email = "jane.doe@econ.uzh.ch"
-          ; username = None
-          ; name = Some "Doe"
-          ; given_name = Some "Jane"
-          ; password =
-              "somepassword"
-              |> Sihl_user.Hashing.hash
-              |> CCResult.get_or_failwith
-          ; status =
-              Sihl_user.status_of_string "active" |> CCResult.get_or_failwith
-          ; admin = false
-          ; confirmed = true
-          ; created_at = CreatedAt.create ()
-          ; updated_at = UpdatedAt.create ()
-          }
+        { Pool_user.id = Pool_user.Id.create ()
+        ; email = EmailAddress.of_string "jane.doe@econ.uzh.ch"
+        ; lastname = Lastname.of_string "Doe"
+        ; firstname = Firstname.of_string "Jane"
+        ; status = Status.Active
+        ; admin = IsAdmin.create false
+        ; confirmed = Confirmed.create true
+        }
     ; terms_accepted_at = TermsAccepted.create_now () |> CCOption.pure
     ; language = Some Language.En
     ; experiment_type_preference = None
@@ -29,8 +20,7 @@ let create_contact () =
     ; paused = Paused.create false
     ; disabled = Disabled.create false
     ; verified = None
-    ; email_verified =
-        () |> Ptime_clock.now |> EmailVerified.create |> CCOption.pure
+    ; email_verified = () |> Ptime_clock.now |> EmailVerified.create |> CCOption.pure
     ; num_invitations = NumberOfInvitations.init
     ; num_assignments = NumberOfAssignments.init
     ; num_show_ups = NumberOfShowUps.init
@@ -42,14 +32,12 @@ let create_contact () =
     ; language_version = Version.create ()
     ; experiment_type_preference_version = Version.create ()
     ; import_pending = Pool_user.ImportPending.create false
-    ; created_at = CreatedAt.create ()
-    ; updated_at = UpdatedAt.create ()
+    ; created_at = CreatedAt.create_now ()
+    ; updated_at = UpdatedAt.create_now ()
     }
 ;;
 
-let create_sihl_user () =
-  () |> create_contact |> fun { Contact.user; _ } -> user
-;;
+let create_user () = () |> create_contact |> fun { Contact.user; _ } -> user
 
 let location =
   let open Pool_location in
@@ -80,12 +68,11 @@ let location =
   let name = "SNS Lab" |> Name.create |> get_exn in
   let description =
     let text_en =
-      "The Laboratory for Social and Neural Systems Research (SNS Lab) is the \
-       heart of the ZNE."
+      "The Laboratory for Social and Neural Systems Research (SNS Lab) is the heart of \
+       the ZNE."
     in
     let text_de =
-      "Das Labor für Soziale und Neuronale Systeme (SNS Lab) ist das Herzstück \
-       des ZNE."
+      "Das Labor für Soziale und Neuronale Systeme (SNS Lab) ist das Herzstück des ZNE."
     in
     let languages = Pool_common.Language.all in
     Pool_common.Language.[ En, text_en; De, text_de ]
@@ -94,20 +81,15 @@ let location =
     |> CCOption.return
   in
   let address = address in
-  let link =
-    "https://www.zne.uzh.ch/en/facilities.html" |> Link.create |> get_exn
-  in
-  let status = Status.Active in
-  let files = [] in
+  let link = "https://www.zne.uzh.ch/en/facilities.html" |> Link.create |> get_exn in
   { id = Id.create ()
   ; name
   ; description
   ; address
   ; link = Some link
-  ; status
-  ; files
-  ; created_at = Ptime_clock.now ()
-  ; updated_at = Ptime_clock.now ()
+  ; status = Status.Active
+  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
 ;;
 
@@ -123,9 +105,7 @@ let create_session experiment =
         |> Start.create
     ; duration = Duration.create hour |> get_or_failwith
     ; internal_description =
-        "Internal description"
-        |> InternalDescription.of_string
-        |> CCOption.return
+        "Internal description" |> InternalDescription.of_string |> CCOption.return
     ; public_description =
         "Public description" |> PublicDescription.of_string |> CCOption.return
     ; location
@@ -141,8 +121,8 @@ let create_session experiment =
     ; text_message_reminder_sent_at = None
     ; closed_at = None
     ; canceled_at = None
-    ; created_at = Pool_common.CreatedAt.create ()
-    ; updated_at = Pool_common.UpdatedAt.create ()
+    ; created_at = Pool_common.CreatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.create_now ()
     ; experiment
     }
 ;;
@@ -158,13 +138,9 @@ let create_experiment () =
   ; title = Title.create "The Wallet Game\t" |> get_exn
   ; public_title = PublicTitle.create "public_title" |> get_exn
   ; internal_description =
-      InternalDescription.create "An internal description"
-      |> get_exn
-      |> CCOption.return
+      InternalDescription.create "An internal description" |> get_exn |> CCOption.return
   ; public_description =
-      PublicDescription.create "A description for everyone"
-      |> get_exn
-      |> CCOption.return
+      PublicDescription.create "A description for everyone" |> get_exn |> CCOption.return
   ; language = None
   ; organisational_unit = None
   ; smtp_auth_id = None
@@ -180,10 +156,9 @@ let create_experiment () =
   ; online_experiment = Some online_experiment
   ; email_session_reminder_lead_time = None
   ; text_message_session_reminder_lead_time = None
-  ; invitation_reset_at = None
   ; matcher_notification_sent = MatcherNotificationSent.create false
-  ; created_at = Ptime_clock.now ()
-  ; updated_at = Ptime_clock.now ()
+  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
 ;;
 
@@ -200,7 +175,7 @@ let create_assignment ?contact () =
   ; external_data_id = Some (ExternalDataId.of_string "DATA_ID")
   ; reminder_manually_last_sent_at = None
   ; custom_fields = None
-  ; created_at = Ptime_clock.now ()
-  ; updated_at = Ptime_clock.now ()
+  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
 ;;

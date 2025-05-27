@@ -1,18 +1,24 @@
 (library
  (name http_utils)
  (libraries
+  announcement
+  api_key
   contact
+  duplicate_contacts
   experiment
+  mailing
   logger
   pool_common
   pool_context
-  service
+  pool_queue
+  pool_version
   session
   sexplib
-  tenant
+  sihl-storage
   time_window
   user_import
-  version)
+  version
+  waiting_list)
  (preprocess
   (pps
    lwt_ppx

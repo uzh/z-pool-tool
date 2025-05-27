@@ -1,9 +1,10 @@
-open Pool_database
+open Database
 
 let get_exn = Test_utils.get_or_failwith
 
 module Testable = struct
-  let database = Pool_database.(Alcotest.testable pp equal)
+  let label = Database.Label.(Alcotest.testable pp equal)
+  let database = Database.(Alcotest.testable pp equal)
 end
 
 module Data = struct
@@ -21,23 +22,20 @@ module Data = struct
 end
 
 let check_root_database _ () =
-  let ctx =
-    Database.Root.label |> Pool_database.Label.of_string |> Pool_database.to_ctx
+  let%lwt (_ : (unit, Pool_message.Error.t) result) =
+    Pool.connect Pool.Root.label |> Lwt_result.map_error Pool_common.Utils.with_log_error
   in
-  let _ = Sihl.Database.fetch_pool ~ctx () in
   Lwt.return_unit
 ;;
 
 let check_find_tenant_database _ () =
-  let create label url = Pool_database.create label url |> get_exn in
-  let expected = CCList.map (CCFun.uncurry create) [ Data.database ] in
-  let%lwt tenants = Pool_tenant.find_databases () in
-  Alcotest.(check (list Testable.database) "databases found" expected tenants)
-  |> Lwt.return
+  let expected = [ fst Data.database ] in
+  let tenants = Database.Pool.Tenant.all () in
+  Alcotest.(check (list Testable.label) "databases found" expected tenants) |> Lwt.return
 ;;
 
 let check_tenant_database _ () =
-  let ctx = Data.database_label |> Pool_database.to_ctx in
+  let ctx = Data.database_label |> Database.to_ctx in
   let _ = Sihl.Database.fetch_pool ~ctx () in
   Lwt.return_unit
 ;;

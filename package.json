@@ -1,6 +1,6 @@
 {
   "name": "pool",
-  "version": "0.7.1",
+  "version": "0.11.1",
   "license": "GPL-2.0-or-later",
   "scripts": {
     "build": "export NODE_OPTIONS=--trace-warnings PUBLIC_URL=$PREFIX_PATH/assets/; parcel build resources/index.js resources/images/** --dist-dir public --public-url $PUBLIC_URL && parcel build resources/admin.js --dist-dir public --public-url $PUBLIC_URL",
@@ -20,16 +20,16 @@
     "parcel": "^2.0.0",
     "process": "^0.11.10",
     "stream-browserify": "^3.0.0",
+    "svgo": "^3",
     "vm-browserify": "^1.1.2"
   },
   "dependencies": {
-    "@ckeditor/ckeditor5-build-classic": "^36.0.0",
-    "@econ/frontend-framework": "^3.4.1",
+    "@econ/frontend-framework": "^4.0.0",
     "@fullcalendar/core": "^6.1.8",
     "@fullcalendar/daygrid": "^6.1.8",
     "@fullcalendar/list": "^6.1.8",
     "@fullcalendar/timegrid": "^6.1.8",
-    "crypto": "^1.0.1",
+    "ckeditor5": "^44.3.0",
     "flatpickr": "^4.6.13",
     "htmx.org": "^1.6.0",
     "tippy.js": "^6.3.7"

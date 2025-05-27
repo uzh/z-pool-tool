@@ -1,6 +1,6 @@
 open CCFun
 open Tyxml.Html
-module Field = Pool_common.Message.Field
+module Field = Pool_message.Field
 module I18n = Pool_common.I18n
 
 let query_field = Field.Search
@@ -27,8 +27,7 @@ let with_empty_message language = function
   | [] ->
     [ span
         ~a:[ a_class [ "data-item" ] ]
-        [ txt Pool_common.(Utils.text_to_string language I18n.EmptyListGeneric)
-        ]
+        [ txt Pool_common.(Utils.text_to_string language I18n.EmptyListGeneric) ]
     ]
   | html -> html
 ;;
@@ -38,19 +37,19 @@ let query_results to_item items =
 ;;
 
 let multi_search
-  ?(query_field = query_field)
-  language
-  field
-  multi_search
-  ?(additional_attributes = [])
-  ?(disabled = false)
-  ?hints
-  ?(is_filter = false)
-  ?js_callback
-  ?input_type
-  ?placeholder
-  ?tag_name
-  ()
+      ?(query_field = query_field)
+      language
+      field
+      multi_search
+      ?(additional_attributes = [])
+      ?(disabled = false)
+      ?hints
+      ?(is_filter = false)
+      ?js_callback
+      ?input_type
+      ?placeholder
+      ?tag_name
+      ()
   =
   let open Pool_common in
   let filter_selected_attributes =
@@ -69,7 +68,7 @@ let multi_search
           ~a:
             ([ a_input_type `Checkbox
              ; a_value (to_value item)
-             ; a_name (Message.Field.array_key tag_name)
+             ; a_name (Pool_message.Field.array_key tag_name)
              ; a_checked ()
              ; a_hidden ()
              ]
@@ -80,10 +79,7 @@ let multi_search
   let hint = Component_input.Elements.hints language hints in
   let base_attributes =
     let placeholder =
-      CCOption.map_or
-        ~default:[]
-        CCFun.(a_placeholder %> CCList.return)
-        placeholder
+      CCOption.map_or ~default:[] CCFun.(a_placeholder %> CCList.return) placeholder
     in
     let disabled = if disabled then [ a_disabled () ] else [] in
     let js_callback =
@@ -92,8 +88,8 @@ let multi_search
       | None -> []
     in
     [ a_input_type `Search
-    ; a_name (Message.Field.show query_field)
-    ; a_user_data "name" (Message.Field.array_key tag_name)
+    ; a_name (Pool_message.Field.show query_field)
+    ; a_user_data "name" (Pool_message.Field.array_key tag_name)
     ]
     @ placeholder
     @ disabled
@@ -105,10 +101,7 @@ let multi_search
       ~a:
         (a_class [ "form-group" ]
          :: (if is_filter then [ a_user_data "query" "wrapper" ] else []))
-      ((label
-          [ txt
-              (Utils.field_to_string language field |> CCString.capitalize_ascii)
-          ]
+      ((label [ txt (Utils.field_to_string language field |> CCString.capitalize_ascii) ]
         :: html)
        @ hint)
   in
@@ -122,15 +115,12 @@ let multi_search
   match multi_search with
   | Static { Component_input.options; selected; to_label; to_value } ->
     [ input
-        ~a:
-          ((a_user_data "search" "static" :: base_attributes)
-           @ additional_attributes)
+        ~a:((a_user_data "search" "static" :: base_attributes) @ additional_attributes)
         ()
     ; div
         ~a:[ a_class [ "data-list"; "relative" ] ]
         (CCList.map (default_query_results_item ~to_label ~to_value) options)
-    ; selected_items_wrapper
-        (CCList.map (selected_item to_label to_value) selected)
+    ; selected_items_wrapper (CCList.map (selected_item to_label to_value) selected)
     ]
     |> wrap
   | Dynamic { hx_url; hx_method; to_label; to_value; selected } ->
@@ -153,8 +143,7 @@ let multi_search
                @ additional_attributes)
             ()
         ; div ~a:[ a_class [ "data-list"; "relative" ] ] []
-        ; selected_items_wrapper
-            (CCList.map (selected_item to_label to_value) selected)
+        ; selected_items_wrapper (CCList.map (selected_item to_label to_value) selected)
         ]
     ]
     |> wrap
@@ -163,8 +152,7 @@ let multi_search
 let additional_filter_attributes =
   [ a_user_data
       "hx-params"
-      Pool_common.Message.Field.(
-        [ array_key Value; show Search ] |> CCString.concat ", ")
+      Pool_message.Field.([ array_key Value; show Search ] |> CCString.concat ", ")
   ]
 ;;
 
@@ -181,13 +169,11 @@ module Experiment = struct
   ;;
 
   let filter_multi_search ?selected ~disabled language =
-    let dynamic_search =
-      dynamic_search ?selected "/admin/experiments/search" `Post
-    in
+    let dynamic_search = dynamic_search ?selected "/admin/experiments/search" `Post in
     multi_search
       ~disabled
       ~is_filter:true
-      ~tag_name:Pool_common.Message.Field.Value
+      ~tag_name:Pool_message.Field.Value
       language
       field
       (Dynamic dynamic_search)
@@ -199,7 +185,7 @@ module Experiment = struct
       dynamic_search
         (Format.asprintf
            "/admin/contacts/%s/experiments"
-           (Contact.id contact |> Pool_common.Id.value))
+           (Contact.id contact |> Contact.Id.value))
         `Get
     in
     multi_search
@@ -265,12 +251,7 @@ module Tag = struct
   ;;
 
   let filter_multi_search ~selected ~disabled language =
-    create
-      ~disabled
-      ~is_filter:true
-      ~selected
-      ~tag_name:Pool_common.Message.Field.Value
-      language
+    create ~disabled ~is_filter:true ~selected ~tag_name:Pool_message.Field.Value language
   ;;
 
   let query_results language items =
@@ -280,19 +261,19 @@ module Tag = struct
 end
 
 module RoleTarget = struct
-  let hx_url admin_id =
-    Format.asprintf "/admin/admins/%s/search-role" Admin.(Id.value admin_id)
+  let hx_url base_path target_id =
+    Format.asprintf "%s/%s/search-role" base_path (Guard.Uuid.Target.to_string target_id)
   ;;
 
   let additional_attributes =
     [ a_user_data
         "hx-params"
-        Pool_common.Message.Field.(
+        Pool_message.Field.(
           [ array_key Target; show Role; show Search ] |> CCString.concat ", ")
     ]
   ;;
 
-  let experiments ?hints language admin_id =
+  let experiments ?hints ~path language target_id =
     let open Experiment in
     multi_search
       ~additional_attributes
@@ -301,11 +282,11 @@ module RoleTarget = struct
       ~placeholder
       language
       field
-      (Dynamic (dynamic_search (hx_url admin_id) `Post))
+      (Dynamic (dynamic_search (hx_url path target_id) `Post))
       ()
   ;;
 
-  let locations ?hints language admin_id =
+  let locations ?hints ~path language target_id =
     let open Location in
     multi_search
       ~additional_attributes
@@ -314,28 +295,27 @@ module RoleTarget = struct
       ~placeholder
       language
       field
-      (Dynamic (dynamic_search (hx_url admin_id) `Post))
+      (Dynamic (dynamic_search (hx_url path target_id) `Post))
       ()
   ;;
 end
 
 module Admin = struct
-  open Admin
-
   let field = Field.Admin
   let placeholder = "Search by admin name or email"
 
   let to_label admin =
     Format.asprintf
-      "%s (%s)"
-      (admin |> Admin.user |> Pool_user.user_fullname)
-      (admin |> Admin.email_address |> Pool_user.EmailAddress.value)
+      "%s (%a)"
+      (admin |> Admin.user |> Pool_user.fullname)
+      Pool_user.EmailAddress.pp
+      (admin |> Admin.email_address)
   ;;
 
-  let to_value = Admin.id %> Id.value
+  let to_value = Admin.(id %> Id.value)
 
   let hx_url admin_id =
-    Format.asprintf "/admin/admins/%s/search-role" Admin.(Id.value admin_id)
+    Format.asprintf "/admin/admins/%s/search-role" Pool_user.(Id.value admin_id)
   ;;
 
   let dynamic_search ?(selected = []) hx_url hx_method =
@@ -343,14 +323,12 @@ module Admin = struct
   ;;
 
   let create ?selected ~disabled language =
-    let dynamic_search =
-      dynamic_search ?selected "/admin/admins/search" `Post
-    in
+    let dynamic_search = dynamic_search ?selected "/admin/admins/search" `Post in
     multi_search
       ~query_field:Field.(SearchOf Admin)
       ~disabled
       ~is_filter:true
-      ~tag_name:Pool_common.Message.Field.(ValueOf Admin)
+      ~tag_name:Pool_message.Field.(ValueOf Admin)
       language
       field
       (Dynamic dynamic_search)

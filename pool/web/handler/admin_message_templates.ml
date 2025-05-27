@@ -1,18 +1,20 @@
+open Pool_message
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Field = Pool_common.Message.Field
+module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.message_templates"
 let create_layout req = General.create_tenant_layout req
-
-let id req field encode =
-  Sihl.Web.Router.param req @@ Field.show field |> encode
-;;
+let template_id = HttpUtils.find_id Message_template.Id.of_string Field.MessageTemplate
 
 let template_label req =
   let open Message_template.Label in
-  HttpUtils.find_id read_from_url Pool_common.Message.Field.Label req
-  |> fun label -> CCList.find (equal label) customizable_by_experiment
+  try
+    Ok
+      (HttpUtils.find_id read_from_url Field.Label req
+       |> fun label -> CCList.find (equal label) customizable_by_experiment)
+  with
+  | _ -> Error Pool_message.(Error.Invalid Field.Label)
 ;;
 
 let database_label_of_req req =
@@ -23,35 +25,35 @@ let database_label_of_req req =
 let index req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
+    Response.bad_request_render_error context
     @@
     let%lwt template_list = Message_template.all_default database_label () in
     Page.Admin.MessageTemplate.index context template_list
     |> create_layout ~active_navigation:"/admin/message-template" req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 let edit req =
   let open Utils.Lwt_result.Infix in
-  let id = id req Field.MessageTemplate Message_template.Id.of_string in
+  let id = template_id req in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
+    let* template = Message_template.find database_label id >|- Response.not_found in
+    Response.bad_request_render_error context
     @@
     let tenant = Pool_context.Tenant.get_tenant_exn req in
-    let* template = Message_template.find database_label id in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
-    Page.Admin.MessageTemplate.edit context template tenant flash_fetcher
+    let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
+    Page.Admin.MessageTemplate.edit ~text_messages_enabled context template tenant
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  Response.handle ~src req result
 ;;
 
 type redirect =
   { success : string
-  ; error : string
+  ; error : Rock.Request.t -> Rock.Response.t Lwt.t
   }
 
 type action =
@@ -64,14 +66,12 @@ let write action req =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
   let redirect, success =
-    let open Pool_common in
     match action with
-    | Create (_, _, redirect) -> redirect, Message.Created Field.MessageTemplate
-    | Update (_, redirect) -> redirect, Message.Updated Field.MessageTemplate
+    | Create (_, _, redirect) -> redirect, Success.Created Field.MessageTemplate
+    | Update (_, redirect) -> redirect, Success.Updated Field.MessageTemplate
   in
-  let result { Pool_context.database_label; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, redirect.error, [ HttpUtils.urlencoded_to_flash urlencoded ])
+  let result { Pool_context.database_label; user; _ } =
+    Response.bad_request_on_error ~urlencoded redirect.error
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let events =
@@ -80,10 +80,7 @@ let write action req =
       | Create (entity_id, label, _) ->
         let%lwt available_languages =
           Pool_context.Tenant.get_tenant_languages_exn req
-          |> Message_template.missing_template_languages
-               database_label
-               entity_id
-               label
+          |> Message_template.missing_template_languages database_label entity_id label
         in
         Create.(
           urlencoded
@@ -95,37 +92,32 @@ let write action req =
         Update.(urlencoded |> decode |> Lwt_result.lift >== handle template)
     in
     let handle events =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-      in
+      let%lwt () = Pool_event.handle_events ~tags database_label user events in
       Http_utils.redirect_to_with_actions
         redirect.success
         [ HttpUtils.Message.set ~success:[ success ] ]
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  Response.handle ~src req result
 ;;
 
 let update req =
-  let id = id req Field.MessageTemplate Message_template.Id.of_string in
+  let id = template_id req in
   let redirect_path =
-    id
-    |> Message_template.Id.value
-    |> Format.asprintf "/admin/message-template/%s/edit"
+    id |> Message_template.Id.value |> Format.asprintf "/admin/message-template/%s/edit"
   in
-  let redirect = { success = redirect_path; error = redirect_path } in
+  let redirect = { success = redirect_path; error = edit } in
   write (Update (id, redirect)) req
 ;;
 
 let default_templates_from_request req ?languages database_label params =
   let open Utils.Lwt_result.Infix in
   let open Page.Admin.MessageTemplate in
-  let label = template_label req in
+  let* label = template_label req |> Lwt_result.lift in
   let languages =
     languages
-    |> CCOption.value
-         ~default:(Pool_context.Tenant.get_tenant_languages_exn req)
+    |> CCOption.value ~default:(Pool_context.Tenant.get_tenant_languages_exn req)
   in
   let find_param field = HttpUtils.find_in_urlencoded_opt field params in
   let experiment_entity experiment_id =
@@ -144,20 +136,15 @@ let default_templates_from_request req ?languages database_label params =
     in
     let entity = Session session_id in
     Lwt_result.return
-      ( [ Experiment.Id.to_common experiment.Experiment.id
-        ; Id.to_common session.id
-        ]
+      ( [ Experiment.Id.to_common experiment.Experiment.id; Id.to_common session.id ]
       , entity )
   in
-  let entities =
-    [ Field.Session, session_entity; Field.Experiment, experiment_entity ]
-  in
+  let entities = [ Field.Session, session_entity; Field.Experiment, experiment_entity ] in
   let* entity_uuids, entity =
     entities
     |> CCList.find_map (fun (key, entity_fnc) ->
       find_param key |> CCOption.map entity_fnc)
-    |> CCOption.value
-         ~default:(Lwt_result.fail Pool_common.Message.(NotFound Field.Context))
+    |> CCOption.value ~default:(Lwt_result.fail (Error.NotFound Field.Context))
   in
   let%lwt templates =
     Message_template.find_entity_defaults_by_label
@@ -171,19 +158,17 @@ let default_templates_from_request req ?languages database_label params =
 
 let preview_default req =
   let open Utils.Lwt_result.Infix in
-  let label = template_label req in
   let result { Pool_context.database_label; language; _ } =
     let query_params = Sihl.Web.Request.query_list req in
+    let* label = template_label req |> Lwt_result.lift in
     let* message_templates, _ =
       default_templates_from_request req database_label query_params
     in
-    Page.Admin.MessageTemplate.preview_template_modal
-      language
-      (label, message_templates)
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    Page.Admin.MessageTemplate.preview_template_modal language (label, message_templates)
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  result |> Response.Htmx.handle ~src req
 ;;
 
 let reset_to_default_htmx req =
@@ -195,8 +180,7 @@ let reset_to_default_htmx req =
       let open Message_template in
       let open CCOption in
       HttpUtils.find_in_urlencoded_opt Field.MessageTemplate urlencoded
-      >|= (fun id ->
-            id |> Id.of_string |> find database_label >|+ CCOption.return)
+      >|= (fun id -> id |> Id.of_string |> find database_label >|+ CCOption.return)
       |> CCOption.value ~default:(Lwt_result.return None)
     in
     let* template_language =
@@ -233,28 +217,30 @@ let reset_to_default_htmx req =
     let* template =
       message_templates
       |> CCList.head_opt
-      |> CCOption.to_result Pool_common.Message.(NotFound Field.MessageTemplate)
+      |> CCOption.to_result (Error.NotFound Field.MessageTemplate)
       |> Lwt_result.lift
     in
-    let text_messages_disabled =
-      Pool_context.Tenant.text_messages_enabled req
-    in
+    let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let form_context =
-      if CCOption.is_some current_template
-      then `Update template
-      else `Create template
+      if CCOption.is_some current_template then `Update template else `Create template
     in
     Page.Admin.MessageTemplate.template_inputs
       ~entity
       ?languages
+      ~text_messages_enabled
       context
-      text_messages_disabled
       form_context
       template.label
-    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Response.Htmx.of_html
     |> Lwt_result.return
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  result |> Response.Htmx.handle ~src req
+;;
+
+let changelog req =
+  let id = template_id req in
+  let url = HttpUtils.Url.Admin.message_template_path ~suffix:"changelog" ~id () in
+  Helpers.Changelog.htmx_handler ~url (Message_template.Id.to_common id) req
 ;;
 
 module Access : module type of Helpers.Access = struct
@@ -263,14 +249,9 @@ module Access : module type of Helpers.Access = struct
   module Guardian = Middleware.Guardian
 
   let template_effects =
-    Guardian.id_effects Message_template.Id.of_string Field.MessageTemplate
+    Guardian.id_effects Message_template.Id.validate Field.MessageTemplate
   ;;
 
-  let index =
-    Message_template.Guard.Access.index |> Guardian.validate_admin_entity
-  ;;
-
-  let update =
-    Command.Update.effects |> template_effects |> Guardian.validate_generic
-  ;;
+  let index = Message_template.Guard.Access.index |> Guardian.validate_admin_entity
+  let update = template_effects Command.Update.effects
 end

@@ -1,4 +1,5 @@
 open Entity
+module Dynparam = Database.Dynparam
 
 module Label = struct
   include Label
@@ -34,12 +35,9 @@ let encode_time_span = function
 let t =
   let encode (m : t) =
     let span, time = encode_time_span m.scheduled_time in
-    Ok (m.label, (time, (span, (m.status, m.last_run))))
+    Ok (m.label, (m.database_label, (time, (span, (m.status, m.last_run)))))
   in
-  let decode _ =
-    failwith
-      Pool_common.(Message.WriteOnlyModel |> Utils.error_to_string Language.En)
-  in
+  let decode _ = Pool_message.Error.WriteOnlyModel |> Pool_common.Utils.failwith in
   Caqti_type.(
     custom
       ~encode
@@ -47,8 +45,10 @@ let t =
       (t2
          Label.t
          (t2
-            (option ScheduledTime.t)
-            (t2 (option ScheduledTimeSpan.t) (t2 Status.t (option LastRunAt.t))))))
+            (option Database.Repo.Label.t)
+            (t2
+               (option ScheduledTime.t)
+               (t2 (option ScheduledTimeSpan.t) (t2 Status.t (option LastRunAt.t)))))))
 ;;
 
 let public =
@@ -63,10 +63,9 @@ let public =
       | Some time, None -> At time |> return
       | None, Some span -> Every span |> return
       | _ ->
-        let open Pool_common in
         Error
-          (Message.(Decode Field.ScheduledTime)
-           |> Utils.error_to_string Language.En)
+          (Pool_message.(Error.Decode Field.ScheduledTime)
+           |> Pool_common.(Utils.error_to_string Language.En))
     in
     Ok { label; scheduled_time; status; last_run }
   in
@@ -82,38 +81,45 @@ let public =
 ;;
 
 module Sql = struct
-  let select_fragment fragment =
+  let sql_select_public_columns =
+    [ "pool_schedules.label"
+    ; "pool_schedules.scheduled_time"
+    ; "pool_schedules.scheduled_time_span"
+    ; "pool_schedules.status"
+    ; "pool_schedules.last_run_at"
+    ]
+  ;;
+
+  let select_public_fragment ?(count = false) where_fragment =
+    let columns =
+      if count then "COUNT(*)" else CCString.concat ", " sql_select_public_columns
+    in
     Format.sprintf
       {sql|
-      SELECT
-        label,
-        scheduled_time,
-        scheduled_time_span,
-        status,
-        last_run_at
-      FROM pool_schedules
-      %s
-    |sql}
-      fragment
+        SELECT %s FROM pool_schedules %s
+      |sql}
+      columns
+      where_fragment
   ;;
 
   let find_all_request =
     let open Caqti_request.Infix in
-    let order_by = {sql|
+    let order_by =
+      {sql|
       ORDER BY last_run_at DESC
-    |sql} in
-    select_fragment order_by |> Caqti_type.unit ->* public
+    |sql}
+    in
+    select_public_fragment order_by |> Caqti_type.unit ->* public
   ;;
 
-  let find_all pool =
-    Utils.Database.collect (Pool_database.Label.value pool) find_all_request
-  ;;
+  let find_all pool = Database.collect pool find_all_request
 
   let upsert_request =
     let open Caqti_request.Infix in
     {sql|
       INSERT INTO pool_schedules (
         label,
+        database_label,
         scheduled_time,
         scheduled_time_span,
         status,
@@ -123,8 +129,10 @@ module Sql = struct
         ?,
         ?,
         ?,
+        ?,
         ?
       ) ON DUPLICATE KEY UPDATE
+        database_label = VALUES(database_label),
         scheduled_time = VALUES(scheduled_time),
         scheduled_time_span = VALUES(scheduled_time_span),
         status = VALUES(status),
@@ -133,9 +141,7 @@ module Sql = struct
     |> t ->. Caqti_type.unit
   ;;
 
-  let upsert pool =
-    Utils.Database.exec (Pool_database.Label.value pool) upsert_request
-  ;;
+  let upsert pool = Database.exec pool upsert_request
 
   let change_all_status_request =
     let open Caqti_request.Infix in
@@ -150,33 +156,18 @@ module Sql = struct
   ;;
 
   let stop_all_active pool =
-    Utils.Database.exec
-      (Pool_database.Label.value pool)
-      change_all_status_request
-      Entity.Status.(Active, Stopped)
+    Database.exec pool change_all_status_request Entity.Status.(Active, Stopped)
   ;;
 
-  let select_count where_fragment =
-    Format.asprintf
-      {sql|
-        SELECT COUNT(*)
-        FROM pool_schedules
-        %s
-      |sql}
-      where_fragment
-  ;;
-
-  let find_by pool query =
-    Query.collect_and_count
-      pool
-      (Some query)
-      ~select:(fun ?(count = false) fragment ->
-        if count then select_count fragment else select_fragment fragment)
-      public
+  let find_by_db_label pool database_label query =
+    let where = "database_label = ? OR database_label IS NULL" in
+    let dyn = Dynparam.(empty |> add Database.Repo.Label.t database_label) in
+    let select = select_public_fragment in
+    Query.collect_and_count pool (Some query) ~where ~dyn ~select public
   ;;
 end
 
-let find_all = Sql.find_all Pool_database.root
-let find_by = Sql.find_by Pool_database.root
-let upsert = Sql.upsert Pool_database.root
-let stop_all_active () = Sql.stop_all_active Pool_database.root
+let find_all = Sql.find_all Database.Pool.Root.label
+let find_by_db_label = Sql.find_by_db_label Database.Pool.Root.label
+let upsert = Sql.upsert Database.Pool.Root.label
+let stop_all_active () = Sql.stop_all_active Database.Pool.Root.label

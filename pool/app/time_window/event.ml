@@ -12,6 +12,7 @@ type create =
 type event =
   | Created of t
   | Updated of t
+  | Deleted of t
 [@@deriving eq, show]
 
 let handle_event pool =
@@ -19,10 +20,9 @@ let handle_event pool =
   function
   | Created time_window ->
     let%lwt () = Repo.insert pool time_window in
-    Session.Guard.Target.to_authorizable
-      ~ctx:(Pool_database.to_ctx pool)
-      time_window.id
+    Session.Guard.Target.to_authorizable ~ctx:(Database.to_ctx pool) time_window.id
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | Updated time_window -> Repo.update pool time_window
+  | Deleted time_window -> Repo.delete pool time_window
 ;;

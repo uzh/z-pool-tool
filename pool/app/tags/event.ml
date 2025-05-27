@@ -3,28 +3,33 @@ open Entity
 
 type event =
   | Created of t
-  | Updated of t
+  | Updated of (t * t)
   | Tagged of Tagged.t
   | Untagged of Tagged.t
   | ParticipationTagAssigned of Repo_participation_tags.entity * Id.t
   | ParticipationTagRemoved of Repo_participation_tags.entity * Id.t
 [@@deriving eq, show, variants]
 
-let handle_event pool : event -> unit Lwt.t =
-  let ctx = Pool_database.to_ctx pool in
+let handle_event ?user_uuid pool : event -> unit Lwt.t =
+  let ctx = Database.to_ctx pool in
+  let create_changelog before after =
+    let open Version_history in
+    insert pool ?user_uuid ~entity_uuid:before.id ~before ~after ()
+  in
   function
   | Created tag ->
-    let%lwt (_ : (unit, Pool_common.Message.error) result) =
+    let%lwt (_ : (unit, Pool_message.Error.t) result) =
       Repo.insert pool tag >|- Pool_common.Utils.with_log_error
     in
     Entity_guard.Target.to_authorizable ~ctx tag
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
-  | Updated tag ->
-    let%lwt () = Repo.update pool tag in
+  | Updated (before, after) ->
+    let%lwt () = create_changelog before after in
+    let%lwt () = Repo.update pool after in
     Lwt.return_unit
   | Tagged tagged ->
-    let%lwt (_ : (unit, Pool_common.Message.error) result) =
+    let%lwt (_ : (unit, Pool_message.Error.t) result) =
       Repo.insert_tagged pool tagged >|- Pool_common.Utils.with_log_error
     in
     Lwt.return_unit

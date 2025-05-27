@@ -14,9 +14,7 @@ module Data = struct
       show permission, [ Utils.Bool.to_string value ])
   ;;
 
-  let handle_booleans =
-    Http_utils.format_request_boolean_values (all |> CCList.map show)
-  ;;
+  let handle_booleans = Http_utils.format_request_boolean_values (all |> CCList.map show)
 end
 
 let update_permissions () =
@@ -45,7 +43,7 @@ let update_permissions () =
       [ RolePermissionSaved [ role_permission Permission.Delete ]
       ; RolePermissionDeleted (role_permission Permission.Update)
       ]
-    |> CCList.map Pool_event.guard
+    |> Pool_event.(map guard)
     |> return
   in
   Test_utils.check_result expected events

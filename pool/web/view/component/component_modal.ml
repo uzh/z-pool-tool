@@ -16,8 +16,7 @@ let create ?(active = false) ?subtitle language title id html =
   let attrs =
     let base_classnames = [ "fullscreen-overlay"; "modal" ] in
     match active with
-    | true ->
-      [ a_class ("active" :: base_classnames); a_aria "hidden" [ "false" ] ]
+    | true -> [ a_class ("active" :: base_classnames); a_aria "hidden" [ "false" ] ]
     | false -> [ a_class base_classnames; a_aria "hidden" [ "true" ] ]
   in
   div
