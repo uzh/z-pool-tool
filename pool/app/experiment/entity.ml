@@ -244,6 +244,12 @@ let create
     }
 ;;
 
+let contact_meets_criteria' pool filter allow_uninvited_signup contact =
+  match allow_uninvited_signup, filter with
+  | true, _ | false, None -> Lwt.return true
+  | _, Some query -> Filter.contact_matches_filter pool query contact
+;;
+
 module SendingInvitations = struct
   module Core = struct
     let field = Pool_message.Field.SendingInvitations
@@ -292,9 +298,7 @@ module DirectEnrollment = struct
   ;;
 
   let contact_meets_criteria pool ({ filter; allow_uninvited_signup; _ } : t) contact =
-    match allow_uninvited_signup, filter with
-    | true, _ | false, None -> Lwt.return true
-    | _, Some query -> Filter.contact_matches_filter pool query contact
+    contact_meets_criteria' pool filter allow_uninvited_signup contact
   ;;
 end
 
@@ -434,9 +438,8 @@ let boolean_fields =
 ;;
 
 let contact_meets_criteria pool { filter; allow_uninvited_signup; _ } contact =
-  match allow_uninvited_signup, filter with
-  | true, _ | false, None -> Lwt.return true
-  | _, Some { Filter.query; _ } -> Filter.contact_matches_filter pool query contact
+  let filter = CCOption.map (fun { Filter.query; _ } -> query) filter in
+  contact_meets_criteria' pool filter allow_uninvited_signup contact
 ;;
 
 open Pool_message
