@@ -1,3 +1,4 @@
+open Utils.Lwt_result.Infix
 module Translations = I18n
 module I18nGuard = I18n.Guard
 module NavUtils = Navigation_utils
@@ -26,21 +27,27 @@ module NavElements = struct
     let nav_link = Profile
     let icon = Icon.Person
 
-    let dropdown ?(contact = false) ?prefix () =
-      (if contact
-       then
-         [ "/user/personal-details", PersonalDetails
-         ; "/user/contact-information", ContactInformation
-         ]
-       else [])
-      @ [ "/user/login-information", LoginInformation ]
-      |> CCList.map (fun (url, field) -> Single (prefixed ?prefix url, field, AlwaysOn))
+    let dropdown_items pool ?(contact = false) () =
+      let%lwt show_contact_info = Gtx_config.text_messages_enabled pool in
+      (match contact with
+       | true ->
+         let details = "/user/personal-details", PersonalDetails in
+         let contact_info = "/user/contact-information", ContactInformation in
+         if show_contact_info then [ details; contact_info ] else [ details ]
+       | false -> [])
+      |> fun links ->
+      [ "/user/login-information", LoginInformation ] @ links |> Lwt.return
     ;;
 
-    let nav ?contact ?prefix () =
-      dropdown ?contact ?prefix ()
-      |> parent ~validation:AlwaysOn nav_link
-      |> NavElement.create ~icon
+    let dropdown pool ?contact ?prefix () =
+      dropdown_items pool ?contact ()
+      ||> CCList.map (fun (url, field) -> Single (prefixed ?prefix url, field, AlwaysOn))
+    ;;
+
+    let nav pool ?contact ?prefix () =
+      dropdown pool ?contact ?prefix ()
+      ||> parent ~validation:AlwaysOn nav_link
+      ||> NavElement.create ~icon
     ;;
   end
 
@@ -111,14 +118,9 @@ module NavElements = struct
       |> NavElement.create
     ;;
 
-    let all =
-      [ dashboard
-      ; experiments
-      ; settings
-      ; user
-      ; Profile.nav ~prefix:"/admin" ()
-      ; NavElement.logout ()
-      ]
+    let all pool =
+      let%lwt profile = Profile.nav pool ~prefix:"/admin" () in
+      Lwt.return [ dashboard; experiments; settings; user; profile; NavElement.logout () ]
     ;;
   end
 
@@ -127,12 +129,13 @@ module NavElements = struct
     [ NavElement.login ?prefix () ] |> NavUtils.create_nav_with_language_switch context
   ;;
 
-  let contact context =
+  let contact ({ Pool_context.database_label; _ } as context) =
     let%lwt experiments_title = contact_experiment_title context in
+    let%lwt profile = Profile.nav database_label ~contact:true () in
     let links =
       [ Single ("/experiments", experiments_title, Set Guard.ValidationSet.empty)
         |> NavElement.create
-      ; Profile.nav ~contact:true ()
+      ; profile
       ]
     in
     links @ [ NavElement.logout () ]
@@ -140,8 +143,9 @@ module NavElements = struct
     |> Lwt.return
   ;;
 
-  let admin context =
-    AdminTenantItems.all |> NavUtils.create_nav ~any_id:true ~validate:true context
+  let admin ({ Pool_context.database_label; _ } as context) =
+    AdminTenantItems.all database_label
+    ||> NavUtils.create_nav ~any_id:true ~validate:true context
   ;;
 
   let root context =
@@ -172,15 +176,19 @@ module NavElements = struct
       |> parent Settings
       |> NavElement.create
     in
+    let%lwt profile =
+      Profile.nav context.Pool_context.database_label ~prefix:"/root" ()
+    in
     [ tenants
     ; users
     ; announcements
     ; versions
     ; settings
-    ; Profile.nav ~prefix:"/root" ()
+    ; profile
     ; NavElement.logout ~prefix:"/root" ()
     ]
     |> NavUtils.create_nav ~any_id:true ~validate:true context
+    |> Lwt.return
   ;;
 
   let find_tenant_nav_links ({ Pool_context.user; _ } as context) languages =
@@ -189,14 +197,13 @@ module NavElements = struct
     | Pool_context.Contact _ ->
       let%lwt fnc = contact context in
       fnc languages |> Lwt.return
-    | Pool_context.Admin _ -> admin context |> Lwt.return
+    | Pool_context.Admin _ -> admin context
   ;;
 
   let find_root_nav_links ({ Pool_context.user; _ } as context) languages =
-    Lwt.return
-    @@
     match user with
-    | Pool_context.Guest | Pool_context.Contact _ -> guest ~root:true context languages
+    | Pool_context.Guest | Pool_context.Contact _ ->
+      guest ~root:true context languages |> Lwt.return
     | Pool_context.Admin _ -> root context
   ;;
 end
