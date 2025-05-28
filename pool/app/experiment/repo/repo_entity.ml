@@ -349,9 +349,10 @@ module DirectEnrollment = struct
           , ( title
             , ( public_title
               , ( filter
-                , ( direct_registration_disabled
-                  , (registration_disabled, (available_spots, contact_already_assigned))
-                  ) ) ) ) )
+                , ( allow_uninvited_signup
+                  , ( direct_registration_disabled
+                    , (registration_disabled, (available_spots, contact_already_assigned))
+                    ) ) ) ) ) )
       =
       let matches_filter = false in
       Ok
@@ -359,6 +360,7 @@ module DirectEnrollment = struct
         ; title
         ; public_title
         ; filter
+        ; allow_uninvited_signup
         ; direct_registration_disabled
         ; registration_disabled
         ; available_spots
@@ -379,7 +381,9 @@ module DirectEnrollment = struct
                  (t2
                     (option Filter.Repo.query)
                     (t2
-                       DirectRegistrationDisabled.t
-                       (t2 RegistrationDisabled.t (t2 bool bool))))))))
+                       AllowUninvitedSignup.t
+                       (t2
+                          DirectRegistrationDisabled.t
+                          (t2 RegistrationDisabled.t (t2 bool bool)))))))))
   ;;
 end
