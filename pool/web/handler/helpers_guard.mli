@@ -26,7 +26,7 @@ val target_model_for_actor_role
   -> Guard.ActorRole.t
   -> (Guard.ActorRole.t * Guard.Persistence.target_model option) Lwt.t
 
-val can_send_direct_message : Pool_context.t -> bool Lwt.t
+val can_send_direct_message : Experiment.Id.t -> Pool_context.t -> bool Lwt.t
 
 val can_rerun_session_filter
   :  Pool_context.t

@@ -63,5 +63,8 @@ module Access = struct
     [ create index_permission `Contact; create ~target_uuid index_permission `Contact ]
   ;;
 
-  let send_direct_message = one_of_tuple (Create, `ContactDirectMessage, None)
+  let send_direct_message experiment_id =
+    let id = Uuid.target_of Pool_common.Id.value experiment_id in
+    one_of_tuple (Create, `ContactDirectMessage, Some id)
+  ;;
 end

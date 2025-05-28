@@ -413,7 +413,9 @@ let show req =
         Message_template.Label.SessionReminder
     in
     let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-    let%lwt send_direct_message = Helpers.Guard.can_send_direct_message context in
+    let%lwt send_direct_message =
+      Helpers.Guard.can_send_direct_message experiment_id context
+    in
     let%lwt rerun_session_filter =
       Helpers.Guard.can_rerun_session_filter context experiment_id session_id
     in
@@ -1036,15 +1038,25 @@ module DirectMessage = struct
       let tenant = Pool_context.Tenant.get_tenant_exn req in
       let open Message_template.ManualSessionMessage in
       let%lwt make_email_job = prepare tenant session in
-      let%lwt make_sms_job = prepare_text_message tenant session in
+      let open Pool_common.MessageChannel in
+      let open Cqrs_command.Session_command in
       let* events =
         let open CCResult.Infix in
-        let open Cqrs_command.Session_command.SendDirectMessage in
         let assignments = to_assignment_list assignments in
-        urlencoded
-        |> decode message_channel
-        >>= handle ~tags make_email_job make_sms_job assignments
-        |> Lwt_result.lift
+        match message_channel with
+        | Email ->
+          let open SendDirectEmailMessage in
+          urlencoded
+          |> decode
+          >>= handle ~tags make_email_job assignments
+          |> Lwt_result.lift
+        | TextMessage ->
+          let open SendDirectTextMessage in
+          let%lwt make_sms_job = prepare_text_message tenant session in
+          urlencoded
+          |> decode
+          >>= handle ~tags make_email_job make_sms_job assignments
+          |> Lwt_result.lift
       in
       let%lwt () = Pool_event.handle_events ~tags database_label user events in
       HttpUtils.redirect_to_with_actions
@@ -1168,7 +1180,13 @@ end = struct
   let close = combined_effects SessionCommand.Close.effects
 
   let direct_message =
-    Contact.Guard.Access.send_direct_message |> Guardian.validate_admin_entity
+    let experiment_effects fcn req =
+      let experiment_id = experiment_id req |> Experiment.Id.to_common in
+      fcn experiment_id |> CCResult.return
+    in
+    Contact.Guard.Access.send_direct_message
+    |> experiment_effects
+    |> Guardian.validate_generic
   ;;
 
   let update_matches_filter =
