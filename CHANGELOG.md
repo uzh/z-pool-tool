@@ -4,6 +4,23 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+### Added
+
+- E-Mail Multi-Factor-Authentication
+
+### Fixed
+
+- allow password reset for unverified users
+- allow session message templates to be edited
+- correct terms
+- ensure closing log channel on exit
+- direct message permission
+- http response codes
+
+### Changed
+
+- hide contact info page when text message API key is missing for tenant
+
 ## [0.11.1](https://github.com/uzh/z-pool-tool/tree/0.11.1) - 2025-04-28
 
 ### Added
