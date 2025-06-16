@@ -32,7 +32,7 @@ printTitle "Setup project"
 ./scripts/setup.sh
 
 printTitle "Install project dependencies"
-opam install --deps-only --with-test --locked -y .
+opam install --deps-only --with-test --update-invariant --locked -y .
 
 printTitle "Build project"
 opam exec -- dune build --root .
