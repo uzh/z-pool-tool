@@ -1,3 +1,5 @@
+open CCFun.Infix
+
 module Id = struct
   include Pool_common.Id
 
@@ -32,8 +34,19 @@ module Token = struct
     Bytes.to_string random_string
   ;;
 
+  let create =
+    create %> CCResult.map CCString.(filter (CCChar.is_whitespace_ascii %> not))
+  ;;
+
   let value m = m
-  let schema () = schema Pool_message.Field.Token ()
+  let schema () = schema ~validation:create Pool_message.Field.Token ()
+
+  let to_human =
+    CCString.to_list
+    %> CCList.chunks 4
+    %> CCList.map CCString.of_list
+    %> String.concat " "
+  ;;
 end
 
 type t =

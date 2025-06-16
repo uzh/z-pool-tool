@@ -153,9 +153,17 @@ let confirm_2fa_test _ () =
     let data = [ ("id", Id.(create () |> value)); "token", "12341234" ] in
     check "Invalid token" data invalid_token
   in
+  let%lwt () =
+    let data = [ ("id", Id.(create () |> value)); "token", "1234 1234" ] in
+    check "Invalid token" data invalid_token
+  in
   (* Successfull login *)
   let%lwt auth, user = find_valid_by_id pool auth_id ||> get_or_failwith in
   let events = [ Deleted auth |> Pool_event.authentication ] in
+  let%lwt () =
+    let data = [ "id", id_value; "token", Token.to_human auth_token ] in
+    check "successfull 2fa logjn" data (Ok (user, events))
+  in
   let%lwt () =
     let data = [ "id", id_value; "token", token_value ] in
     check "successfull 2fa logjn" data (Ok (user, events))
