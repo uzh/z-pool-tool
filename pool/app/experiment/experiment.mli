@@ -344,6 +344,7 @@ val find_pending_waitinglists_by_contact
   -> Contact.t
   -> Public.t list Lwt.t
 
+val invitation_count : Database.Label.t -> Id.t -> int Lwt.t
 val session_count : Database.Label.t -> Id.t -> int Lwt.t
 
 val search

@@ -293,6 +293,7 @@ let delete_with_sessions () =
       handle
         { experiment
         ; session_count
+        ; invitation_count = 0
         ; mailings = []
         ; experimenters = []
         ; assistants = []
@@ -300,6 +301,25 @@ let delete_with_sessions () =
         })
   in
   let expected = Error Error.ExperimentSessionCountNotZero in
+  Test_utils.check_result expected events
+;;
+
+let delete_with_invitations () =
+  let experiment = Model.create_experiment () in
+  let events =
+    let invitation_count = 1234 in
+    ExperimentCommand.Delete.(
+      handle
+        { experiment
+        ; session_count = 0
+        ; invitation_count
+        ; mailings = []
+        ; experimenters = []
+        ; assistants = []
+        ; templates = []
+        })
+  in
+  let expected = Error Error.ExperimentInvitationCountNotZero in
   Test_utils.check_result expected events
 ;;
 
@@ -315,6 +335,7 @@ let delete_with_filter () =
         ~system_event_id
         { experiment
         ; session_count
+        ; invitation_count = 0
         ; mailings = []
         ; experimenters = []
         ; assistants = []

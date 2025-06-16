@@ -32,6 +32,7 @@ let find_pending_waitinglists_by_contact =
 
 let find_of_session = Repo.find_of_session
 let find_of_mailing = Repo.find_of_mailing
+let invitation_count = Repo.invitation_count
 let session_count = Repo.session_count
 let search = Repo.search
 let search_multiple_by_id = Repo.search_multiple_by_id
