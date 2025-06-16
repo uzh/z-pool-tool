@@ -17,7 +17,7 @@ opam pin add -yn sihl $repo_sihl
 opam pin add -yn sihl-email $repo_sihl
 opam pin add -yn sihl-storage $repo_sihl
 opam pin add -yn conformist $repo_oxi/conformist.git#aa7b95d1f39215cdaab8cf96d765d63e41d5f8a6
-opam pin add -yn letters $repo_oxi/letters.git#0.4.0
+opam pin add -yn letters https://github.com/mabiede/letters.git#bug/connection-close-wait
 opam pin add -yn opium $repo_opium
 opam pin add -yn rock $repo_opium
 

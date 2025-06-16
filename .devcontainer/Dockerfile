@@ -1,13 +1,11 @@
-FROM node:lts AS node
-FROM hadolint/hadolint:latest-alpine AS hadolint
 FROM ocaml/opam:debian-11-ocaml-5.2
 
 USER root
 
 # copy node from node container and link commands
-COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=node /usr/local/bin/node /usr/local/bin/node
-COPY --from=node /opt /opt
+COPY --from=node:lts /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=node:lts /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:lts /opt /opt
 RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
   && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
   && ln -s /usr/local/bin/node /usr/local/bin/nodejs \
@@ -15,7 +13,7 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
   && ln -s /opt/yarn-v*/bin/yarnpkg /usr/local/bin/yarnpkg
 
 # copy hadolint
-COPY --from=hadolint /bin/hadolint /bin/hadolint
+COPY --from=hadolint/hadolint:latest-alpine /bin/hadolint /bin/hadolint
 
 # Avoid warnings by switching to noninteractive
 ENV DEBIAN_FRONTEND=noninteractive

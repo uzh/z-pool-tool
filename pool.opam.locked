@@ -15,7 +15,7 @@ depends: [
   "angstrom" {= "0.16.1"}
   "asn1-combinators" {= "0.3.2"}
   "astring" {= "0.8.5"}
-  "base" {= "v0.17.2"}
+  "base" {= "v0.17.3"}
   "base-bigarray" {= "base"}
   "base-bytes" {= "base"}
   "base-domains" {= "base"}
@@ -34,11 +34,11 @@ depends: [
   "caqti-driver-mariadb" {= "2.2.4"}
   "caqti-lwt" {= "2.2.4"}
   "cmdliner" {= "1.3.0"}
-  "cohttp" {= "6.1.0"}
-  "cohttp-lwt" {= "6.1.0"}
-  "cohttp-lwt-unix" {= "6.1.0"}
+  "cohttp" {= "6.1.1"}
+  "cohttp-lwt" {= "6.1.1"}
+  "cohttp-lwt-unix" {= "6.1.1"}
   "coin" {= "0.1.4"}
-  "colombe" {= "0.11.0"}
+  "colombe" {= "0.12.0"}
   "conduit" {= "8.0.0"}
   "conduit-lwt" {= "8.0.0"}
   "conduit-lwt-unix" {= "8.0.0"}
@@ -49,8 +49,8 @@ depends: [
   "conf-mariadb" {= "2"}
   "conf-pkg-config" {= "4"}
   "conformist" {= "0.8.1"}
-  "containers" {= "3.15"}
-  "containers-data" {= "3.15"}
+  "containers" {= "3.16"}
+  "containers-data" {= "3.16"}
   "cppo" {= "1.8.0"}
   "crunch" {= "4.0.0" & with-doc}
   "csexp" {= "1.5.2"}
@@ -58,13 +58,13 @@ depends: [
   "ctypes" {= "0.23.0"}
   "digestif" {= "1.3.0"}
   "domain-name" {= "0.4.1"}
-  "dune" {= "3.18.2"}
-  "dune-build-info" {= "3.18.2"}
-  "dune-configurator" {= "3.18.2"}
-  "dune-private-libs" {= "3.18.2"}
-  "dune-site" {= "3.18.2"}
+  "dune" {= "3.19.1"}
+  "dune-build-info" {= "3.19.1"}
+  "dune-configurator" {= "3.19.1"}
+  "dune-private-libs" {= "3.19.1"}
+  "dune-site" {= "3.19.1"}
   "duration" {= "0.2.1"}
-  "dyn" {= "3.18.2"}
+  "dyn" {= "3.19.1"}
   "either" {= "1.0.0"}
   "emile" {= "1.1"}
   "eqaf" {= "0.10"}
@@ -78,10 +78,10 @@ depends: [
   "gmap" {= "0.3.0"}
   "guardian" {= "0.3.2"}
   "hmap" {= "0.8.1"}
-  "http" {= "6.1.0"}
+  "http" {= "6.1.1"}
   "httpaf" {= "0.7.1"}
   "httpaf-lwt-unix" {= "0.7.1"}
-  "hxd" {= "0.3.3"}
+  "hxd" {= "0.3.4"}
   "integers" {= "0.7.0"}
   "ipaddr" {= "5.6.0"}
   "ipaddr-sexp" {= "5.6.0"}
@@ -99,27 +99,27 @@ depends: [
   "lwt_ssl" {= "1.2.0"}
   "macaddr" {= "5.6.0"}
   "magic-mime" {= "1.3.1"}
-  "mariadb" {= "1.2.0"}
+  "mariadb" {= "1.3.0"}
   "markup" {= "1.0.3"}
   "menhir" {= "20240715"}
   "menhirCST" {= "20240715"}
   "menhirLib" {= "20240715"}
   "menhirSdk" {= "20240715"}
-  "mirage-crypto" {= "2.0.0"}
-  "mirage-crypto-ec" {= "2.0.0"}
-  "mirage-crypto-pk" {= "2.0.0"}
-  "mirage-crypto-rng" {= "2.0.0"}
+  "mirage-crypto" {= "2.0.1"}
+  "mirage-crypto-ec" {= "2.0.1"}
+  "mirage-crypto-pk" {= "2.0.1"}
+  "mirage-crypto-rng" {= "2.0.1"}
   "mrmime" {= "0.7.0"}
   "mtime" {= "2.1.0"}
   "multipart-form-data" {= "0.3.0"}
   "num" {= "1.5-1"}
-  "ocaml" {= "5.2.0"}
-  "ocaml-base-compiler" {= "5.2.0"}
+  "ocaml" {= "5.2.1"}
+  "ocaml-base-compiler" {= "5.2.1"}
   "ocaml-compiler-libs" {= "v0.17.0"}
   "ocaml-config" {= "3"}
   "ocaml-options-vanilla" {= "1"}
   "ocaml-syntax-shims" {= "1.0.0"}
-  "ocaml-version" {= "4.0.0"}
+  "ocaml-version" {= "4.0.1"}
   "ocaml_intrinsics_kernel" {= "v0.17.1"}
   "ocamlbuild" {= "0.16.1"}
   "ocamlfind" {= "1.9.8"}
@@ -132,7 +132,7 @@ depends: [
   "odoc-parser" {= "3.0.0" & with-doc}
   "ohex" {= "0.2.0"}
   "opium" {= "0.20.0"}
-  "ordering" {= "3.18.2"}
+  "ordering" {= "3.19.1"}
   "parsexp" {= "v0.17.0"}
   "pecu" {= "0.7"}
   "pp" {= "2.0.0"}
@@ -167,7 +167,7 @@ depends: [
   "rosetta" {= "0.3.0"}
   "rresult" {= "0.7.0"}
   "safepass" {= "3.1"}
-  "sendmail" {= "0.11.0"}
+  "sendmail" {= "0.12.0"}
   "seq" {= "base"}
   "sexplib" {= "v0.17.0"}
   "sexplib0" {= "v0.17.0"}
@@ -177,7 +177,7 @@ depends: [
   "ssl" {= "0.7.0"}
   "stdio" {= "v0.17.0"}
   "stdlib-shims" {= "0.3.0"}
-  "stdune" {= "3.18.2"}
+  "stdune" {= "3.19.1"}
   "stringext" {= "1.6.0"}
   "time_now" {= "v0.17.0" & with-test}
   "tls" {= "2.0.1"}
@@ -227,11 +227,14 @@ pin-depends: [
     "guardian.0.3.2"
     "git+https://github.com/uzh/guardian.git#287bab9baf9b346efe47999e8b7f456bfefe8c13"
   ]
-  ["letters.0.4.0" "git+https://github.com/oxidizing/letters.git#0.4.0"]
   [
-    "ocaml-base-compiler.5.2.0"
-    "https://github.com/ocaml/ocaml/archive/5.2.0.tar.gz"
-  ]
+  "letters.0.4.0"
+  "git+https://github.com/mabiede/letters.git#bug/connection-close-wait"
+]
+  [
+  "ocaml-base-compiler.5.2.1"
+  "https://github.com/ocaml/ocaml/releases/download/5.2.1/ocaml-5.2.1.tar.gz"
+]
   [
     "opium.0.20.0"
     "git+https://github.com/rgrinberg/opium.git#73b16f0487497e02750c1123ead377a56be3be43"
