@@ -209,6 +209,10 @@ let () =
             `Quick
             Experiment_test.delete_with_sessions
         ; test_case
+            "delete experiment with invitations"
+            `Quick
+            Experiment_test.delete_with_invitations
+        ; test_case
             "delete experiment with filter"
             `Quick
             Experiment_test.delete_with_filter

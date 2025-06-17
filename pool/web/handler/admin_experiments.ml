@@ -363,6 +363,7 @@ let delete req =
     Response.bad_request_on_error show
     @@
     let tags = Pool_context.Logger.Tags.req req in
+    let%lwt invitation_count = Experiment.invitation_count database_label experiment_id in
     let%lwt session_count = Experiment.session_count database_label experiment_id in
     let%lwt mailings = Mailing.find_by_experiment database_label experiment_id in
     let%lwt assistants =
@@ -388,7 +389,14 @@ let delete req =
       let open Cqrs_command.Experiment_command.Delete in
       handle
         ~tags
-        { experiment; session_count; mailings; experimenters; assistants; templates }
+        { experiment
+        ; session_count
+        ; invitation_count
+        ; mailings
+        ; experimenters
+        ; assistants
+        ; templates
+        }
       |> Lwt_result.lift
     in
     let handle events =

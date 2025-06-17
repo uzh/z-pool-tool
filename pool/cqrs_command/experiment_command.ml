@@ -348,6 +348,7 @@ module Delete : sig
   type t =
     { experiment : Experiment.t
     ; session_count : int
+    ; invitation_count : int
     ; mailings : Mailing.t list
     ; assistants : Admin.t list
     ; experimenters : Admin.t list
@@ -367,6 +368,7 @@ end = struct
   type t =
     { experiment : Experiment.t
     ; session_count : int
+    ; invitation_count : int
     ; mailings : Mailing.t list
     ; assistants : Admin.t list
     ; experimenters : Admin.t list
@@ -376,16 +378,22 @@ end = struct
   let handle
         ?(tags = Logs.Tag.empty)
         ?system_event_id
-        { experiment; session_count; mailings; experimenters; assistants; templates }
+        { experiment
+        ; session_count
+        ; invitation_count
+        ; mailings
+        ; experimenters
+        ; assistants
+        ; templates
+        }
     =
     let open CCFun in
     let open CCResult in
+    let open Pool_message.Error in
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
-    let* () =
-      session_count
-      > 0
-      |> Utils.bool_to_result_not Pool_message.Error.ExperimentSessionCountNotZero
-    in
+    let validate fcn count = count > 0 |> Utils.bool_to_result_not fcn in
+    let* () = validate ExperimentSessionCountNotZero session_count in
+    let* () = validate ExperimentInvitationCountNotZero invitation_count in
     let delete_mailing = Mailing.deleted %> Pool_event.mailing in
     let revoke_experimenter admin =
       BaseGuard.RolesRevoked

@@ -285,6 +285,16 @@ module Sql = struct
     Database.find pool session_count_request (id |> Pool_common.Id.value)
   ;;
 
+  let invitation_count_request =
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT COUNT(1) FROM pool_invitations WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Repo_entity.Id.t ->! Caqti_type.int
+  ;;
+
+  let invitation_count pool = Database.find pool invitation_count_request
+
   let update_request =
     let open Caqti_request.Infix in
     {sql|
@@ -584,6 +594,7 @@ let all = Sql.all
 let find_all_ids_of_contact_id = Sql.find_all_ids_of_contact_id
 let find_of_session = Sql.find_of_session
 let find_of_mailing = Sql.find_of_mailing
+let invitation_count = Sql.invitation_count
 let session_count = Sql.session_count
 let insert = Sql.insert
 let update = Sql.update

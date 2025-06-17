@@ -521,6 +521,8 @@ let rec error_to_string =
   | EmailMalformed -> "Malformed email"
   | EmailInterceptionError error -> Format.asprintf "Email interception error: %s" error
   | EndBeforeStart -> "End is before start time."
+  | ExperimentInvitationCountNotZero ->
+    "Invitations exist for this experiment. It cannot be deleted anymore."
   | ExperimentSessionCountNotZero ->
     "Sessions exist for this experiment. It cannot be deleted."
   | FieldRequired field ->

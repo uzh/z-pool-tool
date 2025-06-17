@@ -49,6 +49,7 @@ type t =
   | EmailMalformed
   | EndBeforeStart
   | ExperimentSessionCountNotZero
+  | ExperimentInvitationCountNotZero
   | FieldRequired of Field.t
   | FilterAndOrMustNotBeEmpty
   | FilterListValueMustNotBeEmpty
