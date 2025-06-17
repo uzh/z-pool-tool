@@ -157,6 +157,7 @@ module Distribution = struct
         distribution
         |> CCList.map (fun (field, order) ->
           CCString.concat " " [ field |> SortableField.to_sql; order |> SortOrder.show ])
+        |> CCList.cons "RAND()"
         |> CCString.concat ", "
         |> CCOption.pure)
     %> CCOption.map_or ~default:"" (Format.asprintf "ORDER BY %s")

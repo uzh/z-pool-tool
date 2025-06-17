@@ -122,7 +122,9 @@ let to_string = function
     <li>Select by which field and in which order you want to sort the contacts.</li>
     <li>Press the 'add' button to add the sorting parameter.</li>
     <li>Repeat that to add more parameters. You can sort them by dragging and dropping them.</li>
-  </ol>|}
+  </ol>
+<br>
+<strong>Entries with identical sort values ('field') are used in random order.</strong>|}
   | MailingExperimentNoUpcomingSession ->
     "There are no sessions to which contacts can sign up. No invitations will be sent. \
      Create new sessions before you start the mailing."
@@ -490,8 +492,8 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
     "The given limit is larger than the number of contacts meeting the criteria of this \
      experiment."
   | MergeContacts ->
-    {|Select which attributes are to be transferred from which contact. 
-      
+    {|Select which attributes are to be transferred from which contact.
+
   The fields that are considered to be the same are marked. If an admin value exists, this is taken into account before the contact value.|}
   | MessageTemplateAccountSuspensionNotification ->
     "This message will be sent to a user after the account has been temporarily \
