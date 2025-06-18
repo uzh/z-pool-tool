@@ -125,7 +125,9 @@ let to_string = function
       <li>Wählen Sie aus, nach welchem Feld und in welcher Reihenfolge Sie die Kontakte sortieren möchten.</li>
       <li>Drücken Sie die Schaltfläche "Hinzufügen", um den Sortierparameter hinzuzufügen.</li>
       <li>Wiederholen Sie diesen Vorgang, um weitere Parameter hinzuzufügen. Sie können sie durch "drag and drop" sortieren.</li>
-    </ol>|}
+    </ol>
+<br>
+<strong>Einträge mit identischen Sortierwerten werden in zufälliger Reihenfolge verwendet.</strong>|}
   | MailingExperimentNoUpcomingSession ->
     "Es gibt keine Sessions, an die sich Kontakte anmelden können. Es werden keine \
      Einladungen versendet. Legen Sie neue Sessions an, bevor Sie das Mailing starten."
@@ -509,8 +511,8 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
     "Die angegebene Limite ist grösser als die Anzahl Kontakt, die die Kriterien dieses \
      Experiments erfüllen."
   | MergeContacts ->
-    {|Wählen Sie, von welchem Kontakt die Attribute übernommen werden. 
-    
+    {|Wählen Sie, von welchem Kontakt die Attribute übernommen werden.
+
 Markiert sind die Felder, welche als gleich angesehen werden. Ist ein Admin Wert vorhanden, wird dieser vor dem Kontaktwert berücksichtig.|}
   | MessageTemplateAccountSuspensionNotification ->
     "Diese Nachricht wird an einen Benutzer gesendet, nachdem sein Konto wegen zu vieler \

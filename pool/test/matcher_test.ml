@@ -1,14 +1,23 @@
 open CCFun
 open Utils.Lwt_result.Infix
+open Integration_utils
 module InvitationCommand = Cqrs_command.Invitation_command
 module Field = Pool_message.Field
 module Model = Test_utils.Model
 module JobHistory = Message_template.History
 
+let limit = 10
 let get_or_failwith = Test_utils.get_or_failwith
 let pool = Test_utils.Data.database_label
 let sort_events = Test_utils.sort_events
 let current_user () = Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+let invitation_mail = Message_template.ExperimentInvitation.prepare
+let matcher_notification_mail = Message_template.MatcherNotification.create
+
+let create_contact_ids n_ids =
+  let rec aux acc n = if n <= 0 then acc else aux (Contact.Id.create () :: acc) (n - 1) in
+  aux [] n_ids
+;;
 
 let create_no_match_found_events experiment =
   let open Experiment in
@@ -76,6 +85,72 @@ let create_message ?sender invitation =
   |> CCResult.return
 ;;
 
+module MatcherTestUtils = struct
+  let contact_name_filter name =
+    let open Filter in
+    let value = Single (Str name) in
+    Pred (Predicate.create Key.(Hardcoded Name) Operator.(Equality Equality.Equal) value)
+    |> create None
+  ;;
+
+  let store_filter current_user experiment new_filter =
+    let%lwt () =
+      [ Filter.Created new_filter |> Pool_event.filter
+      ; Experiment.(Updated (experiment, { experiment with filter = Some new_filter }))
+        |> Pool_event.experiment
+      ]
+      |> Pool_event.handle_events pool current_user
+    in
+    Experiment.find pool experiment.Experiment.id ||> get_or_failwith
+  ;;
+
+  let setup_experiment_filter_with_matching_contacts current_user experiment contact_ids =
+    let%lwt experiment =
+      Experiment.Id.value experiment.Experiment.id
+      |> contact_name_filter
+      |> store_filter current_user experiment
+    in
+    let%lwt contacts =
+      Lwt_list.map_s
+        (fun id ->
+           let lastname =
+             Experiment.Id.value experiment.Experiment.id |> Pool_user.Lastname.of_string
+           in
+           ContactRepo.create ~id ~lastname ())
+        contact_ids
+      ||> Matcher.sort_contacts
+    in
+    Lwt.return (experiment, contacts)
+  ;;
+
+  let setup_with_contacts ?id ?(title_suffix = "test") ?(n_contacts = 4) current_user =
+    let contact_ids = create_contact_ids n_contacts in
+    let%lwt experiment =
+      let title = Format.asprintf "Matcher experiment (%s)" title_suffix in
+      ExperimentRepo.create ?id ~title ()
+    in
+    let%lwt experiment, contacts =
+      setup_experiment_filter_with_matching_contacts current_user experiment contact_ids
+    in
+    Lwt.return (experiment, contacts)
+  ;;
+
+  let setup_with_invitations ?id ?title_suffix ?n_contacts current_user =
+    let%lwt experiment, contacts =
+      setup_with_contacts ?id ?title_suffix ?n_contacts current_user
+    in
+    let%lwt () =
+      let open InvitationCommand.Create in
+      { experiment; mailing = None; contacts; invited_contacts = []; create_message }
+      |> handle
+      |> Lwt_result.lift
+      |>> Pool_event.handle_events pool current_user
+      ||> get_or_failwith
+    in
+    Lwt.return (experiment, contacts)
+  ;;
+end
+
 let create_invitations_model () =
   let open InvitationCommand.Create in
   let mailing = Model.create_mailing () in
@@ -99,11 +174,11 @@ let create_invitations_model () =
 let create_invitations _ () =
   let open Mailing in
   let%lwt current_user = current_user () in
+  let%lwt ({ Experiment.id; _ } as experiment), _ =
+    MatcherTestUtils.setup_with_contacts ~title_suffix:"create invitations" current_user
+  in
   let find_invitation_count { Experiment.id; _ } =
     Invitation.find_by_experiment pool id ||> fst ||> CCList.length
-  in
-  let%lwt ({ Experiment.id; _ } as experiment) =
-    Integration_utils.ExperimentRepo.create ()
   in
   let%lwt (_ : Session.t) = Integration_utils.SessionRepo.create experiment () in
   let limit = Limit.create 100 |> get_or_failwith in
@@ -157,8 +232,6 @@ let create_invitations _ () =
   Lwt.return_unit
 ;;
 
-open Integration_utils
-
 let expected_create_events
       ?(invitation_ids = [])
       contacts
@@ -200,64 +273,15 @@ let expected_resend_events contacts mailing experiment invitation_mail =
   |> Lwt.return
 ;;
 
-let experiment_id = Experiment.Id.create ()
-let contact_ids = Contact.Id.[ create (); create (); create (); create () ]
-let invitation_mail = Message_template.ExperimentInvitation.prepare
-let matcher_notification_mail = Message_template.MatcherNotification.create
-
-module MatcherTestUtils = struct
-  let contact_name_filter name =
-    let open Filter in
-    let value = Single (Str name) in
-    Pred (Predicate.create Key.(Hardcoded Name) Operator.(Equality Equality.Equal) value)
-    |> create None
-  ;;
-
-  let store_filter current_user experiment new_filter =
-    let%lwt () =
-      [ Filter.Created new_filter |> Pool_event.filter
-      ; Experiment.(Updated (experiment, { experiment with filter = Some new_filter }))
-        |> Pool_event.experiment
-      ]
-      |> Pool_event.handle_events pool current_user
-    in
-    Experiment.find pool experiment.Experiment.id ||> get_or_failwith
-  ;;
-
-  let setup_experiment_filter_with_matching_contacts current_user experiment contact_ids =
-    let%lwt experiment =
-      Experiment.Id.value experiment.Experiment.id
-      |> contact_name_filter
-      |> store_filter current_user experiment
-    in
-    let%lwt contacts =
-      Lwt_list.map_s
-        (fun id ->
-           let lastname =
-             Experiment.Id.value experiment.Experiment.id |> Pool_user.Lastname.of_string
-           in
-           ContactRepo.create ~id ~lastname ())
-        contact_ids
-      ||> Matcher.sort_contacts
-    in
-    Lwt.return (experiment, contacts)
-  ;;
-end
-
-let limit = 10
-
 let send_invitations _ () =
   let open MatcherTestUtils in
   let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
   let%lwt current_user = current_user () in
-  let%lwt experiment =
-    ExperimentRepo.create ~id:experiment_id ~title:"Matcher experiment" ()
-  in
   let%lwt experiment, contacts =
-    setup_experiment_filter_with_matching_contacts current_user experiment contact_ids
+    setup_with_contacts ~title_suffix:"send_invitations" current_user
   in
-  let invitation_ids = CCList.map (fun _ -> Pool_common.Id.create ()) contact_ids in
-  let%lwt mailing = MailingRepo.create experiment_id in
+  let invitation_ids = CCList.map (fun _ -> Pool_common.Id.create ()) contacts in
+  let%lwt mailing = experiment |> Experiment.id |> MailingRepo.create in
   let%lwt events =
     Matcher.events_of_mailings ~invitation_ids [ pool, [ mailing, limit ] ]
     ||> CCList.hd
@@ -276,20 +300,16 @@ let send_invitations _ () =
 let reset_invitations _ () =
   let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
   let%lwt current_user = current_user () in
-  let%lwt experiment = Experiment.find pool experiment_id ||> get_or_failwith in
-  let%lwt () =
-    let open Experiment in
-    handle_event pool (ResetInvitations experiment)
+  let%lwt experiment, contacts =
+    MatcherTestUtils.setup_with_invitations ~title_suffix:"reset_invitations" current_user
   in
-  let%lwt contacts =
-    Lwt_list.map_s (fun id -> Contact.find pool id ||> get_or_failwith) contact_ids
-    ||> Matcher.sort_contacts
-  in
-  let%lwt mailing = MailingRepo.create experiment_id in
+  let%lwt () = Experiment.(handle_event pool (ResetInvitations experiment)) in
+  let%lwt mailing = experiment |> Experiment.id |> MailingRepo.create in
   let%lwt events =
     Matcher.events_of_mailings [ pool, [ mailing, limit ] ] ||> CCList.hd ||> snd
   in
   let%lwt expected =
+    let contacts = Matcher.sort_contacts contacts in
     let%lwt create_email = invitation_mail tenant experiment in
     expected_resend_events contacts mailing experiment create_email
   in
@@ -302,7 +322,9 @@ let matcher_notification _ () =
   let open MatcherTestUtils in
   let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
   let%lwt current_user = current_user () in
-  let%lwt experiment = Experiment.find pool experiment_id ||> get_or_failwith in
+  let%lwt experiment, _ =
+    setup_with_contacts ~title_suffix:"matcher_notification" current_user
+  in
   let%lwt experiment =
     "that name surely does not exist"
     |> contact_name_filter
@@ -318,7 +340,7 @@ let matcher_notification _ () =
     ||> Email.bulksent
     ||> Pool_event.email
   in
-  let%lwt mailing = MailingRepo.create experiment_id in
+  let%lwt mailing = experiment |> Experiment.id |> MailingRepo.create in
   let matcher_events () = Matcher.events_of_mailings [ pool, [ mailing, limit ] ] in
   let%lwt events = matcher_events () ||> CCList.hd ||> snd in
   let%lwt expected =
