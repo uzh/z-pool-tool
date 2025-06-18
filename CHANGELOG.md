@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.12.0](https://github.com/uzh/z-pool-tool/tree/0.12.0) - 2025-06-18
+
 ### Added
 
 - E-Mail Multi-Factor-Authentication
