@@ -410,8 +410,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
     in
     let order_by =
       let open Mailing.Distribution in
-      Sorted [ SortableField.InvitationCount, SortOrder.Ascending ]
-      |> get_order_element ~randomized:false
+      Sorted [ SortableField.InvitationCount, SortOrder.Ascending ] |> get_order_element
     in
     let%lwt contacts =
       Filter.(

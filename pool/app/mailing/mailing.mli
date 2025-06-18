@@ -114,7 +114,7 @@ module Distribution : sig
   val create_sorted : (SortableField.t * SortOrder.t) list -> t
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
-  val get_order_element : ?randomized:bool -> t -> string
+  val get_order_element : t -> string
   val schema : unit -> (Pool_message.Error.t, sorted) Pool_conformist.Field.t
   val is_random_schema : unit -> (Pool_message.Error.t, bool) Pool_conformist.Field.t
   val of_urlencoded_list : string list -> (string option, Pool_message.Error.t) result
