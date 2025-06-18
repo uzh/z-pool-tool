@@ -191,7 +191,12 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       | Some pool ->
         let%lwt () = drain_opt pool in
         let default =
-          CCOption.value ~default:"Unknown error" note |> Format.asprintf " (%s)"
+          CCOption.map_or
+            (function
+              | `Info msg | `Warning msg | `Error msg -> msg)
+            ~default:"Unknown error"
+            note
+          |> Format.asprintf " (%s)"
         in
         let message =
           CCOption.map_or
@@ -199,8 +204,14 @@ module Make (Config : Pools_sig.ConfigSig) = struct
             (Format.asprintf " with error: %a" Caqti_error.pp)
             error
         in
-        Logs.err ~src (fun m ->
-          m "Disconnecting pool '%s'%s" (database_label pool) message);
+        let level =
+          match note with
+          | Some (`Info _) -> Logs.Info
+          | Some (`Warning _) -> Logs.Warning
+          | Some (`Error _) | None -> Logs.Error
+        in
+        Logs.msg ~src level (fun m ->
+          m "Disconnect pool '%s'%s" (database_label pool) message);
         Cache.replace { pool with connection = CCOption.map_or ~default:Close fail error }
         |> Lwt.return
       | None -> Lwt.return_unit
@@ -209,7 +220,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
     let disconnect ?error = disconnect' ?error ?note:None
 
     let reset ?required database =
-      let%lwt () = disconnect' ~note:"DB reset" (label database) in
+      let%lwt () = disconnect' ~note:(`Info "DB reset") (label database) in
       create ?required database |> Cache.replace |> Lwt.return
     ;;
 
@@ -218,7 +229,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       match%lwt input with
       | Ok resp -> Lwt.return resp
       | Error `Unsupported ->
-        let%lwt () = disconnect' ~note:"Unsupported" label in
+        let%lwt () = disconnect' ~note:(`Error "Unsupported") label in
         raise Pool_message.Error.(Exn (Unsupported "Caqti error"))
       | Error (#t as err) ->
         let%lwt () = disconnect' ~error:err label in
