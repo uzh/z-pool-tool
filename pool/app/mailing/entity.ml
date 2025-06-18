@@ -148,7 +148,7 @@ module Distribution = struct
     | Sorted dist -> dist
   ;;
 
-  let get_order_element =
+  let get_order_element ?(randomized = true) =
     let open CCFun in
     (function
       | Random -> Some "RAND()"
@@ -157,7 +157,7 @@ module Distribution = struct
         distribution
         |> CCList.map (fun (field, order) ->
           CCString.concat " " [ field |> SortableField.to_sql; order |> SortOrder.show ])
-        |> CCList.cons "RAND()"
+        |> (if randomized then CCList.cons "RAND()" else CCFun.id)
         |> CCString.concat ", "
         |> CCOption.pure)
     %> CCOption.map_or ~default:"" (Format.asprintf "ORDER BY %s")
