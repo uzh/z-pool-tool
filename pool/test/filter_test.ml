@@ -392,11 +392,18 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
     let%lwt id = Repo.first_experiment () ||> Experiment.(id %> Id.to_common) in
     let filter =
       let open Filter in
-      Pred
-        (Predicate.create
-           Key.(Hardcoded ContactLanguage)
-           equal_operator
-           (Single (Language Pool_common.Language.En)))
+      And
+        [ Pred
+            (Predicate.create
+               Key.(Hardcoded Name)
+               Operator.(string StringM.Like)
+               (Single (Str "lastname")))
+        ; Pred
+            (Predicate.create
+               Key.(Hardcoded ContactLanguage)
+               equal_operator
+               (Single (Language Pool_common.Language.En)))
+        ]
       |> create None
     in
     let%lwt () =
