@@ -16,10 +16,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - ensure closing log channel on exit
 - direct message permission
 - http response codes
+- show error when trying to delete experiment with invitations
+- properly close connection to mail server
 
 ### Changed
 
 - hide contact info page when text message API key is missing for tenant
+- mailing distribution add ramdom if sort values are identical
 
 ## [0.11.1](https://github.com/uzh/z-pool-tool/tree/0.11.1) - 2025-04-28
 
