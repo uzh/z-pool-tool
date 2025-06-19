@@ -288,12 +288,11 @@ module ActorPermissionSearch = struct
         ~classnames:[ "w-2" ]
         ~attributes
         ~required:true
-        ~read_only:true
         ?flash_fetcher
         language
         Field.Permission
         Guard.Permission.show
-        Guard.Permission.all
+        Guard.Permission.[ Create; Read ]
         init_permission
         ()
     in
