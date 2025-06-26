@@ -204,6 +204,7 @@ let rec field_to_string =
   | Operators -> "operators"
   | Order -> "order"
   | OrganisationalUnit -> "organisational unit"
+  | OTP -> "Verification code"
   | Overbook -> "overbook"
   | OverriddenValue -> "overriden contact answer"
   | Override -> "override"

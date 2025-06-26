@@ -149,6 +149,7 @@ let to_string = function
   | NotMatchingFilter ->
     "The contact does not meet the criteria specified in the filter for this experiment."
   | NoInvitationsSent -> "No invitations have been sent yet."
+  | OtpHint -> "Enter your 8-digit verification code."
   | OurPartners -> "Our partners"
   | Past -> "Past"
   | PastSessionsTitle -> "Your past sessions"

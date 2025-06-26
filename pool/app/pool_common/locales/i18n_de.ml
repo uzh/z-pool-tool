@@ -153,6 +153,7 @@ let to_string = function
   | Note -> "Hinweis"
   | NotMatchingFilter ->
     "Der Kontakt erfüllt nicht die im Filter bestimmten Kriterien für dieses Experiment."
+  | OtpHint -> "Eingabe des 8-stelligen Verifizierungscodes"
   | OurPartners -> "Unsere Partner"
   | Past -> "Vergangen"
   | PastSessionsTitle -> "Ihre vergangenen Sessions"

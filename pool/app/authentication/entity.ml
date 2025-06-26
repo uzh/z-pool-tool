@@ -39,7 +39,7 @@ module Token = struct
   ;;
 
   let value m = m
-  let schema () = schema ~validation:create Pool_message.Field.Token ()
+  let schema () = schema ~validation:create Pool_message.Field.OTP ()
 
   let to_human =
     CCString.to_list

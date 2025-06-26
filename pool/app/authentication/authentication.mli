@@ -14,6 +14,7 @@ end
 module Token : sig
   type t
 
+  val length : int
   val equal : t -> t -> bool
   val generate : unit -> t
   val value : t -> string
