@@ -140,32 +140,32 @@ let confirm_2fa_test _ () =
   let%lwt contact = Contact.find pool Data.contact_id ||> get_or_failwith in
   (* Missing token or auth_id *)
   let no_value field = Error Error.(Conformist [ field, NoValue ]) in
-  let%lwt () = check "Without token" [ "id", id_value ] (no_value Field.Token) in
-  let%lwt () = check "Without id" [ "token", token_value ] (no_value Field.Id) in
+  let%lwt () = check "Without token" [ "id", id_value ] (no_value Field.OTP) in
+  let%lwt () = check "Without id" [ "otp", token_value ] (no_value Field.Id) in
   (* Invalid auth id *)
-  let invalid_token = Error Error.(Invalid Field.Token) in
+  let invalid_token = Error Error.(Invalid Field.OTP) in
   let%lwt () =
-    let data = [ ("id", Id.(create () |> value)); "token", token_value ] in
+    let data = [ ("id", Id.(create () |> value)); "otp", token_value ] in
     check "Invalid id" data invalid_token
   in
   (* Invalid token *)
   let%lwt () =
-    let data = [ ("id", Id.(create () |> value)); "token", "12341234" ] in
+    let data = [ ("id", Id.(create () |> value)); "otp", "12341234" ] in
     check "Invalid token" data invalid_token
   in
   let%lwt () =
-    let data = [ ("id", Id.(create () |> value)); "token", "1234 1234" ] in
+    let data = [ ("id", Id.(create () |> value)); "otp", "1234 1234" ] in
     check "Invalid token" data invalid_token
   in
   (* Successfull login *)
   let%lwt auth, user = find_valid_by_id pool auth_id ||> get_or_failwith in
   let events = [ Deleted auth |> Pool_event.authentication ] in
   let%lwt () =
-    let data = [ "id", id_value; "token", Token.to_human auth_token ] in
+    let data = [ "id", id_value; "otp", Token.to_human auth_token ] in
     check "successfull 2fa logjn" data (Ok (user, events))
   in
   let%lwt () =
-    let data = [ "id", id_value; "token", token_value ] in
+    let data = [ "id", id_value; "otp", token_value ] in
     check "successfull 2fa logjn" data (Ok (user, events))
   in
   let%lwt () = Pool_event.handle_events pool (Pool_context.contact contact) events in

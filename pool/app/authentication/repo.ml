@@ -40,7 +40,7 @@ let insert_request =
       $3,
       $4,
       NOW() + INTERVAL 5 MINUTE
-    ) ON DUPLICATE KEY UPDATE 
+    ) ON DUPLICATE KEY UPDATE
       uuid = UNHEX(REPLACE($1, '-', '')),
       channel = $3,
       token = $4,
@@ -68,7 +68,7 @@ let find_valid_by_id pool id =
   let open Utils.Lwt_result.Infix in
   let* auth =
     Database.find_opt pool find_valid_by_id_request id
-    ||> CCOption.to_result Pool_message.(Error.Invalid Field.Token)
+    ||> CCOption.to_result Pool_message.(Error.Invalid Field.OTP)
   in
   let* user = Pool_user.find pool auth.user_uuid in
   Lwt_result.return (auth, user)

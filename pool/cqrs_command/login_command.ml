@@ -45,7 +45,7 @@ end = struct
     let* () =
       if Token.equal token auth.token
       then Ok ()
-      else Error Pool_message.(Error.Invalid Field.Token)
+      else Error Pool_message.(Error.Invalid Field.OTP)
     in
     Ok [ Deleted auth |> Pool_event.authentication ]
   ;;
