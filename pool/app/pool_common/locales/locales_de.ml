@@ -205,7 +205,7 @@ let rec field_to_string =
   | Operators -> "Operatoren"
   | Order -> "Reihenfolge"
   | OrganisationalUnit -> "Organisationseinheit"
-  | OTP -> "Verifizierungs Code"
+  | OTP -> "Verifizierungscode"
   | Overbook -> "Überbuchen"
   | OverriddenValue -> "Überschriebene Kontakt-Antwort"
   | Override -> "Überschreiben"

@@ -40,7 +40,6 @@ module Token = struct
 
   let value m = m
   let schema () = schema ~validation:create Pool_message.Field.OTP ()
-  let to_human = value
 end
 
 type t =

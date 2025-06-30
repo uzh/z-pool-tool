@@ -686,7 +686,7 @@ module Login2FAToken = struct
   let label = Label.Login2FAToken
 
   let email_params layout user token =
-    global_params layout user @ [ "token", Authentication.Token.to_human token ]
+    global_params layout user @ [ "token", Authentication.Token.value token ]
   ;;
 
   let prepare pool language layout =

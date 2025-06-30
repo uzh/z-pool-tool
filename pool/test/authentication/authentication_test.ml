@@ -161,7 +161,7 @@ let confirm_2fa_test _ () =
   let%lwt auth, user = find_valid_by_id pool auth_id ||> get_or_failwith in
   let events = [ Deleted auth |> Pool_event.authentication ] in
   let%lwt () =
-    let data = [ "id", id_value; "otp", Token.to_human auth_token ] in
+    let data = [ "id", id_value; "otp", Token.value auth_token ] in
     check "successfull 2fa logjn" data (Ok (user, events))
   in
   let%lwt () =

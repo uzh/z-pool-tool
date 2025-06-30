@@ -18,7 +18,6 @@ module Token : sig
   val equal : t -> t -> bool
   val generate : unit -> t
   val value : t -> string
-  val to_human : t -> string
   val schema : unit -> (Pool_conformist.error_msg, t) Pool_conformist.Field.t
 end
 
