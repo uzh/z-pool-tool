@@ -157,16 +157,16 @@ let confirm_2fa_test _ () =
     let data = [ ("id", Id.(create () |> value)); "otp", "1234 1234" ] in
     check "Invalid token" data invalid_token
   in
-  (* Successfull login *)
+  (* Successful login *)
   let%lwt auth, user = find_valid_by_id pool auth_id ||> get_or_failwith in
   let events = [ Deleted auth |> Pool_event.authentication ] in
   let%lwt () =
     let data = [ "id", id_value; "otp", Token.value auth_token ] in
-    check "successfull 2fa login" data (Ok (user, events))
+    check "successful 2fa login" data (Ok (user, events))
   in
   let%lwt () =
     let data = [ "id", id_value; "otp", token_value ] in
-    check "successfull 2fa login" data (Ok (user, events))
+    check "successful 2fa login" data (Ok (user, events))
   in
   let%lwt () = Pool_event.handle_events pool (Pool_context.contact contact) events in
   Lwt.return_unit
