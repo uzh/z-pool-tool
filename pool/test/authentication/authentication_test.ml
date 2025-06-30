@@ -162,11 +162,11 @@ let confirm_2fa_test _ () =
   let events = [ Deleted auth |> Pool_event.authentication ] in
   let%lwt () =
     let data = [ "id", id_value; "otp", Token.value auth_token ] in
-    check "successfull 2fa logjn" data (Ok (user, events))
+    check "successfull 2fa login" data (Ok (user, events))
   in
   let%lwt () =
     let data = [ "id", id_value; "otp", token_value ] in
-    check "successfull 2fa logjn" data (Ok (user, events))
+    check "successfull 2fa login" data (Ok (user, events))
   in
   let%lwt () = Pool_event.handle_events pool (Pool_context.contact contact) events in
   Lwt.return_unit
