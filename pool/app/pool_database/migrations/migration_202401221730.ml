@@ -45,7 +45,7 @@ let convert_experimenter_role_hint_to_i18n_de =
         UNHEX(REPLACE(UUID(), '-', '')),
         'experimenter_role_hint',
         'DE',
-        '<p>Ein Experimentator hat nur eingeschränkte Rechte, die Rolle kann hauptsächlich nur die Informationen lesen und darf Sitzungen schließen.<br>Der Experimentator kann die Namen der teilnehmenden Kontakte des Experiments lesen, dem er/sie zugewiesen ist.</p><p>Eine detaillierte Liste mit allen Rollenberechtigungen ist nur für Recruiter verfügbar.</p>'
+        '<p>Ein Experimentator hat nur eingeschränkte Rechte, die Rolle kann hauptsächlich nur die Informationen lesen und darf Sitzungen schliessen.<br>Der Experimentator kann die Namen der teilnehmenden Kontakte des Experiments lesen, dem er/sie zugewiesen ist.</p><p>Eine detaillierte Liste mit allen Rollenberechtigungen ist nur für Recruiter verfügbar.</p>'
       )
     |sql}
 ;;

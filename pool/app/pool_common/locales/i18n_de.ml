@@ -280,7 +280,7 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | AssignmentCancellationMessageFollowUps ->
     "Die Anmeldung zu folgenden Sessions wurde ebenfalls annulliert:"
   | AssignmentConfirmationMessageFollowUps ->
-    "Sie wurden außerdem den folgenden Folgesitzungen zugewiesen:"
+    "Sie wurden ausserdem den folgenden Folgesitzungen zugewiesen:"
   | AssignmentsMarkedAsClosed ->
     "Diese Anmeldungen wurden als gelöscht markiert. Insofern die Kontakte den \
      Experimentkriterien noch entsprechen, können Sie sich erneut an Sessions anmelden."
