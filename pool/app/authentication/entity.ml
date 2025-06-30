@@ -40,13 +40,7 @@ module Token = struct
 
   let value m = m
   let schema () = schema ~validation:create Pool_message.Field.OTP ()
-
-  let to_human =
-    CCString.to_list
-    %> CCList.chunks 4
-    %> CCList.map CCString.of_list
-    %> String.concat " "
-  ;;
+  let to_human = value
 end
 
 type t =
