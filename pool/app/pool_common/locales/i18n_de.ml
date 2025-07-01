@@ -153,6 +153,7 @@ let to_string = function
   | Note -> "Hinweis"
   | NotMatchingFilter ->
     "Der Kontakt erfüllt nicht die im Filter bestimmten Kriterien für dieses Experiment."
+  | OtpHint -> "Eingabe des 8-stelligen Verifizierungscodes"
   | OurPartners -> "Unsere Partner"
   | Past -> "Vergangen"
   | PastSessionsTitle -> "Ihre vergangenen Sessions"
@@ -279,7 +280,7 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | AssignmentCancellationMessageFollowUps ->
     "Die Anmeldung zu folgenden Sessions wurde ebenfalls annulliert:"
   | AssignmentConfirmationMessageFollowUps ->
-    "Sie wurden außerdem den folgenden Folgesitzungen zugewiesen:"
+    "Sie wurden ausserdem den folgenden Folgesitzungen zugewiesen:"
   | AssignmentsMarkedAsClosed ->
     "Diese Anmeldungen wurden als gelöscht markiert. Insofern die Kontakte den \
      Experimentkriterien noch entsprechen, können Sie sich erneut an Sessions anmelden."

@@ -10,7 +10,9 @@ import {
     DomConverter,
     EasyImage,
     Essentials,
+    GeneralHtmlSupport,
     Heading,
+    HeadingButtonsUI,
     Image,
     ImageCaption,
     ImageStyle,
@@ -22,8 +24,11 @@ import {
     List,
     MediaEmbed,
     Paragraph,
+    ParagraphButtonUI,
     PasteFromOffice,
     PictureEditing,
+    SourceEditing,
+    Style,
     Table,
     TableToolbar,
     TextTransformation,
@@ -42,7 +47,9 @@ export class Editor extends ClassicEditor {
         CloudServices,
         EasyImage,
         Essentials,
+        GeneralHtmlSupport,
         Heading,
+        HeadingButtonsUI,
         Image,
         ImageCaption,
         ImageStyle,
@@ -54,17 +61,23 @@ export class Editor extends ClassicEditor {
         List,
         MediaEmbed,
         Paragraph,
+        ParagraphButtonUI,
         PasteFromOffice,
         PictureEditing,
+        SourceEditing,
+        Style,
         Table,
         TableToolbar,
-        TextTransformation
+        TextTransformation,
     ];
 
     static defaultConfig = {
         toolbar: {
             items: [
-                'heading',
+                'paragraph',
+                'heading1',
+                'heading2',
+                'heading3',
                 '|',
                 'bold',
                 'italic',
@@ -76,9 +89,10 @@ export class Editor extends ClassicEditor {
                 'outdent',
                 'indent',
                 '|',
-                'insertTable',
+                'sourceEditing',
+                '|',
                 'undo',
-                'redo'
+                'redo',
             ]
         },
         image: {
@@ -100,6 +114,23 @@ export class Editor extends ClassicEditor {
         },
         language: 'en',
         licenseKey: 'GPL',
+        heading: {
+            options: [
+                { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
+                { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' },
+            ]
+        },
+        htmlSupport: {
+            allow: [
+                {
+                    name: 'div',
+                    classes: ['otp', 'apple-otp'],
+                    attributes: true
+                }
+            ]
+        }
     };
 }
 

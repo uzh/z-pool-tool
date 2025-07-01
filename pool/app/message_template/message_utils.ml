@@ -130,7 +130,8 @@ let combine_html ?optout_link language layout html_title =
       ; style
           ~a:[ a_mime_type "text/css" ]
           [ Unsafe.data
-              {css| body { font-family:sans-serif, Arial; line-height: 1.4; } |css}
+              {css| body { font-family:sans-serif, Arial; line-height: 1.4; }
+              div.otp { font-size: 36px; font-weight: bold; color: #0028A5; letter-spacing: 4px; margin: 20px 0; } |css}
           ]
       ]
   in

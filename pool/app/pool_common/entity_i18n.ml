@@ -93,6 +93,7 @@ type t =
   | NoInvitationsSent
   | Note
   | NotMatchingFilter
+  | OtpHint
   | OurPartners
   | Past
   | PastSessionsTitle

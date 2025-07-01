@@ -39,7 +39,19 @@ let login_token_confirmation
             ~a:[ a_action action; a_method `Post; a_class [ "stack" ] ]
             [ csrf_element csrf ()
             ; hidden_input
-            ; input_element language `Text Pool_message.Field.Token
+            ; input_element
+                ~additional_attributes:
+                  [ a_autocomplete (`Tokens [ "one-time-code" ])
+                  ; a_maxlength (Authentication.Token.length + 1)
+                  ; a_inputmode `Numeric
+                  ; a_aria
+                      "label"
+                      [ Pool_common.(Utils.text_to_string language I18n.OtpHint) ]
+                  ; a_placeholder "1234 5678"
+                  ]
+                language
+                `Text
+                Pool_message.Field.OTP
             ; div
                 ~a:[ a_class [ "flexrow"; "align-center"; "flex-gap" ] ]
                 [ submit_element
