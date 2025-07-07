@@ -209,29 +209,29 @@ let contains_pattern str pattern =
 ;;
 
 let check_string_against_patterns str =
-  List.fold_left
-    (fun acc (category, patterns) ->
-       let matches = List.exists (contains_pattern str) patterns in
+  CCList.fold_right
+    (fun (category, patterns) acc ->
+       let matches = CCList.exists (contains_pattern str) patterns in
        if matches then category :: acc else acc)
-    []
     all_patterns
+    []
 ;;
 
 let extract_request_data req =
   let uri = req.Rock.Request.target |> Uri.of_string in
   let query_params =
     Uri.query uri
-    |> List.fold_left
+    |> CCList.fold_left
          (fun acc (key, values) ->
-            List.fold_left (fun acc2 value -> (key ^ "=" ^ value) :: acc2) acc values)
+            CCList.fold_left (fun acc2 value -> (key ^ "=" ^ value) :: acc2) acc values)
          []
-    |> String.concat "&"
+    |> CCString.concat "&"
   in
   let path = Uri.path uri in
   let headers =
     req.Rock.Request.headers
     |> Httpaf.Headers.to_list
-    |> List.map (fun (name, value) -> name ^ ": " ^ value)
+    |> CCList.map (fun (name, value) -> name ^ ": " ^ value)
     |> String.concat "\n"
   in
   path, query_params, headers
@@ -239,7 +239,7 @@ let extract_request_data req =
 
 let check_request_security req =
   let path, query_params, headers = extract_request_data req in
-  let all_data = String.concat " " [ path; query_params; headers ] in
+  let all_data = CCString.concat " " [ path; query_params; headers ] in
   let suspicious_categories = check_string_against_patterns all_data in
   match suspicious_categories with
   | [] -> None
