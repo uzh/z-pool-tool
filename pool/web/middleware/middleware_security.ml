@@ -203,7 +203,6 @@ let normalize_string s =
 let contains_pattern str pattern =
   let normalized_str = normalize_string str in
   let normalized_pattern = normalize_string pattern in
-  (* Check both the original string and normalized version *)
   CCString.mem ~sub:normalized_pattern normalized_str
   || CCString.mem ~sub:pattern (String.lowercase_ascii str)
 ;;
@@ -246,8 +245,13 @@ let check_request_security req =
   | categories -> Some categories
 ;;
 
-let log_suspicious_request req categories =
-  let _src = Logs.Src.create "middleware.security" in
+let log_suspicious_request ?(tags = Logs.Tag.empty) req categories =
+  let src = Logs.Src.create "middleware.security" in
+  let tags =
+    Middleware_tenant.tenant_url_of_request req
+    |> CCResult.map_or ~default:tags (fun url ->
+      Logs.Tag.add Database.Logger.Tags.add_label (Pool_tenant.Url.value url) tags)
+  in
   let request_id = Sihl.Web.Id.find req |> CCOption.value ~default:"-" in
   let uri = req.Rock.Request.target in
   let method_str = req.Rock.Request.meth |> Httpaf.Method.to_string in
@@ -260,8 +264,9 @@ let log_suspicious_request req categories =
     |> CCOption.or_ ~else_:(Httpaf.Headers.get req.Rock.Request.headers "x-real-ip")
     |> CCOption.value ~default:"unknown"
   in
-  Logs.warn (fun m ->
+  Logs.warn ~src (fun m ->
     m
+      ~tags
       "Suspicious request detected - ID: %s, Method: %s, URI: %s, Remote: %s, UA: %s, \
        Categories: %s"
       request_id

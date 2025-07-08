@@ -124,4 +124,8 @@ val enhanced_middleware : unit -> Rock.Middleware.t
     - Timestamp
 
     Used internally by middleware but can be called manually for custom logging. *)
-val log_suspicious_request : Sihl.Web.Request.t -> string list -> unit
+val log_suspicious_request
+  :  ?tags:Logs.Tag.set
+  -> Sihl.Web.Request.t
+  -> string list
+  -> unit
