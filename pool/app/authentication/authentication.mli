@@ -43,6 +43,7 @@ val create
 type event =
   | Created of t
   | Deleted of t
+  | ResetExpired
 
 val equal_event : event -> event -> bool
 val show_event : event -> string
