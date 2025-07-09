@@ -1,4 +1,16 @@
-(* Enhanced SQL injection patterns based on real attack examples *)
+open CCFun.Infix
+
+let src = Logs.Src.create "middleware.security"
+
+let create_tags req =
+  let tags = Pool_context.Logger.Tags.req req in
+  Middleware_tenant.tenant_url_of_request req
+  |> CCResult.map_or ~default:tags (fun url ->
+    Logs.Tag.add Database.Logger.Tags.add_label (Pool_tenant.Url.value url) tags)
+;;
+
+let combine_uniq l1 l2 = CCList.append l1 l2 |> CCList.uniq ~eq:CCString.equal
+
 let sql_injection_patterns =
   [ (* Basic SQL keywords *)
     "union select"
@@ -185,6 +197,47 @@ let all_patterns =
   ]
 ;;
 
+let asset_regex =
+  let open Re in
+  let path_segment = seq [ char '/'; rep1 (alt [ wordc; char '-' ]) ] in
+  let uuid_hex n = repn (alt [ digit; rg 'a' 'f'; rg 'A' 'F' ]) n (Some n) in
+  let uuid_pattern =
+    seq
+      [ uuid_hex 8
+      ; char '-'
+      ; uuid_hex 4
+      ; char '-'
+      ; uuid_hex 4
+      ; char '-'
+      ; uuid_hex 4
+      ; char '-'
+      ; uuid_hex 12
+      ]
+  in
+  let build elements = seq [ bos; rep path_segment; elements; eos ] in
+  let filename =
+    seq [ rep1 (alt [ wordc; char '-' ]); rep1 (seq [ char '.'; rep1 alnum ]) ]
+  in
+  let hash_filename =
+    seq [ rep1 wordc; char '.'; rep1 (alt [ alnum; char '-' ]); char '.'; rep1 alnum ]
+  in
+  let static_assets_pattern =
+    seq [ str "/assets/"; alt [ filename; hash_filename ] ] |> build
+  in
+  let custom_assets_pattern =
+    seq [ str "/custom/assets/"; opt uuid_pattern; char '/'; filename ] |> build
+  in
+  let wellknown_pattern =
+    seq [ str "/.well-known"; path_segment; char '/'; filename ] |> build
+  in
+  let pattern =
+    alt
+    @@ [ custom_assets_pattern; static_assets_pattern; build filename ]
+    @ if Sihl.Configuration.is_production () then [] else [ wellknown_pattern ]
+  in
+  compile pattern
+;;
+
 let normalize_string s =
   (* URL decode the string first to catch encoded attacks *)
   let url_decoded =
@@ -214,82 +267,91 @@ let check_string_against_patterns str =
        if matches then category :: acc else acc)
     all_patterns
     []
+  |> function
+  | [] -> None
+  | categories -> Some categories
+;;
+
+let find_query_params uri =
+  Uri.query uri
+  |> CCList.fold_left
+       (fun acc (key, values) ->
+          CCList.fold_left (fun acc2 value -> (key ^ "=" ^ value) :: acc2) acc values)
+       []
+  |> CCString.concat "&"
 ;;
 
 let extract_request_data req =
   let uri = req.Rock.Request.target |> Uri.of_string in
-  let query_params =
-    Uri.query uri
-    |> CCList.fold_left
-         (fun acc (key, values) ->
-            CCList.fold_left (fun acc2 value -> (key ^ "=" ^ value) :: acc2) acc values)
-         []
-    |> CCString.concat "&"
-  in
-  let path = Uri.path uri in
   let headers =
     req.Rock.Request.headers
     |> Httpaf.Headers.to_list
     |> CCList.map (fun (name, value) -> name ^ ": " ^ value)
     |> String.concat "\n"
   in
-  path, query_params, headers
+  Uri.path uri, find_query_params uri, headers
 ;;
 
-let check_request_security req =
-  let path, query_params, headers = extract_request_data req in
-  let all_data = CCString.concat " " [ path; query_params; headers ] in
-  let suspicious_categories = check_string_against_patterns all_data in
-  match suspicious_categories with
-  | [] -> None
-  | categories -> Some categories
-;;
-
-let log_suspicious_request ?(tags = Logs.Tag.empty) req categories =
-  let src = Logs.Src.create "middleware.security" in
-  let tags =
-    Middleware_tenant.tenant_url_of_request req
-    |> CCResult.map_or ~default:tags (fun url ->
-      Logs.Tag.add Database.Logger.Tags.add_label (Pool_tenant.Url.value url) tags)
-  in
-  let request_id = Sihl.Web.Id.find req |> CCOption.value ~default:"-" in
-  let uri = req.Rock.Request.target in
-  let method_str = req.Rock.Request.meth |> Httpaf.Method.to_string in
+let log_suspicious_request req categories =
   let user_agent =
     Httpaf.Headers.get req.Rock.Request.headers "user-agent"
     |> CCOption.value ~default:"unknown"
   in
   let remote_addr =
     Httpaf.Headers.get req.Rock.Request.headers "x-forwarded-for"
+    |> CCOption.or_ ~else_:(Httpaf.Headers.get req.Rock.Request.headers "X-REAL-IP")
     |> CCOption.or_ ~else_:(Httpaf.Headers.get req.Rock.Request.headers "x-real-ip")
     |> CCOption.value ~default:"unknown"
   in
   Logs.warn ~src (fun m ->
     m
-      ~tags
-      "Suspicious request detected - ID: %s, Method: %s, URI: %s, Remote: %s, UA: %s, \
+      ~tags:(create_tags req)
+      "Suspicious request detected - Remote: %s, Method: %s, URI: %s, UA: %s, \
        Categories: %s"
-      request_id
-      method_str
-      uri
       remote_addr
+      (req.Rock.Request.meth |> Httpaf.Method.to_string)
+      req.Rock.Request.target
       user_agent
       (String.concat ", " categories))
 ;;
 
-let security_response () =
-  let body = "Request blocked for security reasons" in
-  Sihl.Web.Response.of_plain_text body
-  |> Sihl.Web.Response.set_status `Bad_request
-  |> Lwt.return
+let continue handler req = function
+  | Some categories ->
+    log_suspicious_request req categories;
+    handler req
+  | None -> handler req
+;;
+
+let check_request_security req =
+  let path, query_params, headers = extract_request_data req in
+  CCString.concat " " [ path; query_params; headers ] |> check_string_against_patterns
+;;
+
+let check_body_security { Rock.Request.meth; body; _ } =
+  let check =
+    Sihl.Web.Body.(copy %> to_string) %> Lwt.map check_string_against_patterns
+  in
+  match meth with
+  | `POST | `PUT -> check body
+  | _ -> Lwt.return None
+;;
+
+let security_filter' handler req checks =
+  let path, query_params, _ = extract_request_data req in
+  match Re.execp asset_regex path with
+  | true when String.equal query_params "" -> handler req
+  | true -> continue handler req (check_string_against_patterns query_params)
+  | false ->
+    CCList.fold_left
+      (fun acc cat ->
+         CCOption.(map2 combine_uniq acc cat |> or_ ~else_:acc |> or_ ~else_:cat))
+      None
+      checks
+    |> continue handler req
 ;;
 
 let security_filter handler req =
-  match check_request_security req with
-  | None -> handler req
-  | Some categories ->
-    log_suspicious_request req categories;
-    security_response ()
+  [ check_request_security req ] |> security_filter' handler req
 ;;
 
 let middleware () =
@@ -298,31 +360,9 @@ let middleware () =
     ~filter:security_filter
 ;;
 
-(* Additional function to check POST body content *)
-let check_body_security body =
-  let%lwt body_string = Sihl.Web.Body.copy body |> Sihl.Web.Body.to_string in
-  let suspicious_categories = check_string_against_patterns body_string in
-  match suspicious_categories with
-  | [] -> Lwt.return None
-  | categories -> Lwt.return (Some categories)
-;;
-
 let enhanced_security_filter handler req =
-  match check_request_security req with
-  | Some categories ->
-    log_suspicious_request req categories;
-    security_response ()
-  | None ->
-    (* Check POST/PUT body if present *)
-    (match req.Rock.Request.meth with
-     | `POST | `PUT ->
-       let%lwt body_check = check_body_security req.Rock.Request.body in
-       (match body_check with
-        | Some body_categories ->
-          log_suspicious_request req body_categories;
-          security_response ()
-        | None -> handler req)
-     | _ -> handler req)
+  let%lwt body_security = check_body_security req in
+  [ check_request_security req; body_security ] |> security_filter' handler req
 ;;
 
 let enhanced_middleware () =

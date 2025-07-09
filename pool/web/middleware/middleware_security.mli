@@ -36,32 +36,10 @@
 
     {[
       let global_middlewares =
-        [ Middleware.id ~id:(fun () -> CCString.sub (Sihl.Random.base64 12) 0 10) ()
-        ; CustomMiddleware.Security.middleware ()  (* Security middleware *)
+        [ CustomMiddleware.Security.middleware ()  (* Security middleware *)
         ; CustomMiddleware.Error.middleware ()
-        ; CustomMiddleware.TrailingSlash.middleware ()
-        ; Middleware.static_file ()
-        ; Opium.Middleware.content_length
-        ; Opium.Middleware.etag
-        ; Opium.Middleware.method_override
-        ]
+        ; CustomMiddleware.TrailingSlash.middleware ()]
     ]}
-
-    {2 Behavior}
-
-    The middleware will:
-    - {b Block} malicious requests and return HTTP 400
-    - {b Allow} legitimate requests to proceed normally
-    - {b Log} all suspicious activity for monitoring
-    - {b Detect} both encoded and plain-text attack patterns
-
-    {2 Test Results}
-
-    Successfully tested with:
-    - 100% detection rate for SQL injection patterns (7/7)
-    - 100% detection rate for URL manipulation (4/4)
-    - 0% false positives on legitimate requests (7/7 allowed)
-    - 100% detection rate for XSS patterns (4/4)
 *)
 
 (** Check if a request contains suspicious patterns.
@@ -121,11 +99,5 @@ val enhanced_middleware : unit -> Rock.Middleware.t
     - Client IP address
     - User-Agent string
     - Attack categories detected
-    - Timestamp
-
-    Used internally by middleware but can be called manually for custom logging. *)
-val log_suspicious_request
-  :  ?tags:Logs.Tag.set
-  -> Sihl.Web.Request.t
-  -> string list
-  -> unit
+    - Timestamp *)
+val log_suspicious_request : Sihl.Web.Request.t -> string list -> unit
