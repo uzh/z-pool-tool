@@ -283,13 +283,7 @@ let find_query_params uri =
 
 let extract_request_data req =
   let uri = req.Rock.Request.target |> Uri.of_string in
-  let headers =
-    req.Rock.Request.headers
-    |> Httpaf.Headers.to_list
-    |> CCList.map (fun (name, value) -> name ^ ": " ^ value)
-    |> String.concat "\n"
-  in
-  Uri.path uri, find_query_params uri, headers
+  Uri.path uri, find_query_params uri
 ;;
 
 let log_suspicious_request req categories =
@@ -323,8 +317,8 @@ let continue handler req = function
 ;;
 
 let check_request_security req =
-  let path, query_params, headers = extract_request_data req in
-  CCString.concat " " [ path; query_params; headers ] |> check_string_against_patterns
+  let _, query_params = extract_request_data req in
+  CCString.concat " " [ query_params ] |> check_string_against_patterns
 ;;
 
 let check_body_security { Rock.Request.meth; body; _ } =
@@ -337,7 +331,7 @@ let check_body_security { Rock.Request.meth; body; _ } =
 ;;
 
 let security_filter' handler req checks =
-  let path, query_params, _ = extract_request_data req in
+  let path, query_params = extract_request_data req in
   match Re.execp asset_regex path with
   | true when String.equal query_params "" -> handler req
   | true -> continue handler req (check_string_against_patterns query_params)
