@@ -43,6 +43,7 @@ val create
 type event =
   | Created of t
   | Deleted of t
+  | ResetExpired
 
 val equal_event : event -> event -> bool
 val show_event : event -> string
@@ -53,3 +54,6 @@ val find_valid_by_id
   :  Database.Label.t
   -> Id.t
   -> (t * Pool_user.t, Pool_message.Error.t) Lwt_result.t
+
+val lifecycle : Sihl.Container.lifecycle
+val register : unit -> Sihl.Container.Service.t

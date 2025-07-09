@@ -121,7 +121,10 @@ let successful_create_2fa_test _ () =
       ||> fun make_make -> make_make user auth
     in
     let events =
-      [ Created auth |> Pool_event.authentication; Email.sent email |> Pool_event.email ]
+      [ ResetExpired |> Pool_event.authentication
+      ; Created auth |> Pool_event.authentication
+      ; Email.sent email |> Pool_event.email
+      ]
     in
     Lwt.return (user, auth, events)
   in
@@ -159,7 +162,11 @@ let confirm_2fa_test _ () =
   in
   (* Successful login *)
   let%lwt auth, user = find_valid_by_id pool auth_id ||> get_or_failwith in
-  let events = [ Deleted auth |> Pool_event.authentication ] in
+  let events =
+    [ Deleted auth |> Pool_event.authentication
+    ; ResetExpired |> Pool_event.authentication
+    ]
+  in
   let%lwt () =
     let data = [ "id", id_value; "otp", Token.value auth_token ] in
     check "successful 2fa login" data (Ok (user, events))

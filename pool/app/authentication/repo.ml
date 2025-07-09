@@ -83,3 +83,13 @@ let delete_request =
 ;;
 
 let delete pool { id; _ } = Database.exec pool delete_request id
+
+let reset_expired_request =
+  {sql|
+    DELETE FROM pool_authentication
+    WHERE valid_until < NOW()
+  |sql}
+  |> Caqti_type.(unit ->. unit)
+;;
+
+let reset_expired pool = Database.exec pool reset_expired_request

@@ -192,6 +192,14 @@ let destroy_user =
   |> Contact.Repo.Id.t ->. unit
 ;;
 
+let destroy_authentication_codes =
+  {sql|
+    DELETE FROM pool_authentication
+    WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> Contact.Repo.Id.t ->. unit
+;;
+
 module Changelog = struct
   let contact_changelog pool ?user_uuid current_contact_state contact =
     let open Contact in
@@ -372,12 +380,17 @@ let merge
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     Connection.exec destroy_user (id merged_contact)
   in
+  let destroy_authentication_codes connection =
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    Connection.exec destroy_authentication_codes (id merged_contact)
+  in
   let actions =
     [ override_invitations; override_waiting_list; override_assignments ]
     |> CCList.filter_map CCFun.id
   in
   let destroy_requests =
-    [ destroy_queue_history
+    [ destroy_authentication_codes
+    ; destroy_queue_history
     ; destroy_tags
     ; destroy_mailing_invitations
     ; destroy_invitations

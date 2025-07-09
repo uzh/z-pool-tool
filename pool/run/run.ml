@@ -15,6 +15,7 @@ let worker_services =
           ; hide Assignment_job.job
           ]
         ())
+  ; Authentication.register ()
   ; Matcher.register ()
   ; System_event.Service.register `Worker ()
   ; User_import.Service.register ()

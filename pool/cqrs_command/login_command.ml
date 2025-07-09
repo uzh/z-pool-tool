@@ -15,7 +15,11 @@ end = struct
     let open Authentication in
     Logs.info ~src (fun m -> m "Handle command Create2FALogin" ~tags);
     let email = email_job user auth in
-    Ok [ Created auth |> Pool_event.authentication; Email.sent email |> Pool_event.email ]
+    Ok
+      [ ResetExpired |> Pool_event.authentication
+      ; Created auth |> Pool_event.authentication
+      ; Email.sent email |> Pool_event.email
+      ]
   ;;
 end
 
@@ -47,6 +51,9 @@ end = struct
       then Ok ()
       else Error Pool_message.(Error.Invalid Field.OTP)
     in
-    Ok [ Deleted auth |> Pool_event.authentication ]
+    Ok
+      [ Deleted auth |> Pool_event.authentication
+      ; ResetExpired |> Pool_event.authentication
+      ]
   ;;
 end
