@@ -1,6 +1,6 @@
 (library
  (name authentication)
- (libraries pool_common pool_user)
+ (libraries pool_common pool_user schedule)
  (preprocess
   (pps
    lwt_ppx
