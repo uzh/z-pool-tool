@@ -12,3 +12,7 @@ val make
   -> Rock.Middleware.t
 
 val validate : unit -> Rock.Middleware.t
+
+val tenant_url_of_request
+  :  Rock.Request.t
+  -> (Pool_tenant.Url.t, Pool_message.Error.t) result
