@@ -161,7 +161,7 @@ create_environment_setup() {
   cat > /tmp/env_setup.sh << 'EOF'
 export PATH="/usr/local/openssl/bin:/usr/local/mariadb/bin:$PATH"
 export LD_LIBRARY_PATH="/usr/local/mariadb/lib/mariadb:/usr/local/openssl/lib:$LD_LIBRARY_PATH"
-export PKG_CONFIG_PATH="/usr/local/mariadb/lib/mariadb/pkgconfig:/usr/local/openssl/lib/pkgconfig:$PKG_CONFIG_PATH"
+export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/mariadb/lib/mariadb/pkgconfig:/usr/local/openssl/lib/pkgconfig:$PKG_CONFIG_PATH"
 export OPENSSL_DIR="/usr/local/openssl"
 export OPENSSL_INCLUDE_DIR="/usr/local/openssl/include"
 export OPENSSL_LIB_DIR="/usr/local/openssl/lib"

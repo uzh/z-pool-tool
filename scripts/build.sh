@@ -17,11 +17,34 @@ sudo apt-get install -yqq --no-install-recommends \
   gcc \
   libev-dev \
   libgmp-dev \
-  pkg-config
+  pkg-config \
+  wget \
+  curl \
+  build-essential \
+  make \
+  perl \
+  cmake \
+  git
 
 # cleanup installations
 sudo apt-get autoremove -y
 sudo apt-get clean all
+
+printTitle "Installing OpenSSL and MariaDB"
+sudo ./scripts/install.sh
+
+printTitle "Loading environment variables"
+# Source the environment setup created by install.sh
+if [ -f /tmp/env_setup.sh ]; then
+  . /tmp/env_setup.sh
+  export PATH="$PATH"
+  export LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
+  export PKG_CONFIG_PATH="$PKG_CONFIG_PATH"
+  export OPENSSL_DIR="$OPENSSL_DIR"
+  export OPENSSL_INCLUDE_DIR="$OPENSSL_INCLUDE_DIR"
+  export OPENSSL_LIB_DIR="$OPENSSL_LIB_DIR"
+  export MARIADB_CONFIG="$MARIADB_CONFIG"
+fi
 
 printTitle "Mark source dir as save"
 git config --global --add safe.directory $(pwd)
