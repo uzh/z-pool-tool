@@ -28,12 +28,7 @@ install_openssl() {
   tar -xzf "openssl-${OPENSSL_VERSION}.tar.gz"
   cd "openssl-${OPENSSL_VERSION}"
 
-  # Configure based on architecture
-  if [ "$(uname -m)" = "aarch64" ]; then
-    ./config --prefix=/usr/local/openssl --openssldir=/usr/local/openssl
-  else
-    ./config --prefix=/usr/local/openssl --openssldir=/usr/local/openssl enable-fips
-  fi
+  ./config --prefix=/usr/local/openssl --openssldir=/usr/local/openssl
 
   # Build and install
   make -j"$(nproc)"
