@@ -59,8 +59,19 @@ jobs:
             # link opam version
             sudo ln -fs /usr/bin/opam-2.2 /usr/bin/opam
 
-            # Install openSSL dependencies
-            /app/scripts/install.sh || exit 1
+            # Install system dependencies needed for install.sh
+            sudo apt-get update -q
+            sudo apt-get install -yqq --no-install-recommends \
+              wget \
+              curl \
+              build-essential \
+              make \
+              perl \
+              cmake \
+              git
+
+            # Install OpenSSL and MariaDB dependencies
+            sudo /app/scripts/install.sh || exit 1
 
             # Build and test executable
             /app/scripts/build.sh || exit 1
