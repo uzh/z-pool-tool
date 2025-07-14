@@ -17,8 +17,6 @@ sudo apt-get install -yqq --no-install-recommends \
   gcc \
   libev-dev \
   libgmp-dev \
-  libmariadb-dev \
-  libssl-dev \
   pkg-config
 
 # cleanup installations
@@ -32,7 +30,7 @@ printTitle "Setup project"
 ./scripts/setup.sh
 
 printTitle "Install project dependencies"
-opam install --deps-only --with-test --update-invariant --locked -y .
+opam install --deps-only --with-test --update-invariant --locked --no-depexts -y .
 
 printTitle "Build project"
 opam exec -- dune build --root .
