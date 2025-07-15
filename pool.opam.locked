@@ -91,7 +91,7 @@ depends: [
   "kdf" {= "1.0.0"}
   "ke" {= "0.6"}
   "letters" {= "0.4.0"}
-  "logs" {= "0.8.0"}
+  "logs" {= "0.9.0"}
   "lru" {= "0.3.1"}
   "lwt" {= "5.9.1"}
   "lwt-dllist" {= "1.1.0"}
@@ -112,7 +112,7 @@ depends: [
   "mrmime" {= "0.7.0"}
   "mtime" {= "2.1.0"}
   "multipart-form-data" {= "0.3.0"}
-  "num" {= "1.5-1"}
+  "num" {= "1.6"}
   "ocaml" {= "5.2.1"}
   "ocaml-base-compiler" {= "5.2.1"}
   "ocaml-compiler-libs" {= "v0.17.0"}
@@ -161,7 +161,7 @@ depends: [
   "prettym" {= "0.0.3"}
   "psq" {= "0.2.1"}
   "ptime" {= "1.2.0"}
-  "re" {= "1.12.0"}
+  "re" {= "1.13.2"}
   "result" {= "1.5"}
   "rock" {= "0.20.0"}
   "rosetta" {= "0.3.0"}
