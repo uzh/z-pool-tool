@@ -1,9 +1,5 @@
 FROM registry.access.redhat.com/ubi8/ubi:8.10-1752567140
 
-LABEL org.opencontainers.image.source="https://github.com/uzh/z-pool-tool"
-LABEL org.opencontainers.image.title="OCaml Development Environment"
-LABEL org.opencontainers.image.description="OCaml 5.3.0 development environment with opam 2.3.0 installed, based on Red Hat Universal Base Image 8.10 (RHEL 8)."
-
 USER root
 
 # Set up environment

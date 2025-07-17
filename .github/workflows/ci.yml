@@ -56,6 +56,14 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:5.3-2.3
+          labels: |
+            org.opencontainers.image.title=OCaml Development Environment
+            org.opencontainers.image.description=OCaml 5.3.0 development environment with opam 2.3.0 installed, based on Red Hat Universal Base Image 8.10 (RHEL 8)
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.url=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=5.3-2.3
+            org.opencontainers.image.created=${{ steps.meta.outputs.created || github.event.head_commit.timestamp }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
