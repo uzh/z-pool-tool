@@ -43,7 +43,7 @@ let insert_request =
       UNHEX(REPLACE($1, '-', '')),
       $2,
       UNHEX(REPLACE($3, '-', '')),
-      UNHEX(REPLACE($4, '-', '')),
+      CASE WHEN $4 IS NOT NULL THEN UNHEX(REPLACE($4, '-', '')) ELSE NULL END,
       $5,
       $6
     )
