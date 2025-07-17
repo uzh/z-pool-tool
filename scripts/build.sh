@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # this script is used to build the project
-# it is setup to run in a ocaml/opam:debian-ocaml based Docker image
+# it is setup to run in a RHEL 8 or Debian-based Docker image
 
 # immediately when a command fails and print each command
 set -ex
@@ -11,39 +11,56 @@ printTitle() {
 }
 
 printTitle "Installing system dependencies"
-sudo apt-get update -q
-sudo apt-get install -yqq --no-install-recommends \
-  m4 \
-  gcc \
-  libev-dev \
-  libgmp-dev \
-  pkg-config \
-  wget \
-  curl \
-  build-essential \
-  make \
-  perl \
-  cmake \
-  git
-
-# cleanup installations
-sudo apt-get autoremove -y
-sudo apt-get clean all
-
-printTitle "Installing OpenSSL and MariaDB"
-sudo ./scripts/install.sh
-
-printTitle "Loading environment variables"
-# Source the environment setup created by install.sh
-if [ -f /tmp/env_setup.sh ]; then
-  . /tmp/env_setup.sh
-  export PATH="$PATH"
-  export LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
-  export PKG_CONFIG_PATH="$PKG_CONFIG_PATH"
-  export OPENSSL_DIR="$OPENSSL_DIR"
-  export OPENSSL_INCLUDE_DIR="$OPENSSL_INCLUDE_DIR"
-  export OPENSSL_LIB_DIR="$OPENSSL_LIB_DIR"
-  export MARIADB_CONFIG="$MARIADB_CONFIG"
+# Detect package manager and install dependencies
+if command -v dnf >/dev/null 2>&1; then
+  sudo dnf install -y \
+    m4 \
+    gcc \
+    gcc-c++ \
+    gmp-devel \
+    wget \
+    curl \
+    make \
+    cmake \
+    git \
+    openssl-devel \
+    mariadb-connector-c-devel
+elif command -v yum >/dev/null 2>&1; then
+  sudo yum install -y \
+    m4 \
+    gcc \
+    gcc-c++ \
+    libev-devel \
+    gmp-devel \
+    pkgconfig \
+    wget \
+    curl \
+    make \
+    cmake \
+    git \
+    openssl-devel \
+    mariadb-devel
+elif command -v apt-get >/dev/null 2>&1; then
+  sudo apt-get update -q
+  sudo apt-get install -yqq --no-install-recommends \
+    m4 \
+    gcc \
+    libev-dev \
+    libgmp-dev \
+    pkg-config \
+    wget \
+    curl \
+    build-essential \
+    make \
+    cmake \
+    git \
+    libssl-dev \
+    libmariadb-dev
+  sudo apt-get autoremove -y
+  sudo apt-get clean all
+else
+  echo "Error: No supported package manager found (dnf, yum, or apt-get)"
+  exit 1
 fi
 
 printTitle "Mark source dir as save"

@@ -6,10 +6,67 @@ on:
     tags: ["**"]
   workflow_dispatch:
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/ocaml
+
 jobs:
+  build-image:
+    name: Build CI container image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      should-build: ${{ steps.changes.outputs.docker }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for Docker changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            docker:
+              - 'docker/Dockerfile'
+              - 'scripts/opam-install.sh'
+
+      - name: Set up Docker Buildx
+        if: steps.changes.outputs.docker == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        if: steps.changes.outputs.docker == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        if: steps.changes.outputs.docker == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:5.3-2.3
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Output image
+        id: image
+        run: echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_OUTPUT
+
   build:
     name: Build and test
     runs-on: ubuntu-latest
+    needs: build-image
     env:
       EMAIL_RATE_LIMIT: 3600
       MATCHER_MAX_CAPACITY: 80
@@ -50,14 +107,11 @@ jobs:
           SMTP_SENDER: test@econ.uzh.ch
           TEST_EMAIL: test@econ.uzh.ch
         with:
-          image: ocaml/opam:debian-12-ocaml-5.2
-          options: -v ${{ github.workspace }}:/app -w /app -e DATABASE_URL -e DATABASE_URL_TENANT_ONE -e TEST_EMAIL -e SMTP_SENDER -e SIHL_ENV -e EMAIL_RATE_LIMIT -e MATCHER_MAX_CAPACITY
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:5.3-2.3
+          options: -v ${{ github.workspace }}:/app -w /app -e DATABASE_URL -e DATABASE_URL_TENANT_ONE -e TEST_EMAIL -e SMTP_SENDER -e SIHL_ENV -e EMAIL_RATE_LIMIT -e MATCHER_MAX_CAPACITY --user opam
           run: |
             # Reclaim required directory permissions
             sudo chown -R opam .
-
-            # link opam version
-            sudo ln -fs /usr/bin/opam-2.2 /usr/bin/opam
 
             # Build and test executable
             /app/scripts/build.sh || exit 1
