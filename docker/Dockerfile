@@ -6,6 +6,7 @@ LABEL org.opencontainers.image.source="https://github.com/uzh/z-pool-tool"
 LABEL org.opencontainers.image.url="https://github.com/uzh/z-pool-tool"
 LABEL org.opencontainers.image.documentation="https://github.com/uzh/z-pool-tool/blob/main/README.md"
 LABEL org.opencontainers.image.base.name="registry.access.redhat.com/ubi8/ubi:8.10-1752567140"
+LABEL org.opencontainers.image.base.licenses="GPL-2.0-or-later"
 
 USER root
 
