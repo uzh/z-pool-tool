@@ -1,13 +1,13 @@
 #!/bin/bash
 #
 # inotify-tools Installation Script
-# 
+#
 # This script installs inotify-tools (a file monitoring utility) by downloading
 # the source code from GitHub and compiling it. This approach ensures compatibility
 # with the target system and provides the latest features.
 #
 # Usage:
-#   ./inotify-install.sh [OPTIONS]
+#   ./watcher-install.sh [OPTIONS]
 #
 # Options:
 #   -f, --force       Force reinstallation even if inotify-tools is already installed
@@ -15,9 +15,9 @@
 #   -h, --help        Show this help message
 #
 # Examples:
-#   ./inotify-install.sh                      # Interactive installation
-#   ./inotify-install.sh --force              # Force reinstallation
-#   ./inotify-install.sh --version 4.23.9.0   # Install specific version
+#   ./watcher-install.sh                      # Interactive installation
+#   ./watcher-install.sh --force              # Force reinstallation
+#   ./watcher-install.sh --version 4.23.9.0   # Install specific version
 #
 # Requirements:
 #   - curl or wget (for downloading source)
@@ -44,7 +44,7 @@ show_help() {
 inotify-tools Installation Script
 
 USAGE:
-    ./inotify-install.sh [OPTIONS]
+    ./watcher-install.sh [OPTIONS]
 
 OPTIONS:
     -f, --force              Force reinstallation even if inotify-tools is already installed
@@ -52,10 +52,10 @@ OPTIONS:
     -h, --help              Show this help message
 
 EXAMPLES:
-    ./inotify-install.sh                      # Interactive installation
-    ./inotify-install.sh --force              # Force reinstallation  
-    ./inotify-install.sh --version 4.23.9.0   # Install specific version
-    ./inotify-install.sh -f -v 3.22.6.0       # Force install specific version
+    ./watcher-install.sh                      # Interactive installation
+    ./watcher-install.sh --force              # Force reinstallation
+    ./watcher-install.sh --version 4.23.9.0   # Install specific version
+    ./watcher-install.sh -f -v 3.22.6.0       # Force install specific version
 
 DESCRIPTION:
     This script installs inotify-tools by downloading the source code from GitHub
@@ -101,13 +101,13 @@ parse_arguments() {
 # Function to check system requirements
 check_system_requirements() {
   echo "Checking system requirements..."
-  
+
   # Check for required download tools
   if ! command -v curl >/dev/null 2>&1 && ! command -v wget >/dev/null 2>&1; then
     echo "Error: Neither curl nor wget found. Please install one of them." >&2
     exit 1
   fi
-  
+
   echo "✓ System requirements check passed."
 }
 
@@ -117,7 +117,7 @@ check_existing_installation() {
     local current_version
     current_version=$(inotifywait --version 2>&1 | head -n1 | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+' || echo "unknown")
     echo "Found existing inotify-tools version: $current_version"
-    
+
     # Check if force install is requested
     if [[ "$FORCE_INSTALL" == "true" ]]; then
       echo "Force installation requested, proceeding with reinstallation..."
@@ -134,7 +134,7 @@ check_existing_installation() {
 execute_with_privileges() {
   local cmd="$1"
   shift
-  
+
   if [[ "$(id -u)" -eq 0 ]]; then
     "$cmd" "$@"
   else
@@ -146,7 +146,7 @@ execute_with_privileges() {
 execute_or_exit() {
   local description="$1"
   shift
-  
+
   echo "$description..."
   "$@" || {
     echo "Error: $description failed" >&2
@@ -157,7 +157,7 @@ execute_or_exit() {
 # Function to get the latest version from GitHub API
 get_latest_version() {
   local api_url="https://api.github.com/repos/$GITHUB_REPO/releases/latest"
-  
+
   if command -v curl >/dev/null 2>&1; then
     curl -s "$api_url" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' 2>/dev/null || echo ""
   elif command -v wget >/dev/null 2>&1; then
@@ -170,7 +170,7 @@ get_latest_version() {
 # Function to download and build inotify-tools
 install_inotify_tools() {
   echo "Installing inotify-tools from source..."
-  
+
   # Determine which version to install
   local version_to_install=""
   if [[ -n "$SPECIFIC_VERSION" ]]; then
@@ -186,16 +186,16 @@ install_inotify_tools() {
       echo "Installing latest inotify-tools version $version_to_install..."
     fi
   fi
-  
+
   # Clean up any existing build directory
   rm -rf "$BUILD_DIR"
   mkdir -p "$BUILD_DIR"
   cd "$BUILD_DIR"
-  
+
   # Download source code
   local download_url="https://github.com/$GITHUB_REPO/archive/refs/tags/$version_to_install.tar.gz"
   local filename="inotify-tools-$version_to_install.tar.gz"
-  
+
   if command -v curl >/dev/null 2>&1; then
     execute_or_exit "Downloading source code" curl -L -o "$filename" "$download_url"
   elif command -v wget >/dev/null 2>&1; then
@@ -204,16 +204,16 @@ install_inotify_tools() {
     echo "Error: Neither curl nor wget found" >&2
     exit 1
   fi
-  
+
   # Verify download
   if [[ ! -f "$filename" ]] || [[ $(stat -c%s "$filename" 2>/dev/null || echo 0) -lt 1000 ]]; then
     echo "Error: Download failed or file is too small" >&2
     exit 1
   fi
-  
+
   # Extract source code
   execute_or_exit "Extracting source code" tar -xzf "$filename"
-  
+
   # Find the extracted directory (handle different naming patterns)
   local src_dir=""
   for dir in "inotify-tools-$version_to_install" "inotify-tools-${version_to_install#v}"; do
@@ -222,35 +222,35 @@ install_inotify_tools() {
       break
     fi
   done
-  
+
   if [[ -z "$src_dir" ]]; then
     echo "Error: Could not find extracted source directory" >&2
     ls -la
     exit 1
   fi
-  
+
   cd "$src_dir"
-  
+
   # Build and install
   if [[ -f "autogen.sh" ]]; then
     execute_or_exit "Running autogen.sh" ./autogen.sh
   elif [[ ! -f "configure" ]]; then
     execute_or_exit "Running autoreconf to generate configure script" autoreconf -fiv
   fi
-  
+
   execute_or_exit "Running configure" ./configure --prefix="$PREFIX"
-  
+
   local num_cores
   num_cores=$(nproc 2>/dev/null || echo 2)
   execute_or_exit "Building inotify-tools" make -j"$num_cores"
-  
+
   execute_or_exit "Installing inotify-tools" execute_with_privileges make install
-  
+
   # Update library cache
   if command -v ldconfig >/dev/null 2>&1; then
     execute_with_privileges ldconfig 2>/dev/null || true
   fi
-  
+
   echo "✓ inotify-tools installed successfully."
 }
 
@@ -277,25 +277,25 @@ install_inotify_tools
 # Function to verify installation
 verify_installation() {
   echo "Verifying installation..."
-  
+
   # Check if tools are available
   if ! command -v inotifywait >/dev/null 2>&1; then
     echo "❌ Error: inotifywait not found in PATH" >&2
     return 1
   fi
-  
+
   if ! command -v inotifywatch >/dev/null 2>&1; then
     echo "❌ Error: inotifywatch not found in PATH" >&2
     return 1
   fi
-  
+
   local version
   version=$(inotifywait --version 2>&1 | head -n1 || echo "unknown")
-  
+
   echo "✅ inotify-tools installed successfully!"
   echo "Version: $version"
   echo "Location: $(command -v inotifywait)"
-  
+
   return 0
 }
 
