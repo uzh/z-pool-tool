@@ -1,4 +1,6 @@
 SHELL = zsh
+EXCLUDE_PATTERN = (_build|public|logs|Makefile|\.vscode|\.devcontainer|\.git|\.DS_Store|node_modules|resources|.*\.ctf)
+PORT = 3000
 
 .PHONY: dev
 .SILENT:
@@ -6,7 +8,7 @@ SHELL = zsh
 dev:: ## Run the Sihl app, watch files and restart on change
 	sigint_handler()
 	{
-	kill -9 $$(lsof -ti tcp:3000) 2>/dev/null || true
+	kill -9 $$(lsof -ti tcp:$(PORT)) 2>/dev/null || true
 	exit
 	}
 	trap sigint_handler SIGINT
@@ -18,8 +20,8 @@ dev:: ## Run the Sihl app, watch files and restart on change
 		SIHL_ENV=development ./_build/default/pool/run/run.exe server &
 	fi
 	echo
-	inotifywait -e modify -e move -e create -e delete -e attrib -r `pwd` --exclude "(_build|public|logs|Makefile|\.vscode|\.devcontainer|\.git|\.DS_Store|node_modules|resources|.*\.ctf)" -qq
-	PID=$$(lsof -ti tcp:3000)
+	inotifywait -e modify -e move -e create -e delete -e attrib -r `pwd` --exclude "$(EXCLUDE_PATTERN)" -qq
+	PID=$$(lsof -ti tcp:$(PORT))
 	if [ -n "$$PID" ]; then
 		kill -0 $$PID 2>/dev/null && kill -9 $$PID || true
 	fi

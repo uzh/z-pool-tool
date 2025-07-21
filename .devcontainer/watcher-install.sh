@@ -32,6 +32,7 @@ GITHUB_REPO="inotify-tools/inotify-tools"
 DEFAULT_FALLBACK_VERSION="4.23.9.0"
 BUILD_DIR="/tmp/inotify-tools-build"
 PREFIX="/usr/local"
+MINIMUM_FILE_SIZE_BYTES=1000
 
 # Script arguments
 FORCE_INSTALL=false
@@ -206,7 +207,7 @@ install_inotify_tools() {
   fi
 
   # Verify download
-  if [[ ! -f "$filename" ]] || [[ $(stat -c%s "$filename" 2>/dev/null || echo 0) -lt 1000 ]]; then
+  if [[ ! -f "$filename" ]] || [[ $(stat -c%s "$filename" 2>/dev/null || echo 0) -lt $MINIMUM_FILE_SIZE_BYTES ]]; then
     echo "Error: Download failed or file is too small" >&2
     exit 1
   fi
