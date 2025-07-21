@@ -50,7 +50,7 @@ USAGE:
 OPTIONS:
     -f, --force              Force reinstallation even if inotify-tools is already installed
     -v, --version VERSION    Install a specific version (default: latest)
-    -h, --help              Show this help message
+    -h, --help               Show this help message
 
 EXAMPLES:
     ./watcher-install.sh                      # Interactive installation

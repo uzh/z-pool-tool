@@ -9,7 +9,7 @@ sudo chown -R opam: node_modules
 opam init -a --shell=zsh
 
 # Check for git line ending issues and provide troubleshooting information
-if [ ! -z "$(git status --porcelain)" ]; then
+if [ -n "$(git status --porcelain)" ]; then
   echo "⚠️  Git detected file changes (likely line ending issues)"
   echo ""
   echo "TROUBLESHOOTING: Line ending issues"
