@@ -112,11 +112,15 @@ check_system_requirements() {
   echo "✓ System requirements check passed."
 }
 
+get_current_version() {
+  inotifywait --version 2>&1 | grep -oE '([0-9]+\.){2,3}[0-9]+' || echo "unknown"
+}
+
 # Function to check if inotify-tools is already installed
 check_existing_installation() {
   if command -v inotifywait >/dev/null 2>&1; then
     local current_version
-    current_version=$(inotifywait --version 2>&1 | head -n1 | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+' || echo "unknown")
+    current_version=$(get_current_version)
     echo "Found existing inotify-tools version: $current_version"
 
     # Check if force install is requested
@@ -291,7 +295,7 @@ verify_installation() {
   fi
 
   local version
-  version=$(inotifywait --version 2>&1 | head -n1 || echo "unknown")
+  version=$(get_current_version)
 
   echo "✅ inotify-tools installed successfully!"
   echo "Version: $version"

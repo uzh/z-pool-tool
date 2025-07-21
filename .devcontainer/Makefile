@@ -21,9 +21,7 @@ dev:: ## Run the Sihl app, watch files and restart on change
 	trap sigint_handler SIGINT
 	yarn build --log-level warn
 	while true; do
-	dune build
-	if [ $$? -eq 0 ]
-	then
+	if dune build; then
 		SIHL_ENV=development ./_build/default/pool/run/run.exe server &
 	fi
 	echo
