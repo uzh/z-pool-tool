@@ -3,10 +3,6 @@
 # immediately when a command fails and print each command
 set -ex
 
-# get newest opam packages
-opam remote remove --all default
-opam remote add default https://opam.ocaml.org
-
 repo_oxi=https://github.com/oxidizing
 repo_uzh=https://github.com/uzh
 repo_sihl=$repo_uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8

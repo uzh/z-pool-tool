@@ -26,10 +26,11 @@ settings "General" tab uncheck "Allow Sourcetree to modify your global Mercurial
 
 ## Start
 
-If needed, edit `.devcontainer/docker-compose.override.yml` to suit your needs.
-
-Click on the icon similar to "><" in the bottom left corner and select `Remote-Containers: Reopen in Container`.
-If any changes were made to files in `.devcontainer` folder the Container should be rebuilt (`Remote-Containers: Rebuild Container`)
+1. If needed, edit `.devcontainer/docker-compose.override.yml` to suit your needs.
+1. If not logged in to GitHub's container registry, the base image can be buildt with the following command: `docker build -f ./docker/Dockerfile -t ghcr.io/uzh/z-pool-tool/ocaml:5.3-2.3 .`
+1. Mark devcontainer workspace as safe: `git config --global --add safe.directory /workspace`
+1. Click on the icon similar to "><" in the bottom left corner and select `Remote-Containers: Reopen in Container`.
+    - If any changes were made to files in `.devcontainer` folder the Container should be rebuilt (`Remote-Containers: Rebuild Container`)
 
 > **NOTE**: When the setup is fully installed, select `View` -> `Command Palette...` and run the command `OCaml: Restart Language Server`
 

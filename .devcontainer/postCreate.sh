@@ -8,8 +8,6 @@ sudo chown -R opam: node_modules
 
 opam init -a --shell=zsh
 
-git config --global --add safe.directory /workspace
-
 # Check for git line ending issues and provide troubleshooting information
 if [ ! -z "$(git status --porcelain)" ]; then
   echo "⚠️  Git detected file changes (likely line ending issues)"
@@ -37,10 +35,6 @@ fi
 
 opam install ocaml-lsp-server
 opam install --working-dir --with-test --with-doc --deps-only --update-invariant -y .
-
-# install opam packages used for vscode ocaml platform package
-# e.g. when developing with emax, add also: utop merlin ocamlformat
-make deps
 
 # install yarn packages
 yarn
