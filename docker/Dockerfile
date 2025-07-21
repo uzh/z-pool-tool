@@ -17,6 +17,8 @@ ENV OCAML_VERSION=5.3.0
 # Enable RHEL repositories and install packages
 # hadolint ignore=DL3041,DL3033
 RUN dnf update -y && dnf install -y \
+  autoconf \ 
+  automake \ 
   bzip2 \
   curl \
   diffutils \
@@ -24,7 +26,10 @@ RUN dnf update -y && dnf install -y \
   gcc-c++ \
   git \
   gmp-devel \
+  libtool \ 
+  lsof \
   m4 \
+  make \
   make \
   mariadb-connector-c-devel \
   openssl \

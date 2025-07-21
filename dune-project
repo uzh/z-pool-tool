@@ -73,6 +73,10 @@
    (= v0.17.0))
   (tyxml-ppx
    (>= 4.6.0))
+  (yojson
+   (and
+    (>= 2.1.0)
+    (< 3.0.0)))
   digestif
   canary
   (guardian

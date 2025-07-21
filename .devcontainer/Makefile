@@ -1,4 +1,4 @@
-SHELL = bash
+SHELL = zsh
 
 .PHONY: dev
 .SILENT:
@@ -11,22 +11,18 @@ dev:: ## Run the Sihl app, watch files and restart on change
 	}
 	trap sigint_handler SIGINT
 	yarn build --log-level warn
+	while true; do
 	dune build
-	watchexec \
-		--restart \
-		--ignore "_build/**" \
-		--ignore "public/**" \
-		--ignore "logs/**" \
-		--ignore "Makefile" \
-		--ignore ".vscode/**" \
-		--ignore ".devcontainer/**" \
-		--ignore ".git/**" \
-		--ignore ".DS_Store" \
-		--ignore "node_modules/**" \
-		--ignore "resources/**" \
-		--ignore "*.ctf" \
-		--shell=bash \
-		--exts ml,mli,re,rei,js,ts,tsx,jsx,json,yaml,yml,toml \
-		-- 'dune build && SIHL_ENV=development ./_build/default/pool/run/run.exe server'
+	if [ $$? -eq 0 ]
+	then
+		SIHL_ENV=development ./_build/default/pool/run/run.exe server &
+	fi
+	echo
+	inotifywait -e modify -e move -e create -e delete -e attrib -r `pwd` --exclude "(_build|public|logs|Makefile|\.vscode|\.devcontainer|\.git|\.DS_Store|node_modules|resources|.*\.ctf)" -qq
+	kill -9 $$(lsof -ti tcp:3000)
+	echo
+	done
 
-include ./Makefile
+# Forward all other targets to parent directory's Makefile
+%:
+	@cd /workspace && $(MAKE) $@
