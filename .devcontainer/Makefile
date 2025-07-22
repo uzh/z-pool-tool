@@ -2,6 +2,10 @@ SHELL = zsh
 EXCLUDE_PATTERN = (_build|public|logs|Makefile|\.vscode|\.devcontainer|\.git|\.DS_Store|node_modules|resources|.*\.ctf)
 PORT = 3000
 
+ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+ARGS := $(subst :,\:,$(ARGS))
+$(eval $(ARGS):;@:)
+
 .PHONY: dev
 .SILENT:
 .ONESHELL:
@@ -29,6 +33,10 @@ dev:: ## Run the Sihl app, watch files and restart on change
 	kill_process_on_port $(PORT)
 	echo
 	done
+
+.PHONY: sihl
+sihl:
+	@cd /workspace && $(MAKE) sihl $(ARGS)
 
 # Forward all other targets to parent directory's Makefile
 %:
