@@ -6,20 +6,24 @@
 # the source code from GitHub and compiling it. This approach ensures compatibility
 # with the target system and provides the latest features.
 #
-# Usage:
-#   ./watcher-install.sh [OPTIONS]
+# The inotify-tools package provides utilities like inotifywait and inotifywatch
+# for monitoring filesystem events using Linux's inotify interface.
 #
-# Options:
-#   -f, --force       Force reinstallation even if inotify-tools is already installed
-#   -v, --version VER Install a specific version (default: latest)
-#   -h, --help        Show this help message
+# USAGE:
+#     ./watcher-install.sh [OPTIONS]
 #
-# Examples:
-#   ./watcher-install.sh                      # Interactive installation
-#   ./watcher-install.sh --force              # Force reinstallation
-#   ./watcher-install.sh --version 4.23.9.0   # Install specific version
+# OPTIONS:
+#     -f, --force              Force reinstallation even if inotify-tools is already installed
+#     -v, --version VERSION    Install a specific version (default: latest)
+#     -h, --help               Show this help message
 #
-# Requirements:
+# EXAMPLES:
+#     ./watcher-install.sh                      # Interactive installation
+#     ./watcher-install.sh --force              # Force reinstallation
+#     ./watcher-install.sh --version 4.23.9.0   # Install specific version
+#     ./watcher-install.sh -f -v 3.22.6.0       # Force install specific version
+#
+# REQUIREMENTS:
 #   - curl or wget (for downloading source)
 #   - Internet connection
 #   - Build tools (gcc, make, autotools)
@@ -41,32 +45,8 @@ SHOW_HELP=false
 
 # Function to show help
 show_help() {
-  cat << 'EOF'
-inotify-tools Installation Script
-
-USAGE:
-    ./watcher-install.sh [OPTIONS]
-
-OPTIONS:
-    -f, --force              Force reinstallation even if inotify-tools is already installed
-    -v, --version VERSION    Install a specific version (default: latest)
-    -h, --help               Show this help message
-
-EXAMPLES:
-    ./watcher-install.sh                      # Interactive installation
-    ./watcher-install.sh --force              # Force reinstallation
-    ./watcher-install.sh --version 4.23.9.0   # Install specific version
-    ./watcher-install.sh -f -v 3.22.6.0       # Force install specific version
-
-DESCRIPTION:
-    This script installs inotify-tools by downloading the source code from GitHub
-    and compiling it. This approach ensures compatibility with the target system
-    and provides access to the latest features and bug fixes.
-
-    The inotify-tools package provides utilities like inotifywait and inotifywatch
-    for monitoring filesystem events using Linux's inotify interface.
-
-EOF
+  # Extract and display the header comment as help
+  sed -n '2,/^$/p' "$0" | sed 's/^# \?//' | sed '/^$/q'
 }
 
 # Parse command line arguments

@@ -25,7 +25,7 @@ dev:: ## Run the Sihl app, watch files and restart on change
 		SIHL_ENV=development ./_build/default/pool/run/run.exe server &
 	fi
 	echo
-	inotifywait -e modify -e move -e create -e delete -e attrib -r `pwd` --exclude "$(EXCLUDE_PATTERN)" -qq
+	inotifywait -e modify -e move -e create -e delete -e attrib -r $(pwd) --exclude "$(EXCLUDE_PATTERN)" -qq
 	kill_process_on_port $(PORT)
 	echo
 	done
