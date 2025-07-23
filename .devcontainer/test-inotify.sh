@@ -2,7 +2,7 @@
 # Shared function to test inotify support on the workspace filesystem
 
 test_inotify_support() {
-    local test_file="/workspace/pool/test_inotify_$$"
+    local test_file="/workspace/pool/test_inotify_$$$(date +%s%N)"
     echo "test" > "$test_file"
     timeout 2 inotifywait -e modify "$test_file" --timeout 1 >/dev/null 2>&1 &
     local inotify_pid=$!

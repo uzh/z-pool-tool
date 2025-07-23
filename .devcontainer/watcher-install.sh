@@ -191,7 +191,7 @@ install_inotify_tools() {
   fi
 
   # Verify download
-  if [[ ! -f "$filename" ]] || [[ $(stat -c%s "$filename" 2>/dev/null || echo 0) -lt $MINIMUM_FILE_SIZE_BYTES ]]; then
+  if [[ ! -f "$filename" ]] || [[ $(wc -c < "$filename" 2>/dev/null || echo 0) -lt $MINIMUM_FILE_SIZE_BYTES ]]; then
     echo "Error: Download failed or file is too small" >&2
     exit 1
   fi

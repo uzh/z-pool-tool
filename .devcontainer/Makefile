@@ -42,11 +42,12 @@ dev:: ## Run the Sihl app, watch files and restart on change
 			echo "Watching for file changes (polling every 2s)..."
 			while true; do
 				sleep 2
-				LAST_CHANGE=$$(find /workspace/pool -name "*.ml" -o -name "*.mli" -o -name "dune*" -o -name "*.js" -o -name "*.scss" | xargs ls -t 2>/dev/null | head -1 | xargs stat -c %Y 2>/dev/null)
+				RESULT=$$(find /workspace \( -name "*.ml" -o -name "*.mli" -o -name "dune*" -o -name "*.js" -o -name "*.scss" \) -printf "%T@ %p\n" 2>/dev/null | sort -n | tail -1)
+				LAST_CHANGE=$$(echo "$$RESULT" | awk '{print int($$1)}')
+				LAST_FILE=$$(echo "$$RESULT" | awk '{print $$2}')
 				LAST_BUILD=$$(stat -c %Y /tmp/last_build_time 2>/dev/null || echo 0)
 				if [ "$$LAST_CHANGE" -gt "$$LAST_BUILD" ]; then
-					CHANGED_FILE=$$(find /workspace/pool -name "*.ml" -o -name "*.mli" -o -name "dune*" -o -name "*.js" -o -name "*.scss" | xargs ls -t 2>/dev/null | head -1)
-					echo "File change detected: $$CHANGED_FILE"
+					echo "File change detected: $$LAST_FILE"
 					touch /tmp/last_build_time
 					break
 				fi
@@ -68,7 +69,7 @@ sihl:
 .PHONY: test-filesystem
 test-filesystem:
 	@echo "Testing inotify support on current filesystem..."
-	@if ./test-inotify.sh; then \
+	@if /workspace/.devcontainer/test-inotify.sh; then \
 		echo "✓ inotify IS supported"; \
 	else \
 		echo "⚠ inotify NOT supported (likely 9p/Windows filesystem)"; \
