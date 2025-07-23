@@ -37,7 +37,7 @@ dev:: ## Run the Sihl app, watch files and restart on change
 		fi
 		if [ "$$USE_INOTIFY" = "true" ]; then
 			echo "Watching for file changes (inotify)..."
-			inotifywait -e modify -e move -e create -e delete -e attrib -r .. --exclude "$(EXCLUDE_PATTERN)" -qq
+			inotifywait -e modify -e move -e create -e delete -e attrib -r /workspace --exclude "$(EXCLUDE_PATTERN)" -qq
 		else
 			echo "Watching for file changes (polling every 2s)..."
 			while true; do
@@ -58,14 +58,12 @@ dev:: ## Run the Sihl app, watch files and restart on change
 		echo
 	done
 
+# explicitly forward sihl commands (issue on Docker for Windows)
 .PHONY: sihl
 sihl:
 	@cd /workspace && $(MAKE) sihl $(ARGS)
 
-# Forward all other targets to parent directory's Makefile
-%:
-	@cd /workspace && $(MAKE) $@
-
+# Used for checking inotify on Docker for Windows mounted volumes
 .PHONY: test-filesystem
 test-filesystem:
 	@echo "Testing inotify support on current filesystem..."
@@ -74,3 +72,7 @@ test-filesystem:
 	else \
 		echo "⚠ inotify NOT supported (likely 9p/Windows filesystem)"; \
 	fi
+
+# Forward all other targets to parent directory's Makefile
+%:
+	@cd /workspace && $(MAKE) $@
