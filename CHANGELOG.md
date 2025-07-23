@@ -4,6 +4,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.12.2](https://github.com/uzh/z-pool-tool/tree/0.12.2) - 2025-07-21
+
+### Added
+
+- Periodic reset of expired authentication codes
+
+### Fixed
+
+- Removal of authentication codes when merging duplicate contacts
+
 ## [0.12.1](https://github.com/uzh/z-pool-tool/tree/0.12.1) - 2025-07-01
 
 ### Added
