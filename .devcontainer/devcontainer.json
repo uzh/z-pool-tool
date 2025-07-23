@@ -28,6 +28,7 @@
         },
         "terminal.integrated.defaultProfile.linux": "zsh",
         "editor.formatOnSave": true,
+        "files.insertFinalNewline": true,
         "files.associations": {
           "*.ml": "ocaml",
           "*.mli": "ocaml"

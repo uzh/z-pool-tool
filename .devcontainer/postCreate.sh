@@ -8,25 +8,10 @@ sudo chown -R opam: node_modules
 
 opam init -a --shell=zsh
 
-# Check for git line ending issues and provide troubleshooting information
+# Check for git line ending issues and provide information
 if [ -n "$(git status --porcelain)" ]; then
-  echo "⚠️  Git detected file changes (likely line ending issues)"
-  echo ""
-  echo "TROUBLESHOOTING: Line ending issues"
-  echo "==================================="
-  echo ""
-  echo "If you're experiencing line ending issues, you can configure git manually:"
-  echo "  git config core.autocrlf false    # Disable automatic line ending conversion"
-  echo "  git config core.eol lf            # Use LF (Unix) line endings"
-  echo "  git config core.filemode false    # Ignore file mode changes"
-  echo ""
-  echo "To fix existing line ending issues:"
-  echo "  git add --renormalize .           # Renormalize all files"
-  echo ""
-  echo "If you want to reset all changes (WARNING: will lose uncommitted changes):"
-  echo "  git rm --cached -r ."
-  echo "  git reset --hard"
-  echo ""
+  echo "⚠️  Git detected file changes"
+  echo "    (likely line ending issue, see .devcontainer/README.md#error-with-line-endings)"
 else
   echo "✓ No git file changes detected"
 fi

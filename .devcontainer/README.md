@@ -79,3 +79,42 @@ This issue isn't related to ocaml-lsp-server it's depending on the underliing fo
 - Delete all currently existing Container/Images/Volumes related to the pool tool
 - Open the newly cloned project in VSCode
 - Use "Reopen in Container"
+
+### Error on devcontainer Configuration during startup
+
+It's most likely a git related issue.
+
+#### Solution
+
+- Open a new Terminal within the container
+- check output of `git status`
+- run `git config --global --add safe.directory /workspace`
+- run `./.devcontainer/postCreate.sh`
+
+[test](#error-with-line-endings)
+
+### Error with line endings
+
+**NOTE:** Most likely with Docker on Windows
+
+Git detected file changes (likely line ending issues).
+If you're experiencing line ending issues, you can configure git manually:
+
+```zsh
+git config core.autocrlf false    # Disable automatic line ending conversion"
+git config core.eol lf            # Use LF (Unix) line endings"
+git config core.filemode false    # Ignore file mode changes"
+```
+
+To fix existing line ending issues (renormalize all files)
+
+```zsh
+git add --renormalize .
+```
+
+If you want to reset all changes (**WARNING: will lose uncommitted changes**)
+
+```zsh
+git rm --cached -r .
+git reset --hard"
+```
