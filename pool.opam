@@ -33,6 +33,7 @@ depends: [
   "ppx_yojson_conv" {= "v0.17.0"}
   "ppx_variants_conv" {= "v0.17.0"}
   "tyxml-ppx" {>= "4.6.0"}
+  "yojson" {>= "2.1.0" & < "3.0.0"}
   "digestif"
   "canary"
   "guardian" {= "0.3.2"}

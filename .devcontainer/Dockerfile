@@ -20,9 +20,9 @@ COPY --from=hadolint/hadolint:latest-alpine /bin/hadolint /bin/hadolint
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Install Watchexec - file watcher for development
-COPY ./watchexec-install.sh /tmp/watchexec-install.sh
-RUN /tmp/watchexec-install.sh && rm /tmp/watchexec-install.sh
+# Install file watcher
+COPY ./watcher-install.sh /tmp/watcher-install.sh
+RUN /tmp/watcher-install.sh && rm /tmp/watcher-install.sh
 
 USER opam
 

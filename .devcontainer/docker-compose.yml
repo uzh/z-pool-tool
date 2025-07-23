@@ -11,10 +11,6 @@ services:
       - node_modules:/workspace/node_modules:cached
       - opam:/home/opam/.opam:cached
       - build:/workspace/_build:cached
-      - ${HOME}${USERPROFILE}/.ssh:/home/opam/.ssh
-      - ${HOME}${USERPROFILE}/.gitconfig:/home/opam/.gitconfig
-      - ${HOME}${USERPROFILE}/.gitignore_global:/home/opam/.gitignore_global
-      - /var/run/docker.sock:/var/run/docker.sock
       # Add database folders to dev container
       - db-root:/databases/db-root/:ro
       - db-tenant:/databases/db-tenant/:ro

@@ -26,10 +26,11 @@ settings "General" tab uncheck "Allow Sourcetree to modify your global Mercurial
 
 ## Start
 
-If needed, edit `.devcontainer/docker-compose.override.yml` to suit your needs.
-
-Click on the icon similar to "><" in the bottom left corner and select `Remote-Containers: Reopen in Container`.
-If any changes were made to files in `.devcontainer` folder the Container should be rebuilt (`Remote-Containers: Rebuild Container`)
+1. If needed, edit `.devcontainer/docker-compose.override.yml` to suit your needs.
+1. If not logged in to GitHub's container registry, the base image can be buildt with the following command: `docker build -f ./docker/Dockerfile -t ghcr.io/uzh/z-pool-tool/ocaml:5.3-2.3 .`
+1. Mark devcontainer workspace as safe: `git config --global --add safe.directory /workspace`
+1. Click on the icon similar to "><" in the bottom left corner and select `Remote-Containers: Reopen in Container`.
+    - If any changes were made to files in `.devcontainer` folder the Container should be rebuilt (`Remote-Containers: Rebuild Container`)
 
 > **NOTE**: When the setup is fully installed, select `View` -> `Command Palette...` and run the command `OCaml: Restart Language Server`
 
@@ -78,3 +79,42 @@ This issue isn't related to ocaml-lsp-server it's depending on the underliing fo
 - Delete all currently existing Container/Images/Volumes related to the pool tool
 - Open the newly cloned project in VSCode
 - Use "Reopen in Container"
+
+### Error on devcontainer Configuration during startup
+
+It's most likely a git related issue.
+
+#### Solution
+
+- Open a new Terminal within the container
+- check output of `git status`
+- run `git config --global --add safe.directory /workspace`
+- run `./.devcontainer/postCreate.sh`
+
+[test](#error-with-line-endings)
+
+### Error with line endings
+
+**NOTE:** Most likely with Docker on Windows
+
+Git detected file changes (likely line ending issues).
+If you're experiencing line ending issues, you can configure git manually:
+
+```zsh
+git config core.autocrlf false    # Disable automatic line ending conversion"
+git config core.eol lf            # Use LF (Unix) line endings"
+git config core.filemode false    # Ignore file mode changes"
+```
+
+To fix existing line ending issues (renormalize all files)
+
+```zsh
+git add --renormalize .
+```
+
+If you want to reset all changes (**WARNING: will lose uncommitted changes**)
+
+```zsh
+git rm --cached -r .
+git reset --hard"
+```
