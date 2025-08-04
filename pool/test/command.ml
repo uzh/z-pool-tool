@@ -491,5 +491,20 @@ let () =
       , [ test_case "update page scripts" `Quick Tenant_settings_test.update_page_scripts
         ] )
     ; ("time window", Time_window_test.[ test_case "create" `Slow create_timewindow ])
+    ; ( "security middleware"
+      , [ test_case
+            "SQL injection detection"
+            `Quick
+            Test_middleware_security.test_sql_injection_detection
+        ; test_case
+            "URL manipulation detection"
+            `Quick
+            Test_middleware_security.test_url_manipulation_detection
+        ; test_case
+            "Legitimate requests"
+            `Quick
+            Test_middleware_security.test_legitimate_requests
+        ; test_case "XSS detection" `Quick Test_middleware_security.test_xss_detection
+        ] )
     ]
 ;;
