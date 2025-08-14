@@ -1,7 +1,7 @@
 open Pool_message
 
 let default_language = Pool_common.Language.En
-let map_error = Utils.Lwt_result.map_error
+let map_error = Lwt_result.map_error
 
 type url_encoded = (string * string list) list
 

@@ -213,7 +213,11 @@ let work_queue (job : AnyJob.t) (database_label : Database.Label.t) =
     let%lwt instances =
       Repo.poll_n_workable database_label config.batch_size job.AnyJob.name
     in
-    let () = Lwt.async (fun () -> Lwt_list.iter_s (work_job job) instances) in
+    let () =
+      Lwt.dont_wait
+        (fun () -> Lwt_list.iter_s (work_job job) instances)
+        (Logger.log_exception ~prefix:msg_prefix ~src:log_src ~tags)
+    in
     Lwt.return_unit
 ;;
 

@@ -164,7 +164,11 @@ let run ({ database_label; label; scheduled_time; status; _ } as schedule : t) =
 
 let start_schedule ?tags ({ label; _ } as schedule : t) =
   Logs.info ~src (fun m -> m ?tags "Start %s" label);
-  Lwt.ignore_result @@ run schedule;
+  Lwt.dont_wait
+    (fun () -> run schedule)
+    (fun exn ->
+       let prefix = Format.asprintf "Running schedule '%s'" label in
+       Logger.log_exception ~prefix ~src exn);
   Lwt.return_unit
 ;;
 

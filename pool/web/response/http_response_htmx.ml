@@ -87,6 +87,7 @@ let index_handler
   -> Rock.Response.t Lwt.t
   =
   fun ?active_navigation ~query:(module Q) ~create_layout req run ->
+  let tags = Pool_context.Logger.Tags.req req in
   let result context =
     let query =
       Query.from_request
@@ -96,22 +97,27 @@ let index_handler
         ~default:Q.default_query
         req
     in
-    let%lwt page =
-      run context query
-      ||> CCResult.get_lazy (fun error ->
-        inline_error context.Pool_context.language error)
-    in
-    match Http_utils.Htmx.is_hx_request req with
-    | true -> of_html page |> Lwt_result.return
-    | false ->
+    let%lwt res = run context query in
+    match res, Http_utils.Htmx.is_hx_request req with
+    | Ok page, true -> of_html page |> Lwt_result.return
+    | Ok page, false ->
       create_layout ?active_navigation req context page >|+ Sihl.Web.Response.of_html
+    | Error err, is_hx ->
+      (* Log the original error before rendering a fallback page *)
+      let err = Pool_common.Utils.with_log_error ~src ~tags err in
+      let page = inline_error context.Pool_context.language err in
+      if is_hx
+      then of_html page |> Lwt_result.return
+      else create_layout ?active_navigation req context page >|+ Sihl.Web.Response.of_html
   in
-  let tags = Pool_context.Logger.Tags.req req in
   Pool_context.find req
   |> Lwt_result.lift
   >>= result
+  (* Log any remaining errors (e.g., layout creation) and map to a 500 page *)
   ||> Pool_common.Utils.with_log_result_error ~src ~tags CCFun.id
-  ||> CCResult.get_lazy inline_internal_server_error
+  ||> function
+  | Ok resp -> resp
+  | Error err -> inline_internal_server_error err
 ;;
 
 (** By default, htmx only handles 200 status codes
@@ -124,14 +130,14 @@ let handle ?(src = src) ?(error_as_notification = false) req result =
   let log_error = Pool_common.Utils.with_log_error ~src ~tags in
   match context with
   | Ok ({ Pool_context.language; _ } as context) ->
-    result context
-    ||> CCResult.get_lazy (fun error ->
-      let error = log_error error in
-      let html =
-        if error_as_notification
-        then error_notification language error
-        else inline_error language error
-      in
-      of_html html)
+    (match%lwt result context with
+     | Ok resp -> Lwt.return resp
+     | Error error ->
+       let error = log_error error in
+       of_html
+         (if error_as_notification
+          then error_notification language error
+          else inline_error language error)
+       |> Lwt.return)
   | Error error -> log_error error |> inline_internal_server_error |> Lwt.return
 ;;

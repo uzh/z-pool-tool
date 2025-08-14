@@ -149,7 +149,7 @@ let create_logs_dir () =
   if not (Sys.file_exists (logs_dir ())) then Sys.mkdir (logs_dir ()) 0o755
 ;;
 
-let log_exception ?prefix ~src ~tags =
+let log_exception ?prefix ~src ?(tags = Logs.Tag.empty) =
   let backtrace = Printexc.get_backtrace () in
   let prefix = CCOption.map_or ~default:"" (asprintf "%s: ") prefix in
   let print ?(error_type = "Exception") error_name =

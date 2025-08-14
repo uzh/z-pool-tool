@@ -118,11 +118,9 @@ let handle ?(src = src) ?enable_cache req result =
   match context with
   | Ok context ->
     let%lwt res = result context in
-    res
-    |> with_log_http_result_error ~src ~tags
-    >|= Http_utils.set_no_cache_headers ?enable_cache
-    >|= Lwt.return
-    |> get_lazy (handle_error context req)
+    (match with_log_http_result_error ~src ~tags res with
+     | Ok resp -> Http_utils.set_no_cache_headers ?enable_cache resp |> Lwt.return
+     | Error err -> handle_error context req err)
   | Error err ->
     Logs.warn ~src (fun m -> m ~tags "Context not found: %s" (Error.show err));
     Page.internal_server_error_response err |> Lwt.return

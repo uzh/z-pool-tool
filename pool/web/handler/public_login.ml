@@ -245,9 +245,11 @@ let request_reset_password_post req =
       >|> Lwt_result.return
     in
     handle ()
-    ||> CCResult.get_lazy (fun err ->
-      let (_ : Pool_message.Error.t) = Pool_common.Utils.with_log_error err in
-      ())
+    ||> (function
+     | Ok () -> ()
+     | Error err ->
+       let (_ : Pool_message.Error.t) = Pool_common.Utils.with_log_error err in
+       ())
     >|> redirect
   in
   Response.handle ~src req result

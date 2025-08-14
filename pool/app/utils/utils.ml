@@ -29,8 +29,6 @@ module Lwt_result : sig
     val ( >|+ ) : ('a, 'b) Lwt_result.t -> ('a -> 'c) -> ('c, 'b) Lwt_result.t
     val ( >|- ) : ('a, 'b) Lwt_result.t -> ('b -> 'c) -> ('a, 'c) Lwt_result.t
   end
-
-  val map_error : ('a -> 'b) -> ('c, 'a) Lwt_result.t -> ('c, 'b) Lwt_result.t
 end =
   Lwt_trace
 
