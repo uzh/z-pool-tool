@@ -314,6 +314,7 @@ type event =
   | Unblocked of t
   | PasswordUpdated of
       Id.t * Password.Plain.t * Password.Plain.t * Password.Confirmation.t
+  | PasswordReset of string * Password.Plain.t * Password.Confirmation.t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
