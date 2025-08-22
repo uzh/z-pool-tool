@@ -225,7 +225,6 @@ end = struct
       (Pool_user.PasswordReset
          (command.token, command.new_password, command.password_confirmation)
        |> Pool_event.user)
-      (*  *)
       :: CCOption.map_or
            ~default:[]
            (Email.sent %> Pool_event.email %> CCList.return)
