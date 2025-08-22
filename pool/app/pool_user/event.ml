@@ -1,4 +1,5 @@
 open Entity
+module PasswordReset = Pool_user_service.Password.Reset
 module Password = Entity_password
 
 let src = Logs.Src.create "user.event"
@@ -7,6 +8,7 @@ type event =
   | Unblocked of t
   | PasswordUpdated of
       Id.t * Password.Plain.t * Password.Plain.t * Password.Confirmation.t [@opaque]
+  | PasswordReset of string * Password.Plain.t * Password.Confirmation.t [@opaque]
 [@@deriving eq, show]
 
 let update_password label user_id ~old_password ~new_password ~new_password_confirmation =
@@ -32,6 +34,14 @@ let handle_event ?tags pool : event -> unit Lwt.t =
         ~old_password
         ~new_password
         ~new_password_confirmation:confirmation
+      >|- Pool_common.Utils.with_log_error ~src ?tags
+    in
+    Lwt.return_unit
+  | PasswordReset (token, new_password, confirmation) ->
+    let%lwt _ =
+      PasswordReset.reset_password ~token pool new_password confirmation
+      (* TODO ykl: deactivate token only if password reset was successfull *)
+      (* >>= fun _ -> Pool_token.deactivate Database.Pool.Root.label token *)
       >|- Pool_common.Utils.with_log_error ~src ?tags
     in
     Lwt.return_unit

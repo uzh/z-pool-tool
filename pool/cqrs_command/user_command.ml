@@ -176,6 +176,70 @@ end = struct
   ;;
 end
 
+module ResetPassword : sig
+  type t =
+    { token : string
+    ; new_password : Pool_user.Password.Plain.t
+    ; password_confirmation : Pool_user.Password.Confirmation.t
+    }
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> ?notification:Email.dispatch
+    -> t
+    -> (Pool_event.t list, Pool_message.Error.t) result
+
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
+end = struct
+  type t =
+    { token : string
+    ; new_password : Pool_user.Password.Plain.t [@opaque]
+    ; password_confirmation : Pool_user.Password.Confirmation.t [@opaque]
+    }
+
+  let command token new_password password_confirmation =
+    { token; new_password; password_confirmation }
+  ;;
+
+  let schema =
+    let open Pool_message.Field in
+    Pool_conformist.(
+      make
+        Field.
+          [ string "token"
+          ; Pool_user.Password.Plain.(schema ~field:Password ())
+          ; Pool_user.Password.Confirmation.schema ()
+          ]
+        command)
+  ;;
+
+  let handle ?(tags = Logs.Tag.empty) ?notification command =
+    let open CCResult.Infix in
+    Logs.info ~src (fun m -> m "Handle command ResetPassword" ~tags);
+    let* () =
+      Pool_user.Password.validate_confirmation
+        command.new_password
+        command.password_confirmation
+    in
+    let events =
+      (Pool_user.PasswordReset
+         (command.token, command.new_password, command.password_confirmation)
+       |> Pool_event.user)
+      (*  *)
+      :: CCOption.map_or
+           ~default:[]
+           (Email.sent %> Pool_event.email %> CCList.return)
+           notification
+    in
+    CCResult.return events
+  ;;
+
+  let decode data =
+    Pool_conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_message.to_conformist_error
+  ;;
+end
+
 module Unblock : sig
   type t = Pool_user.t
 
