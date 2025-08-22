@@ -40,44 +40,7 @@ let reset_password_succeeds =
     Lwt.return_ok ())
 ;;
 
-(* let reset_password_fail_capital_letters =
-   Test_utils.case (fun () ->
-   let open Pool_user in
-   let open Utils.Lwt_result.Infix in
-   let email = EmailAddress.of_string "foopass1@example.com" in
-   let new_password = "password1!" in
-   let%lwt (_ : t) =
-   create_user
-   database_label
-   email
-   (Lastname.of_string "Star")
-   (Firstname.of_string "Jane")
-   created_password
-   created_password_confirmation
-   ||> Pool_common.Utils.get_or_failwith
-   in
-   let%lwt token =
-   Pool_user.Password.Reset.create_token database_label email
-   ||> CCOption.get_exn_or "User with email not found"
-   in
-   let events =
-   let open Cqrs_command.User_command.ResetPassword in
-   let command_data =
-   [ "token", [ token ] ; "password", [ new_password ] ; "password_confirmation", [ new_password ] ]
-   in
-   command_data |> decode |> Lwt_result.lift >== handle
-   in
-   events
-   ||> Alcotest.(check (result event Test_utils.error))
-   "Expected the password to contain a capital letter."
-   Pool_message.Error.PasswordPolicyCapitalLetter);
-   LWT.return_unit ()
-   ;; *)
-
 let suite =
   Alcotest_lwt.
-    [ "password reset", [ test_case "password reset" `Quick reset_password_succeeds ]
-      (* ; ( "password reset fail capital letters"
-         , [ test_case "password reset fail capital letters" `Quick reset_password_fail_capital_letters ] ) *)
-    ]
+    [ "password reset", [ test_case "password reset" `Quick reset_password_succeeds ] ]
 ;;
