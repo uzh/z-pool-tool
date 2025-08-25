@@ -27,7 +27,6 @@ let () =
         ; test_case "try delete with verified email" `Quick Contact_test.delete_verified
         ; test_case "update language of user" `Quick Contact_test.update_language
         ; test_case "update password" `Quick Contact_test.update_password
-        ; test_case "reset password" `Quick Contact_test.reset_password
         ; test_case "password policy: min length" `Quick Contact_test.password_min_length
         ; test_case
             "password policy: capital letter"

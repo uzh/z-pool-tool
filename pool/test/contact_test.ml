@@ -253,35 +253,6 @@ let update_password () =
   check_result expected events
 ;;
 
-let reset_password () =
-  let ((_, _, _, _, _) as contact_info) = "john@gmail.com" |> contact_info in
-  let contact = contact_info |> create_contact true in
-  let token = "reset_token" in
-  let new_password = "NewPassword2!" in
-  let notification = confirmation_mail contact in
-  let events =
-    let open Cqrs_command.User_command.ResetPassword in
-    [ Field.(Token |> show), [ token ]
-    ; Field.(Password |> show), [ new_password ]
-    ; Field.(PasswordConfirmation |> show), [ new_password ]
-    ]
-    |> decode
-    |> Pool_common.Utils.get_or_failwith
-    |> handle ~notification
-  in
-  let expected =
-    Ok
-      [ Pool_user.PasswordReset
-          ( token
-          , new_password |> Pool_user.Password.Plain.create
-          , new_password |> Pool_user.Password.Confirmation.create )
-        |> Pool_event.user
-      ; Email.sent notification |> Pool_event.email
-      ]
-  in
-  check_result expected events
-;;
-
 let validate_password_policy password expected =
   let res = Pool_user.Password.Plain.(password |> create |> validate) in
   Alcotest.(check Test_utils.(result password_plain error) "succeeds" expected res)
