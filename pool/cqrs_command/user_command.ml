@@ -183,12 +183,7 @@ module ResetPassword : sig
     ; password_confirmation : Pool_user.Password.Confirmation.t
     }
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> ?notification:Email.dispatch
-    -> t
-    -> (Pool_event.t list, Pool_message.Error.t) result
-
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   type t =
@@ -213,7 +208,7 @@ end = struct
         command)
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) ?notification command =
+  let handle ?(tags = Logs.Tag.empty) command =
     let open CCResult.Infix in
     Logs.info ~src (fun m -> m "Handle command ResetPassword" ~tags);
     let* () =
@@ -222,13 +217,10 @@ end = struct
         command.password_confirmation
     in
     let events =
-      (Pool_user.PasswordReset
-         (command.token, command.new_password, command.password_confirmation)
-       |> Pool_event.user)
-      :: CCOption.map_or
-           ~default:[]
-           (Email.sent %> Pool_event.email %> CCList.return)
-           notification
+      [ Pool_user.PasswordReset
+          (command.token, command.new_password, command.password_confirmation)
+        |> Pool_event.user
+      ]
     in
     CCResult.return events
   ;;
