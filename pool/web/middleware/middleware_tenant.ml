@@ -63,7 +63,7 @@ let web_filter handler req =
     |> Sihl.Web.Response.of_html
     |> Lwt.return
   in
-  let connection_issue_handler () = Http_utils.redirect_to "/error" in
+  let connection_issue_handler () = Http_utils.redirect_to "/not-found" in
   let error_handler (_ : Pool_message.Error.t) = Http_utils.redirect_to "/not-found" in
   filter ~maintenance_handler ~connection_issue_handler ~error_handler handler req
 ;;
