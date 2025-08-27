@@ -296,7 +296,7 @@ let reset_password_post req =
       ||> CCOption.to_result Pool_message.(Error.Invalid Field.Token)
       >|+ Pool_user.Id.of_string
     in
-    let* events =
+    let* reset_password_events =
       let open Cqrs_command.User_command.ResetPassword in
       urlencoded |> decode |> Lwt_result.lift >== handle ~tags
     in
@@ -313,8 +313,10 @@ let reset_password_post req =
         Cqrs_command.User_import_command.DisableImport.handle ~tags (user, import)
         |> Lwt_result.lift
     in
-    let all_events = events @ import_events in
-    let%lwt () = all_events |> Pool_event.handle_events database_label user in
+    let%lwt () =
+      reset_password_events @ import_events
+      |> Pool_event.handle_events database_label user
+    in
     HttpUtils.(
       redirect_to_with_actions
         (url_with_field_params query_parameters "/login")
