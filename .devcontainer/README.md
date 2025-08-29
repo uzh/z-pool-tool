@@ -116,5 +116,5 @@ If you want to reset all changes (**WARNING: will lose uncommitted changes**)
 
 ```zsh
 git rm --cached -r .
-git reset --hard"
+git reset --hard
 ```
