@@ -4,6 +4,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.12.3](https://github.com/uzh/z-pool-tool/tree/0.12.3) - 2025-08-29
+
+### Fixed
+
+- Possiblity to update time windows of online experiments
+- Missing Link to application inactivity warning
+
 ## [0.12.2](https://github.com/uzh/z-pool-tool/tree/0.12.2) - 2025-07-21
 
 ### Added
