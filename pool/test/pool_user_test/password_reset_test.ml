@@ -32,6 +32,8 @@ let reset_password_succeeds =
       in
       command_data |> decode |> Lwt_result.lift >== handle
     in
+    (* delay handling of events to ensure user and token are created and queryable in db transaction of handle_events *)
+    let () = Unix.sleep 1 in
     let%lwt () = Pool_event.handle_events database_label Pool_context.Guest events in
     let validated_password = Pool_user.Password.Plain.create new_password in
     let%lwt (_ : t) =
