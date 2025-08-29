@@ -513,23 +513,22 @@ let update_handler action req =
     | `Reschedule -> reschedule_form
   in
   let result { Pool_context.database_label; user; _ } =
-    let* session = Session.find database_label session_id >|- Response.not_found in
-    let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
-    in
-    Response.bad_request_on_error ~urlencoded error_handler
-    @@
-    let sessions_data () =
-      let%lwt follow_ups = Session.find_follow_ups database_label session.Session.id in
+    let tags = Pool_context.Logger.Tags.req req in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
+    let sessions_data ({ Session.id; follow_up_to; _ } as session) =
+      let%lwt follow_ups = Session.find_follow_ups database_label id in
       let* parent =
-        match session.Session.follow_up_to with
+        match follow_up_to with
         | None -> Lwt_result.return None
         | Some parent_id -> parent_id |> Session.find database_label >|+ CCOption.return
       in
       Lwt_result.return (session, follow_ups, parent)
     in
-    let tags = Pool_context.Logger.Tags.req req in
-    let tenant = Pool_context.Tenant.get_tenant_exn req in
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    in
+    Response.bad_request_on_error ~urlencoded error_handler
+    @@
     let* experiment = Experiment.find database_label experiment_id in
     let field =
       if Experiment.is_sessionless experiment then Field.TimeWindow else Field.Session
@@ -559,7 +558,9 @@ let update_handler action req =
            in
            handle ~tags ~overlapps time_window decoded |> Lwt_result.lift
          | false ->
-           let* session, follow_ups, parent = sessions_data () in
+           let* session, follow_ups, parent =
+             Session.find database_label session_id >>= sessions_data
+           in
            let* location = location urlencoded database_label in
            let open CCResult.Infix in
            let open Update in
@@ -569,7 +570,9 @@ let update_handler action req =
            |> Lwt_result.lift)
       | `Reschedule ->
         let open Reschedule in
-        let* session, follow_ups, parent = sessions_data () in
+        let* session, follow_ups, parent =
+          Session.find database_label session_id >>= sessions_data
+        in
         let%lwt assignments =
           Assignment.find_uncanceled_by_session database_label session.Session.id
         in

@@ -392,9 +392,9 @@ module Sql = struct
     in
     Format.asprintf
       {sql|
-        SELECT 
-        %s 
-        FROM pool_sessions 
+        SELECT
+        %s
+        FROM pool_sessions
         INNER JOIN pool_experiments
           ON pool_experiments.uuid = pool_sessions.experiment_uuid
           AND pool_experiments.assignment_without_session = 0
@@ -776,7 +776,7 @@ module Sql = struct
         {sql|
           %s
           %s
-          INNER JOIN user_permissions 
+          INNER JOIN user_permissions
             ON pool_sessions.uuid = user_permissions.target_uuid
             OR pool_sessions.location_uuid = user_permissions.target_uuid
             OR pool_sessions.experiment_uuid = user_permissions.target_uuid
