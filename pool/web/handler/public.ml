@@ -81,8 +81,19 @@ let email_confirmation_note req =
 
 (* TODO: Does that work as expected? *)
 let not_found req =
+  let (context : Pool_context.t) =
+    Pool_context.create
+      ( []
+      , Pool_common.Language.En
+      , Database.Pool.Root.label
+      , None
+      , ""
+      , Pool_context.Guest
+      , []
+      , [] )
+  in
   let error (_ : Pool_context.t) = Response.generic_not_found |> Lwt_result.fail in
-  Response.handle ~src req error
+  Response.handle ~src (Pool_context.set req context) error
 ;;
 
 (* TODO: Simplify? *)
