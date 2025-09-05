@@ -53,6 +53,7 @@ module Public = struct
       [ get "/" Handler.Public.root_redirect
       ; get "/custom/assets/:id/:filename" Handler.Public.asset
       ; get "/error" Handler.Public.error
+      ; get "/not-found" Handler.Public.not_found
       ]
   ;;
 
