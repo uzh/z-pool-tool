@@ -25,10 +25,7 @@ let find_verified_by_user pool = Repo.find_by_user pool VerifiedC
 let find_unverified_by_address pool = Repo.find_by_address pool UnverifiedC
 let delete_unverified_by_user = Repo.delete_unverified_by_user
 let token_data address = [ "email", Pool_user.EmailAddress.value address ]
-
-let create_token pool address =
-  Pool_token.create pool (token_data address)
-;;
+let create_token pool address = Pool_token.create pool (token_data address)
 
 let find_active_token pool address =
   token_data address |> Pool_token.find_active_by_data pool
