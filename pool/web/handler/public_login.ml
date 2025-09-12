@@ -290,7 +290,7 @@ let reset_password_post req =
       |> Lwt_result.lift
     in
     let go field = field |> Field.show |> CCFun.flip (CCList.assoc ~eq:( = )) params in
-    let token = go Field.Token in
+    let token = go Field.Token |> Pool_token.of_string in
     let* user_uuid =
       Pool_token.read database_label token ~k:"user_id"
       ||> CCOption.to_result Pool_message.(Error.Invalid Field.Token)

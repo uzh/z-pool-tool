@@ -5,7 +5,7 @@ module User = Pool_user
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 type verification_event =
-  | Created of Pool_user.EmailAddress.t * Token.t * Pool_user.Id.t
+  | Created of Pool_user.EmailAddress.t * Pool_token.t * Pool_user.Id.t
   | EmailVerified of unverified t
 
 let verification_event_name = function
@@ -28,7 +28,7 @@ let handle_verification_event pool : verification_event -> unit Lwt.t = function
 let equal_verification_event (one : verification_event) (two : verification_event) : bool =
   match one, two with
   | Created (e1, t1, id1), Created (e2, t2, id2) ->
-    User.EmailAddress.equal e1 e2 && Token.equal t1 t2 && Pool_user.Id.equal id1 id2
+    User.EmailAddress.equal e1 e2 && Pool_token.equal t1 t2 && Pool_user.Id.equal id1 id2
   | EmailVerified m, EmailVerified p -> equal m p
   | Created _, EmailVerified _ | EmailVerified _, Created _ -> false
 ;;
@@ -38,7 +38,7 @@ let pp_verification_event formatter (event : verification_event) : unit =
   match event with
   | Created (m, t, id) ->
     pp_address m;
-    Token.pp Format.std_formatter t;
+    Pool_token.pp Format.std_formatter t;
     Pool_user.Id.pp formatter id
   | EmailVerified m -> pp formatter m
 ;;

@@ -178,12 +178,12 @@ let email_verification req =
     in
     let* token =
       Sihl.Web.Request.query Field.(show Token) req
-      |> CCOption.map Email.Token.create
+      |> CCOption.map Pool_token.of_string
       |> CCOption.to_result (Error.NotFound Field.Token)
       |> Lwt_result.lift
     in
     let* email =
-      Pool_token.read database_label (Email.Token.value token) ~k:Field.(Email |> show)
+      Pool_token.read database_label token ~k:Field.(Email |> show)
       ||> CCOption.to_result Error.TokenInvalidFormat
       >== Pool_user.EmailAddress.create
       >>= Email.find_unverified_by_address database_label

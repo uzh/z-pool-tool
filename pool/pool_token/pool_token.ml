@@ -1,8 +1,18 @@
+type t = Repo.Model.Token.t
+
+let t = Repo.Model.Token.t
+let equal = Repo.Model.Token.equal
+let pp = Repo.Model.Token.pp
+let show = Repo.Model.Token.show
+let value = Repo.Model.Token.to_string
+let of_string str = str
+let schema = Repo.Model.Token.schema Pool_message.Field.Token
+
 type config = { token_length : int option }
 
 let config token_length = { token_length }
 
-let schema =
+let configuration_schema =
   let open Conformist in
   make Field.[ Conformist.optional (int ~default:80 "TOKEN_LENGTH") ] config
 ;;
@@ -31,7 +41,9 @@ let make id ?(expires_in = Sihl.Time.OneDay) ?now ?(length = 80) data =
 let create ?secret:_ ?expires_in label data =
   let open Repo.Model in
   let id = Pool_common.Id.(create () |> value) in
-  let length = CCOption.value ~default:30 (Sihl.Configuration.read schema).token_length in
+  let length =
+    CCOption.value ~default:30 (Sihl.Configuration.read configuration_schema).token_length
+  in
   let token = make id ?expires_in ~length data in
   let%lwt () = Repo.insert label token in
   Repo.find_by_id label id |> Lwt.map (fun token -> token.value)
@@ -110,7 +122,7 @@ let find_active_by_data = Repo.Sql.find_active_by_data
 
 let start () =
   (* Make sure that configuration is valid *)
-  Sihl.Configuration.require schema;
+  Sihl.Configuration.require configuration_schema;
   Lwt.return ()
 ;;
 
@@ -127,6 +139,6 @@ let lifecycle =
 let register () =
   Repo.register_migration ();
   Repo.register_cleaner ();
-  let configuration = Sihl.Configuration.make ~schema () in
+  let configuration = Sihl.Configuration.make ~schema:configuration_schema () in
   Sihl.Container.Service.create ~configuration lifecycle
 ;;

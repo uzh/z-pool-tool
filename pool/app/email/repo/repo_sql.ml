@@ -109,7 +109,7 @@ let insert_request =
         $3
       )
     |sql}
-  |> Caqti_type.(t3 User.Repo.EmailAddress.t User.Repo.Id.t RepoEntity.Token.t ->. unit)
+  |> Caqti_type.(t3 User.Repo.EmailAddress.t User.Repo.Id.t Pool_token.t ->. unit)
 ;;
 
 let insert pool t = Database.exec pool insert_request (address t, user_id t, token t)

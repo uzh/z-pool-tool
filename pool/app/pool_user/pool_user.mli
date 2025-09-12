@@ -113,10 +113,10 @@ module Password : sig
     -> (unit, Pool_message.Error.t) Lwt_result.t
 
   module Reset : sig
-    val create_token : Database.Label.t -> EmailAddress.t -> string option Lwt.t
+    val create_token : Database.Label.t -> EmailAddress.t -> Pool_token.t option Lwt.t
 
     val reset_password
-      :  token:string
+      :  token:Pool_token.t
       -> Database.Label.t
       -> Plain.t
       -> Confirmation.t
@@ -314,7 +314,7 @@ type event =
   | Unblocked of t
   | PasswordUpdated of
       Id.t * Password.Plain.t * Password.Plain.t * Password.Confirmation.t
-  | PasswordReset of string * Password.Plain.t * Password.Confirmation.t
+  | PasswordReset of Pool_token.t * Password.Plain.t * Password.Confirmation.t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

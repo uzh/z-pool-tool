@@ -8,7 +8,7 @@ type event =
   | Unblocked of t
   | PasswordUpdated of
       Id.t * Password.Plain.t * Password.Plain.t * Password.Confirmation.t [@opaque]
-  | PasswordReset of string * Password.Plain.t * Password.Confirmation.t [@opaque]
+  | PasswordReset of Pool_token.t * Password.Plain.t * Password.Confirmation.t [@opaque]
 [@@deriving eq, show]
 
 let update_password label user_id ~old_password ~new_password ~new_password_confirmation =

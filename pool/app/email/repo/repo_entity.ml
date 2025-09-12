@@ -1,17 +1,6 @@
 open Entity
 module SmtpAuth = Repo_entity_smtp_auth
 
-module Token = struct
-  include Token
-
-  let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.string
-      CCFun.(create %> CCResult.return)
-      value
-  ;;
-end
-
 module VerifiedAt = struct
   include VerifiedAt
 
@@ -39,7 +28,9 @@ let unverified_t =
          User.Repo.EmailAddress.t
          (t2
             Pool_user.Repo.t
-            (t2 Token.t (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))))
+            (t2
+               Pool_token.t
+               (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))))
 ;;
 
 let verified_t =

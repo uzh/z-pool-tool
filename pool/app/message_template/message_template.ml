@@ -531,7 +531,7 @@ module EmailVerification = struct
       Pool_common.
         [ ( Pool_message.Field.Language
           , language |> Language.show |> CCString.lowercase_ascii )
-        ; Pool_message.Field.Token, Email.Token.value token
+        ; Pool_message.Field.Token, Pool_token.value token
         ]
       |> create_public_url_with_params url "/email-verified"
     in
@@ -886,7 +886,7 @@ module PasswordReset = struct
     let layout = create_layout layout in
     let reset_url =
       Pool_message.
-        [ Field.Token, reset_token
+        [ Field.Token, reset_token |> Pool_token.value
         ; Field.Language, language |> Language.show |> CCString.lowercase_ascii
         ]
       |> create_public_url_with_params
@@ -1235,7 +1235,7 @@ module SignUpVerification = struct
         Pool_common.
           [ ( Pool_message.Field.Language
             , language |> Language.show |> CCString.lowercase_ascii )
-          ; Pool_message.Field.Token, Email.Token.value token
+          ; Pool_message.Field.Token, Pool_token.value token
           ]
         @ signup_code
       in

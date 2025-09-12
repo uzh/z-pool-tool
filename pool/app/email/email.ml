@@ -27,8 +27,7 @@ let delete_unverified_by_user = Repo.delete_unverified_by_user
 let token_data address = [ "email", Pool_user.EmailAddress.value address ]
 
 let create_token pool address =
-  let open Utils.Lwt_result.Infix in
-  Pool_token.create pool (token_data address) ||> Token.create
+  Pool_token.create pool (token_data address)
 ;;
 
 let find_active_token pool address =

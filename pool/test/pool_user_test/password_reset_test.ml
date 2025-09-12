@@ -25,7 +25,7 @@ let reset_password_succeeds =
     let* events =
       let open Cqrs_command.User_command.ResetPassword in
       let command_data =
-        [ "token", [ token ]
+        [ "token", [ Pool_token.value token ]
         ; "password", [ new_password ]
         ; "password_confirmation", [ new_password ]
         ]
@@ -67,7 +67,7 @@ let reset_password_fail_password_policy =
     let%lwt result =
       let open Cqrs_command.User_command.ResetPassword in
       let command_data =
-        [ "token", [ token ]
+        [ "token", [ Pool_token.value token ]
         ; "password", [ new_password ]
         ; "password_confirmation", [ new_password ]
         ]
@@ -106,7 +106,7 @@ let reset_password_events =
     let* events =
       let open Cqrs_command.User_command.ResetPassword in
       let command_data =
-        [ "token", [ token ]
+        [ "token", [ Pool_token.value token ]
         ; "password", [ new_password ]
         ; "password_confirmation", [ new_password ]
         ]

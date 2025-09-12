@@ -141,7 +141,7 @@ let email_verification _ () =
       (Tenant tenant)
       contact
       ("new@email.com" |> Pool_user.EmailAddress.of_string)
-      ("123123123" |> Email.Token.create)
+      ("123123123" |> Pool_token.of_string)
   in
   let expected = Label.EmailVerification, [ Contact.Id.to_common contact_id ] in
   let () = check_message_template ~label:(fst expected) res in

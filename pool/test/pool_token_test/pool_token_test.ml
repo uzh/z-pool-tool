@@ -48,12 +48,18 @@ let forge_token =
   let%lwt token = Pool_token.create database_label [ "foo", "bar" ] in
   let%lwt value = Pool_token.read database_label token ~k:"foo" in
   Alcotest.(check (option string) "reads value" (Some "bar") value);
-  let forged_token = "prefix" ^ token in
-  let%lwt value = Pool_token.read database_label forged_token ~k:"foo" in
+  let forged_token = "prefix" ^ Pool_token.value token in
+  let%lwt value =
+    Pool_token.read database_label (Pool_token.of_string forged_token) ~k:"foo"
+  in
   Alcotest.(check (option string) "reads no value" None value);
-  let%lwt value = Pool_token.read database_label ~force:() forged_token ~k:"foo" in
+  let%lwt value =
+    Pool_token.read database_label ~force:() (Pool_token.of_string forged_token) ~k:"foo"
+  in
   Alcotest.(check (option string) "force doesn't read value" None value);
-  let%lwt is_valid_signature = Pool_token.verify database_label forged_token in
+  let%lwt is_valid_signature =
+    Pool_token.verify database_label (Pool_token.of_string forged_token)
+  in
   Alcotest.(check bool "signature is not valid" false is_valid_signature);
   Lwt.return_ok ()
 ;;

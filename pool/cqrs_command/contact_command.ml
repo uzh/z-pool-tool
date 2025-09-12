@@ -12,7 +12,7 @@ module SignUp : sig
     -> ?terms_accepted_at:Pool_user.TermsAccepted.t option
     -> ?signup_code:Signup_code.Code.t
     -> Custom_field.Public.t list
-    -> Email.Token.t
+    -> Pool_token.t
     -> Pool_user.EmailAddress.t
     -> Email.dispatch
     -> Pool_common.Language.t option
@@ -177,7 +177,7 @@ module RequestEmailValidation : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> Email.Token.t
+    -> Pool_token.t
     -> Email.dispatch
     -> Contact.t
     -> t

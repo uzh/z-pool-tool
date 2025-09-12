@@ -178,7 +178,7 @@ end
 
 module ResetPassword : sig
   type t =
-    { token : string
+    { token : Pool_token.t
     ; new_password : Pool_user.Password.Plain.t
     ; password_confirmation : Pool_user.Password.Confirmation.t
     }
@@ -187,7 +187,7 @@ module ResetPassword : sig
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   type t =
-    { token : string
+    { token : Pool_token.t
     ; new_password : Pool_user.Password.Plain.t [@opaque]
     ; password_confirmation : Pool_user.Password.Confirmation.t [@opaque]
     }
@@ -201,7 +201,7 @@ end = struct
     Pool_conformist.(
       make
         Field.
-          [ string "token"
+          [ Pool_token.schema ()
           ; Pool_user.Password.Plain.(schema ~field:Password ())
           ; Pool_user.Password.Confirmation.schema ()
           ]

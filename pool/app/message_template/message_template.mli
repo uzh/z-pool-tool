@@ -325,7 +325,7 @@ module EmailVerification : sig
     -> layout
     -> Contact.t
     -> Pool_user.EmailAddress.t
-    -> Email.Token.t
+    -> Pool_token.t
     -> Email.dispatch Lwt.t
 end
 
@@ -592,7 +592,7 @@ module SignUpVerification : sig
     -> Pool_common.Language.t
     -> Pool_tenant.t
     -> Pool_user.EmailAddress.t
-    -> Email.Token.t
+    -> Pool_token.t
     -> Pool_user.Firstname.t
     -> Pool_user.Lastname.t
     -> Pool_user.Id.t
