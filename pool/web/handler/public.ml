@@ -81,13 +81,14 @@ let email_confirmation_note req =
 
 (* TODO: Does that work as expected? *)
 let not_found req =
+  let csrf = Sihl.Web.Csrf.find_exn req in
   let (context : Pool_context.t) =
     Pool_context.create
       ( []
       , Pool_common.Language.En
       , Database.Pool.Root.label
       , None
-      , ""
+      , csrf
       , Pool_context.Guest
       , []
       , [] )
