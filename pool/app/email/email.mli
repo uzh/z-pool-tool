@@ -1,13 +1,3 @@
-module Token : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> t
-  val value : t -> string
-end
-
 module VerifiedAt : sig
   type t
 
@@ -22,7 +12,7 @@ end
 type email_unverified =
   { address : Pool_user.EmailAddress.t
   ; user : Pool_user.t
-  ; token : Token.t
+  ; token : Pool_token.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -52,12 +42,12 @@ type _ t =
 val equal : 'email t -> 'email t -> bool
 val pp : Format.formatter -> 'email t -> unit
 val show : 'state t -> string
-val token : unverified t -> string
+val token : unverified t -> Pool_token.t
 val verify : unverified t -> verified t
 val address : 'email t -> Pool_user.EmailAddress.t
 val user_id : 'email t -> Pool_user.Id.t
 val user_is_confirmed : 'email t -> bool
-val create : Pool_user.EmailAddress.t -> Pool_user.t -> Token.t -> unverified t
+val create : Pool_user.EmailAddress.t -> Pool_user.t -> Pool_token.t -> unverified t
 
 val find_unverified_by_user
   :  Database.Label.t
@@ -76,12 +66,12 @@ val find_unverified_by_address
 
 val delete_unverified_by_user : Database.Label.t -> Pool_user.Id.t -> unit Lwt.t
 val token_data : Pool_user.EmailAddress.t -> (string * string) list
-val create_token : Database.Label.t -> Pool_user.EmailAddress.t -> Token.t Lwt.t
+val create_token : Database.Label.t -> Pool_user.EmailAddress.t -> Pool_token.t Lwt.t
 
 val find_active_token
   :  Database.Label.t
   -> Pool_user.EmailAddress.t
-  -> Token.t option Lwt.t
+  -> Pool_token.t option Lwt.t
 
 module SmtpAuth : sig
   module Id : module type of Pool_common.Id
@@ -291,7 +281,7 @@ module Guard : sig
 end
 
 type verification_event =
-  | Created of Pool_user.EmailAddress.t * Token.t * Pool_user.Id.t
+  | Created of Pool_user.EmailAddress.t * Pool_token.t * Pool_user.Id.t
   | EmailVerified of unverified t
 
 val handle_verification_event : Database.Label.t -> verification_event -> unit Lwt.t

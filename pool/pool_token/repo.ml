@@ -1,6 +1,17 @@
 open Ppx_yojson_conv_lib.Yojson_conv
 
 module Model = struct
+  module Token = struct
+    include Pool_model.Base.String
+
+    type t = (string[@opaque]) [@@deriving eq, show]
+
+    let t = Caqti_type.string
+    let to_string t = t
+    let of_string str = str
+    let schema = schema ~validation:create
+  end
+
   module Data = struct
     type t = (string * string) list [@@deriving eq, show, yojson]
 
@@ -29,7 +40,7 @@ module Model = struct
 
   type t =
     { id : string
-    ; value : string
+    ; value : Token.t
     ; data : Data.t
     ; status : Status.t
     ; expires_at : Ptime.t

@@ -23,18 +23,12 @@ module Sihl_email = struct
   ;;
 end
 
-module Token = struct
-  include Pool_model.Base.String
-
-  let create m = m
-end
-
 module VerifiedAt = Pool_model.Base.Ptime
 
 type email_unverified =
   { address : User.EmailAddress.t
   ; user : Pool_user.t
-  ; token : Token.t
+  ; token : Pool_token.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -95,13 +89,13 @@ let address : type state. state t -> User.EmailAddress.t = function
   | Unverified { address; _ } | Verified { address; _ } -> address
 ;;
 
-let token (Unverified email) = Token.value email.token
+let token (Unverified email) = email.token
 
 let create address user token =
   Unverified
     { address
     ; user
-    ; token = Token.value token
+    ; token
     ; created_at = Pool_common.CreatedAt.create_now ()
     ; updated_at = Pool_common.UpdatedAt.create_now ()
     }

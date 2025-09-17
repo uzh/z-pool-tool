@@ -161,32 +161,16 @@ let reset_password_get req =
 
 let reset_password_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result _ =
+  let result { Pool_context.user; _ } =
     let open Utils.Lwt_result.Infix in
     Response.bad_request_on_error reset_password_get
     @@
-    let* params =
-      Field.[ Token; Password; PasswordConfirmation ]
-      |> CCList.map Field.show
-      |> HttpUtils.urlencoded_to_params urlencoded
-      |> CCOption.to_result Error.PasswordResetInvalidData
-      |> Lwt_result.lift
+    let tags = Pool_context.Logger.Tags.req req in
+    let* events =
+      let open Cqrs_command.User_command.ResetPassword in
+      urlencoded |> decode |> Lwt_result.lift >== handle ~tags
     in
-    let go field = field |> Field.show |> CCFun.flip (CCList.assoc ~eq:( = )) params in
-    let token = go Field.Token in
-    let password = Field.Password |> go |> Pool_user.Password.Plain.create in
-    let password_confirmed =
-      let open Pool_user.Password.Confirmation in
-      Field.PasswordConfirmation |> go |> create
-    in
-    let* () =
-      Pool_user.Password.Reset.reset_password
-        Database.Pool.Root.label
-        ~token
-        password
-        password_confirmed
-      >|- fun (_ : Pool_message.Error.t) -> Error.PasswordResetInvalidData
-    in
+    let%lwt () = events |> Pool_event.handle_events ~tags Database.Pool.Root.label user in
     HttpUtils.redirect_to_with_actions
       root_login_path
       [ Message.set ~success:[ Success.PasswordReset ] ]

@@ -126,7 +126,7 @@ let sign_up_not_allowed_suffix () =
   let ({ Cqrs_command.User_command.email; _ } as decoded) =
     contact_info |> sign_up_contact |> decode |> CCResult.get_exn
   in
-  let token = Email.Token.create "testtoken" in
+  let token = Pool_token.of_string "testtoken" in
   let verification_email = verification_email contact_info in
   let events =
     decoded |> handle ~allowed_email_suffixes [] token email verification_email None
@@ -146,7 +146,7 @@ let sign_up () =
     contact_info "john@gmail.com"
   in
   let email = "john@gmail.com" |> Pool_user.EmailAddress.create |> CCResult.get_exn in
-  let token = Email.Token.create "testtoken" in
+  let token = Pool_token.of_string "testtoken" in
   let verification_email = verification_email contact_info in
   let events =
     let open CCResult in
@@ -353,7 +353,7 @@ let request_email_validation () =
     |> Pool_user.EmailAddress.create
     |> Pool_common.Utils.get_or_failwith
   in
-  let token = Email.Token.create "testtoken" in
+  let token = Pool_token.of_string "testtoken" in
   let verification_email = verification_email contact_info in
   let allowed_email_suffixes =
     [ "gmail.com" ]
@@ -383,7 +383,7 @@ let request_email_validation_wrong_suffix () =
     |> Pool_user.EmailAddress.create
     |> Pool_common.Utils.get_or_failwith
   in
-  let token = Email.Token.create "testtoken" in
+  let token = Pool_token.of_string "testtoken" in
   let verification_email = verification_email contact_info in
   let allowed_email_suffixes =
     [ "gmail.com" ]
@@ -410,7 +410,7 @@ let update_email () =
     Email.Unverified
       { Email.address = new_email |> Pool_user.EmailAddress.of_string
       ; user = contact.Contact.user
-      ; token = Email.Token.create "testing"
+      ; token = Pool_token.of_string "testing"
       ; created_at = Pool_common.CreatedAt.create_now ()
       ; updated_at = Pool_common.UpdatedAt.create_now ()
       }
@@ -440,7 +440,7 @@ let verify_email () =
     Email.Unverified
       { Email.address = email_address |> Pool_user.EmailAddress.of_string
       ; user = contact.Contact.user
-      ; token = Email.Token.create "testing"
+      ; token = Pool_token.of_string "testing"
       ; created_at = Pool_common.CreatedAt.create_now ()
       ; updated_at = Pool_common.UpdatedAt.create_now ()
       }

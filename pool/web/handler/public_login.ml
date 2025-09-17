@@ -290,24 +290,15 @@ let reset_password_post req =
       |> Lwt_result.lift
     in
     let go field = field |> Field.show |> CCFun.flip (CCList.assoc ~eq:( = )) params in
-    let token = go Field.Token in
-    let password = Field.Password |> go |> Pool_user.Password.Plain.create in
-    let password_confirmed =
-      let open Pool_user.Password.Confirmation in
-      Field.PasswordConfirmation |> go |> create
-    in
+    let token = go Field.Token |> Pool_token.of_string in
     let* user_uuid =
       Pool_token.read database_label token ~k:"user_id"
       ||> CCOption.to_result Pool_message.(Error.Invalid Field.Token)
       >|+ Pool_user.Id.of_string
     in
-    let%lwt reset =
-      Pool_user.Password.Reset.reset_password
-        database_label
-        ~token
-        password
-        password_confirmed
-      >|- CCFun.const Error.PasswordResetInvalidData
+    let* reset_password_events =
+      let open Cqrs_command.User_command.ResetPassword in
+      urlencoded |> decode |> Lwt_result.lift >== handle ~tags
     in
     let* import_events =
       let%lwt import = User_import.find_pending_by_user_id_opt database_label user_uuid in
@@ -322,16 +313,15 @@ let reset_password_post req =
         Cqrs_command.User_import_command.DisableImport.handle ~tags (user, import)
         |> Lwt_result.lift
     in
-    match reset with
-    | Ok () ->
-      let%lwt () = Pool_token.deactivate database_label token in
-      let%lwt () = import_events |> Pool_event.handle_events database_label user in
-      HttpUtils.(
-        redirect_to_with_actions
-          (url_with_field_params query_parameters "/login")
-          [ Message.set ~success:[ Success.PasswordReset ] ])
-      |> Lwt_result.ok
-    | Error err -> err |> Lwt_result.fail
+    let%lwt () =
+      reset_password_events @ import_events
+      |> Pool_event.handle_events database_label user
+    in
+    HttpUtils.(
+      redirect_to_with_actions
+        (url_with_field_params query_parameters "/login")
+        [ Message.set ~success:[ Success.PasswordReset ] ])
+    |> Lwt_result.ok
   in
   Response.handle ~src req result
 ;;
