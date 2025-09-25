@@ -35,6 +35,7 @@ let web_middlewares =
       ~not_allowed_handler:CustomMiddleware.NotAllowed.handle
       ~expires:session_expiration
       ()
+  ; CustomMiddleware.Security.enhanced_middleware ()
   ]
 ;;
 
