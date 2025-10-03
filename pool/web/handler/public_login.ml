@@ -279,49 +279,68 @@ let reset_password_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result { Pool_context.database_label; query_parameters; user; _ } =
     let open Pool_message in
-    Response.bad_request_on_error reset_password_get
-    @@
-    let tags = Pool_context.Logger.Tags.req req in
-    let* params =
+    let params =
       Field.[ Token; Password; PasswordConfirmation ]
       |> CCList.map Field.show
       |> HttpUtils.urlencoded_to_params urlencoded
       |> CCOption.to_result Error.PasswordResetInvalidData
       |> Lwt_result.lift
     in
-    let go field = field |> Field.show |> CCFun.flip (CCList.assoc ~eq:( = )) params in
-    let token = go Field.Token |> Pool_token.of_string in
-    let* user_uuid =
-      Pool_token.read database_label token ~k:"user_id"
-      ||> CCOption.to_result Pool_message.(Error.Invalid Field.Token)
-      >|+ Pool_user.Id.of_string
-    in
-    let* reset_password_events =
-      let open Cqrs_command.User_command.ResetPassword in
-      urlencoded |> decode |> Lwt_result.lift >== handle ~tags
-    in
-    let* import_events =
-      let%lwt import = User_import.find_pending_by_user_id_opt database_label user_uuid in
-      import
-      |> function
-      | None -> Lwt_result.return []
-      | Some import ->
-        let%lwt user =
-          Pool_user.find_exn database_label user_uuid
-          >|> Pool_context.context_user_of_user database_label
+    let handle_request token =
+      let tags = Pool_context.Logger.Tags.req req in
+      let token = Pool_token.of_string token in
+      let all_events =
+        let* user_uuid =
+          Pool_token.read database_label token ~k:"user_id"
+          ||> CCOption.to_result Pool_message.(Error.Invalid Field.Token)
+          >|+ Pool_user.Id.of_string
         in
-        Cqrs_command.User_import_command.DisableImport.handle ~tags (user, import)
-        |> Lwt_result.lift
+        let* reset_password_events =
+          let open Cqrs_command.User_command.ResetPassword in
+          urlencoded |> decode |> Lwt_result.lift >== handle ~tags
+        in
+        let* import_events =
+          let%lwt import =
+            User_import.find_pending_by_user_id_opt database_label user_uuid
+          in
+          import
+          |> function
+          | None -> Lwt_result.return []
+          | Some import ->
+            let%lwt user =
+              Pool_user.find_exn database_label user_uuid
+              >|> Pool_context.context_user_of_user database_label
+            in
+            Cqrs_command.User_import_command.DisableImport.handle ~tags (user, import)
+            |> Lwt_result.lift
+        in
+        Lwt_result.return (reset_password_events @ import_events)
+      in
+      all_events
+      |>> fun events ->
+      let%lwt () = events |> Pool_event.handle_events database_label user in
+      HttpUtils.(
+        redirect_to_with_actions
+          (url_with_field_params query_parameters "/login")
+          [ Message.set ~success:[ Success.PasswordReset ] ])
     in
-    let%lwt () =
-      reset_password_events @ import_events
-      |> Pool_event.handle_events database_label user
+    let handle_error token result =
+      match result with
+      | Ok _ as o -> Lwt.return o
+      | Error err ->
+        HttpUtils.(
+          redirect_to_with_actions
+            (url_with_field_params
+               (CCOption.map_or ~default:[] (fun t -> [ Field.Token, t ]) token)
+               "/reset-password")
+            [ Message.set ~error:[ err ] ])
+        |> Lwt_result.ok
     in
-    HttpUtils.(
-      redirect_to_with_actions
-        (url_with_field_params query_parameters "/login")
-        [ Message.set ~success:[ Success.PasswordReset ] ])
-    |> Lwt_result.ok
+    params
+    >>= (fun params ->
+    let token = CCList.assoc ~eq:( = ) Field.(show Token) params in
+    handle_request token >|> handle_error (Some token))
+    >|> handle_error None
   in
   Response.handle ~src req result
 ;;
