@@ -277,70 +277,58 @@ let reset_password_get req =
 
 let reset_password_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result { Pool_context.database_label; query_parameters; user; _ } =
+  let result { Pool_context.database_label; user; _ }
+    : (Rock.Response.t, Response.http_error) Lwt_result.t
+    =
     let open Pool_message in
-    let params =
-      Field.[ Token; Password; PasswordConfirmation ]
-      |> CCList.map Field.show
-      |> HttpUtils.urlencoded_to_params urlencoded
-      |> CCOption.to_result Error.PasswordResetInvalidData
-      |> Lwt_result.lift
+    let open HttpUtils in
+    let open Cqrs_command.User_command.ResetPassword in
+    let handle_error result =
+      Lwt_result.ok
+      @@ match%lwt result with
+         | Ok o -> Lwt.return o
+         | Error (err, Some token) ->
+           redirect_to_with_actions
+             (url_with_field_params
+                [ Field.Token, Pool_token.show token ]
+                "/reset-password")
+             [ Message.set ~error:[ err ] ]
+         | Error (err, None) ->
+           redirect_to_with_actions "/reset-password" [ Message.set ~error:[ err ] ]
     in
-    let handle_request token =
+    handle_error
+    @@
+    let* ({ Cqrs_command.User_command.ResetPassword.token; _ } as decoded_params) =
+      urlencoded |> decode |> CCResult.map_err (fun err -> err, None) |> Lwt_result.lift
+    in
+    let handle_request decoded_params =
+      Lwt_result.map_error (fun err -> err, Some token)
+      @@
       let tags = Pool_context.Logger.Tags.req req in
-      let token = Pool_token.of_string token in
-      let all_events =
+      let* all_events =
         let* user_uuid =
           Pool_token.read database_label token ~k:"user_id"
           ||> CCOption.to_result Pool_message.(Error.Invalid Field.Token)
           >|+ Pool_user.Id.of_string
         in
-        let* reset_password_events =
-          let open Cqrs_command.User_command.ResetPassword in
-          urlencoded |> decode |> Lwt_result.lift >== handle ~tags
-        in
+        let* reset_password_events = handle ~tags decoded_params |> Lwt_result.lift in
         let* import_events =
-          let%lwt import =
-            User_import.find_pending_by_user_id_opt database_label user_uuid
-          in
-          import
-          |> function
-          | None -> Lwt_result.return []
+          User_import.find_pending_by_user_id_opt database_label user_uuid
+          >|> function
+          | None -> Lwt.return_ok []
           | Some import ->
-            let%lwt user =
-              Pool_user.find_exn database_label user_uuid
-              >|> Pool_context.context_user_of_user database_label
-            in
+            Pool_user.find_exn database_label user_uuid
+            >|> Pool_context.context_user_of_user database_label
+            ||> fun user ->
             Cqrs_command.User_import_command.DisableImport.handle ~tags (user, import)
-            |> Lwt_result.lift
         in
-        Lwt_result.return (reset_password_events @ import_events)
+        Lwt.return_ok (reset_password_events @ import_events)
       in
-      all_events
-      |>> fun events ->
-      let%lwt () = events |> Pool_event.handle_events database_label user in
-      HttpUtils.(
-        redirect_to_with_actions
-          (url_with_field_params query_parameters "/login")
-          [ Message.set ~success:[ Success.PasswordReset ] ])
+      let%lwt () = Pool_event.handle_events database_label user all_events in
+      redirect_to_with_actions "/login" [ Message.set ~success:[ Success.PasswordReset ] ]
+      >|> Lwt.return_ok
     in
-    let handle_error token result =
-      match result with
-      | Ok _ as o -> Lwt.return o
-      | Error err ->
-        HttpUtils.(
-          redirect_to_with_actions
-            (url_with_field_params
-               (CCOption.map_or ~default:[] (fun t -> [ Field.Token, t ]) token)
-               "/reset-password")
-            [ Message.set ~error:[ err ] ])
-        |> Lwt_result.ok
-    in
-    params
-    >>= (fun params ->
-    let token = CCList.assoc ~eq:( = ) Field.(show Token) params in
-    handle_request token >|> handle_error (Some token))
-    >|> handle_error None
+    handle_request decoded_params
   in
   Response.handle ~src req result
 ;;
