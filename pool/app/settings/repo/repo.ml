@@ -119,6 +119,19 @@ module PageScripts = struct
     let find = find_opt tbl
     let add database_label = replace tbl database_label
     let update = add
+
+    let update_script label location script =
+      let cached_scripts = find label in
+      let new_scripts =
+        match cached_scripts, location with
+        | Some { body; _ }, Head -> { head = script; body }
+        | Some { head; _ }, Body -> { head; body = script }
+        | None, Head -> { head = script; body = None }
+        | None, Body -> { head = None; body = script }
+      in
+      update label new_scripts
+    ;;
+
     let clear () = clear tbl
   end
 
@@ -178,10 +191,12 @@ module PageScripts = struct
   ;;
 
   let update ?user_uuid pool (script, location) =
+    let open Utils.Lwt_result.Infix in
     let%lwt () = create_changelog ?user_uuid pool location script in
-    match script with
-    | None -> Database.exec pool clear_request (show_location location)
-    | Some script -> Database.exec pool update_request (show_location location, script)
+    (match script with
+     | None -> Database.exec pool clear_request (show_location location)
+     | Some script -> Database.exec pool update_request (show_location location, script))
+    ||> fun _ -> Cache.update_script pool location script
   ;;
 
   let find_id pool location =
