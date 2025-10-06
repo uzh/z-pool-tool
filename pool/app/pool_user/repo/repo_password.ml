@@ -37,7 +37,9 @@ let update_request =
   [%string
     {sql|
       UPDATE user_users
-      SET password = $2
+      SET 
+        password = $2,
+        updated_at = now()
       WHERE user_users.uuid = %{Entity.Id.sql_value_fragment "$1"}
     |sql}]
   |> Caqti_type.(t2 Repo_entity.Id.t t ->. unit)
