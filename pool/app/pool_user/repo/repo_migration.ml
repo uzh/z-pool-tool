@@ -48,10 +48,20 @@ let add_name_columns =
     |sql}
 ;;
 
+let add_on_update_to_updated_at =
+  Step.create
+    ~label:"add on update to updated_at"
+    {sql|
+      ALTER TABLE user_users
+      MODIFY COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    |sql}
+;;
+
 let migration () =
   empty "user"
   |> add_step fix_collation
   |> add_step create_users_table
   |> add_step add_updated_at_column
   |> add_step add_name_columns
+  |> add_step add_on_update_to_updated_at
 ;;
