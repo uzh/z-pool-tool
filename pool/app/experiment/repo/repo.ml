@@ -552,11 +552,12 @@ module Sql = struct
   let participation_history_where ?(dyn = Dynparam.empty) ~only_closed contact_id =
     let joins =
       {sql|
-        INNER JOIN pool_sessions ON pool_sessions.experiment_uuid = pool_experiments.uuid
+        LEFT JOIN pool_sessions ON pool_sessions.experiment_uuid = pool_experiments.uuid
           AND pool_sessions.canceled_at IS NULL
-        INNER JOIN pool_assignments ON pool_assignments.session_uuid = pool_sessions.uuid
+        LEFT JOIN pool_assignments ON pool_assignments.session_uuid = pool_sessions.uuid
           AND pool_assignments.canceled_at IS NULL
           AND pool_assignments.marked_as_deleted = 0
+          AND pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
       |sql}
     in
     let where =
@@ -569,12 +570,7 @@ module Sql = struct
           END
         |sql}
       in
-      Format.asprintf
-        {sql|
-            pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
-            %s
-        |sql}
-        (if only_closed then Format.asprintf "AND (%s)" only_closed_condition else "")
+      if only_closed then only_closed_condition else ""
     in
     where, Dynparam.(dyn |> add Contact.Repo.Id.t contact_id), joins
   ;;
