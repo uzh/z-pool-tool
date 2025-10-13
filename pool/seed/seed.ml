@@ -18,10 +18,7 @@ module Tenant = struct
             then []
             else
               [ Seed_user.contacts; Seed_guard.create_role_assignments; Seed_smtp.create ])
-           @ [ Seed_user.contacts
-             ; Seed_guard.create_role_assignments
-             ; Seed_smtp.create
-             ; Seed_experiment.experiments
+           @ [ Seed_experiment.experiments
              ; Seed_custom_fields.create
              ; Seed_user.admins
              ; Seed_location.create
