@@ -48,7 +48,7 @@ let assignment pool =
              let assign { Time_window.id; _ } =
                Assignment.(Created (create contact, id))
              in
-             assign time_window :: []))
+             [ assign time_window ]))
         time_window_invitations
   in
   let%lwt () = Lwt_list.iter_s (Assignment.handle_event pool) events in
