@@ -1,3 +1,8 @@
+let day, hour, halfhour =
+  let map f (a, b, c) = f a, f b, f c in
+  (24 * 60 * 60, 60 * 60, 30 * 60) |> map Ptime.Span.of_int_s
+;;
+
 let timewindow pool =
   let open Utils.Lwt_result.Infix in
   let%lwt online_experiments =
@@ -9,37 +14,33 @@ let timewindow pool =
     all_experiments ||> CCList.filter is_online_experiment
   in
   let get_or_failwith = Pool_common.Utils.get_or_failwith in
-  let parse_time str =
-    str |> Ptime.of_rfc3339 |> CCResult.get_exn |> fun (t, _, _) -> t
+  let from_now_ms offset =
+    Ptime.add_span (Ptime_clock.now ()) offset |> CCOption.get_exn_or "Invalid time"
   in
   let time_window_data =
-    [ ( "Morning session - Week 1"
+    [ ( "Morning session - 1"
       , "Initial data collection phase"
       , Some 10
-      , "2025-10-15T09:00:00Z"
-      , "2025-10-15T12:00:00Z" )
-    ; ( "Afternoon session - Week 1"
+      , Ptime_clock.now ()
+      , hour )
+    ; ( "Afternoon session - 1"
       , "Follow-up data collection"
       , Some 10
-      , "2025-10-15T14:00:00Z"
-      , "2025-10-15T17:00:00Z" )
-    ; ( "Evening session - Weekend"
+      , Ptime_clock.now ()
+      , hour )
+    ; ( "Evening session"
       , "Extended availability for remote participants"
       , Some 25
-      , "2025-10-19T18:00:00Z"
-      , "2025-10-19T22:00:00Z" )
+      , from_now_ms day
+      , day )
     ]
   in
   let create_timewindow
-        (public_description, internal_description, max_participants, start_str, end_str)
+        (public_description, internal_description, max_participants, start, duration)
         experiment
     =
-    let start = parse_time start_str |> Session.Start.create in
-    let end_at = parse_time end_str in
-    let start_time = Session.Start.value start in
-    let duration =
-      Ptime.diff end_at start_time |> Session.Duration.create |> get_or_failwith
-    in
+    let start = start |> Session.Start.create in
+    let duration = duration |> Session.Duration.create |> get_or_failwith in
     let public_description =
       Session.PublicDescription.create public_description |> get_or_failwith
     in
