@@ -26,7 +26,7 @@ let assignment pool =
          in
          let%lwt time_window =
            Time_window.query_by_experiment pool experiment.Experiment.id
-           ||> fun (time_windows, _) -> time_windows |> CCList.hd
+           ||> CCFun.(fst %> CCList.hd)
          in
          Lwt.return (time_window, experiment_invitations))
       online_experiments
