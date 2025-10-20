@@ -36,8 +36,8 @@ let timewindow pool =
     ]
   in
   let create_timewindow
-        (public_description, internal_description, max_participants, start, duration)
         experiment
+        (public_description, internal_description, max_participants, start, duration)
     =
     let start = start |> Session.Start.create in
     let duration = duration |> Session.Duration.create |> get_or_failwith in
@@ -62,9 +62,8 @@ let timewindow pool =
   let events =
     online_experiments
     |> CCList.flat_map (fun experiment ->
-      time_window_data
-      |> CCList.map (fun time_window -> create_timewindow time_window experiment))
-    |> CCList.map (fun tw -> Time_window.Created tw)
+      time_window_data |> CCList.map (create_timewindow experiment))
+    |> CCList.map (fun tw -> Time_window.created tw)
   in
   let%lwt () = Lwt_list.iter_s (Time_window.handle_event pool) events in
   Lwt.return_unit
