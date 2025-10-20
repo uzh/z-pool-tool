@@ -1,7 +1,4 @@
-let day, hour, halfhour =
-  let map f (a, b, c) = f a, f b, f c in
-  (24 * 60 * 60, 60 * 60, 30 * 60) |> map Ptime.Span.of_int_s
-;;
+let day, hour = (24 * 60 * 60, 60 * 60) |> CCPair.map_same Ptime.Span.of_int_s
 
 let timewindow pool =
   let open Utils.Lwt_result.Infix in
