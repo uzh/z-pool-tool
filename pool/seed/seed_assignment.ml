@@ -6,29 +6,34 @@ let assignment pool =
       online_experiment |> CCOption.is_none)
   in
   let%lwt session_invitations =
-    Lwt_list.map_s
+    Lwt_list.filter_map_s
       (fun experiment ->
-         let%lwt experiment_invitations, (_ : Query.t) =
-           Invitation.find_by_experiment pool experiment.Experiment.id
-         in
          let%lwt session =
-           Session.find_all_for_experiment pool experiment.Experiment.id ||> CCList.hd
+           Session.find_all_for_experiment pool experiment.Experiment.id
+           ||> CCList.head_opt
          in
-         let%lwt follow_ups = Session.find_follow_ups pool session.Session.id in
-         Lwt.return (session, follow_ups, experiment_invitations))
+         Lwt.return session
+         >|> function
+         | Some session ->
+           let%lwt follow_ups = Session.find_follow_ups pool session.Session.id in
+           let%lwt experiment_invitations, (_ : Query.t) =
+             Invitation.find_by_experiment pool experiment.Experiment.id
+           in
+           Lwt.return_some (session, follow_ups, experiment_invitations)
+         | None -> Lwt.return_none)
       offline_experiments
   in
   let%lwt time_window_invitations =
-    Lwt_list.map_s
+    Lwt_list.filter_map_s
       (fun experiment ->
          let%lwt experiment_invitations, (_ : Query.t) =
            Invitation.find_by_experiment pool experiment.Experiment.id
          in
          let%lwt time_window =
            Time_window.query_by_experiment pool experiment.Experiment.id
-           ||> CCFun.(fst %> CCList.hd)
+           ||> CCFun.(fst %> CCList.head_opt)
          in
-         Lwt.return (time_window, experiment_invitations))
+         CCOption.map (fun tw -> tw, experiment_invitations) time_window |> Lwt.return)
       online_experiments
   in
   let events =
