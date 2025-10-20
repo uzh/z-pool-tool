@@ -16,16 +16,8 @@ let timewindow pool =
   in
   let now = Ptime_clock.now () in
   let time_window_data =
-    [ ( "Morning session - 1"
-      , "Initial data collection phase"
-      , Some 10
-      , now
-      , hour )
-    ; ( "Afternoon session - 1"
-      , "Follow-up data collection"
-      , Some 10
-      , now
-      , hour )
+    [ "Morning session - 1", "Initial data collection phase", Some 10, now, hour
+    ; "Afternoon session - 1", "Follow-up data collection", Some 10, now, hour
     ; ( "Evening session"
       , "Extended availability for remote participants"
       , Some 25
