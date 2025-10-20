@@ -35,6 +35,7 @@ let assignment pool =
     CCList.flat_map
       (fun (session, follow_ups, invitations) ->
          invitations
+         (* only take half of the invitations to leave some contacts open for invites after seeding *)
          |> CCList.take (CCList.length invitations / 2)
          |> CCList.flat_map (fun ({ Invitation.contact; _ } : Invitation.t) ->
            let assign { Session.id; _ } = Assignment.(Created (create contact, id)) in
@@ -43,6 +44,7 @@ let assignment pool =
     @ CCList.flat_map
         (fun (time_window, invitations) ->
            invitations
+           (* only take half of the invitations to leave some contacts open for invites after seeding *)
            |> CCList.take (CCList.length invitations / 2)
            |> CCList.flat_map (fun ({ Invitation.contact; _ } : Invitation.t) ->
              let assign { Time_window.id; _ } =
