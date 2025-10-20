@@ -17,16 +17,17 @@ let timewindow pool =
   let from_now_ms offset =
     Ptime.add_span (Ptime_clock.now ()) offset |> CCOption.get_exn_or "Invalid time"
   in
+  let now = Ptime_clock.now () in
   let time_window_data =
     [ ( "Morning session - 1"
       , "Initial data collection phase"
       , Some 10
-      , Ptime_clock.now ()
+      , now
       , hour )
     ; ( "Afternoon session - 1"
       , "Follow-up data collection"
       , Some 10
-      , Ptime_clock.now ()
+      , now
       , hour )
     ; ( "Evening session"
       , "Extended availability for remote participants"
