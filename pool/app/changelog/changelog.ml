@@ -79,7 +79,6 @@ module T (R : RecordSig) = struct
          | [] -> None
          | assoc -> Some (Assoc assoc))
       (* Catching equal variants *)
-      | `Tuple [ `String key1; val1 ], `Tuple [ `String key2; val2 ]
       | `List [ `String key1; val1 ], `List [ `String key2; val2 ] ->
         if eq key1 key2
         then compare val1 val2

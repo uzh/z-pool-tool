@@ -13,11 +13,11 @@ module Change = struct
 
   let t_of_yojson (json : Yojson.Safe.t) : t =
     match json with
-    | `Tuple [ a; b ] -> a, b
+    | `List [ a; b ] -> a, b
     | _ -> raise (Yojson.Json_error "Invalid Change.t yojson")
   ;;
 
-  let yojson_of_t (a, b) = `Tuple [ a; b ]
+  let yojson_of_t (a, b) = `List [ a; b ]
 end
 
 module Changes = struct
