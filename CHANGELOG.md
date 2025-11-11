@@ -4,6 +4,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.12.4](https://github.com/uzh/z-pool-tool/tree/0.12.4) - 2025-11-11
+
+### Fixed
+
+- Caching when page scripts are updated
+- Timestamp when updating password
+- Validation errors on password reset page
+- Show online studies in contact experiment history
+
+### Changed
+
+- Password Reset process (CQRS, token invalidation)
+
 ## [0.12.3](https://github.com/uzh/z-pool-tool/tree/0.12.3) - 2025-08-29
 
 ### Fixed
