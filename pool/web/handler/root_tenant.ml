@@ -114,6 +114,7 @@ let create_operator req =
         redirect_path
         [ Message.set ~success:[ Success.Created Field.Operator ] ]
     in
+    let open Utils.Lwt_result.ParallelInfix in
     validate_user () >> events >>= handle |>> return_to_overview
   in
   Response.handle ~src req result
