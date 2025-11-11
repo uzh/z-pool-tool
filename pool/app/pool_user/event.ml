@@ -38,10 +38,11 @@ let handle_event ?tags pool : event -> unit Lwt.t =
     in
     Lwt.return_unit
   | PasswordReset (token, new_password, confirmation) ->
-    let%lwt _ =
+    let%lwt () =
       PasswordReset.reset_password ~token pool new_password confirmation
       >|- Pool_common.Utils.with_log_error ~src ?tags
-      >|> fun _ -> Pool_token.deactivate pool token
+      >|> fun (_ : (unit, Pool_message.Error.t) result) ->
+      Pool_token.deactivate pool token
     in
     Lwt.return_unit
 ;;
