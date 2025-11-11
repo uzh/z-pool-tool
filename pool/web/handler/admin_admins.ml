@@ -124,6 +124,7 @@ let create_admin req =
         (admin_path ~id ())
         [ Message.set ~success:[ Success.Created Field.Admin ] ]
     in
+    let open Utils.Lwt_result.ParallelInfix in
     () |> validate_user >> events >>= handle |>> return_to_overview
   in
   Response.handle ~src req result

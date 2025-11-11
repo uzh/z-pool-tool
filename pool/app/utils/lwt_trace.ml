@@ -37,9 +37,6 @@ module Infix = struct
     Lwt.return @@ f l'
   ;;
 
-  (* Utils.Lwt_result.bind CCFun.const *)
-  let ( >> ) m k = m >>= fun _ -> k
-
   (* Utils.Lwt_result.bind_lwt *)
   let ( |>> ) l f =
     let* l' = l in
@@ -60,6 +57,13 @@ module Infix = struct
     | Error e -> Lwt.return (Error (f e))
     | Ok _ as x' -> Lwt.return x'
   ;;
+end
+
+module ParallelInfix = struct
+  open Infix
+
+  (* Utils.Lwt_result.bind CCFun.const *)
+  let ( >> ) m k = m >>= fun _ -> k
 end
 
 let map_error f l = Infix.( >|- ) l f
