@@ -36,7 +36,14 @@ let session_data =
 let create pool =
   let open CCFun in
   let open Pool_common.Utils in
-  let%lwt experiments = Experiment.all pool in
+  let%lwt experiments =
+    let open Utils.Lwt_result.Infix in
+    let all_experiments = Experiment.all pool in
+    let is_in_person_experiment = function
+      | { Experiment.online_experiment; _ } -> online_experiment |> CCOption.is_none
+    in
+    all_experiments ||> CCList.filter is_in_person_experiment
+  in
   let%lwt locations = Pool_location.all pool in
   let%lwt () =
     Lwt_list.iter_s

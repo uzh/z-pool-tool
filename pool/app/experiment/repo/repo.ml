@@ -552,9 +552,9 @@ module Sql = struct
   let participation_history_where ?(dyn = Dynparam.empty) ~only_closed contact_id =
     let joins =
       {sql|
-        INNER JOIN pool_sessions ON pool_sessions.experiment_uuid = pool_experiments.uuid
+        LEFT JOIN pool_sessions ON pool_sessions.experiment_uuid = pool_experiments.uuid
           AND pool_sessions.canceled_at IS NULL
-        INNER JOIN pool_assignments ON pool_assignments.session_uuid = pool_sessions.uuid
+        LEFT JOIN pool_assignments ON pool_assignments.session_uuid = pool_sessions.uuid
           AND pool_assignments.canceled_at IS NULL
           AND pool_assignments.marked_as_deleted = 0
       |sql}

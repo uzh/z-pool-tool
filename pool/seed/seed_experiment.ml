@@ -10,7 +10,8 @@ let experiments pool =
       , "It was great fun."
       , Some "F-00000-11-22"
       , false
-      , Some (60 * 60) )
+      , Some (60 * 60)
+      , None )
     ; ( "The Wallet Game"
       , "Finance experiment"
       , "Students bid for an object in a first-price auction. Each receives an \
@@ -18,6 +19,7 @@ let experiments pool =
          sum of the signal."
       , Some "F-00000-11-22"
       , false
+      , None
       , None )
     ; ( "The Ultimatum and the Dictator Bargaining Games"
       , "Bidding experiment"
@@ -25,7 +27,16 @@ let experiments pool =
          most microeconomics lectures or lectures on public economics."
       , None
       , true
-      , Some (60 * 60) )
+      , Some (60 * 60)
+      , None )
+    ; ( "The Blame Game"
+      , "Git Blame Game"
+      , "An experimental investigation of accountability and blame attribution in \
+         strategic decision-making contexts."
+      , Some "F-00000-11-33"
+      , false
+      , None
+      , Some "https://google.com" )
     ]
   in
   let events =
@@ -36,7 +47,8 @@ let experiments pool =
            , description
            , cost_center
            , direct_registration_disabled
-           , email_session_reminder_lead_time ) ->
+           , email_session_reminder_lead_time
+           , survey_url ) ->
          let experiment =
            let title = Title.create title |> get_or_failwith in
            let public_title = PublicTitle.create public_title |> get_or_failwith in
@@ -57,6 +69,12 @@ let experiments pool =
            let external_data_required = ExternalDataRequired.create false in
            let show_external_data_id_links = ShowExternalDataIdLinks.create false in
            let registration_disabled = RegistrationDisabled.create false in
+           let online_experiment =
+             survey_url
+             |> CCOption.map (fun survey_url ->
+               let url = Experiment.SurveyUrl.create survey_url |> get_or_failwith in
+               Experiment.(OnlineExperiment.create ~survey_url:url))
+           in
            create
              title
              public_title
@@ -69,6 +87,7 @@ let experiments pool =
              allow_uninvited_signup
              external_data_required
              show_external_data_id_links
+             ?online_experiment
            |> get_or_failwith
          in
          Experiment.Created experiment)

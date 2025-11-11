@@ -13,7 +13,7 @@ type event =
   | Created of t
   | Updated of t
   | Deleted of t
-[@@deriving eq, show]
+[@@deriving eq, show, variants]
 
 let handle_event pool =
   let open Utils.Lwt_result.Infix in

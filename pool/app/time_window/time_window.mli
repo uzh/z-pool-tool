@@ -52,6 +52,9 @@ type event =
   | Updated of t
   | Deleted of t
 
+val created : t -> event
+val updated : t -> event
+val deleted : t -> event
 val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
