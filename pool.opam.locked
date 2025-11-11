@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "pool"
-version: "0.12.3"
+version: "0.12.4"
 synopsis: "The Z-Pool tool"
 description: "TODO"
 maintainer: "engineering@uzh.econ.ch"
