@@ -61,6 +61,7 @@ let recruiter_permissions : RolePermission.t list =
   ; `Recruiter, Manage, `MessageTemplate
   ; `Recruiter, Read, `Permission
   ; `Recruiter, Read, `OrganisationalUnit
+  ; `Recruiter, Create, `Queue
   ; `Recruiter, Read, `Queue
   ; `Recruiter, Manage, `Role
   ; `Recruiter, Read, `Schedule
