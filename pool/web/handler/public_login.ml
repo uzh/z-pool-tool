@@ -290,7 +290,9 @@ let reset_password_post req =
       | Ok o -> Lwt.return o
       | Error (err, Some token) ->
         redirect_to_with_actions
-          (url_with_field_params [ Field.Token, Pool_token.show token ] "/reset-password")
+          (url_with_field_params
+             [ Field.Token, Pool_token.value token ]
+             "/reset-password")
           [ Message.set ~error:[ err ] ]
       | Error (err, None) ->
         redirect_to_with_actions "/reset-password" [ Message.set ~error:[ err ] ]
