@@ -300,7 +300,22 @@ let reset_password_post req =
     handle_error
     @@
     let* ({ Cqrs_command.User_command.ResetPassword.token; _ } as decoded_params) =
-      urlencoded |> decode |> CCResult.map_err (fun err -> err, None) |> Lwt_result.lift
+      let open Cqrs_command.User_command.ResetPassword in
+      let token =
+        let open CCOption in
+        CCList.assoc_opt ~eq:String.equal Field.(show Token) urlencoded
+        >>= CCList.head_opt
+        >|= Pool_token.of_string
+      in
+      let%lwt is_token_valid =
+        match token with
+        | Some token -> token |> Pool_token.is_valid database_label
+        | None -> Lwt.return_false
+      in
+      urlencoded
+      |> decode
+      |> CCResult.map_err (fun err -> err, if is_token_valid then token else None)
+      |> Lwt_result.lift
     in
     let handle_request decoded_params =
       Lwt_result.map_error (fun err -> err, Some token)
