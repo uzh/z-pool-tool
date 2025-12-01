@@ -133,3 +133,84 @@ let tenant_migration_pending =
        let%lwt () = Pool.Tenant.set_migration_pending db_pools in
        Lwt.return_some ())
 ;;
+
+module YojsonTupleMigration = struct
+  open Caqti_request.Infix
+
+  let select_request =
+    {sql|
+      SELECT
+        uuid
+        changes
+      FROM pool_change_log
+    |sql}
+    |> Caqti_type.(unit ->* t2 string string)
+  ;;
+
+  let update_request =
+    {sql|
+      UPDATE pool_change_log
+      SET changes = ?
+      WHERE uuid = ?)
+    |sql}
+    |> Caqti_type.(t2 string string ->. unit)
+  ;;
+
+  let rec transform_tuples (json : Yojson.Safe.t) : Yojson.Safe.t =
+    match json with
+    | `Tuple [ a; b ] -> `List [ a; b ]
+    | `List items -> `List (CCList.map transform_tuples items)
+    | `Assoc pairs -> `Assoc (CCList.map (fun (k, v) -> k, transform_tuples v) pairs)
+    | other -> other
+  ;;
+
+  let migrate_changelog database_label =
+    let tags = Database.Logger.Tags.create database_label in
+    Logs.info (fun m ->
+      m ~tags "Starting yojson tuple migration for pool_change_log table");
+    let%lwt changelogs = Database.collect database_label select_request () in
+    let total = CCList.length changelogs in
+    Logs.info (fun m -> m ~tags "Found %d changelog entries to process" total);
+    let%lwt migrated_count =
+      Lwt_list.fold_left_s
+        (fun count (uuid, changes_str) ->
+           try
+             let json = Yojson.Safe.from_string changes_str in
+             let transformed = transform_tuples json in
+             if Yojson.Safe.equal json transformed
+             then Lwt.return count
+             else (
+               let new_changes_str = Yojson.Safe.to_string transformed in
+               let%lwt () =
+                 Database.exec database_label update_request (new_changes_str, uuid)
+               in
+               Lwt.return (count + 1))
+           with
+           | exn ->
+             Logs.warn (fun m ->
+               m ~tags "Failed to process changelog %s: %s" uuid (Printexc.to_string exn));
+             Lwt.return count)
+        0
+        changelogs
+    in
+    Logs.info (fun m ->
+      m ~tags "Completed migration: %d/%d entries updated" migrated_count total);
+    Lwt.return_unit
+  ;;
+
+  let run_all () =
+    let () = Pool.Root.add () in
+    let%lwt db_pools = Pool.Tenant.setup () in
+    Lwt_list.iter_s migrate_changelog db_pools
+  ;;
+end
+
+let migrate_yojson_tuples =
+  Command_utils.make_no_args
+    "migrate.yojson_tuples"
+    "Migrate json serialized data in the database to use lists rather than tuples due to \
+     removal of tuples in yojson 3.0.0+"
+    (fun () ->
+       let%lwt () = YojsonTupleMigration.run_all () in
+       Lwt.return_some ())
+;;
