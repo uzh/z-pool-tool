@@ -140,7 +140,7 @@ module YojsonTupleMigration = struct
   let select_request =
     {sql|
       SELECT
-        uuid
+        uuid,
         changes
       FROM pool_change_log
     |sql}
@@ -151,7 +151,7 @@ module YojsonTupleMigration = struct
     {sql|
       UPDATE pool_change_log
       SET changes = ?
-      WHERE uuid = ?)
+      WHERE uuid = ?
     |sql}
     |> Caqti_type.(t2 string string ->. unit)
   ;;
