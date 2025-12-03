@@ -158,8 +158,7 @@ module YojsonTupleMigration = struct
 
   let rec transform_tuples (json : Yojson.Safe.t) : Yojson.Safe.t =
     match json with
-    | `Tuple items -> `List (CCList.map transform_tuples items)
-    | `List items -> `List (CCList.map transform_tuples items)
+    | `Tuple items | `List items -> `List (CCList.map transform_tuples items)
     | `Assoc pairs -> `Assoc (CCList.map (fun (k, v) -> k, transform_tuples v) pairs)
     | other -> other
   ;;
