@@ -258,7 +258,7 @@ jobs:
   deploy_staging:
     name: Trigger staging deploy
     runs-on: ubuntu-latest
-    needs: [build, assets, build_app_image]
+    needs: [build, assets, build-app-image]
     if: github.ref_name == 'main'
     steps:
       - name: Checkout code
@@ -273,7 +273,7 @@ jobs:
   release:
     name: Release a new version
     runs-on: ubuntu-latest
-    needs: [build, assets, build_app_image]
+    needs: [build, assets, build-app-image]
     if: github.ref_type == 'tag'
     permissions:
       contents: write
