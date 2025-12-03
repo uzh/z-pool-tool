@@ -31,7 +31,6 @@ ENV SIHL_ENV=production
 ENV LOG_LEVEL=info
 ENV ROOT_PATH=/app
 ENV PUBLIC_DIR=/app/public
-ENV PORT=3000
 
 EXPOSE 3000
 
