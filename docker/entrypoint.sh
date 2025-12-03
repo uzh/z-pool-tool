@@ -8,7 +8,7 @@ if [ "${CONTAINER_ROLE:-app}" = "app" ]; then
   /app/run.exe migrate.root
 
   echo "[entrypoint] migrate.tenant_migrations_pending"
-  /app/run.exe migrate.tenant_migrations_pending || true
+  /app/run.exe migrate.tenant_migrations_pending
 
   echo "[entrypoint] migrate.tenant"
   /app/run.exe migrate.tenant
