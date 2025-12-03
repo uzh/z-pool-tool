@@ -46,6 +46,7 @@ let commands =
   [ Migrate.root
   ; Migrate.tenants
   ; Migrate.tenant_migration_pending
+  ; Migrate.migrate_yojson_tuples
   ; Seed.root_data
   ; Seed.root_data_clean
   ; Seed.tenant_data
