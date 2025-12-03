@@ -30,7 +30,7 @@ jobs:
         with:
           filters: |
             docker:
-              - 'docker/Dockerfile.opam'
+              - 'docker/Dockerfile.build'
               - 'scripts/opam-install.sh'
 
       - name: Set up Docker Buildx
@@ -61,7 +61,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./docker/Dockerfile.opam
+          file: ./docker/Dockerfile.build
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
