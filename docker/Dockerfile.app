@@ -38,4 +38,4 @@ HEALTHCHECK --interval=60s --timeout=3s --start-period=5s --retries=10 \
   CMD curl -f http://localhost:3000/root/api/v1/status || exit 1
 
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["server"]
+CMD ["/app/run.exe", "server"]
