@@ -281,8 +281,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download all workflow run artifacts
+      - name: Download executable artifact
         uses: actions/download-artifact@v4
+        with:
+          name: run.exe
+          path: run.exe
+
+      - name: Download assets artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: assets
+          path: assets
 
       - name: Extract version changelog
         run: sed -nr "/^## .?v?${GITHUB_REF_NAME}/,/^## /p" CHANGELOG.md | sed '1d;2d;$d' > changes.md
