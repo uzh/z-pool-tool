@@ -4,6 +4,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.12.5](https://github.com/uzh/z-pool-tool/tree/0.12.5) - 2025-12-04
+
+### Fixed
+
+- show password validation errors when resetting password
+- set token on redirect when password reset validation fails
+
+### Added
+- add queue create permission to recruiter role
+
+
 ## [0.12.4](https://github.com/uzh/z-pool-tool/tree/0.12.4) - 2025-11-11
 
 ### Fixed
