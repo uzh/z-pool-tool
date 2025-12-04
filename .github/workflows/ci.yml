@@ -30,7 +30,7 @@ jobs:
         with:
           filters: |
             docker:
-              - 'docker/Dockerfile'
+              - 'docker/Dockerfile.build'
               - 'scripts/opam-install.sh'
 
       - name: Set up Docker Buildx
@@ -48,20 +48,20 @@ jobs:
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
             type=raw,value=5.3-2.3
-        env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
 
       - name: Build and push Docker image
         if: steps.changes.outputs.docker == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./docker/Dockerfile
+          file: ./docker/Dockerfile.build
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -190,10 +190,75 @@ jobs:
         with:
           webhook: ${{ secrets.ECON_TEAMS_WEBHOOK }}
 
+  build-app-image:
+    name: Build and push application Docker image
+    runs-on: ubuntu-latest
+    needs: [build, assets]
+    if: github.ref_name == 'main' || github.ref_type == 'tag'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download executable artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: run.exe
+          path: ./artifacts/run.exe
+
+      - name: Download assets artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: assets
+          path: ./artifacts/public
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.CR_PAT }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/z-pool-tool
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile.app
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Notify about failure
+        if: failure()
+        uses: ./.github/actions/notify-failure
+        with:
+          webhook: ${{ secrets.ECON_TEAMS_WEBHOOK }}
+
   deploy_staging:
     name: Trigger staging deploy
     runs-on: ubuntu-latest
-    needs: [build, assets]
+    needs: [build, assets, build-app-image]
     if: github.ref_name == 'main'
     steps:
       - name: Checkout code
@@ -208,7 +273,7 @@ jobs:
   release:
     name: Release a new version
     runs-on: ubuntu-latest
-    needs: [build, assets]
+    needs: [build, assets, build-app-image]
     if: github.ref_type == 'tag'
     permissions:
       contents: write
