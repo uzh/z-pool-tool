@@ -80,12 +80,12 @@ printTitle "Check formatting"
 make format
 
 printTitle "Setup test"
-opam config exec -- dune exec --root . pool/run/run.exe migrate.root
-opam config exec -- dune exec --root . pool/run/run.exe seed.root.clean
-opam config exec -- dune exec --root . pool/run/run.exe migrate.tenant
-opam config exec -- dune exec --root . pool/run/run.exe seed.tenant.clean
+opam exec -- dune exec --root . pool/run/run.exe migrate.root
+opam exec -- dune exec --root . pool/run/run.exe seed.root.clean
+opam exec -- dune exec --root . pool/run/run.exe migrate.tenant
+opam exec -- dune exec --root . pool/run/run.exe seed.tenant.clean
 
 printTitle "Execute tests"
-opam config exec -- make test
+opam exec -- make test
 
 printTitle "Build script finished"
