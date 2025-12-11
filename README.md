@@ -13,7 +13,7 @@ The project executable can be run via command line `make sihl` and shows the inf
 1. Migrate tenant database with `make sihl migrate.tenant`
 1. Seed tenant database `make sihl seed.tenant`
 1. Run development server `make dev`
-1. See `pool/database/seed/seed_user.ml` for default users or `make sihl admin.create ...` (see [Application Commands](#application-commands)) to generate one
+1. See `pool/seed/seed_user.ml` for default users or `make sihl admin.create ...` (see [Application Commands](#application-commands)) to generate one
 
 ### Running locally with Esy
 
