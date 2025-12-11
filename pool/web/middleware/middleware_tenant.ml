@@ -25,40 +25,38 @@ let tenant_of_request req =
 let filter ~maintenance_handler ~connection_issue_handler ~error_handler handler req =
   let open Pool_context in
   let open Status in
-  [%lwt
-    match[@ocaml.warning "-4"] tenant_of_request req with
-    | Ok ({ Pool_tenant.database_label; status; _ } as tenant) ->
-      let handle_request =
-        Settings.find_languages database_label
-        ||> Tenant.create tenant
-        ||> Tenant.set req
-        >|> handler
-      in
-      (match status with
-       | Active -> handle_request
-       | Maintenance | MigrationsConnectionIssue | MigrationsFailed | MigrationsPending ->
-         maintenance_handler ()
-       | Disabled -> connection_issue_handler ()
-       | ConnectionIssue ->
-         (match%lwt Pool.connect database_label with
-          | Ok () ->
-            let%lwt () =
-              let open Pool_database in
-              StatusUpdated (database_label, Status.Active)
-              |> handle_event Pool.Root.label
-            in
-            handle_request
-          | Error err -> error_handler err))
-    | Error Pool_message.Error.SessionTenantNotFound ->
-      Logs.err ~src (fun m ->
-        m
-          ~tags:(Logger.Tags.req req)
-          "Missing tenant: is the tenant url configured correctly?");
-      (* Return an empty response in order to not leak information *)
-      Lwt.return Http_response.empty_not_found
-    | Error err ->
-      Pool_common.Utils.with_log_error ~src ~tags:(Logger.Tags.req req) err
-      |> error_handler]
+  match%lwt tenant_of_request req with
+  | Ok ({ Pool_tenant.database_label; status; _ } as tenant) ->
+    let handle_request =
+      Settings.find_languages database_label
+      ||> Tenant.create tenant
+      ||> Tenant.set req
+      >|> handler
+    in
+    (match status with
+     | Active -> handle_request
+     | Maintenance | MigrationsConnectionIssue | MigrationsFailed | MigrationsPending ->
+       maintenance_handler ()
+     | Disabled -> connection_issue_handler ()
+     | ConnectionIssue ->
+       (match%lwt Pool.connect database_label with
+        | Ok () ->
+          let%lwt () =
+            let open Pool_database in
+            StatusUpdated (database_label, Status.Active) |> handle_event Pool.Root.label
+          in
+          handle_request
+        | Error err -> error_handler err))
+  | Error Pool_message.Error.SessionTenantNotFound ->
+    Logs.err ~src (fun m ->
+      m
+        ~tags:(Logger.Tags.req req)
+        "Missing tenant: is the tenant url configured correctly?");
+    (* Return an empty response in order to not leak information *)
+    Lwt.return Http_response.empty_not_found
+  | Error err ->
+    Pool_common.Utils.with_log_error ~src ~tags:(Logger.Tags.req req) err |> error_handler
+[@@ocaml.warning "-4"]
 ;;
 
 let web_filter handler req =
