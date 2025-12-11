@@ -25,7 +25,7 @@ let tenant_of_request req =
 let filter ~maintenance_handler ~connection_issue_handler ~error_handler handler req =
   let open Pool_context in
   let open Status in
-  match%lwt tenant_of_request req with
+  match%lwt[@ocaml.warning "-4"] tenant_of_request req with
   | Ok ({ Pool_tenant.database_label; status; _ } as tenant) ->
     let handle_request =
       Settings.find_languages database_label
@@ -47,6 +47,22 @@ let filter ~maintenance_handler ~connection_issue_handler ~error_handler handler
           in
           handle_request
         | Error err -> error_handler err))
+  | Error (Pool_message.Error.SessionTenantNotFound as err) ->
+    let context =
+      (* Set a dummy root context *)
+      let csrf = Sihl.Web.Csrf.find_exn req in
+      Pool_context.(create
+                      ( []
+                      , Pool_common.Language.En
+                      , Database.Pool.Root.label
+                      , None
+                      , csrf
+                      , Guest
+                      , []
+                      , [] ))
+    in
+    let req = Pool_context.set req context in
+    Http_response.handle req (fun _ -> Lwt_result.fail (Http_response.NotFound err))
   | Error err ->
     Pool_common.Utils.with_log_error ~src ~tags:(Logger.Tags.req req) err |> error_handler
 ;;
