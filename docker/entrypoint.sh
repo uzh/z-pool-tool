@@ -15,4 +15,4 @@ if [ "${CONTAINER_ROLE:-app}" = "app" ]; then
 fi
 
 echo "[entrypoint] Starting application: $*"
-exec /app/run.exe "$@"
+exec "$@"
