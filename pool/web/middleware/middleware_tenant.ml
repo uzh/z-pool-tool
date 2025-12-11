@@ -47,22 +47,12 @@ let filter ~maintenance_handler ~connection_issue_handler ~error_handler handler
           in
           handle_request
         | Error err -> error_handler err))
-  | Error (Pool_message.Error.SessionTenantNotFound as err) ->
-    let context =
-      (* Set a dummy root context *)
-      let csrf = Sihl.Web.Csrf.find_exn req in
-      Pool_context.(create
-                      ( []
-                      , Pool_common.Language.En
-                      , Database.Pool.Root.label
-                      , None
-                      , csrf
-                      , Guest
-                      , []
-                      , [] ))
-    in
-    let req = Pool_context.set req context in
-    Http_response.handle req (fun _ -> Lwt_result.fail (Http_response.NotFound err))
+  | Error Pool_message.Error.SessionTenantNotFound ->
+    Logs.err ~src (fun m ->
+        m ~tags:(Logger.Tags.req req)
+          "Missing tenant: is the tenant url configured correctly?");
+    (* Return an empty response in order to not leak information *)
+    Lwt.return Http_response.empty_not_found
   | Error err ->
     Pool_common.Utils.with_log_error ~src ~tags:(Logger.Tags.req req) err |> error_handler
 ;;
