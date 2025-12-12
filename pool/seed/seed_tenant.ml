@@ -33,7 +33,8 @@ let create () =
       in
       [ ( "Econ test"
         , "description"
-        , "test.pool.econ.uzh.ch"
+        , Sihl.Configuration.read_string "PUBLIC_URL_TENANT_ONE"
+          |> CCOption.value ~default:"test.pool.econ.uzh.ch"
         , database_url
         , "econ-test"
         , styles.Assets.id
@@ -43,7 +44,8 @@ let create () =
     else
       [ ( "Econ UZH"
         , "description"
-        , "localhost:3017"
+        , Sihl.Configuration.read_string "PUBLIC_HOST_TENANT_ONE"
+          |> CCOption.value ~default:"localhost:3017"
         , Sihl.Configuration.read_string "DATABASE_URL_TENANT_ONE"
           |> CCOption.value ~default:"mariadb://root@database-tenant:3306/dev_econ"
         , "econ-uzh"
@@ -52,7 +54,8 @@ let create () =
         , "EN" )
       ; ( "ZHAW"
         , "description"
-        , "pool.zhaw.ch"
+        , Sihl.Configuration.read_string "PUBLIC_HOST_TENANT_TWO"
+          |> CCOption.value ~default:"pool.zhaw.ch"
         , Sihl.Configuration.read_string "DATABASE_URL_TENANT_TWO"
           |> CCOption.value ~default:"mariadb://root@database-tenant:3306/dev_zhaw"
         , "zhaw"
