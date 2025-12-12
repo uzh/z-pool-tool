@@ -4,7 +4,7 @@
 
 A guide to setup the project with devcontainers can be found
 [here](./.devcontainer/README.md). If you prefer to [run the project
-locally](#running-locally-with-Esy), you can do that with [esy][esy].
+locally](#running-locally-with-Esy), you can do that with [esy][esy] or with [opam].
 
 The project executable can be run via command line `make sihl` and shows the information of the executable.
 
@@ -26,6 +26,43 @@ execute it within the project's sandbox, or you can start a new development
 shell within it by running `esy shell`.
 
 [esy]: https://esy.sh
+
+#### Running locally with opam
+
+Opam is a source-based package manager for OCaml. Esy produces opam and opam
+lock files that can be consumed by opam. This can be useful if you don't wish
+to use `npm` or `yarn` on your machine and don't need to change the frontend
+code or CSS. In that case you can run `yarn install` and `yarn build` in a VM
+or docker container and copy the `public/` directory over.
+
+For installation instructions for opam see the [opam website][opam].
+Once installed you may consider creating a local opam switch:
+
+```shell
+$ opam switch create . --locked --deps-only --with-test
+```
+
+With an existing switch you can run the following command. Note that
+`--update-invariant` may be required if you don't have installed the exact same
+version of the OCaml compiler:
+
+```shell
+$ opam install --deps-only --with-test ./pool.opam.locked
+```
+
+#### Environment variables for running locally
+
+The .env.sample is written for running with devcontainers where ports are
+remapped. Thus `PUBLIC_HOST_TENANT_ONE` needs to be modified as the application
+will only be listening on port 3000. As the root `PUBLIC_URL` is using
+http://localhost:3000 we need a different name. You can either use e.g.
+`test.localhost:3000` or edit `/etc/hosts` with a name of your choice.
+
+You will also need to edit the database URLs `DATABASE_URL`,
+`DATABASE_URL_TENANT_ONE` and `DATABASE_URL_TENANT_TWO` with the correct
+address for your mariadb database instance.
+
+[opam]: https://opam.ocaml.org/
 
 ### Commands
 
@@ -50,6 +87,10 @@ The following list shows only the most frequently used commands, for a complete 
 - `make sihl server` - starts the tools webserver
 - `make sihl worker` - starts the tools worker for background jobs (e.g. send mails, create invitations)
 
+Note that the commands `make seed.root.clean` and `make seed.tenant.clean` also
+seed the database. Thus there's no need to run `make seed.root` or `make
+seed.tenant` respectively afterwards.
+
 Example commands to add an administrator for a specific role.
 
 ```bash
@@ -70,8 +111,8 @@ run.exe admin.grant_role tenant1 experimenter@mail.com RecruiterAll
 
 For completeness, these environment files are handled with priority from SIHL.
 
-- `.env`: Stores the environment for your local development
-- `.env.test`: Stores the environment used when running tests (e.g. with `make test`)
+- `.env`: Stores the environment for your local development (`SIHL_ENV=development`)
+- `.env.test`: Stores the environment used when running tests (e.g. with `make test`, `SIHL_ENV=test`)
 
 ### Build project
 
