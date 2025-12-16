@@ -731,7 +731,7 @@ Only sessions with open spots can be selected.|}
      parameters. E.g: https://www.domain.com/survey/id?callbackUrl={callbackUrl}"
   | TagsIntro ->
     "The defined tags can be added to several types (e.g. contacts). The tags can be \
-     used by the experiment filter to eighter include or exclude them."
+     used by the experiment filter to either include or exclude them."
   | TemplateTextElementsHint ->
     "The following text elements can be used inside the templates. Click on the labels \
      to copy them to the clipboard."
