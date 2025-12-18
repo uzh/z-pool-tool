@@ -38,12 +38,14 @@ Provide all fields to create a new tenant:
       ; logos
       ; default_language
       ; email
-      ; password
-      ; firstname
-      ; lastname
+      ; _password
+      ; _firstname
+      ; _lastname
       ] ->
+      let%lwt () = Database.Pool.initialize () in
       let%lwt () =
         let open CCResult.Infix in
+        let email_logo = "None" in
         let%lwt database =
           Database.Pool.create_validated_and_tested database_label database_url
           |> Lwt.map failwith
@@ -54,12 +56,10 @@ Provide all fields to create a new tenant:
           ; "url", [ url ]
           ; "styles", [ styles ]
           ; "icon", [ icon ]
-          ; "logos", [ logos ]
           ; "language", [ default_language ]
-          ; "email", [ email ]
-          ; "password", [ password ]
-          ; "firstname", [ firstname ]
-          ; "lastname", [ lastname ]
+          ; "tenant_logos", [ logos ] (* ; "partner_logos", [ partner_logos ] *)
+          ; "email_logo", [ email_logo ]
+          ; "contact_email", [ email ]
           ]
         >>= Cqrs_command.Pool_tenant_command.Create.handle database
         |> Pool_common.Utils.get_or_failwith
