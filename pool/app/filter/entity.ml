@@ -105,6 +105,7 @@ module Key = struct
     | MultiSelect of Custom_field.SelectOption.t list [@printer print "multi_select"]
     | QueryExperiments
     | QueryTags
+    | QueryExperimentTags
   [@@deriving show]
 
   type hardcoded =
@@ -120,6 +121,7 @@ module Key = struct
     | Assignment [@printer print "assignment"] [@name "assignment"]
     | Invitation [@printer print "invitation"] [@name "invitation"]
     | Tag [@printer print "tag"] [@name "tag"]
+    | ExperimentTag [@printer print "experiment_tag"] [@name "experiment_tag"]
   [@@deriving show { with_path = false }, eq, yojson, variants, enum]
 
   type human =
@@ -197,7 +199,7 @@ module Key = struct
     | NumNoShows -> Ok "pool_contacts.num_no_shows"
     | NumParticipations -> Ok "pool_contacts.num_participations"
     | NumShowUps -> Ok "pool_contacts.num_show_ups"
-    | Assignment | Invitation | Participation | Tag ->
+    | Assignment | Invitation | Participation | Tag | ExperimentTag ->
       Error Pool_message.(Error.QueryNotCompatible (Field.Key, Field.Value))
   ;;
 
@@ -209,6 +211,7 @@ module Key = struct
     | NumAssignments | NumInvitations | NumNoShows | NumParticipations | NumShowUps -> Nr
     | Assignment | Invitation | Participation -> QueryExperiments
     | Tag -> QueryTags
+    | ExperimentTag -> QueryExperimentTags
   ;;
 
   let type_of_custom_field m : input_type =
@@ -245,7 +248,7 @@ module Key = struct
           options
         |> CCOption.to_result error
         >|= CCFun.const ()
-      | Str _, (QueryExperiments | QueryTags) -> Ok ()
+      | Str _, (QueryExperiments | QueryTags | QueryExperimentTags) -> Ok ()
       | _ -> Error error
     in
     let validate value input_type =
@@ -507,7 +510,7 @@ module Operator = struct
     | Firstname | Name -> all_equality_operators @ all_string_operators
     | NumAssignments | NumInvitations | NumNoShows | NumParticipations | NumShowUps ->
       all_equality_operators @ all_size_operators
-    | Participation | Tag | Invitation | Assignment -> all_list_operators
+    | Participation | Tag | ExperimentTag | Invitation | Assignment -> all_list_operators
   ;;
 
   let input_type_to_operator (key : Key.input_type) =
@@ -515,7 +518,8 @@ module Operator = struct
     match key with
     | Bool | Languages _ -> all_equality_operators
     | Date | Nr -> all_equality_operators @ all_size_operators
-    | MultiSelect _ | QueryExperiments | QueryTags -> all_list_operators
+    | MultiSelect _ | QueryExperiments | QueryTags | QueryExperimentTags ->
+      all_list_operators
     | Select _ -> all_select_operators
     | Str -> all_equality_operators @ all_string_operators
   ;;
