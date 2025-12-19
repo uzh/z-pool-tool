@@ -47,8 +47,16 @@ let filter ~maintenance_handler ~connection_issue_handler ~error_handler handler
           in
           handle_request
         | Error err -> error_handler err))
+  | Error Pool_message.Error.SessionTenantNotFound ->
+    Logs.err ~src (fun m ->
+      m
+        ~tags:(Logger.Tags.req req)
+        "Missing tenant: is the tenant url configured correctly?");
+    (* Return an empty response in order to not leak information *)
+    Lwt.return Http_response.empty_not_found
   | Error err ->
     Pool_common.Utils.with_log_error ~src ~tags:(Logger.Tags.req req) err |> error_handler
+[@@ocaml.warning "-4"]
 ;;
 
 let web_filter handler req =
