@@ -54,6 +54,8 @@ let commands =
   ; Seed.tenant_data_test
   ; Seed.tenant_data_clean_specific
   ; Seed.tenant_data_contacts_specific
+  ; Seed.demo_instance
+  ; Seed.demo_instance_clean
   ; Tenant_pool.create_tenant_pool
   ; Tenant_pool.update_tenant_database_url
   ; Contact.sign_up

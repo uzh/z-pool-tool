@@ -66,3 +66,30 @@ let tenant_data_contacts_specific =
     let%lwt () = Seed.Tenant.create_contacts pool () in
     Lwt.return_some ())
 ;;
+
+let demo_instance =
+  let name = "seed.demo" in
+  let description =
+    "Initialize a demo instance with restricted functionality and demo data"
+  in
+  Command_utils.make_pool_specific name description (fun pool ->
+    (* Seed Demo Instance with DEV Data *)
+    let%lwt () = Seed.Tenant.create [ pool ] in
+    (* Change Demo Instance specific Settings *)
+    let%lwt () = Seed.DemoInstance.create pool in
+    Lwt.return_some ())
+;;
+
+let demo_instance_clean =
+  let name = "seed.demo.clean" in
+  let description =
+    "Clean database and initialize a demo instance with restricted functionality"
+  in
+  Command_utils.make_pool_specific name description (fun pool ->
+    let%lwt () = Database.clean_all pool in
+    (* Seed Demo Instance with DEV Data *)
+    let%lwt () = Seed.Tenant.create [ pool ] in
+    (* Change Demo Instance specific Settings *)
+    let%lwt () = Seed.DemoInstance.create pool in
+    Lwt.return_some ())
+;;
