@@ -33,7 +33,7 @@ let create () =
       in
       [ ( "Econ test"
         , "description"
-        , Sihl.Configuration.read_string "PUBLIC_URL_TENANT_ONE"
+        , Sihl.Configuration.read_string "PUBLIC_HOST_TENANT_ONE"
           |> CCOption.value ~default:"test.pool.econ.uzh.ch"
         , database_url
         , "econ-test"
