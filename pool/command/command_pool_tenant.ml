@@ -5,7 +5,6 @@ let create_tenant_pool =
   let help =
     {|<title> <description> <url> <database_url> <database_label>
       <styles> <icon> <logos> <default_language> <operator_email>
-      <operator_password> <operator_firstname> <operator_lastname>
 
 Provide all fields to create a new tenant:
       <title>                             : string
@@ -13,14 +12,8 @@ Provide all fields to create a new tenant:
       <url>                               : string
       <database_url>                      : string
       <database_label>                    : string
-      <styles>                            : uuid
-      <icon>                              : uuid
-      <logos>                             : uuid
       <default_language>                  : 'DE' | 'EN'
       <operator_email>                    : string
-      <operator_password>                 : string
-      <operator_firstname>                : string
-      <operator_lastname>                 : string
   |}
   in
   Sihl.Command.make
@@ -28,20 +21,9 @@ Provide all fields to create a new tenant:
     ~description:"Creates a new test tenant"
     ~help
     (function
-    | [ title
-      ; description
-      ; url
-      ; database_url
-      ; database_label
-      ; styles
-      ; icon
-      ; logos
-      ; default_language
-      ; email
-      ; password
-      ; firstname
-      ; lastname
-      ] ->
+    | [ title; description; url; database_url; database_label; default_language; email ]
+      ->
+      let%lwt () = Database.Pool.initialize () in
       let%lwt () =
         let open CCResult.Infix in
         let%lwt database =
@@ -52,14 +34,9 @@ Provide all fields to create a new tenant:
           [ "title", [ title ]
           ; "description", [ description ]
           ; "url", [ url ]
-          ; "styles", [ styles ]
-          ; "icon", [ icon ]
-          ; "logos", [ logos ]
           ; "language", [ default_language ]
-          ; "email", [ email ]
-          ; "password", [ password ]
-          ; "firstname", [ firstname ]
-          ; "lastname", [ lastname ]
+          ; "contact_email", [ email ]
+          ; "tenant_logos", []
           ]
         >>= Cqrs_command.Pool_tenant_command.Create.handle database
         |> Pool_common.Utils.get_or_failwith

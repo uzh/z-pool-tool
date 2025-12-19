@@ -56,7 +56,7 @@ module Pool = struct
     let open Utils.Lwt_result.Infix in
     let* label = Label.create database_label |> Lwt_result.lift in
     let* url = Url.create database_url |> Lwt_result.lift in
-    create_tested url label
+    create_tested label url
   ;;
 
   let is_root = is_root
