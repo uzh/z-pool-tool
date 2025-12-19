@@ -53,12 +53,17 @@ let htmx_search_helper
           validate database_label (read id) actor ||> CCResult.is_ok)
       in
       execute_search search_location query_results
-    | `ContactTag ->
+    | (`ContactTag | `ExperimentTag) as model_tag ->
       let open Component.Search.Tag in
       let open Tags.Guard.Access in
       let%lwt exclude = entities_to_exclude Tags.Id.of_string in
+      let model =
+        match model_tag with
+        | `ContactTag -> Tags.Model.Contact
+        | `ExperimentTag -> Tags.Model.Experiment
+      in
       let search_tags value actor =
-        Tags.search_by_title database_label ~model:Tags.Model.Contact ~exclude value
+        Tags.search_by_title database_label ~model ~exclude value
         >|> Lwt_list.filter_s (fun (id, _) ->
           validate database_label (read id) actor ||> CCResult.is_ok)
       in
