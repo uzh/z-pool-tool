@@ -188,6 +188,7 @@ module Sql = struct
     in
     let queries =
       [ {sql| DROP TEMPORARY TABLE IF EXISTS tmp_participations; |sql}
+      ; {sql| DROP TEMPORARY TABLE IF EXISTS tmp_tagged_participations; |sql}
       ; {sql| DROP TEMPORARY TABLE IF EXISTS tmp_invitations; |sql}
       ; {sql| DROP TEMPORARY TABLE IF EXISTS tmp_assignments; |sql}
       ]
@@ -360,11 +361,61 @@ module Sql = struct
     fnc
   ;;
 
+  let create_temporary_tagged_participation_table template_queries query =
+    let open Dynparam in
+    let open Caqti_request.Infix in
+    let create_request ids =
+      Format.asprintf
+        {sql|
+        CREATE TEMPORARY TABLE tmp_tagged_participations
+        (INDEX contact_index (contact_uuid),
+         INDEX tag_index (tag_uuid)
+        )
+        AS (
+          SELECT
+            pool_assignments.contact_uuid AS contact_uuid,
+            pool_tagging.tag_uuid AS tag_uuid
+          FROM
+            pool_assignments
+            INNER JOIN pool_sessions ON pool_sessions.uuid = pool_assignments.session_uuid
+            INNER JOIN pool_tagging ON pool_tagging.model_uuid = pool_sessions.experiment_uuid
+              AND pool_assignments.participated = 1
+              AND pool_assignments.canceled_at IS NULL
+              AND pool_tagging.tag_uuid IN ( %s ))
+        |sql}
+        (CCList.mapi
+           (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
+           ids
+         |> CCString.concat ",")
+    in
+    let fnc connection =
+      match query with
+      | None -> Lwt_result.return ()
+      | Some query ->
+        query :: template_queries
+        |> CCList.fold_left
+             (fun acc cur ->
+                acc @ Repo_utils.find_experiments_by_key Key.ExperimentTag cur)
+             []
+        |> (function
+         | [] -> Lwt_result.return ()
+         | ids ->
+           let (Pack (pt, pv)) =
+             CCList.fold_left (fun dyn id -> dyn |> add Caqti_type.string id) empty ids
+           in
+           let (module Connection : Caqti_lwt.CONNECTION) = connection in
+           let request = create_request ids |> pt ->. Caqti_type.unit in
+           Connection.exec request pv)
+    in
+    fnc
+  ;;
+
   let create_temp_tables templates filter =
     let template_queries = CCList.map (fun f -> f.query) templates in
     [ create_temporary_participation_table template_queries filter
     ; create_temporary_invitation_table template_queries filter
     ; create_temporary_assignments_table template_queries filter
+    ; create_temporary_tagged_participation_table template_queries filter
     ]
   ;;
 

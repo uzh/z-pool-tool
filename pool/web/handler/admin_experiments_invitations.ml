@@ -17,15 +17,20 @@ let index req =
     let common_exp_id = Experiment.(experiment |> id |> Id.to_common) in
     let%lwt key_list = Filter.all_keys database_label in
     let%lwt template_list = Filter.find_all_templates database_label () in
-    let%lwt query_experiments, query_tags =
+    let%lwt query_experiments, query_tags, query_experiment_tags =
       match experiment |> Experiment.filter with
-      | None -> Lwt.return ([], [])
+      | None -> Lwt.return ([], [], [])
       | Some filter ->
-        Lwt.both
-          (filter
-           |> Filter.all_query_experiments
-           |> Experiment.search_multiple_by_id database_label)
-          (filter |> Filter.all_query_tags |> Tags.find_multiple database_label)
+        let%lwt query_experiments =
+          filter
+          |> Filter.all_query_experiments
+          |> Experiment.search_multiple_by_id database_label
+        and query_tags =
+          filter |> Filter.all_query_tags |> Tags.find_multiple database_label
+        and query_experiment_tags =
+          filter |> Filter.all_query_experiment_tags |> Tags.find_multiple database_label
+        in
+        Lwt.return (query_experiments, query_tags, query_experiment_tags)
     in
     let* filtered_contacts =
       if Sihl.Configuration.is_production ()
@@ -51,6 +56,7 @@ let index req =
       template_list
       query_experiments
       query_tags
+      query_experiment_tags
       statistics
       filtered_contacts
       context

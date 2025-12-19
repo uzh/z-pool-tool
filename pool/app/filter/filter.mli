@@ -28,6 +28,7 @@ module Key : sig
     | MultiSelect of Custom_field.SelectOption.t list
     | QueryExperiments
     | QueryTags
+    | QueryExperimentTags
 
   val show_input_type : input_type -> string
 
@@ -44,6 +45,7 @@ module Key : sig
     | Assignment
     | Invitation
     | Tag
+    | ExperimentTag
 
   type t =
     | CustomField of Custom_field.Id.t
@@ -164,6 +166,7 @@ module Human : sig
   val of_yojson : Key.human list -> Yojson.Safe.t -> (t, Pool_message.Error.t) result
   val all_query_experiments : t -> Pool_common.Id.t list
   val all_query_tags : t -> Tags.Id.t list
+  val all_query_experiment_tags : t -> Tags.Id.t list
 end
 
 val equal : t -> t -> bool
@@ -239,6 +242,7 @@ val find_templates_of_query : Database.Label.t -> query -> t list Lwt.t
 val toggle_predicate_type : Human.t -> string -> (Human.t, Pool_message.Error.t) result
 val all_query_experiments : t -> Pool_common.Id.t list
 val all_query_tags : t -> Tags.Id.t list
+val all_query_experiment_tags : t -> Tags.Id.t list
 
 type base_condition =
   | MatchesFilter
