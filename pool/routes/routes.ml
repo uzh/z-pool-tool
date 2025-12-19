@@ -22,7 +22,7 @@ let global_middlewares =
   [ Middleware.id ~id:(fun () -> CCString.sub (Sihl.Random.base64 12) 0 10) ()
   ; CustomMiddleware.Error.middleware ()
   ; CustomMiddleware.TrailingSlash.middleware ()
-  ; Middleware.static_file ()
+  ; CustomMiddleware.Static.middleware ()
   ; Opium.Middleware.content_length
   ; Opium.Middleware.etag
   ; Opium.Middleware.method_override
