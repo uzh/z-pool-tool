@@ -61,6 +61,7 @@ let edit
       key_list
       query_experiments
       query_tags
+      query_experiment_tags
   =
   let changelog =
     match filter with
@@ -85,7 +86,8 @@ let edit
               key_list
               []
               query_experiments
-              query_tags)
+              query_tags
+              query_experiment_tags)
         ; changelog
         ]
     ]
