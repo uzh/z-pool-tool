@@ -66,9 +66,6 @@ fi
 printTitle "Mark source dir as save"
 git config --global --add safe.directory $(pwd)
 
-printTitle "Setup project"
-./scripts/setup.sh
-
 printTitle "Install project dependencies"
 opam update
 opam install --deps-only --with-test --update-invariant --locked --no-depexts -y .

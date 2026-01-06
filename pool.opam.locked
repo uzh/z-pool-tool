@@ -24,21 +24,21 @@ depends: [
   "base-threads" {= "base"}
   "base-unix" {= "base"}
   "base64" {= "3.5.2"}
-  "bigarray-overlap" {= "0.2.1"}
   "bigstringaf" {= "0.10.0"}
   "bos" {= "0.2.1"}
+  "bstr" {= "0.0.3"}
   "ca-certs" {= "1.0.1"}
   "camlp-streams" {= "5.0.1"}
   "canary" {= "0.0.3"}
   "caqti" {= "2.2.4"}
   "caqti-driver-mariadb" {= "2.2.4"}
   "caqti-lwt" {= "2.2.4"}
-  "cmdliner" {= "2.0.0"}
+  "cmdliner" {= "2.1.0"}
   "cohttp" {= "6.1.1"}
   "cohttp-lwt" {= "6.1.1"}
   "cohttp-lwt-unix" {= "6.1.1"}
-  "coin" {= "0.1.4"}
-  "colombe" {= "0.12.0"}
+  "coin" {= "0.1.5"}
+  "colombe" {= "0.12.1"}
   "conduit" {= "8.0.0"}
   "conduit-lwt" {= "8.0.0"}
   "conduit-lwt-unix" {= "8.0.0"}
@@ -81,7 +81,7 @@ depends: [
   "http" {= "6.1.1"}
   "httpaf" {= "0.7.1"}
   "httpaf-lwt-unix" {= "0.7.1"}
-  "hxd" {= "0.3.5"}
+  "hxd" {= "0.3.6"}
   "integers" {= "0.7.0"}
   "ipaddr" {= "5.6.1"}
   "ipaddr-sexp" {= "5.6.1"}
@@ -109,7 +109,7 @@ depends: [
   "mirage-crypto-ec" {= "2.0.2"}
   "mirage-crypto-pk" {= "2.0.2"}
   "mirage-crypto-rng" {= "2.0.2"}
-  "mrmime" {= "0.7.0"}
+  "mrmime" {= "0.7.1"}
   "mtime" {= "2.1.0"}
   "multipart-form-data" {= "0.3.0"}
   "num" {= "1.6"}
@@ -159,16 +159,16 @@ depends: [
   "ppx_yojson_conv_lib" {= "v0.17.0"}
   "ppxlib" {= "0.35.0"}
   "ppxlib_jane" {= "v0.17.2"}
-  "prettym" {= "0.0.3"}
+  "prettym" {= "0.0.4"}
   "psq" {= "0.2.1"}
   "ptime" {= "1.2.0"}
   "re" {= "1.14.0"}
   "result" {= "1.5"}
   "rock" {= "0.20.0"}
-  "rosetta" {= "0.3.0"}
+  "rosetta" {= "0.4.0"}
   "rresult" {= "0.7.0"}
   "safepass" {= "3.1"}
-  "sendmail" {= "0.12.0"}
+  "sendmail" {= "0.12.1"}
   "seq" {= "base"}
   "sexplib" {= "v0.17.0"}
   "sexplib0" {= "v0.17.0"}
@@ -196,10 +196,10 @@ depends: [
   "uuidm" {= "0.9.10"}
   "uuseg" {= "17.0.0"}
   "uutf" {= "1.0.4"}
-  "uuuu" {= "0.3.0"}
+  "uuuu" {= "0.4.0"}
   "variantslib" {= "v0.17.0"}
   "x509" {= "1.0.6"}
-  "yojson" {= "2.2.2"}
+  "yojson" {= "3.0.0"}
   "yuscii" {= "0.3.0"}
   "zarith" {= "1.14"}
 ]
@@ -229,16 +229,16 @@ pin-depends: [
     "git+https://github.com/uzh/guardian.git#287bab9baf9b346efe47999e8b7f456bfefe8c13"
   ]
   [
-  "letters.0.4.0"
-  "git+https://github.com/mabiede/letters.git#bug/connection-close-wait"
-]
+    "letters.0.4.0"
+    "git+https://github.com/mabiede/letters.git#bug/connection-close-wait"
+  ]
   [
     "opium.0.20.0"
-    "git+https://github.com/rgrinberg/opium.git#73b16f0487497e02750c1123ead377a56be3be43"
+    "git+https://github.com/rgrinberg/opium.git#da1b22e2ee31889fea68a943b4a6358a633df0c6"
   ]
   [
     "rock.0.20.0"
-    "git+https://github.com/rgrinberg/opium.git#73b16f0487497e02750c1123ead377a56be3be43"
+    "git+https://github.com/rgrinberg/opium.git#da1b22e2ee31889fea68a943b4a6358a633df0c6"
   ]
   [
     "sihl.4.0.0"

@@ -56,3 +56,20 @@ build: [
   ]
 ]
 dev-repo: "git+https://github.com/uzh/z-pool-tool"
+pin-depends: [
+    # pin Sihl repos to ensure edge is available
+    ["sihl" "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"]
+    ["sihl-email" "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"]
+    ["sihl-storage" "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"]
+
+    ["conformist" "git+https://github.com/oxidizing/conformist.git#aa7b95d1f39215cdaab8cf96d765d63e41d5f8a6"]
+
+    ["letters" "git+https://github.com/mabiede/letters.git#bug/connection-close-wait"]
+
+    ["opium" "git+https://github.com/rgrinberg/opium.git#da1b22e2ee31889fea68a943b4a6358a633df0c6"]
+    ["rock" "git+https://github.com/rgrinberg/opium.git#da1b22e2ee31889fea68a943b4a6358a633df0c6"]
+
+    # pin custom libraries
+    ["guardian" "git+https://github.com/uzh/guardian.git#287bab9baf9b346efe47999e8b7f456bfefe8c13"]
+    ["canary" "git+https://github.com/uzh/canary.git#0.0.3"]
+]
