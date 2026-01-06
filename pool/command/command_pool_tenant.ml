@@ -4,7 +4,7 @@ let src = Logs.Src.create "command.pool_tenant"
 let create_tenant_pool =
   let help =
     {|<title> <description> <url> <database_url> <database_label>
-      <styles> <icon> <logos> <default_language> <operator_email>
+      <default_language> <operator_email>
 
 Provide all fields to create a new tenant:
       <title>                             : string
