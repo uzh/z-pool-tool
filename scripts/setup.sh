@@ -6,7 +6,7 @@ set -ex
 repo_oxi=https://github.com/oxidizing
 repo_uzh=https://github.com/uzh
 repo_sihl=$repo_uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8
-repo_opium=https://github.com/rgrinberg/opium.git#73b16f0487497e02750c1123ead377a56be3be43
+repo_opium=https://github.com/rgrinberg/opium.git#da1b22e2ee31889fea68a943b4a6358a633df0c6
 
 # pin Sihl repos to ensure edge is available
 opam pin add -yn sihl $repo_sihl
