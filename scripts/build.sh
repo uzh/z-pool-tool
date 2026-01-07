@@ -68,7 +68,7 @@ git config --global --add safe.directory $(pwd)
 
 printTitle "Install project dependencies"
 opam update
-opam install --deps-only --with-test --update-invariant --locked --no-depexts -y .
+opam install --deps-only --with-test --update-invariant --no-depexts -y .
 
 printTitle "Build project"
 opam exec -- dune build --root .
