@@ -48,7 +48,7 @@ depends: [
   "conf-libssl" {= "4"}
   "conf-mariadb" {= "2"}
   "conf-pkg-config" {= "4"}
-  "conformist" {= "0.8.1"}
+  "conformist" {= "0.8.1-master+aa7b95d"}
   "containers" {= "3.16"}
   "containers-data" {= "3.16"}
   "cppo" {= "1.8.0"}
@@ -76,7 +76,7 @@ depends: [
   "fmt" {= "0.11.0"}
   "fpath" {= "0.7.3"}
   "gmap" {= "0.3.0"}
-  "guardian" {= "0.3.2"}
+  "guardian" {= "0.3.2-main+287bab9"}
   "hmap" {= "0.8.1"}
   "http" {= "6.1.1"}
   "httpaf" {= "0.7.1"}
@@ -90,7 +90,7 @@ depends: [
   "jwto" {= "0.4.0"}
   "kdf" {= "1.0.0"}
   "ke" {= "0.6"}
-  "letters" {= "0.4.0"}
+  "letters" {= "0.4.0-bug-connection-close-wait+HEAD"}
   "logs" {= "0.10.0"}
   "lru" {= "0.3.1"}
   "lwt" {= "5.9.2"}
@@ -132,7 +132,7 @@ depends: [
   "odoc" {= "3.1.0" & with-doc}
   "odoc-parser" {= "3.1.0" & with-doc}
   "ohex" {= "0.2.0"}
-  "opium" {= "0.20.0"}
+  "opium" {= "0.20.0-master+da1b22e"}
   "ordering" {= "3.20.2"}
   "parsexp" {= "v0.17.0"}
   "pecu" {= "0.7"}
@@ -164,7 +164,7 @@ depends: [
   "ptime" {= "1.2.0"}
   "re" {= "1.14.0"}
   "result" {= "1.5"}
-  "rock" {= "0.20.0"}
+  "rock" {= "0.20.0-master+da1b22e"}
   "rosetta" {= "0.4.0"}
   "rresult" {= "0.7.0"}
   "safepass" {= "3.1"}
@@ -172,9 +172,9 @@ depends: [
   "seq" {= "base"}
   "sexplib" {= "v0.17.0"}
   "sexplib0" {= "v0.17.0"}
-  "sihl" {= "4.0.0"}
-  "sihl-email" {= "4.0.0"}
-  "sihl-storage" {= "4.0.0"}
+  "sihl" {= "4.0.0-master+6c3c404"}
+  "sihl-email" {= "4.0.0-master+6c3c404"}
+  "sihl-storage" {= "4.0.0-master+6c3c404"}
   "ssl" {= "0.7.0"}
   "stdio" {= "v0.17.0"}
   "stdlib-shims" {= "0.3.0"}
@@ -199,7 +199,7 @@ depends: [
   "uuuu" {= "0.4.0"}
   "variantslib" {= "v0.17.0"}
   "x509" {= "1.0.6"}
-  "yojson" {= "3.0.0"}
+  "yojson" {= "2.2.2"}
   "yuscii" {= "0.3.0"}
   "zarith" {= "1.14"}
 ]
@@ -221,35 +221,35 @@ dev-repo: "git+https://github.com/uzh/z-pool-tool"
 pin-depends: [
   ["canary.0.0.3" "git+https://github.com/uzh/canary.git#0.0.3"]
   [
-    "conformist.0.8.1"
+    "conformist.0.8.1-master+aa7b95d"
     "git+https://github.com/oxidizing/conformist.git#aa7b95d1f39215cdaab8cf96d765d63e41d5f8a6"
   ]
   [
-    "guardian.0.3.2"
+    "guardian.0.3.2-main+287bab9"
     "git+https://github.com/uzh/guardian.git#287bab9baf9b346efe47999e8b7f456bfefe8c13"
   ]
   [
-    "letters.0.4.0"
+    "letters.0.4.0-bug-connection-close-wait+HEAD"
     "git+https://github.com/mabiede/letters.git#bug/connection-close-wait"
   ]
   [
-    "opium.0.20.0"
+    "opium.0.20.0-master+da1b22e"
     "git+https://github.com/rgrinberg/opium.git#da1b22e2ee31889fea68a943b4a6358a633df0c6"
   ]
   [
-    "rock.0.20.0"
+    "rock.0.20.0-master+da1b22e"
     "git+https://github.com/rgrinberg/opium.git#da1b22e2ee31889fea68a943b4a6358a633df0c6"
   ]
   [
-    "sihl.4.0.0"
+    "sihl.4.0.0-master+6c3c404"
     "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"
   ]
   [
-    "sihl-email.4.0.0"
+    "sihl-email.4.0.0-master+6c3c404"
     "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"
   ]
   [
-    "sihl-storage.4.0.0"
+    "sihl-storage.4.0.0-master+6c3c404"
     "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"
   ]
 ]
