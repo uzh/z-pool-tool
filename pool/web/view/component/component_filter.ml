@@ -49,7 +49,7 @@ let value_input
       language
       query_experiments
       query_tags
-      query_experiment_tags
+      query_tagged_experiments
       input_type
       ?(disabled = false)
       ?value
@@ -245,7 +245,7 @@ let value_input
                    let tag_id = id |> Tags.Id.of_string in
                    CCList.find_opt
                      (fun (id, _) -> Tags.Id.equal id tag_id)
-                     query_experiment_tags
+                     query_tagged_experiments
                  | Bool _ | Date _ | Language _ | Nr _ | Option _ -> None)
                lst)
        in
@@ -260,7 +260,7 @@ let predicate_value_form
       language
       query_experiments
       query_tags
-      query_experiment_tags
+      query_tagged_experiments
       ?key
       ?value
       ?operator
@@ -278,7 +278,7 @@ let predicate_value_form
       language
       query_experiments
       query_tags
-      query_experiment_tags
+      query_tagged_experiments
       input_type
       ~disabled:value_disabled
       ?value
@@ -295,7 +295,7 @@ let single_predicate_form
       templates_disabled
       query_experiments
       query_tags
-      query_experiment_tags
+      query_tagged_experiments
       ?key
       ?operator
       ?value
@@ -307,7 +307,7 @@ let single_predicate_form
       language
       query_experiments
       query_tags
-      query_experiment_tags
+      query_tagged_experiments
       ?key
       ?value
       ?operator
@@ -406,7 +406,7 @@ let rec predicate_form
           templates_disabled
           query_experiments
           query_tags
-          query_experiment_tags
+          query_tagged_experiments
           query
           ?(identifier = [ 0 ])
           ()
@@ -436,7 +436,7 @@ let rec predicate_form
         templates_disabled
         query_experiments
         query_tags
-        query_experiment_tags
+        query_tagged_experiments
     in
     let open Human in
     match query with
@@ -462,7 +462,7 @@ let rec predicate_form
         templates_disabled
         query_experiments
         query_tags
-        query_experiment_tags
+        query_tagged_experiments
         ?key
         ?operator
         ?value
@@ -521,7 +521,7 @@ let filter_form
       template_list
       query_experiments
       query_tags
-      query_experiment_tags
+      query_tagged_experiments
   =
   let filter, action =
     let open Experiment in
@@ -603,7 +603,7 @@ let filter_form
       templates_disabled
       query_experiments
       query_tags
-      query_experiment_tags
+      query_tagged_experiments
       filter_query
       ()
   in

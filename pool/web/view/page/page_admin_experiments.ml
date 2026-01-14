@@ -939,7 +939,7 @@ let invitations
       template_list
       query_experiments
       query_tags
-      query_experiment_tags
+      query_tagged_experiments
       statistics
       filtered_contacts
       ({ Pool_context.language; _ } as context)
@@ -973,7 +973,7 @@ let invitations
           template_list
           query_experiments
           query_tags
-          query_experiment_tags
+          query_tagged_experiments
           filtered_contacts
           statistics
       ; changelog

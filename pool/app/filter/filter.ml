@@ -114,7 +114,7 @@ let[@warning "-4"] all_query_tags =
     | _, _ -> [])
 ;;
 
-let[@ocaml.warning "-4"] all_query_experiment_tags =
+let[@ocaml.warning "-4"] all_query_tagged_experiments =
   let open Entity.Key in
   all_in_query_fcn (function
     | Hardcoded TaggedParticipation, Entity.Lst lst ->

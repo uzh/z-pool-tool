@@ -67,7 +67,7 @@ let form is_edit req =
     in
     Response.bad_request_render_error context
     @@
-    let%lwt query_experiments, query_tags, query_experiment_tags =
+    let%lwt query_experiments, query_tags, query_tagged_experiments =
       match filter with
       | None -> Lwt.return ([], [], [])
       | Some filter ->
@@ -77,10 +77,12 @@ let form is_edit req =
           |> Experiment.search_multiple_by_id database_label
         and query_tags =
           filter |> Filter.all_query_tags |> Tags.find_multiple database_label
-        and query_experiment_tags =
-          filter |> Filter.all_query_experiment_tags |> Tags.find_multiple database_label
+        and query_tagged_experiments =
+          filter
+          |> Filter.all_query_tagged_experiments
+          |> Tags.find_multiple database_label
         in
-        Lwt.return (query_experiments, query_tags, query_experiment_tags)
+        Lwt.return (query_experiments, query_tags, query_tagged_experiments)
     in
     let%lwt key_list = Filter.all_keys database_label in
     Page.Admin.Filter.edit
@@ -89,7 +91,7 @@ let form is_edit req =
       key_list
       query_experiments
       query_tags
-      query_experiment_tags
+      query_tagged_experiments
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -197,8 +199,10 @@ let handle_toggle_predicate_type action req =
       |> Experiment.search_multiple_by_id database_label
     and query_tags =
       query |> Filter.Human.all_query_tags |> Tags.find_multiple database_label
-    and query_experiment_tags =
-      query |> Filter.Human.all_query_experiment_tags |> Tags.find_multiple database_label
+    and query_tagged_experiments =
+      query
+      |> Filter.Human.all_query_tagged_experiments
+      |> Tags.find_multiple database_label
     in
     Component.Filter.(
       predicate_form
@@ -209,7 +213,7 @@ let handle_toggle_predicate_type action req =
         templates_disabled
         query_experiments
         query_tags
-        query_experiment_tags
+        query_tagged_experiments
         (Some query)
         ~identifier
         ())

@@ -283,7 +283,7 @@ let tag_subquery dyn operator ids =
   add_list_condition subquery dyn ids operator
 ;;
 
-let experiment_tag_subquery dyn operator ids =
+let tagged_participation_subquery dyn operator ids =
   let open CCResult in
   let* dyn, query_params = add_uuid_param dyn ids in
   let subquery ~count =
@@ -335,7 +335,7 @@ let predicate_to_sql (dyn, sql) ({ Predicate.key; operator; value } : Predicate.
         | Invitation -> invitation_subquery dyn operator values
         | Assignment -> assignment_subquery dyn operator values
         | Tag -> tag_subquery dyn operator values
-        | TaggedParticipation -> experiment_tag_subquery dyn operator values
+        | TaggedParticipation -> tagged_participation_subquery dyn operator values
         | ContactLanguage
         | Firstname
         | Name
