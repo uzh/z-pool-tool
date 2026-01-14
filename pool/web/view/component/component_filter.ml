@@ -233,7 +233,7 @@ let value_input
                lst)
        in
        Component_search.Tag.filter_multi_search ~selected ~disabled language ()
-     | Key.QueryExperimentTags ->
+     | Key.QueryTaggedExperiments ->
        let selected =
          value
          |> CCOption.map_or ~default:[] (function
@@ -249,7 +249,11 @@ let value_input
                  | Bool _ | Date _ | Language _ | Nr _ | Option _ -> None)
                lst)
        in
-       Component_search.ExperimentTag.filter_multi_search ~selected ~disabled language ())
+       Component_search.TaggedExperiment.filter_multi_search
+         ~selected
+         ~disabled
+         language
+         ())
 ;;
 
 let predicate_value_form

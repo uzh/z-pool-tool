@@ -28,7 +28,7 @@ module Key : sig
     | MultiSelect of Custom_field.SelectOption.t list
     | QueryExperiments
     | QueryTags
-    | QueryExperimentTags
+    | QueryTaggedExperiments
 
   val show_input_type : input_type -> string
 
@@ -45,7 +45,7 @@ module Key : sig
     | Assignment
     | Invitation
     | Tag
-    | ExperimentTag
+    | TaggedParticipation
 
   type t =
     | CustomField of Custom_field.Id.t

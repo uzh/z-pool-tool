@@ -117,7 +117,7 @@ let[@warning "-4"] all_query_tags =
 let[@ocaml.warning "-4"] all_query_experiment_tags =
   let open Entity.Key in
   all_in_query_fcn (function
-    | Hardcoded ExperimentTag, Entity.Lst lst ->
+    | Hardcoded TaggedParticipation, Entity.Lst lst ->
       lst |> Filter_utils.single_val_to_id |> CCList.map Tags.Id.of_common
     | _, _ -> [])
 ;;

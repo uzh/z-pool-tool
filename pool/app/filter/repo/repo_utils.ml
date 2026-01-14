@@ -335,7 +335,7 @@ let predicate_to_sql (dyn, sql) ({ Predicate.key; operator; value } : Predicate.
         | Invitation -> invitation_subquery dyn operator values
         | Assignment -> assignment_subquery dyn operator values
         | Tag -> tag_subquery dyn operator values
-        | ExperimentTag -> experiment_tag_subquery dyn operator values
+        | TaggedParticipation -> experiment_tag_subquery dyn operator values
         | ContactLanguage
         | Firstname
         | Name

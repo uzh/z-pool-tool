@@ -260,7 +260,7 @@ module Tag = struct
   ;;
 end
 
-module ExperimentTag = struct
+module TaggedExperiment = struct
   open Tags
 
   let placeholder = "Search by experiment tag title"

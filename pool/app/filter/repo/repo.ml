@@ -395,7 +395,7 @@ module Sql = struct
         query :: template_queries
         |> CCList.fold_left
              (fun acc cur ->
-                acc @ Repo_utils.find_experiments_by_key Key.ExperimentTag cur)
+                acc @ Repo_utils.find_experiments_by_key Key.TaggedParticipation cur)
              []
         |> (function
          | [] -> Lwt_result.return ()
