@@ -67,18 +67,31 @@ let form is_edit req =
     in
     Response.bad_request_render_error context
     @@
-    let%lwt query_experiments, query_tags =
+    let%lwt query_experiments, query_tags, query_tagged_experiments =
       match filter with
-      | None -> Lwt.return ([], [])
+      | None -> Lwt.return ([], [], [])
       | Some filter ->
-        Lwt.both
-          (filter
-           |> Filter.all_query_experiments
-           |> Experiment.search_multiple_by_id database_label)
-          (filter |> Filter.all_query_tags |> Tags.find_multiple database_label)
+        let%lwt query_experiments =
+          filter
+          |> Filter.all_query_experiments
+          |> Experiment.search_multiple_by_id database_label
+        and query_tags =
+          filter |> Filter.all_query_tags |> Tags.find_multiple database_label
+        and query_tagged_experiments =
+          filter
+          |> Filter.all_query_tagged_experiments
+          |> Tags.find_multiple database_label
+        in
+        Lwt.return (query_experiments, query_tags, query_tagged_experiments)
     in
     let%lwt key_list = Filter.all_keys database_label in
-    Page.Admin.Filter.edit context filter key_list query_experiments query_tags
+    Page.Admin.Filter.edit
+      context
+      filter
+      key_list
+      query_experiments
+      query_tags
+      query_tagged_experiments
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -180,12 +193,16 @@ let handle_toggle_predicate_type action req =
          Filter.toggle_predicate_type current predicate_type
     in
     let* identifier = find_identifier urlencoded |> Lwt_result.lift in
-    let%lwt quey_experiments, query_tags =
-      Lwt.both
-        (query
-         |> Filter.Human.all_query_experiments
-         |> Experiment.search_multiple_by_id database_label)
-        (query |> Filter.Human.all_query_tags |> Tags.find_multiple database_label)
+    let%lwt query_experiments =
+      query
+      |> Filter.Human.all_query_experiments
+      |> Experiment.search_multiple_by_id database_label
+    and query_tags =
+      query |> Filter.Human.all_query_tags |> Tags.find_multiple database_label
+    and query_tagged_experiments =
+      query
+      |> Filter.Human.all_query_tagged_experiments
+      |> Tags.find_multiple database_label
     in
     Component.Filter.(
       predicate_form
@@ -194,8 +211,9 @@ let handle_toggle_predicate_type action req =
         key_list
         template_list
         templates_disabled
-        quey_experiments
+        query_experiments
         query_tags
+        query_tagged_experiments
         (Some query)
         ~identifier
         ())
@@ -214,7 +232,7 @@ let handle_toggle_key _ req =
       |> Lwt_result.lift
       >>= Filter.key_of_string database_label
     in
-    Component.Filter.predicate_value_form language [] [] ~key ()
+    Component.Filter.predicate_value_form language [] [] [] ~key ()
     |> Response.Htmx.of_html
     |> Lwt.return_ok
   in
@@ -243,6 +261,7 @@ let handle_add_predicate action req =
         key_list
         template_list
         templates_disabled
+        []
         []
         []
         query

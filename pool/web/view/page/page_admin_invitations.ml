@@ -98,6 +98,7 @@ module Partials = struct
         template_list
         query_experiments
         query_tags
+        query_tagged_experiments
         filtered_contacts
         statistics
     =
@@ -167,7 +168,8 @@ module Partials = struct
             key_list
             template_list
             query_experiments
-            query_tags)
+            query_tags
+            query_tagged_experiments)
       ; div ~a:[ a_class [ "gap-lg" ] ] [ filtered_contacts_form ]
       ]
   ;;

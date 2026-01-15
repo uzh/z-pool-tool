@@ -283,6 +283,33 @@ let tag_subquery dyn operator ids =
   add_list_condition subquery dyn ids operator
 ;;
 
+let tagged_participation_subquery dyn operator ids =
+  let open CCResult in
+  let* dyn, query_params = add_uuid_param dyn ids in
+  let subquery ~count =
+    let col = "DISTINCT tmp_tagged_participations.tag_uuid" in
+    let select = if count then Format.asprintf "COUNT(%s)" col else col in
+    let base =
+      Format.asprintf
+        {sql|
+        SELECT
+          %s
+        FROM
+          tmp_tagged_participations
+        WHERE
+          tmp_tagged_participations.contact_uuid = pool_contacts.user_uuid
+        AND tmp_tagged_participations.tag_uuid in (%s)
+      |sql}
+        select
+        query_params
+    in
+    if count
+    then Format.asprintf "%s GROUP BY tmp_participations.contact_uuid" base
+    else base
+  in
+  add_list_condition subquery dyn ids operator
+;;
+
 let predicate_to_sql (dyn, sql) ({ Predicate.key; operator; value } : Predicate.t) =
   let open CCResult in
   let open Operator in
@@ -308,6 +335,7 @@ let predicate_to_sql (dyn, sql) ({ Predicate.key; operator; value } : Predicate.
         | Invitation -> invitation_subquery dyn operator values
         | Assignment -> assignment_subquery dyn operator values
         | Tag -> tag_subquery dyn operator values
+        | TaggedParticipation -> tagged_participation_subquery dyn operator values
         | ContactLanguage
         | Firstname
         | Name

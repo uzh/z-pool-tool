@@ -105,3 +105,11 @@ let[@warning "-4"] all_query_tags =
       lst |> Filter_utils.single_val_to_id |> CCList.map Tags.Id.of_common
     | _, _ -> [])
 ;;
+
+let[@ocaml.warning "-4"] all_query_tagged_experiments =
+  let open Entity.Key in
+  all_in_query_fcn (function
+    | Some (Hardcoded TaggedParticipation), Some (Entity.Lst lst) ->
+      lst |> Filter_utils.single_val_to_id |> CCList.map Tags.Id.of_common
+    | _, _ -> [])
+;;
