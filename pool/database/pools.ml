@@ -316,7 +316,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
         Logs.debug (fun m -> m "Successfully rolled back transaction"))
       |> Pool.raise_caqti_error label
     in
-    Lwt.fail error
+    Lwt.reraise error
   ;;
 
   let transaction
