@@ -19,7 +19,7 @@ depends: [
   "sihl" {>= "4.0.0" & < "5.0.0"}
   "sihl-email" {>= "4.0.0" & < "5.0.0"}
   "sihl-storage" {>= "4.0.0" & < "5.0.0"}
-  "lwt" {>= "5.6.1"}
+  "lwt" {>= "5.7.0"}
   "logs" {>= "0.7.0"}
   "containers" {>= "3.14"}
   "containers-data" {>= "3.14"}
