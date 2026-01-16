@@ -9,17 +9,17 @@
 (authors "Department of Economics, University of Zurich")
 
 (source
- (uri git+https://github.com/uzh/z-pool-tool))
+ (uri git+<https://github.com/uzh/z-pool-tool>))
 
 (license GPL-2.0-or-later)
 
-(maintainers "engineering@uzh.econ.ch")
+(maintainers "<engineering@uzh.econ.ch>")
 
-(homepage "https://github.com/uzh/z-pool-tool")
+(homepage "<https://github.com/uzh/z-pool-tool>")
 
-(bug_reports "https://github.com/uzh/z-pool-tool")
+(bug_reports "<https://github.com/uzh/z-pool-tool>")
 
-(documentation "https://uzh.github.io/z-pool-tool-documentation/")
+(documentation "<https://uzh.github.io/z-pool-tool-documentation/>")
 
 (package
  (name pool)
@@ -46,7 +46,7 @@
   (logs
    (>= 0.7.0))
   (lwt
-   (>= 5.6.1))
+   (>= 5.7.0))
   (mariadb
    (and
     (>= 1.2.0)
