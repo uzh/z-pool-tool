@@ -178,7 +178,7 @@ let list_by_user ?query pool actor =
   let joins =
     [%string
       {sql|
-        LEFT JOIN user_permissions 
+        LEFT JOIN user_permissions
           ON pool_contacts.user_uuid = user_permissions.target_uuid
           OR (
             user_permissions.target_uuid IS NULL
@@ -211,11 +211,11 @@ let list_by_user ?query pool actor =
               INNER JOIN user_permissions ON
               (
                 -- ASSIGNMENT PERMISSION
-                user_permissions.target_uuid = pool_assignments.uuid 
+                user_permissions.target_uuid = pool_assignments.uuid
 
                 -- SESSION PERMISSION
                 OR user_permissions.target_uuid = pool_sessions.uuid
-      
+
                 -- LOCATION PERMISSION
                 OR (
                   pool_sessions.location_uuid IS NOT NULL
@@ -363,10 +363,20 @@ let delete_unverified_email_verifications_request =
   |> Id.t ->. Caqti_type.unit
 ;;
 
+let delete_unverified_authentication_request =
+  let open Caqti_request.Infix in
+  {sql|
+    DELETE FROM user_authentication
+    WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
+  |sql}
+  |> Id.t ->. Caqti_type.unit
+;;
+
 let delete_unverified pool id =
   let exec request = Database.exec pool request id in
   let%lwt () = exec delete_unverified_contact_request in
   let%lwt () = exec delete_unverified_email_verifications_request in
+  let%lwt () = exec delete_unverified_authentication_request in
   exec delete_unverified_user_request
 ;;
 
