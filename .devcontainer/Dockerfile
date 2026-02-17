@@ -1,4 +1,4 @@
-FROM ghcr.io/uzh/z-pool-tool/ocaml:5.3-2.3
+FROM ghcr.io/uzh/z-pool-tool/ocaml:9-5.3-2.3
 
 # Set up environment
 ENV SIHL_ENV=development

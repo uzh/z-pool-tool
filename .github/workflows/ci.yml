@@ -54,7 +54,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
-            type=raw,value=5.3-2.3
+            type=raw,value=9-5.3-2.3
 
       - name: Build and push Docker image
         if: steps.changes.outputs.docker == 'true'
@@ -112,7 +112,7 @@ jobs:
           password: ${{ secrets.CR_PAT }}
 
       - name: Pull Docker image
-        run: docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:5.3-2.3
+        run: docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:9-5.3-2.3
 
       - name: add commit SHA for non-production builds
         if: github.ref_type != 'tag'
