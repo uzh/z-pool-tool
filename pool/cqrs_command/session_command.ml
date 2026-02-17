@@ -368,7 +368,7 @@ end = struct
     : ((int, (Session.Id.t * Session.Start.t) list) CCList.Assoc.t, 'b) Result.t
     =
     let error = Pool_message.Error.InvalidRequest in
-    let open CCResult in
+    let open CCResult.Infix in
     let start_of_string str = Pool_model.Time.parse_time str >|= Session.Start.create in
     let parse_row id group value =
       let to_result = CCOption.to_result in

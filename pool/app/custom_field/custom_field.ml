@@ -1,3 +1,4 @@
+open CCFun
 include Entity
 include Event
 open Pool_message
@@ -103,7 +104,7 @@ let validate_htmx ~is_admin ~entity_uuid value (m : Public.t) =
   let single_value =
     value
     |> CCList.head_opt
-    |> CCFun.flip CCOption.bind (fun v -> if CCString.is_empty v then None else Some v)
+    |> flip CCOption.bind (fun v -> if CCString.is_empty v then None else Some v)
   in
   let validate validation value = validation |> fst |> fun rule -> rule value in
   match m with
@@ -198,7 +199,7 @@ let validate_partial_update
     Conformist.decode_and_validate schema [ partial_field |> Field.show, value ]
     |> CCResult.map_err to_conformist_error
   in
-  let open CCResult in
+  let open CCResult.Infix in
   match[@warning "-4"] partial_field with
   | PoolField.Firstname ->
     User.Firstname.schema
@@ -229,7 +230,7 @@ let validate_partial_update
       |> CCOption.to_result Error.InvalidHtmxRequest
       |> Lwt_result.lift
       >>= check_permission
-      >>= CCFun.(validate_htmx ~is_admin ~entity_uuid value %> Lwt_result.lift)
+      >>= validate_htmx ~is_admin ~entity_uuid value %> Lwt_result.lift
     in
     let old_v = Public.version custom_field in
     custom_field |> custom |> check_version old_v |> Lwt_result.lift
@@ -238,7 +239,7 @@ let validate_partial_update
 (* Replace all ids with the names of the custom_fields and custom_field_options *)
 let changelog_to_human pool language ({ Changelog.changes; _ } as changelog) =
   let open Changelog.Changes in
-  let id_of_string = CCFun.(Id.validate %> CCOption.of_result) in
+  let id_of_string = Id.validate %> CCOption.of_result in
   let rec yojson_id = function
     | `String id -> id_of_string id |> CCOption.map_or ~default:[] CCList.return
     | `List lst -> CCList.fold_left (fun acc str -> acc @ yojson_id str) [] lst
