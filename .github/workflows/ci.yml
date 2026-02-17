@@ -143,7 +143,7 @@ jobs:
             -e EMAIL_RATE_LIMIT \
             -e MATCHER_MAX_CAPACITY \
             --user opam \
-            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:5.3-2.3" \
+            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:9-5.3-2.3" \
             sh -lc '
               set -euo pipefail
               sudo chown -R opam .

@@ -16,7 +16,7 @@ ENV OCAML_VERSION=5.3.0
 
 # Enable RHEL repositories and install packages
 # hadolint ignore=DL3041,DL3033
-RUN dnf update -y && dnf install -y --allowerasing \
+RUN dnf install -y --allowerasing --nobest \
   autoconf \
   automake \
   bzip2 \
