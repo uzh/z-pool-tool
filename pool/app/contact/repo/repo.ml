@@ -366,18 +366,22 @@ let delete_unverified_email_verifications_request =
 let delete_unverified_authentication_request =
   let open Caqti_request.Infix in
   {sql|
-    DELETE FROM user_authentication
+    DELETE FROM pool_authentication
     WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
   |sql}
   |> Id.t ->. Caqti_type.unit
 ;;
 
 let delete_unverified pool id =
-  let exec request = Database.exec pool request id in
-  let%lwt () = exec delete_unverified_contact_request in
-  let%lwt () = exec delete_unverified_email_verifications_request in
-  let%lwt () = exec delete_unverified_authentication_request in
-  exec delete_unverified_user_request
+  [ delete_unverified_contact_request, id
+  ; delete_unverified_email_verifications_request, id
+  ; delete_unverified_authentication_request, id
+  ; delete_unverified_user_request, id
+  ]
+  |> CCList.map (fun (request, input) connection ->
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    Connection.exec request input)
+  |> Database.transaction_iter pool
 ;;
 
 let find_to_trigger_profile_update_request =
