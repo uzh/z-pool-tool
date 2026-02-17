@@ -578,7 +578,7 @@ module Predicate = struct
     in
     match yojson with
     | `Assoc assoc ->
-      let open CCResult in
+      let open CCResult.Infix in
       let go json_key of_yojson =
         assoc |> CCList.assoc_opt ~eq:CCString.equal json_key |> CCOption.map of_yojson
       in
