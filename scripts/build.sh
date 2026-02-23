@@ -13,7 +13,7 @@ printTitle() {
 printTitle "Installing system dependencies"
 # Detect package manager and install dependencies
 if command -v dnf >/dev/null 2>&1; then
-  sudo dnf install -y \
+  sudo dnf install -y --allowerasing --skip-broken --nobest \
     m4 \
     gcc \
     gcc-c++ \
