@@ -15,6 +15,7 @@ ENV OPAM_VERSION=2.3.0
 ENV OCAML_VERSION=5.3.0
 
 # Enable RHEL repositories and install packages
+RUN dnf update -y && dnf clean all
 # hadolint ignore=DL3041,DL3033
 RUN dnf install -y --allowerasing --skip-broken --nobest \
   autoconf \
@@ -68,7 +69,7 @@ USER opam
 WORKDIR /app
 
 # Initialize opam and install OCaml
-RUN opam init --bare --disable-sandboxing -y \
+RUN opam init --bare --disable-sandboxing -y default git+https://github.com/ocaml/opam-repository.git \
   && opam switch create "${OCAML_VERSION}"
 
 # Default command

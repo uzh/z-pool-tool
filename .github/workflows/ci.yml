@@ -131,7 +131,6 @@ jobs:
           SERVICE_NETWORK: ${{ job.services['database-root'].network }}
         run: |
           docker run --rm \
-            --pull always \
             --network "$SERVICE_NETWORK" \
             -v "${{ github.workspace }}:/app" \
             -w /app \
