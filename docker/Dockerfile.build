@@ -69,7 +69,7 @@ USER opam
 WORKDIR /app
 
 # Initialize opam and install OCaml
-RUN opam init --bare --disable-sandboxing -y default git+https://github.com/ocaml/opam-repository.git \
+RUN opam init --bare --disable-sandboxing -y \
   && opam switch create "${OCAML_VERSION}"
 
 # Default command
