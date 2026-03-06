@@ -146,7 +146,8 @@ jobs:
             "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}" \
             sh -lc '
               set -euo pipefail
-              /app/scripts/build.sh
+              chown -R opam /app
+              su -s /bin/bash opam -c "cd /app && /app/scripts/build.sh"
             '
 
       - uses: actions/upload-artifact@v4
