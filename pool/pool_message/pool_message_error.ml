@@ -154,4 +154,4 @@ type t =
 exception Exn of t
 
 let error_to_exn t = Failure (show t)
-let get_or_failwith error = CCResult.(error |> map_err show |> get_or_failwith)
+let get_or_failwith error = error |> CCResult.map_err show |> CCResult.get_or_failwith

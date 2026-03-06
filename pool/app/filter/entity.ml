@@ -43,7 +43,6 @@ type value =
 
 let single_value_of_yojson (yojson : Yojson.Safe.t) =
   let error = Pool_message.(Error.Invalid Field.Value) in
-  let open CCResult in
   match yojson with
   | `Assoc [ (key, value) ] ->
     (match key, value with
@@ -53,6 +52,7 @@ let single_value_of_yojson (yojson : Yojson.Safe.t) =
        |> Pool_model.Base.Ptime.date_of_string
        |> CCResult.map2 (fun date -> Date date) (fun _ -> error)
      | "language", `String str ->
+       let open CCResult in
        str |> Pool_common.Language.create >|= fun l -> Language l
      | "nr", `Float n -> Ok (Nr n)
      | "nr", `Int n -> Ok (Nr (CCInt.to_float n))
@@ -230,7 +230,6 @@ module Key = struct
 
   let validate_value (key_list : human list) (key : t) value =
     let error = Pool_message.(Error.QueryNotCompatible (Field.Value, Field.Key)) in
-    let open CCResult in
     let validate_single_value input_type value =
       match[@warning "-4"] value, input_type with
       | (Bool _ : single_val), (Bool : input_type) | Date _, Date | Nr _, Nr | Str _, Str
@@ -238,13 +237,13 @@ module Key = struct
       | Language lang, Languages languages ->
         CCList.find_opt (Pool_common.Language.equal lang) languages
         |> CCOption.to_result error
-        >|= CCFun.const ()
+        |> CCResult.map (CCFun.const ())
       | Option selected, Select options | Option selected, MultiSelect options ->
         CCList.find_opt
           (fun option -> Custom_field.SelectOption.(Id.equal option.id selected))
           options
         |> CCOption.to_result error
-        >|= CCFun.const ()
+        |> CCResult.map (CCFun.const ())
       | Str _, (QueryExperiments | QueryTags) -> Ok ()
       | _ -> Error error
     in
@@ -256,11 +255,12 @@ module Key = struct
         lst
         |> CCList.map (validate_single_value input_type)
         |> CCList.all_ok
-        >|= CCFun.const ()
+        |> CCResult.map (CCFun.const ())
     in
     match key with
     | Hardcoded v -> v |> type_of_hardcoded |> validate value
     | CustomField field_id ->
+      let ( let* ) = CCResult.( let* ) in
       let* custom_field =
         CCList.find_map
           (fun (key : human) ->
@@ -565,7 +565,7 @@ module Predicate = struct
 
   let validate : t -> Key.human list -> (t, Pool_message.Error.t) result =
     fun ({ key; operator; value } as m) key_list ->
-    let open CCResult in
+    let open CCResult.Infix in
     let* () = Key.validate_value key_list key value in
     let* () = Operator.validate key operator in
     Ok m
@@ -578,7 +578,7 @@ module Predicate = struct
     in
     match yojson with
     | `Assoc assoc ->
-      let open CCResult in
+      let open CCResult.Infix in
       let go json_key of_yojson =
         assoc |> CCList.assoc_opt ~eq:CCString.equal json_key |> CCOption.map of_yojson
       in

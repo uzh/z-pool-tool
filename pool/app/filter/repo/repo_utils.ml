@@ -99,7 +99,7 @@ let add_value_to_params operator value dyn =
 ;;
 
 let add_single_value (key : Key.t) operator dyn value =
-  let open CCResult in
+  let open CCResult.Infix in
   match key with
   | Key.Hardcoded h ->
     let* dyn = add_value_to_params operator value dyn in
@@ -284,7 +284,7 @@ let tag_subquery dyn operator ids =
 ;;
 
 let predicate_to_sql (dyn, sql) ({ Predicate.key; operator; value } : Predicate.t) =
-  let open CCResult in
+  let open CCResult.Infix in
   let open Operator in
   match value with
   | NoValue ->

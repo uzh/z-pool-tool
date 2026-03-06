@@ -255,7 +255,7 @@ let validate_filter_with_unknown_field _ () =
 
 let validate_filter_with_invalid_value _ () =
   let open Test_utils in
-  let open CCResult in
+  let open CCResult.Infix in
   let%lwt key_list = Filter.all_keys Data.database_label in
   let query =
     let open Filter in
@@ -439,7 +439,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
 ;;
 
 let create_filter_template_with_template _ () =
-  let open CCResult in
+  let open CCResult.Infix in
   let open Filter in
   let template_id = Pool_common.Id.create () in
   let template =

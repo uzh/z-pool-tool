@@ -96,7 +96,6 @@ let update ?contact req =
         >|+ CCOption.pure)
     in
     let%lwt response =
-      let open CCResult in
       let tags = Pool_context.Logger.Tags.req req in
       let html_response html = html |> Response.Htmx.of_html |> Lwt.return in
       let%lwt partial_update =
@@ -107,7 +106,7 @@ let update ?contact req =
           (field, version, value)
       in
       let events =
-        let open CCResult in
+        let open CCResult.Infix in
         partial_update >>= Cqrs_command.Contact_command.Update.handle ~tags user contact
       in
       let htmx_element () =
