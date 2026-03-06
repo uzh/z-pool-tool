@@ -40,6 +40,7 @@ jobs:
               - 'docker/Dockerfile.build'
               - 'docker/Dockerfile.build.rhel8'
               - 'scripts/opam-install.sh'
+              - '.github/workflows/ci.yml'
 
       - name: Set up Docker Buildx
         if: steps.changes.outputs.docker == 'true'
@@ -207,11 +208,11 @@ jobs:
       matrix:
         include:
           - rhel: "8"
-            dockerfile: docker/Dockerfile.app
+            dockerfile: docker/Dockerfile.app.rhel8
             artifact: run.exe-rhel8
             image_suffix: "-rhel8"
           - rhel: "9"
-            dockerfile: docker/Dockerfile.app.rhel9
+            dockerfile: docker/Dockerfile.app
             artifact: run.exe-rhel9
             image_suffix: ""
     permissions:

@@ -30,7 +30,7 @@ settings "General" tab uncheck "Allow Sourcetree to modify your global Mercurial
 > GitHub Actions only build the `linux/amd64` image, use the build command on step 2 for `linux/arm64`
 
 1. If needed, edit `.devcontainer/docker-compose.override.yml` to suit your needs.
-1. If not logged in to GitHub's container registry, the base image can be buildt with the following command: `docker build -f ./docker/Dockerfile.build -t ghcr.io/uzh/z-pool-tool/ocaml:9-5.3-2.3 .`
+1. If not logged in to GitHub's container registry, the base image can be built with the following command: `docker build -f ./docker/Dockerfile.build -t ghcr.io/uzh/z-pool-tool/ocaml:9-5.3-2.3 .`
 1. Mark devcontainer workspace as safe: `git config --global --add safe.directory /workspace`
 1. Click on the icon similar to "><" in the bottom left corner and select `Remote-Containers: Reopen in Container`.
     - If any changes were made to files in `.devcontainer` folder the Container should be rebuilt (`Remote-Containers: Rebuild Container`)
