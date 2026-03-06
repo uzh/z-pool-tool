@@ -142,6 +142,7 @@ jobs:
             -e EMAIL_RATE_LIMIT \
             -e MATCHER_MAX_CAPACITY \
             -e SKIP_SYS_DEPS=1 \
+            --user root \
             "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}" \
             sh -lc '
               set -euo pipefail
