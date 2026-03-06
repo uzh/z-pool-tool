@@ -141,13 +141,10 @@ jobs:
             -e SIHL_ENV \
             -e EMAIL_RATE_LIMIT \
             -e MATCHER_MAX_CAPACITY \
-            --user opam \
             "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}" \
             sh -lc '
               set -euo pipefail
-              sudo chown -R opam .
               /app/scripts/build.sh
-              sudo chown -R 1001:123 .
             '
 
       - uses: actions/upload-artifact@v4
