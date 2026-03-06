@@ -499,6 +499,7 @@ usage() {
     echo "    --version   VERSION    Install this specific version instead of $VERSION"
     echo "    --download-only        Download binary in current directory and check its sha512"
     echo "    --tty                  Allow interactive questions to be asked even if the script is being piped to (e.g. curl https://../install.sh | sh)"
+    echo "    --yes, -y              Assume yes to all interactive questions (non-interactive mode)"
     echo
     echo "The default is to backup if the current version of opam is 1.*, or when"
     echo "using '--fresh' or '--dev'"
@@ -517,6 +518,7 @@ NOBACKUP=
 FRESH=
 DOWNLOAD_ONLY=
 TTY=
+YES=
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -544,6 +546,8 @@ while [ $# -gt 0 ]; do
             DOWNLOAD_ONLY=1;;
         --tty)
             TTY=1;;
+        --yes|-y)
+            YES=1;;
         --help|-h)
             usage; exit 0;;
         *)
@@ -697,8 +701,12 @@ if [ -n "$RESTORE" ]; then
         exit 1
     fi
     if [ "$NOBACKUP" = 1 ]; then
-        printf "## This will clear %s and %s. Continue ? [Y/n] " "$OPAM" "$OPAMROOT"
-        read_tty R
+        if [ "$YES" != 1 ]; then
+            printf "## This will clear %s and %s. Continue ? [Y/n] " "$OPAM" "$OPAMROOT"
+            read_tty R
+        else
+            R="y"
+        fi
         case "$R" in
             ""|"y"|"Y"|"yes")
                 xsudo rm -f "$OPAM"
@@ -728,6 +736,10 @@ if [ -n "$EXISTING_OPAM" ]; then
     DEFAULT_BINDIR=$(dirname "$EXISTING_OPAM")
 fi
 
+if [ "$YES" = 1 ]; then
+    BINDIR="$DEFAULT_BINDIR"
+    if [ ! -d "$BINDIR" ]; then xsudo mkdir -p "$BINDIR"; fi
+else
 while true; do
     printf "## Where should it be installed ? [%s] " "$DEFAULT_BINDIR"
     read_tty BINDIR
@@ -757,6 +769,7 @@ while true; do
         esac
     fi
 done
+fi
 
 if [ -e "$EXISTING_OPAM" ]; then
     if [ "$NOBACKUP" = 1 ]; then
@@ -770,8 +783,12 @@ fi
 if [ -d "$OPAMROOT" ]; then
     if [ "$FRESH" = 1 ]; then
         if [ "$NOBACKUP" = 1 ]; then
-            printf "## This will clear %s. Continue ? [Y/n] " "$OPAMROOT"
-            read_tty R
+            if [ "$YES" != 1 ]; then
+                printf "## This will clear %s. Continue ? [Y/n] " "$OPAMROOT"
+                read_tty R
+            else
+                R="y"
+            fi
             case "$R" in
                 ""|"y"|"Y"|"yes")
                     rm -rf "$OPAMROOT";;
@@ -834,8 +851,12 @@ EOF
       SKIP_APPARMOR=1
     else
       echo "## The opam-local AppArmor profile already exists and differs from the expected content."
-      printf "Would you like to overwrite it? [Y/n] "
-      read -r R
+      if [ "$YES" != 1 ]; then
+        printf "Would you like to overwrite it? [Y/n] "
+        read -r R
+      else
+        R="y"
+      fi
       case "$R" in
       ""|"y"|"Y"|"yes")
         APPARMOR_CREATION_OPTION="-r"

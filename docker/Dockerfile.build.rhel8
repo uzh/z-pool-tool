@@ -58,11 +58,9 @@ RUN bash -c 'echo "http		80/tcp	www		# WorldWideWeb HTTP" >> /etc/services' \
 # Create opam user
 RUN groupadd -r opam && useradd -r -g opam -m -s /bin/bash opam
 
-USER root
-
 # Install opam
 COPY ./scripts/opam-install.sh /tmp/opam-install.sh
-RUN /tmp/opam-install.sh --version "${OPAM_VERSION}" \
+RUN /tmp/opam-install.sh --version "${OPAM_VERSION}" --yes \
   && rm /tmp/opam-install.sh
 
 # Switch to opam user and set working directory
