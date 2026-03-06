@@ -31,11 +31,17 @@
         "files.insertFinalNewline": true,
         "files.associations": {
           "*.ml": "ocaml",
-          "*.mli": "ocaml"
+          "*.mli": "ocaml",
+          ".env*": "dotenv"
         },
         "ocaml.sandbox": {
           "kind": "opam",
           "switch": "5.3.0"
+        },
+        // Excluding content from GitHub Copilot currently only affects code completion. GitHub Copilot Chat is not affected by these settings.
+        "github.copilot.enable": {
+          "*": true,
+          "dotenv": false
         }
       },
       // Add the IDs of extensions you want installed when the container is created in the array below.
