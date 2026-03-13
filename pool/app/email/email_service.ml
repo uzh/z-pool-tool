@@ -338,6 +338,21 @@ let register () =
 module Job = struct
   include Entity.Job
 
+  let is_system_email_template
+        (database_label : Database.Label.t)
+        (template : Pool_common.MessageTemplateLabel.t)
+    : bool Lwt.t
+    =
+    let open Utils.Lwt_result.Infix in
+    Settings.find_system_email_templates database_label
+    ||> (CCList.mem ~eq:Pool_common.MessageTemplateLabel.equal) template
+  ;;
+
+  let resolve_system_smtp_auth_id database_label =
+    let%lwt auth = Repo_sql.Smtp.find_full_system_or_default_opt database_label in
+    auth |> CCOption.map SmtpAuth.Write.(fun { id; _ } -> id) |> Lwt.return
+  ;;
+
   let encode = yojson_of_t %> Yojson.Safe.to_string
 
   let decode str =
@@ -361,21 +376,54 @@ module Job = struct
   ;;
 
   let send =
-    let open CCFun in
     let open Utils.Lwt_result.Infix in
-    let open Pool_queue in
-    let handle ?id:_ label ({ email; smtp_auth_id; _ } : t) =
-      Lwt.catch
-        (fun () -> send ?smtp_auth_id label email ||> CCResult.return)
-        (Printexc.to_string %> Pool_message.Error.nothandled %> Lwt.return_error)
+    let increment_smtp_bounce = Repo_sql.Contact.increment_smtp_bounce in
+    let reset_smtp_bounce = Repo_sql.Contact.reset_smtp_bounce in
+    let is_recipient_not_found msg =
+      (*
+         Error Documentation:
+         * https://learn.microsoft.com/en-us/troubleshoot/exchange/email-delivery/ndr/recipientnotfound-ndr
+      *)
+      CCString.find ~sub:"550" msg >= 0
+      && CCString.find ~sub:"RESOLVER.ADR.RecipientNotFound" msg >= 0
     in
-    Job.create
-      ~max_tries:10
-      ~retry_delay:(Sihl.Time.Span.hours 1)
-      handle
-      encode
-      decode
-      JobName.SendEmail
+    let handle ?id:_ label (job : t) =
+      let email_data = email job in
+      let smtp_auth_id = smtp_auth_id job in
+      Lwt.catch
+        (fun () ->
+           let%lwt result =
+             Smtp.send ?smtp_auth_id label email_data ||> CCResult.return
+           in
+           let%lwt () =
+             reset_smtp_bounce
+               label
+               (Pool_user.EmailAddress.of_string email_data.Sihl_email.recipient)
+           in
+           Lwt.return result)
+        (fun exn ->
+           match Printexc.to_string exn with
+           | msg when is_recipient_not_found msg ->
+             let recipient = email_data.Sihl_email.recipient in
+             Logs.info ~src (fun m ->
+               m
+                 ~tags:(Database.Logger.Tags.create label)
+                 "SMTP 550 bounce for %s — incrementing smtp_bounces_count"
+                 recipient);
+             let%lwt () =
+               increment_smtp_bounce label (Pool_user.EmailAddress.of_string recipient)
+             in
+             Lwt.return_error (Pool_message.Error.SmtpRecipientNotFound recipient)
+           | msg -> Lwt.return_error (Pool_message.Error.nothandled msg))
+    in
+    Pool_queue.(
+      Job.create
+        ~max_tries:10
+        ~retry_delay:(Sihl.Time.Span.hours 1)
+        handle
+        encode
+        decode
+        JobName.SendEmail)
   ;;
 end
 
@@ -390,7 +438,16 @@ let dispatch
   =
   let tags = Database.Logger.Tags.create database_label in
   Logs.debug ~src (fun m -> m ~tags "Dispatch email to %s" email.Sihl_email.recipient);
-  let job = job |> Job.update ?new_email_address ?new_smtp_auth_id in
+  let%lwt resolved =
+    match new_smtp_auth_id, Job.smtp_auth_id job, message_template with
+    | Some id, _, _ -> Lwt.return_some id
+    | None, Some _, _ | None, None, None -> Lwt.return_none
+    | None, None, Some template ->
+      (match%lwt Job.is_system_email_template database_label template with
+       | true -> Job.resolve_system_smtp_auth_id database_label
+       | false -> Lwt.return_none)
+  in
+  let job = job |> Job.update ?new_email_address ?new_smtp_auth_id:resolved in
   Pool_queue.dispatch
     ?id
     ?message_template
@@ -401,18 +458,32 @@ let dispatch
 ;;
 
 let dispatch_all database_label jobs =
-  let recipients, jobs =
-    jobs
-    |> CCList.fold_left
-         (fun (recipients, jobs)
-           (id, ({ Entity.Job.email; _ } as job), message_template, mappings) ->
-            ( email.Sihl_email.recipient :: recipients
-            , ( id
-              , job |> Job.intercept_prepare_of_event
-              , message_template
-              , CCOption.get_or ~default:(Pool_queue.job_ctx_create []) mappings )
-              :: jobs ))
-         ([], [])
+  let%lwt recipients, jobs =
+    Lwt_list.fold_left_s
+      (fun (recipients, jobs)
+        (id, ({ Entity.Job.email; _ } as job), message_template, mappings) ->
+         let%lwt resolved_new_smtp_auth_id =
+           match Job.smtp_auth_id job, message_template with
+           | Some _, _ -> Lwt.return_none
+           | None, Some template ->
+             let%lwt is_system_template =
+               Job.is_system_email_template database_label template
+             in
+             (match is_system_template with
+              | true -> Job.resolve_system_smtp_auth_id database_label
+              | false -> Lwt.return_none)
+           | None, _ -> Lwt.return_none
+         in
+         let job = job |> Job.update ?new_smtp_auth_id:resolved_new_smtp_auth_id in
+         Lwt.return
+           ( email.Sihl_email.recipient :: recipients
+           , ( id
+             , job |> Job.intercept_prepare_of_event
+             , message_template
+             , CCOption.get_or ~default:(Pool_queue.job_ctx_create []) mappings )
+             :: jobs ))
+      ([], [])
+      jobs
   in
   Logs.debug ~src (fun m ->
     m

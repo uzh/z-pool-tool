@@ -53,16 +53,77 @@ module Default = struct
   ;;
 end
 
+module RateLimit = struct
+  include RateLimit
+
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.int create value
+end
+
+module InvitationCapacity = struct
+  include InvitationCapacity
+
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.int create value
+end
+
+module SystemAccount = struct
+  include SystemAccount
+
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.bool
+      CCFun.(create %> CCResult.return)
+      value
+  ;;
+end
+
+module InternalRegex = struct
+  include InternalRegex
+
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
+end
+
 let t =
   let encode (m : t) =
     Ok
       ( m.id
       , ( m.label
-        , (m.server, (m.port, (m.username, (m.mechanism, (m.protocol, m.default))))) ) )
+        , ( m.server
+          , ( m.port
+            , ( m.username
+              , ( m.mechanism
+                , ( m.protocol
+                  , ( m.default
+                    , ( m.system_account
+                      , (m.internal_regex, (m.rate_limit, m.invitation_capacity)) ) ) ) )
+              ) ) ) ) )
   in
-  let decode (id, (label, (server, (port, (username, (mechanism, (protocol, default)))))))
+  let decode
+        ( id
+        , ( label
+          , ( server
+            , ( port
+              , ( username
+                , ( mechanism
+                  , ( protocol
+                    , ( default
+                      , ( system_account
+                        , (internal_regex, (rate_limit, invitation_capacity)) ) ) ) ) ) )
+            ) ) )
     =
-    Ok { id; label; server; port; username; mechanism; protocol; default }
+    Ok
+      { id
+      ; label
+      ; server
+      ; port
+      ; username
+      ; mechanism
+      ; protocol
+      ; default
+      ; system_account
+      ; internal_regex
+      ; rate_limit
+      ; invitation_capacity
+      }
   in
   Caqti_type.(
     custom
@@ -76,7 +137,19 @@ let t =
                Server.t
                (t2
                   Port.t
-                  (t2 (option Username.t) (t2 Mechanism.t (t2 Protocol.t Default.t))))))))
+                  (t2
+                     (option Username.t)
+                     (t2
+                        Mechanism.t
+                        (t2
+                           Protocol.t
+                           (t2
+                              Default.t
+                              (t2
+                                 SystemAccount.t
+                                 (t2
+                                    (option InternalRegex.t)
+                                    (t2 RateLimit.t InvitationCapacity.t))))))))))))
 ;;
 
 module Write = struct
@@ -88,17 +161,45 @@ module Write = struct
         ( m.id
         , ( m.label
           , ( m.server
-            , (m.port, (m.username, (m.password, (m.mechanism, (m.protocol, m.default)))))
-            ) ) )
+            , ( m.port
+              , ( m.username
+                , ( m.password
+                  , ( m.mechanism
+                    , ( m.protocol
+                      , ( m.default
+                        , ( m.system_account
+                          , (m.internal_regex, (m.rate_limit, m.invitation_capacity)) ) )
+                      ) ) ) ) ) ) ) )
     in
     let decode
           ( id
           , ( label
-            , (server, (port, (username, (password, (mechanism, (protocol, default))))))
-            ) )
+            , ( server
+              , ( port
+                , ( username
+                  , ( password
+                    , ( mechanism
+                      , ( protocol
+                        , ( default
+                          , ( system_account
+                            , (internal_regex, (rate_limit, invitation_capacity)) ) ) ) )
+                    ) ) ) ) ) )
       =
-      let open CCResult in
-      Ok { id; label; server; port; username; password; mechanism; protocol; default }
+      Ok
+        { id
+        ; label
+        ; server
+        ; port
+        ; username
+        ; password
+        ; mechanism
+        ; protocol
+        ; default
+        ; system_account
+        ; internal_regex
+        ; rate_limit
+        ; invitation_capacity
+        }
     in
     Caqti_type.(
       custom
@@ -114,6 +215,18 @@ module Write = struct
                     Port.t
                     (t2
                        (option Username.t)
-                       (t2 (option Password.t) (t2 Mechanism.t (t2 Protocol.t Default.t)))))))))
+                       (t2
+                          (option Password.t)
+                          (t2
+                             Mechanism.t
+                             (t2
+                                Protocol.t
+                                (t2
+                                   Default.t
+                                   (t2
+                                      SystemAccount.t
+                                      (t2
+                                         (option InternalRegex.t)
+                                         (t2 RateLimit.t InvitationCapacity.t)))))))))))))
   ;;
 end

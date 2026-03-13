@@ -1,5 +1,6 @@
 open CCFun
 open Pool_message
+open Pool_common.MessageTemplateLabel
 open Utils.Lwt_result.Infix
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
@@ -410,7 +411,7 @@ let show req =
       Message_template.find_all_of_entity_by_label
         database_label
         (session_id |> Session.Id.to_common)
-        Message_template.Label.SessionReminder
+        Pool_common.MessageTemplateLabel.SessionReminder
     in
     let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let%lwt send_direct_message =
@@ -699,7 +700,7 @@ let delete req =
       find_all_of_entity_by_label
         database_label
         (session_id |> Session.Id.to_common)
-        Label.SessionReminder
+        SessionReminder
     in
     let* events =
       let open Cqrs_command.Session_command.Delete in
@@ -855,25 +856,22 @@ let message_template_form ?template_id label req =
   Response.handle ~src req result
 ;;
 
-let new_session_reminder req =
-  message_template_form Message_template.Label.SessionReminder req
-;;
+let new_session_reminder req = message_template_form SessionReminder req
 
 let new_session_reminder_post req =
   let open Admin_message_templates in
   let experiment_id = experiment_id req in
   let session_id = session_id req in
   let entity_id = session_id |> Session.Id.to_common in
-  let label = Message_template.Label.SessionReminder in
   let redirect =
     { success = session_path ~id:session_id experiment_id; error = new_session_reminder }
   in
-  (write (Create (entity_id, label, redirect))) req
+  (write (Create (entity_id, SessionReminder, redirect))) req
 ;;
 
 let edit_template req =
   let template_id = template_id req in
-  message_template_form ~template_id Message_template.Label.SessionReminder req
+  message_template_form ~template_id SessionReminder req
 ;;
 
 let update_template req =
@@ -894,12 +892,11 @@ let message_template_changelog req =
   let experiment_id = experiment_id req in
   let session_id = session_id req in
   let id = template_id req in
-  let label = Message_template.Label.SessionReminder in
   let url =
     HttpUtils.Url.Admin.session_message_template_path
       experiment_id
       session_id
-      label
+      SessionReminder
       ~suffix:"changelog"
       ~id
       ()
@@ -1006,10 +1003,7 @@ module DirectMessage = struct
           |> CCOption.value ~default:(CCList.hd system_languages)
         in
         Message_template.(
-          find_by_label_and_language_to_send
-            database_label
-            Label.ManualSessionMessage
-            language)
+          find_by_label_and_language_to_send database_label ManualSessionMessage language)
       in
       Page.Admin.Assignment.Partials.direct_message_modal
         context

@@ -4,47 +4,6 @@ module Id : sig
   val to_common : t -> Pool_common.Id.t
 end
 
-module Label : sig
-  type t =
-    | AccountSuspensionNotification
-    | AssignmentCancellation
-    | AssignmentConfirmation
-    | AssignmentSessionChange
-    | ContactEmailChangeAttempt
-    | ContactRegistrationAttempt
-    | EmailVerification
-    | ExperimentInvitation
-    | InactiveContactWarning
-    | InactiveContactDeactivation
-    | Login2FAToken
-    | ManualSessionMessage
-    | MatcherNotification
-    | MatchFilterUpdateNotification
-    | PasswordChange
-    | PasswordReset
-    | PhoneVerification
-    | ProfileUpdateTrigger
-    | SignUpVerification
-    | SessionCancellation
-    | SessionReminder
-    | SessionReschedule
-    | UserImport
-    | WaitingListConfirmation
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val t_of_yojson : Yojson.Safe.t -> t
-  val yojson_of_t : t -> Yojson.Safe.t
-  val read : string -> t
-  val read_from_url : string -> t
-  val of_string : string -> (t, Pool_message.Error.t) result
-  val to_human : t -> string
-  val human_url : t -> string
-  val prefixed_human_url : t -> string
-  val customizable_by_experiment : t list
-end
-
 module EmailSubject : sig
   include Pool_model.Base.StringSig
 end
@@ -67,7 +26,7 @@ end
 
 type t =
   { id : Id.t
-  ; label : Label.t
+  ; label : Pool_common.MessageTemplateLabel.t
   ; entity_uuid : Pool_common.Id.t option
   ; language : Pool_common.Language.t
   ; email_subject : EmailSubject.t
@@ -118,22 +77,26 @@ val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_default_by_label_and_language
   :  Database.Label.t
   -> Pool_common.Language.t
-  -> Label.t
+  -> Pool_common.MessageTemplateLabel.t
   -> t Lwt.t
 
-val find_default_by_label : Database.Label.t -> Label.t -> t list Lwt.t
+val find_default_by_label
+  :  Database.Label.t
+  -> Pool_common.MessageTemplateLabel.t
+  -> t list Lwt.t
+
 val all_default : Database.Label.t -> unit -> t list Lwt.t
 
 val find_all_of_entity_by_label
   :  Database.Label.t
   -> Pool_common.Id.t
-  -> Label.t
+  -> Pool_common.MessageTemplateLabel.t
   -> t list Lwt.t
 
 val find_by_label_and_language_to_send
   :  Database.Label.t
   -> ?entity_uuids:Pool_common.Id.t list
-  -> Label.t
+  -> Pool_common.MessageTemplateLabel.t
   -> Pool_common.Language.t
   -> t Lwt.t
 
@@ -141,14 +104,14 @@ val find_all_by_label_to_send
   :  Database.Label.t
   -> ?entity_uuids:Pool_common.Id.t list
   -> Pool_common.Language.t list
-  -> Label.t
+  -> Pool_common.MessageTemplateLabel.t
   -> t list Lwt.t
 
 val find_entity_defaults_by_label
   :  Database.Label.t
   -> ?entity_uuids:Pool_common.Id.t list
   -> Pool_common.Language.t list
-  -> Label.t
+  -> Pool_common.MessageTemplateLabel.t
   -> t list Lwt.t
 
 val filter_languages
@@ -160,7 +123,7 @@ val filter_languages
 val missing_template_languages
   :  Database.Label.t
   -> Pool_common.Id.t
-  -> Label.t
+  -> Pool_common.MessageTemplateLabel.t
   -> ?exclude:Pool_common.Language.t list
   -> Pool_common.Language.t list
   -> Pool_common.Language.t list Lwt.t
@@ -210,7 +173,8 @@ type email_layout =
   }
 
 val layout_from_tenant : Pool_tenant.t -> email_layout
-val template_hint : Label.t -> Pool_common.I18n.hint
+val template_hint : Pool_common.MessageTemplateLabel.t -> Pool_common.I18n.hint
+val customizable_label_by_experiment : Pool_common.MessageTemplateLabel.t list
 
 module History : sig
   val admin_item : Admin.t -> Pool_queue.History.item

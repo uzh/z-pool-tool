@@ -1103,7 +1103,7 @@ let detail
     div ~a:[ a_class [ "stack" ] ] [ table; links ]
   in
   let message_templates_html label list =
-    let open Message_template in
+    let open Pool_common.MessageTemplateLabel in
     let build_path append template =
       Format.asprintf
         "%s/%s"
@@ -1116,13 +1116,11 @@ let detail
       if CCList.is_empty (Message_template.filter_languages sys_languages list)
       then None
       else (
-        let path =
-          Format.asprintf "%s/%s" session_path Label.(prefixed_human_url label)
-        in
+        let path = Format.asprintf "%s/%s" session_path (prefixed_human_url label) in
         Some (Button.add label path))
     in
     div
-      [ h2 ~a:[ a_class [ "heading-2"; "has-gap" ] ] [ txt (Label.to_human label) ]
+      [ h2 ~a:[ a_class [ "heading-2"; "has-gap" ] ] [ txt (to_human label) ]
       ; Page_admin_message_template.(
           experiment_help ~entity:(Session session.id) language [ label ])
       ; div
@@ -1309,7 +1307,7 @@ let detail
     ; session_overview
     ; tags_html
     ; message_templates_html
-        Message_template.Label.SessionReminder
+        MessageTemplateLabel.SessionReminder
         session_reminder_templates
     ; assignments_html
     ; Component.Changelog.list context changelog_url None
@@ -1972,12 +1970,13 @@ let message_template_form
   =
   let open Message_template in
   let open Pool_common in
+  let open MessageTemplateLabel in
   let control_to_title control =
     Layout.Experiment.Text
       (Format.asprintf
          "%s %s"
          (control |> Utils.control_to_string language)
-         (label |> Label.to_human |> CCString.lowercase_ascii))
+         (label |> to_human |> CCString.lowercase_ascii))
   in
   let control =
     match form_context with
@@ -1992,7 +1991,7 @@ let message_template_form
         Session.(Id.value session.Session.id)
     in
     match form_context with
-    | `Create t -> path (Label.prefixed_human_url t.label)
+    | `Create t -> path (prefixed_human_url t.label)
     | `Update t -> path (prefixed_template_url t)
   in
   let text_elements =

@@ -26,6 +26,9 @@ let settings_page ?open_tab req =
     in
     let languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let%lwt email_suffixes = Settings.find_email_suffixes database_label in
+    let%lwt system_email_templates =
+      Settings.find_system_email_templates database_label
+    in
     let%lwt contact_email = Settings.find_contact_email database_label in
     let%lwt inactive_user_disable_after =
       Settings.find_inactive_user_disable_after database_label
@@ -55,6 +58,7 @@ let settings_page ?open_tab req =
       ?open_tab
       languages
       email_suffixes
+      system_email_templates
       contact_email
       inactive_user_disable_after
       inactive_user_warning
@@ -97,6 +101,8 @@ let update_settings req =
       let command_handler urlencoded =
         let open CCResult.Infix in
         function
+        | `UpdateSystemEmailTemplates ->
+          UpdateSystemEmailTemplates.handle ~tags urlencoded |> lift
         | `UpdateLanguages ->
           CCList.filter_map
             (fun (k, _) ->
@@ -253,6 +259,7 @@ module Access : module type of Helpers.Access = struct
       | `UpdateUnactiveUserServiceDisabled -> Command.InactiveUser.DisableService.effects
       | `UpdateContactEmail -> Command.UpdateContactEmail.effects
       | `UpdateEmailSuffixes -> Command.UpdateEmailSuffixes.effects
+      | `UpdateSystemEmailTemplates -> Command.UpdateSystemEmailTemplates.effects
       | `UpdateLanguages -> Command.UpdateLanguages.effects
       | `UpdateTriggerProfileUpdateAfter ->
         Command.UpdateTriggerProfileUpdateAfter.effects

@@ -123,6 +123,32 @@ module SmtpAuth : sig
     include Pool_model.Base.BooleanSig
   end
 
+  module SystemAccount : sig
+    include Pool_model.Base.BooleanSig
+  end
+
+  module InternalRegex : sig
+    include Pool_model.Base.StringSig
+
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+  end
+
+  module RateLimit : sig
+    include Pool_model.Base.IntegerSig
+
+    val default : t
+    val create : int -> (t, Pool_message.Error.t) result
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+  end
+
+  module InvitationCapacity : sig
+    include Pool_model.Base.IntegerSig
+
+    val default : t
+    val create : int -> (t, Pool_message.Error.t) result
+    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+  end
+
   type t =
     { id : Id.t
     ; label : Label.t
@@ -132,6 +158,10 @@ module SmtpAuth : sig
     ; mechanism : Mechanism.t
     ; protocol : Protocol.t
     ; default : Default.t
+    ; system_account : SystemAccount.t
+    ; internal_regex : InternalRegex.t option
+    ; rate_limit : RateLimit.t
+    ; invitation_capacity : InvitationCapacity.t
     }
 
   val id : t -> Id.t
@@ -158,12 +188,20 @@ module SmtpAuth : sig
       ; mechanism : Mechanism.t
       ; protocol : Protocol.t
       ; default : Default.t
+      ; system_account : SystemAccount.t
+      ; internal_regex : InternalRegex.t option
+      ; rate_limit : RateLimit.t
+      ; invitation_capacity : InvitationCapacity.t
       }
 
     val to_entity : t -> smtp
 
     val create
       :  ?id:Id.t
+      -> ?rate_limit:RateLimit.t
+      -> ?invitation_capacity:InvitationCapacity.t
+      -> ?system_account:SystemAccount.t
+      -> ?internal_regex:InternalRegex.t
       -> Label.t
       -> Server.t
       -> Port.t
@@ -181,8 +219,10 @@ module SmtpAuth : sig
   val find_default : Database.Label.t -> (t, Pool_message.Error.t) Lwt_result.t
   val find_default_opt : Database.Label.t -> t option Lwt.t
   val find_all : Database.Label.t -> t list Lwt.t
+  val find_for_experiment : Database.Label.t -> t list Lwt.t
   val find_by : Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
   val defalut_is_set : Database.Label.t -> bool Lwt.t
+  val count_invitations_sent_since : Database.Label.t -> Id.t option -> int -> int Lwt.t
   val column_label : Query.Column.t
   val column_smtp_server : Query.Column.t
   val column_smtp_username : Query.Column.t
@@ -247,7 +287,7 @@ module Service : sig
     :  ?id:Pool_queue.Id.t
     -> ?new_email_address:Pool_user.EmailAddress.t
     -> ?new_smtp_auth_id:Pool_common.Id.t
-    -> ?message_template:string
+    -> ?message_template:Pool_common.MessageTemplateLabel.t
     -> ?job_ctx:Pool_queue.job_ctx
     -> Database.Label.t
     -> Job.t
@@ -255,7 +295,11 @@ module Service : sig
 
   val dispatch_all
     :  Database.Label.t
-    -> (Pool_queue.Id.t * Job.t * string option * Pool_queue.job_ctx option) list
+    -> (Pool_queue.Id.t
+       * Job.t
+       * Pool_common.MessageTemplateLabel.t option
+       * Pool_queue.job_ctx option)
+         list
     -> unit Lwt.t
 
   val lifecycle : Sihl.Container.lifecycle
@@ -280,6 +324,11 @@ module Guard : sig
   end
 end
 
+module Contact : sig
+  val increment_smtp_bounce : Database.Label.t -> Pool_user.EmailAddress.t -> unit Lwt.t
+  val reset_smtp_bounce : Database.Label.t -> Pool_user.EmailAddress.t -> unit Lwt.t
+end
+
 type verification_event =
   | Created of Pool_user.EmailAddress.t * Pool_token.t * Pool_user.Id.t
   | EmailVerified of unverified t
@@ -291,7 +340,7 @@ val pp_verification_event : Format.formatter -> verification_event -> unit
 type dispatch =
   { job : Service.Job.t
   ; id : Pool_queue.Id.t option
-  ; message_template : string option
+  ; message_template : Pool_common.MessageTemplateLabel.t option
   ; job_ctx : Pool_queue.job_ctx option
   }
 
@@ -300,12 +349,12 @@ val pp_dispatch : Format.formatter -> dispatch -> unit
 val yojson_of_dispatch : dispatch -> Yojson.Safe.t
 val job : dispatch -> Service.Job.t
 val id : dispatch -> Pool_queue.Id.t option
-val message_template : dispatch -> string option
+val message_template : dispatch -> Pool_common.MessageTemplateLabel.t option
 val job_ctx : dispatch -> Pool_queue.job_ctx option
 
 val create_dispatch
   :  ?id:Pool_queue.Id.t
-  -> ?message_template:string
+  -> ?message_template:Pool_common.MessageTemplateLabel.t
   -> ?job_ctx:Pool_queue.job_ctx
   -> Service.Job.t
   -> dispatch
@@ -326,7 +375,7 @@ val verification_event_name : verification_event -> string
 
 val create_sent
   :  ?id:Pool_queue.Id.t
-  -> ?message_template:string
+  -> ?message_template:Pool_common.MessageTemplateLabel.t
   -> ?job_ctx:Pool_queue.job_ctx
   -> ?new_email_address:Pool_user.EmailAddress.t
   -> ?new_smtp_auth_id:SmtpAuth.Id.t

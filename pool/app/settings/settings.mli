@@ -15,6 +15,7 @@ module Key : sig
   type t =
     | ContactEmail
     | EmailSuffixes
+    | SystemEmailTemplates
     | InactiveUserDisableAfter
     | InactiveUserWarning
     | InactiveUserServiceDisabled
@@ -36,6 +37,15 @@ end
 
 module EmailSuffix : sig
   include Pool_model.Base.StringSig
+end
+
+module SystemEmailTemplates : sig
+  type t = Pool_common.MessageTemplateLabel.t list
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val normalize : t -> t
 end
 
 module InactiveUser : sig
@@ -125,6 +135,7 @@ val action_of_param
        | `UpdateUnactiveUserServiceDisabled
        | `UpdateContactEmail
        | `UpdateEmailSuffixes
+       | `UpdateSystemEmailTemplates
        | `UpdateLanguages
        | `UpdateTriggerProfileUpdateAfter
        | `UserImportFirstReminderAfter
@@ -144,6 +155,7 @@ val stringify_action
      | `UpdateUnactiveUserServiceDisabled
      | `UpdateContactEmail
      | `UpdateEmailSuffixes
+     | `UpdateSystemEmailTemplates
      | `UpdateLanguages
      | `UpdateTriggerProfileUpdateAfter
      | `UserImportFirstReminderAfter
@@ -159,6 +171,7 @@ type event =
   | DefaultReminderLeadTimeUpdated of Pool_common.Reminder.EmailLeadTime.t
   | DefaultTextMsgReminderLeadTimeUpdated of Pool_common.Reminder.TextMessageLeadTime.t
   | EmailSuffixesUpdated of EmailSuffix.t list
+  | SystemEmailTemplatesUpdated of SystemEmailTemplates.t
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
   | InactiveUserServiceDisabled of InactiveUser.ServiceDisabled.t
@@ -174,6 +187,7 @@ val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val find_languages : Database.Label.t -> Pool_common.Language.t list Lwt.t
 val find_email_suffixes : Database.Label.t -> EmailSuffix.t list Lwt.t
+val find_system_email_templates : Database.Label.t -> SystemEmailTemplates.t Lwt.t
 val find_contact_email : Database.Label.t -> ContactEmail.t Lwt.t
 
 val find_inactive_user_disable_after

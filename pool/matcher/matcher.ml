@@ -4,33 +4,16 @@ open Utils.Lwt_result.Infix
 let src = Logs.Src.create "matcher.service"
 let tags = Database.(Logger.Tags.create Pool.Root.label)
 
-type config =
-  { start : bool option
-  ; rate_limit : int
-  ; max_capacity : int
-  }
-[@@warning "-69"]
-
-let config start rate_limit max_capacity = { start; rate_limit; max_capacity }
-
-type env =
-  | Run
-  | EmailRateLimit
-  | MaxCapacity
+type env = Run
 
 let to_string = function
   | Run -> "MATCHER_RUN"
-  | EmailRateLimit -> "EMAIL_RATE_LIMIT"
-  | MaxCapacity -> "MATCHER_MAX_CAPACITY"
 ;;
 
-let read_variable fcn env =
-  fcn (env |> to_string)
+let read_bool env =
+  Sihl.Configuration.read_bool (env |> to_string)
   |> CCOption.get_exn_or (Format.asprintf "Variable not defined: %s" (env |> to_string))
 ;;
-
-let read_int = read_variable Sihl.Configuration.read_int
-let read_bool = read_variable Sihl.Configuration.read_bool
 
 let schema =
   let open Conformist in
@@ -41,18 +24,8 @@ let schema =
              ~meta:"If set to false, the matcher will not be executed."
              ~default:(Sihl.Configuration.is_production ())
              (Run |> to_string))
-      ; int
-          ~meta:"Rate limit of the mail server to external mail addresses"
-          ~validator:(fun m ->
-            if m >= 0 then None else Some "Rate limit cannot have a value below zero.")
-          (EmailRateLimit |> to_string)
-      ; int
-          ~meta:"maximum percentage of the rate limit used for invitations"
-          ~validator:(fun m ->
-            if m >= 0 && m <= 100 then None else Some "Not a percentage value.")
-          (MaxCapacity |> to_string)
       ]
-    config
+    CCFun.id
 ;;
 
 let get_or_failwith element =
@@ -62,12 +35,6 @@ let get_or_failwith element =
 ;;
 
 let sum = CCList.fold_left ( + ) 0
-
-let for_interval interval rate =
-  (* calculated number from the rate per hour to the specified interval *)
-  let rate = max rate 0. in
-  CCFloat.(rate / 3600. * (interval |> Ptime.Span.to_float_s))
-;;
 
 let experiment_has_bookable_spots database_label { Experiment.id; online_experiment; _ } =
   let open Utils.Lwt_result.Infix in
@@ -111,37 +78,25 @@ let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
   (experiment, contacts, use_case) |> Lwt_result.return
 ;;
 
-let calculate_mailing_limits
-      interval
-      (pool_based_mailings : ('a * Mailing.Status.status list) list)
-  =
+let calculate_mailing_limits remaining_capacity statuses =
+  (* Distribute [remaining_capacity] across mailings proportionally to their
+     requested amounts (to_handle). If the total requested <= remaining_capacity
+     every mailing gets its full amount; otherwise each gets a proportional share. *)
   let open CCList in
   let open CCFloat in
-  let rate_limit = read_int EmailRateLimit |> CCInt.to_float in
-  let factor = read_int MaxCapacity |> CCInt.to_float in
-  let max_total_invitations = rate_limit * (factor / 100.) |> for_interval interval in
   let total =
-    let open Mailing.Status in
-    pool_based_mailings
+    statuses
     |> fold_left
-         (fun init (_, status) -> init :: (status >|= to_handle %> ToHandle.value) |> sum)
-         0
+         (fun acc s -> acc +. (Mailing.Status.(to_handle s |> ToHandle.value) |> of_int))
+         0.
   in
-  let reduce_factor =
-    (* only allow a factor between 0 and 1 *)
-    max_total_invitations / of_int total |> min 1. |> max 0.
-  in
-  pool_based_mailings
-  >|= fun (pool, mailing_status) ->
-  let limit_to_mailing =
-    mailing_status
-    >|= fun { Mailing.Status.mailing; to_handle; _ } ->
-    let open CCFloat in
-    let to_handle = Mailing.Status.ToHandle.value to_handle |> of_int in
-    let limit = to_handle *. reduce_factor |> floor |> to_int in
-    mailing, limit
-  in
-  pool, limit_to_mailing
+  let capacity = of_int remaining_capacity in
+  let reduce_factor = if total <= 0. then 0. else capacity /. total |> min 1. |> max 0. in
+  statuses
+  >|= fun { Mailing.Status.mailing; to_handle; _ } ->
+  let to_handle = Mailing.Status.ToHandle.value to_handle |> of_int in
+  let limit = to_handle *. reduce_factor |> floor |> to_int in
+  mailing, limit
 ;;
 
 let notify_all_invited pool tenant experiment =
@@ -165,141 +120,192 @@ let notify_all_invited pool tenant experiment =
     Lwt.return (experiment_event :: email_event)
 ;;
 
-let events_of_mailings ?invitation_ids =
-  let ok_or_log_error = function
-    | Ok (pool, events) when CCList.is_empty events ->
-      Logs.info ~src (fun m -> m ~tags:(Database.Logger.Tags.create pool) "No action");
-      None
-    | Ok m -> Some m
-    | Error err ->
-      let open Pool_common in
-      let (_ : Pool_message.Error.t) = Utils.with_log_error ~tags err in
-      None
+let events_of_mailings ?invitation_ids pool limited_mailings =
+  let tags = Database.Logger.Tags.create pool in
+  let open Lwt_result.Syntax in
+  let%lwt events =
+    let* tenant = Pool_tenant.find_by_label pool in
+    limited_mailings
+    |> Lwt_list.map_s (fun (mailing, limit) ->
+      find_contacts_by_mailing pool mailing limit
+      >>= fun (experiment, contacts, use_case) ->
+      match contacts with
+      | [] -> notify_all_invited pool tenant experiment |> Lwt_result.ok
+      | contacts ->
+        let open Cqrs_command.Invitation_command in
+        let contacts = sort_contacts contacts in
+        let%lwt create_message =
+          Message_template.ExperimentInvitation.prepare tenant experiment
+        in
+        let create_new contacts =
+          Create.(
+            handle
+              ?ids:invitation_ids
+              ~tags
+              { experiment
+              ; mailing = Some mailing
+              ; contacts
+              ; invited_contacts = []
+              ; create_message
+              })
+        in
+        let resend_existing invitations =
+          invitations
+          |> CCList.map (fun invitation ->
+            Resend.(handle ~tags ~mailing_id:mailing.Mailing.id create_message invitation))
+          |> CCList.all_ok
+          |> CCResult.map CCList.flatten
+        in
+        (match use_case with
+         | Filter.MatchesFilter -> failwith "Invalid use case"
+         | Filter.Matcher _ ->
+           contacts
+           |> Lwt_list.fold_left_s
+                (fun (invitations, contacts) contact ->
+                   Contact.id contact
+                   |> Invitation.find_by_contact_and_experiment_opt
+                        pool
+                        experiment.Experiment.id
+                   |> Lwt.map (function
+                     | None -> invitations, contacts @ [ contact ]
+                     | Some invitation -> invitations @ [ invitation ], contacts))
+                ([], [])
+           >|> fun (invitations, contacts) ->
+           let* resend_events = resend_existing invitations |> Lwt_result.lift in
+           let* create_events = create_new contacts |> Lwt_result.lift in
+           Lwt_result.return (create_events @ resend_events)))
+    ||> CCList.all_ok
+    >|+ CCList.flatten
   in
-  Lwt_list.filter_map_s (fun (pool, limited_mailings) ->
-    let open Lwt_result.Syntax in
-    let%lwt events =
-      let* tenant = Pool_tenant.find_by_label pool in
-      limited_mailings
-      |> Lwt_list.map_s (fun (mailing, limit) ->
-        find_contacts_by_mailing pool mailing limit
-        >>= fun (experiment, contacts, use_case) ->
-        match contacts with
-        | [] -> notify_all_invited pool tenant experiment |> Lwt_result.ok
-        | contacts ->
-          let open Cqrs_command.Invitation_command in
-          let contacts = sort_contacts contacts in
-          let%lwt create_message =
-            Message_template.ExperimentInvitation.prepare tenant experiment
-          in
-          let create_new contacts =
-            Create.(
-              handle
-                ?ids:invitation_ids
-                ~tags
-                { experiment
-                ; mailing = Some mailing
-                ; contacts
-                ; invited_contacts = []
-                ; create_message
-                })
-          in
-          let resend_existing invitations =
-            invitations
-            |> CCList.map (fun invitation ->
-              Resend.(
-                handle ~tags ~mailing_id:mailing.Mailing.id create_message invitation))
-            |> CCList.all_ok
-            |> CCResult.map CCList.flatten
-          in
-          (match use_case with
-           | Filter.MatchesFilter -> failwith "Invalid use case"
-           | Filter.Matcher _ ->
-             contacts
-             |> Lwt_list.fold_left_s
-                  (fun (invitations, contacts) contact ->
-                     Contact.id contact
-                     |> Invitation.find_by_contact_and_experiment_opt
-                          pool
-                          experiment.Experiment.id
-                     |> Lwt.map (function
-                       | None -> invitations, contacts @ [ contact ]
-                       | Some invitation -> invitations @ [ invitation ], contacts))
-                  ([], [])
-             >|> fun (invitations, contacts) ->
-             let* resend_events = resend_existing invitations |> Lwt_result.lift in
-             let* create_events = create_new contacts |> Lwt_result.lift in
-             Lwt_result.return (create_events @ resend_events)))
-      ||> CCList.all_ok
-      >|+ CCList.flatten
+  match events with
+  | Ok events when CCList.is_empty events ->
+    Logs.info ~src (fun m -> m ~tags "No action");
+    Lwt.return []
+  | Ok events -> Lwt.return events
+  | Error err ->
+    let open Pool_common in
+    let (_ : Pool_message.Error.t) = Utils.with_log_error ~tags err in
+    Lwt.return []
+;;
+
+let smtp_limits_of_id pool =
+  let open Email.SmtpAuth in
+  let default = RateLimit.default, InvitationCapacity.default in
+  let limits { rate_limit; invitation_capacity; _ } = rate_limit, invitation_capacity in
+  function
+  | None -> find_default_opt pool ||> CCOption.map_or ~default limits
+  | Some id ->
+    (match%lwt find pool id with
+     | Ok smtp when Default.value smtp.default ->
+       find_default_opt pool ||> CCOption.map_or ~default limits
+     | Ok smtp -> Lwt.return (limits smtp)
+     | Error _ -> Lwt.return default)
+;;
+
+let compute_limited_mailings pool interval =
+  let%lwt status_with_smtp =
+    Mailing.Status.find_current pool interval
+    >|> Lwt_list.filter_map_s (fun ({ Mailing.Status.mailing; _ } as status) ->
+      let find_experiment { Mailing.id; _ } =
+        Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
+      in
+      let with_spots ({ Experiment.smtp_auth_id; _ } as experiment) =
+        match%lwt experiment_has_bookable_spots pool experiment with
+        | true -> Lwt.return_ok (status, smtp_auth_id)
+        | false -> Lwt.return_error Pool_message.Error.SessionFullyBooked
+      in
+      mailing
+      |> find_experiment
+      >>= with_spots
+      >|- Pool_common.Utils.with_log_error ~level:Logs.Warning
+      ||> CCResult.to_option)
+  in
+  (* Normalize: if smtp_auth_id points to the default account, treat it as None
+     so that mailings without a custom SMTP and those using the default are grouped together *)
+  let%lwt status_with_smtp =
+    status_with_smtp
+    |> Lwt_list.map_s (fun (status, smtp_auth_id) ->
+      match smtp_auth_id with
+      | None -> Lwt.return (status, None)
+      | Some id ->
+        (match%lwt Email.SmtpAuth.find pool id with
+         | Ok { Email.SmtpAuth.default; _ } when Email.SmtpAuth.Default.value default ->
+           Lwt.return (status, None)
+         | Ok _ | Error _ -> Lwt.return (status, smtp_auth_id)))
+  in
+  let smtp_id_eq = CCOption.equal Email.SmtpAuth.Id.equal in
+  let groups =
+    CCList.fold_left
+      (fun acc (status, smtp_auth_id) ->
+         let existing =
+           CCList.Assoc.get ~eq:smtp_id_eq smtp_auth_id acc |> CCOption.get_or ~default:[]
+         in
+         CCList.Assoc.set ~eq:smtp_id_eq smtp_auth_id (existing @ [ status ]) acc)
+      []
+      status_with_smtp
+  in
+  groups
+  |> Lwt_list.map_s (fun (smtp_auth_id, statuses) ->
+    let%lwt rate_limit, invitation_capacity = smtp_limits_of_id pool smtp_auth_id in
+    (* Daily cap = rate_limit * invitation_capacity% *)
+    let daily_cap =
+      let open CCFloat in
+      CCInt.to_float (Email.SmtpAuth.RateLimit.value rate_limit)
+      *. (CCInt.to_float (Email.SmtpAuth.InvitationCapacity.value invitation_capacity)
+          /. 100.)
+      |> floor
+      |> to_int
     in
-    let open CCResult in
-    events >|= CCPair.make pool |> ok_or_log_error |> Lwt.return)
+    (* Rolling 24h window: count invitations already sent *)
+    let%lwt already_sent =
+      Email.SmtpAuth.count_invitations_sent_since pool smtp_auth_id 86400
+    in
+    (* Remaining budget for the rest of today's window *)
+    let remaining = max 0 (daily_cap - already_sent) in
+    Lwt.return (calculate_mailing_limits remaining statuses))
+  ||> CCList.flatten
 ;;
 
-let create_invitation_events ?invitation_ids interval pools =
-  let%lwt pool_based_mailings =
-    Lwt_list.map_s
-      (fun pool ->
-         Mailing.Status.find_current pool interval
-         >|> Lwt_list.filter_map_s (fun ({ Mailing.Status.mailing; _ } as status) ->
-           let find_experiment { Mailing.id; _ } =
-             Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
-           in
-           let has_spots = experiment_has_bookable_spots pool in
-           let validate = function
-             | true -> Ok status
-             | false -> Error Pool_message.Error.SessionFullyBooked
-           in
-           mailing
-           |> find_experiment
-           |>> has_spots
-           >== validate
-           >|- Pool_common.Utils.with_log_error ~level:Logs.Warning
-           ||> CCResult.to_opt)
-         ||> fun m -> pool, m)
-      pools
-  in
-  pool_based_mailings
-  |> calculate_mailing_limits interval
-  |> events_of_mailings ?invitation_ids
+let create_invitation_events ?invitation_ids interval database_label =
+  let%lwt limited_mailings = compute_limited_mailings database_label interval in
+  events_of_mailings ?invitation_ids database_label limited_mailings
 ;;
 
-let match_invitations interval pools =
-  let open Utils.Lwt_result.Infix in
+let match_invitations interval database_label =
   let count_mails =
     CCList.filter_map
       (let open Pool_event in
        function[@warning "-4"]
-       (* TODO: Account based internal/external email count *)
        | Email (Email.Sent _) -> Some 1
        | Email (Email.BulkSent mails) -> Some (CCList.length mails)
        | _ -> None)
     %> sum
   in
-  let handle_events =
-    Lwt_list.iter_s (fun (pool, events) ->
-      Logs.info ~src (fun m ->
-        m
-          ~tags:(Database.Logger.Tags.create pool)
-          "Sending %4d intivation emails"
-          (count_mails events));
-      Pool_event.handle_system_events pool events)
-  in
-  create_invitation_events interval pools >|> handle_events
+  let%lwt events = create_invitation_events interval database_label in
+  Logs.info ~src (fun m ->
+    m
+      ~tags:(Database.Logger.Tags.create database_label)
+      "Sending %4d invitation emails"
+      (count_mails events));
+  Pool_event.handle_system_events database_label events
 ;;
 
 let start_matcher () =
   let open Schedule in
   let interval = Ptime.Span.of_int_s (5 * 60) in
-  let periodic_fcn () =
-    Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
-    Database.(Pool.Tenant.all ()) |> match_invitations interval
-  in
-  let schedule =
-    create "matcher" (Every (interval |> ScheduledTimeSpan.of_span)) None periodic_fcn
-  in
-  Schedule.add_and_start schedule
+  Database.Pool.Tenant.all ()
+  |> Lwt_list.iter_s (fun database_label ->
+    let label = [%string "matcher [%{Database.Label.value database_label}]"] in
+    Logs.debug ~src (fun m ->
+      m ~tags:(Database.Logger.Tags.create database_label) "Starting %s" label);
+    let schedule =
+      create
+        label
+        (Every (interval |> ScheduledTimeSpan.of_span))
+        (Some database_label)
+        (fun () -> match_invitations interval database_label)
+    in
+    Schedule.add_and_start schedule)
 ;;
 
 let start () =

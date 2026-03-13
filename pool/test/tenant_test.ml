@@ -80,6 +80,12 @@ module Data = struct
     let password = "emailemail"
     let mechanism = SmtpAuth.Mechanism.(LOGIN, LOGIN |> show)
     let protocol = SmtpAuth.Protocol.(STARTTLS, STARTTLS |> show)
+    let system_account = false
+    let rate_limit = Email.SmtpAuth.RateLimit.default |> Email.SmtpAuth.RateLimit.value
+
+    let invitation_capacity =
+      Email.SmtpAuth.InvitationCapacity.default |> Email.SmtpAuth.InvitationCapacity.value
+    ;;
 
     let urlencoded ?(default = true) () =
       [ Field.SmtpLabel, [ database_label ]
@@ -90,6 +96,9 @@ module Data = struct
       ; Field.SmtpMechanism, [ snd mechanism ]
       ; Field.SmtpProtocol, [ snd protocol ]
       ; Field.DefaultSmtpServer, [ Utils.Bool.to_string default ]
+      ; Field.SmtpSystemAccount, [ Utils.Bool.to_string system_account ]
+      ; Field.SmtpRateLimit, [ CCInt.to_string rate_limit ]
+      ; Field.SmtpInvitationCapacity, [ CCInt.to_string invitation_capacity ]
       ]
       |> CCList.map (CCPair.map_fst Field.show)
     ;;
@@ -130,10 +139,24 @@ module Data = struct
           ; mechanism
           ; protocol
           ; default
+          ; system_account
+          ; internal_regex
           ; _
           }
       =
-      { SmtpAuth.id; label; server; port; username; mechanism; protocol; default }
+      { SmtpAuth.id
+      ; label
+      ; server
+      ; port
+      ; username
+      ; mechanism
+      ; protocol
+      ; default
+      ; system_account
+      ; internal_regex
+      ; rate_limit = Email.SmtpAuth.RateLimit.default
+      ; invitation_capacity = Email.SmtpAuth.InvitationCapacity.default
+      }
     ;;
   end
 

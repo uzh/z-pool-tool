@@ -40,6 +40,8 @@ module Key = struct
   type t =
     | ContactEmail [@name "contact_email"] [@printer printer "contact_email"]
     | EmailSuffixes [@name "email_suffixes"] [@printer printer "email_suffixes"]
+    | SystemEmailTemplates [@name "system_email_templates"]
+    [@printer printer "system_email_templates"]
     | InactiveUserDisableAfter [@name "inactive_user_disable_after"]
     [@printer printer "inactive_user_disable_after"]
     | InactiveUserWarning [@name "inactive_user_warning"]
@@ -94,6 +96,30 @@ module EmailSuffixes = struct
   type t = EmailSuffix.t list [@@deriving eq, show, yojson]
 
   let key = Key.EmailSuffixes
+end
+
+module SystemEmailTemplates = struct
+  open Pool_common
+  open CCFun.Infix
+
+  type t = MessageTemplateLabel.t list [@@deriving eq, show]
+
+  let key = Key.SystemEmailTemplates
+  let normalize = CCList.sort_uniq ~cmp:MessageTemplateLabel.compare
+
+  let yojson_of_t =
+    CCList.map MessageTemplateLabel.yojson_of_t %> fun values -> `List values
+  ;;
+
+  let t_of_yojson = function
+    | `List values ->
+      values
+      |> CCList.filter_map (fun value ->
+        try Some (MessageTemplateLabel.t_of_yojson value) with
+        | _ -> None)
+      |> normalize
+    | _ -> []
+  ;;
 end
 
 module EmailReminderLeadTime = struct
@@ -227,6 +253,7 @@ let action_of_param = function
   | "disable_inactive_user_service" -> Ok `UpdateUnactiveUserServiceDisabled
   | "update_contact_email" -> Ok `UpdateContactEmail
   | "update_emailsuffix" -> Ok `UpdateEmailSuffixes
+  | "update_system_email_templates" -> Ok `UpdateSystemEmailTemplates
   | "update_languages" -> Ok `UpdateLanguages
   | "update_trigger_profile_update_after" -> Ok `UpdateTriggerProfileUpdateAfter
   | "user_import_first_reminder_after" -> Ok `UserImportFirstReminderAfter
@@ -245,6 +272,7 @@ let stringify_action = function
   | `UpdateUnactiveUserServiceDisabled -> "disable_inactive_user_service"
   | `UpdateContactEmail -> "update_contact_email"
   | `UpdateEmailSuffixes -> "update_emailsuffix"
+  | `UpdateSystemEmailTemplates -> "update_system_email_templates"
   | `UpdateLanguages -> "update_languages"
   | `UpdateTriggerProfileUpdateAfter -> "update_trigger_profile_update_after"
   | `UserImportFirstReminderAfter -> "user_import_first_reminder_after"

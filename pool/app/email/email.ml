@@ -33,3 +33,8 @@ let find_active_token pool address =
 
 module Service = Email_service
 module Guard = Entity_guard
+
+module Contact = struct
+  let increment_smtp_bounce = Repo_sql.Contact.increment_smtp_bounce
+  let reset_smtp_bounce = Repo_sql.Contact.reset_smtp_bounce
+end

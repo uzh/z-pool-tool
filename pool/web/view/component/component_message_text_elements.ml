@@ -2,7 +2,7 @@ open Tyxml.Html
 module DummyData = Component_message_text_elements_data
 
 let message_template_hints =
-  let open Message_template.Label in
+  let open Pool_common.MessageTemplateLabel in
   let open Pool_common.I18n in
   function
   | ExperimentInvitation ->
@@ -101,7 +101,7 @@ let message_template_help
       template_label
   =
   let open Message_template in
-  let open Label in
+  let open Pool_common.MessageTemplateLabel in
   let open DummyData in
   let token = "123456789" in
   let open CCOption in

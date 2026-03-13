@@ -54,7 +54,7 @@ module Instance : sig
   val max_tries : t -> int
   val run_at : t -> Ptime.t
   val clone_of : t -> Id.t option
-  val message_template : t -> string option
+  val message_template : t -> Pool_common.MessageTemplateLabel.t option
   val input : t -> string
   val name : t -> JobName.t
   val database_label : t -> Database.Label.t
@@ -65,7 +65,7 @@ module Instance : sig
 
   val create
     :  ?id:Id.t
-    -> ?message_template:string
+    -> ?message_template:Pool_common.MessageTemplateLabel.t
     -> ?tries:int
     -> ?max_tries:int
     -> ?status:Status.t
@@ -117,7 +117,7 @@ module Job : sig
 
   val to_instance
     :  ?id:Id.t
-    -> ?message_template:string
+    -> ?message_template:Pool_common.MessageTemplateLabel.t
     -> ?run_at:run_at
     -> ?clone_of:Id.t
     -> Database.Label.t
@@ -205,7 +205,7 @@ val job_ctx_clone : Id.t -> job_ctx
 val dispatch
   :  ?id:Id.t
   -> ?callback:(Instance.t -> unit Lwt.t)
-  -> ?message_template:string
+  -> ?message_template:Pool_common.MessageTemplateLabel.t
   -> ?job_ctx:job_ctx
   -> ?run_at:run_at
   -> Database.Label.t
@@ -217,7 +217,7 @@ val dispatch_all
   :  ?callback:(Instance.t -> unit Lwt.t)
   -> ?run_at:run_at
   -> Database.Label.t
-  -> (Id.t * 'a * string option * job_ctx) list
+  -> (Id.t * 'a * Pool_common.MessageTemplateLabel.t option * job_ctx) list
   -> 'a Job.t
   -> unit Lwt.t
 

@@ -44,7 +44,7 @@ let confirmation_mail contact =
   |> Email.Service.Job.create
   |> Email.create_dispatch
        ~job_ctx:Pool_queue.(job_ctx_create JobHistory.[ contact_item contact ])
-       ~message_template:(Message_template.Label.show label)
+       ~message_template:label
 ;;
 
 let sign_up_contact contact_info =
@@ -111,7 +111,7 @@ let verification_email (email_address, _, _, _, _) =
     ; bcc = []
     }
   |> Email.Service.Job.create
-  |> Email.create_dispatch ~message_template:(Message_template.Label.show label)
+  |> Email.create_dispatch ~message_template:label
 ;;
 
 let sign_up_not_allowed_suffix () =

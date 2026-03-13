@@ -165,10 +165,40 @@ let create_invitations_model () =
     ; invited_contacts = []
     }
     |> handle ~ids
-    |> CCResult.map sort_events
   in
-  let expected = expected_events ~ids experiment (Some mailing) contacts create_message in
-  Test_utils.check_result expected events
+  let[@warning "-4"] created, emails, contacts =
+    match events with
+    | Ok
+        [ Pool_event.Invitation
+            (Invitation.Created ({ Invitation.mailing = Some _; _ } as created))
+        ; Pool_event.Email (Email.BulkSent emails)
+        ; Pool_event.Contact contactOne
+        ; Pool_event.Contact contactTwo
+        ] -> created, emails, [ contactOne; contactTwo ]
+    | Ok _ -> failwith "Event mismatch"
+    | Error err -> failwith Pool_common.(Utils.error_to_string Language.En err)
+  in
+  let open Alcotest in
+  let () =
+    check
+      bool
+      "experiment id"
+      true
+      (Experiment.Id.equal
+         created.Invitation.experiment.Experiment.id
+         experiment.Experiment.id)
+  in
+  let () =
+    check
+      bool
+      "mailing id"
+      true
+      (Mailing.Id.equal
+         (CCOption.get_exn_or "Missing mailing" created.Invitation.mailing).Mailing.id
+         mailing.Mailing.id)
+  in
+  let () = check int "invitations" 2 (CCList.length created.Invitation.invitations) in
+  check int "emails" (CCList.length contacts) (CCList.length emails)
 ;;
 
 let create_invitations _ () =
@@ -189,10 +219,7 @@ let create_invitations _ () =
     in
     Integration_utils.MailingRepo.create ~start:Start.StartNow ~distribution ~limit id
   in
-  let run_matcher () =
-    Matcher.create_invitation_events interval [ pool ]
-    ||> CCList.assoc ~eq:Database.Label.equal pool
-  in
+  let run_matcher () = Matcher.create_invitation_events interval pool in
   let%lwt current = Status.find_current pool interval in
   let () = Alcotest.(check int "count mailings" 1 (CCList.length current)) in
   let mailing = current |> CCList.hd |> fun { Status.mailing; _ } -> mailing in
@@ -228,6 +255,175 @@ let create_invitations _ () =
   in
   (* Stop mailing for upcoming tests - and wait for a second, as mailings refer to timestamps *)
   let%lwt () = Stopped mailing |> Mailing.handle_event pool in
+  Unix.sleep 1;
+  Lwt.return_unit
+;;
+
+let update_contact current_user update contact =
+  let updated = update contact in
+  let%lwt () =
+    Contact.Updated updated
+    |> Pool_event.contact
+    |> Pool_event.handle_event pool current_user
+  in
+  Lwt.return updated
+;;
+
+let created_invitation_contact_ids events =
+  let[@warning "-4"] invitation_contact_ids = function
+    | Pool_event.Invitation (Invitation.Created created) ->
+      created.Invitation.invitations
+      |> CCList.map (fun invitation ->
+        invitation.Invitation.contact |> Contact.id |> Contact.Id.value)
+      |> CCOption.return
+    | _ -> None
+  in
+  events
+  |> CCList.filter_map invitation_contact_ids
+  |> CCList.flatten
+  |> CCList.sort CCString.compare
+;;
+
+let create_invitations_for_different_user_types _ () =
+  let open MatcherTestUtils in
+  let%lwt current_user = current_user () in
+  let%lwt experiment, contacts =
+    setup_with_contacts
+      ~title_suffix:"create_invitations_different_user_types"
+      ~n_contacts:4
+      current_user
+  in
+  let open_contact, pending_import_contact, paused_contact, disabled_inactive_contact =
+    match contacts with
+    | [ open_contact; pending_import_contact; paused_contact; disabled_inactive_contact ]
+      -> open_contact, pending_import_contact, paused_contact, disabled_inactive_contact
+    | _ -> failwith "Expected exactly 4 contacts"
+  in
+  let%lwt pending_import_contact =
+    update_contact
+      current_user
+      (fun contact ->
+         Contact.{ contact with import_pending = Pool_user.ImportPending.create true })
+      pending_import_contact
+  in
+  let%lwt (_ : Contact.t) =
+    update_contact
+      current_user
+      (fun contact -> Contact.{ contact with paused = Pool_user.Paused.create true })
+      paused_contact
+  in
+  let%lwt (_ : Contact.t) =
+    update_contact
+      current_user
+      (fun contact ->
+         Contact.
+           { contact with
+             disabled = Pool_user.Disabled.create true
+           ; user = Pool_user.{ contact.user with status = Status.Inactive }
+           })
+      disabled_inactive_contact
+  in
+  let%lwt mailing = experiment |> Experiment.id |> MailingRepo.create in
+  let%lwt events = Matcher.events_of_mailings pool [ mailing, limit ] in
+  let expected_ids =
+    [ open_contact; pending_import_contact ]
+    |> CCList.map Contact.(id %> Id.value)
+    |> CCList.sort CCString.compare
+  in
+  let invitation_contact_ids = created_invitation_contact_ids events in
+  let () =
+    Alcotest.(
+      check
+        (list string)
+        "only open and pending import contacts receive invitations"
+        expected_ids
+        invitation_contact_ids)
+  in
+  let%lwt () = Mailing.Stopped mailing |> Mailing.handle_event pool in
+  Unix.sleep 1;
+  Lwt.return_unit
+;;
+
+let create_invitations_exclude_paused_and_disabled_inactive _ () =
+  let open MatcherTestUtils in
+  let%lwt current_user = current_user () in
+  let%lwt experiment, contacts =
+    setup_with_contacts
+      ~title_suffix:"create_invitations_exclude_paused_and_disabled"
+      ~n_contacts:2
+      current_user
+  in
+  let paused_contact, disabled_inactive_contact =
+    match contacts with
+    | [ paused_contact; disabled_inactive_contact ] ->
+      paused_contact, disabled_inactive_contact
+    | _ -> failwith "Expected exactly 2 contacts"
+  in
+  let%lwt (_ : Contact.t) =
+    update_contact
+      current_user
+      (fun contact -> Contact.{ contact with paused = Pool_user.Paused.create true })
+      paused_contact
+  in
+  let%lwt (_ : Contact.t) =
+    update_contact
+      current_user
+      (fun contact ->
+         Contact.
+           { contact with
+             disabled = Pool_user.Disabled.create true
+           ; user = Pool_user.{ contact.user with status = Status.Inactive }
+           })
+      disabled_inactive_contact
+  in
+  let%lwt mailing = experiment |> Experiment.id |> MailingRepo.create in
+  let%lwt events = Matcher.events_of_mailings pool [ mailing, limit ] in
+  let invitation_contact_ids = created_invitation_contact_ids events in
+  Alcotest.(
+    check
+      (list string)
+      "paused and disabled/inactive contacts do not receive invitations"
+      []
+      invitation_contact_ids);
+  let%lwt () = Mailing.Stopped mailing |> Mailing.handle_event pool in
+  Unix.sleep 1;
+  Lwt.return_unit
+;;
+
+let create_invitations_exclude_inactive_only _ () =
+  let open MatcherTestUtils in
+  let%lwt current_user = current_user () in
+  let%lwt experiment, contacts =
+    setup_with_contacts
+      ~title_suffix:"create_invitations_exclude_inactive_only"
+      ~n_contacts:1
+      current_user
+  in
+  let inactive_contact =
+    match contacts with
+    | [ inactive_contact ] -> inactive_contact
+    | _ -> failwith "Expected exactly 1 contact"
+  in
+  let%lwt (_ : Contact.t) =
+    update_contact
+      current_user
+      (fun contact ->
+         Contact.
+           { contact with
+             user = Pool_user.{ contact.user with status = Status.Inactive }
+           })
+      inactive_contact
+  in
+  let%lwt mailing = experiment |> Experiment.id |> MailingRepo.create in
+  let%lwt events = Matcher.events_of_mailings pool [ mailing, limit ] in
+  let invitation_contact_ids = created_invitation_contact_ids events in
+  Alcotest.(
+    check
+      (list string)
+      "inactive-only contacts do not receive invitations"
+      []
+      invitation_contact_ids);
+  let%lwt () = Mailing.Stopped mailing |> Mailing.handle_event pool in
   Unix.sleep 1;
   Lwt.return_unit
 ;;
@@ -282,11 +478,7 @@ let send_invitations _ () =
   in
   let invitation_ids = CCList.map (fun _ -> Pool_common.Id.create ()) contacts in
   let%lwt mailing = experiment |> Experiment.id |> MailingRepo.create in
-  let%lwt events =
-    Matcher.events_of_mailings ~invitation_ids [ pool, [ mailing, limit ] ]
-    ||> CCList.hd
-    ||> snd
-  in
+  let%lwt events = Matcher.events_of_mailings ~invitation_ids pool [ mailing, limit ] in
   let%lwt expected =
     let%lwt create_email = invitation_mail tenant experiment in
     expected_create_events ~invitation_ids contacts mailing experiment create_email
@@ -305,9 +497,7 @@ let reset_invitations _ () =
   in
   let%lwt () = Experiment.(handle_event pool (ResetInvitations experiment)) in
   let%lwt mailing = experiment |> Experiment.id |> MailingRepo.create in
-  let%lwt events =
-    Matcher.events_of_mailings [ pool, [ mailing, limit ] ] ||> CCList.hd ||> snd
-  in
+  let%lwt events = Matcher.events_of_mailings pool [ mailing, limit ] in
   let%lwt expected =
     let contacts = Matcher.sort_contacts contacts in
     let%lwt create_email = invitation_mail tenant experiment in
@@ -341,8 +531,8 @@ let matcher_notification _ () =
     ||> Pool_event.email
   in
   let%lwt mailing = experiment |> Experiment.id |> MailingRepo.create in
-  let matcher_events () = Matcher.events_of_mailings [ pool, [ mailing, limit ] ] in
-  let%lwt events = matcher_events () ||> CCList.hd ||> snd in
+  let matcher_events () = Matcher.events_of_mailings pool [ mailing, limit ] in
+  let%lwt events = matcher_events () in
   let%lwt expected =
     let updated =
       Experiment.
@@ -358,12 +548,7 @@ let matcher_notification _ () =
   let () = Alcotest.(check (list Test_utils.event) "succeeds" expected events) in
   let%lwt () = Pool_event.handle_events pool current_user events in
   (* Expect notification not to be sent again *)
-  let%lwt events =
-    matcher_events ()
-    ||> function
-    | [] -> []
-    | events -> events |> CCList.hd |> snd
-  in
+  let%lwt events = matcher_events () in
   let () = Alcotest.(check (list Test_utils.event) "succeeds" [] events) in
   Lwt.return_unit
 ;;
@@ -389,12 +574,7 @@ let create_invitations_for_online_experiment _ () =
   in
   let run_test expected message =
     let%lwt events =
-      Matcher.create_invitation_events
-        ~invitation_ids
-        (Ptime.Span.of_int_s (5 * 60))
-        [ pool ]
-      ||> CCList.assoc_opt ~eq:Database.Label.equal pool
-      ||> CCOption.value ~default:[]
+      Matcher.create_invitation_events ~invitation_ids (Ptime.Span.of_int_s (5 * 60)) pool
     in
     let%lwt expected =
       match expected with

@@ -650,3 +650,5 @@ module InactivityNotification = struct
     Database.exec pool request (Entity.id contact)
   ;;
 end
+
+let increment_smtp_bounce = Email.Contact.increment_smtp_bounce

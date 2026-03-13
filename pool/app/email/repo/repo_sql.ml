@@ -166,7 +166,11 @@ module Smtp = struct
             %s
             mechanism,
             protocol,
-            default_account
+            default_account,
+            system_account,
+            internal_regex,
+            rate_limit,
+            invitation_capacity
           FROM pool_smtp
         |sql}
         with_password_fragment
@@ -221,6 +225,21 @@ module Smtp = struct
     Database.find_opt pool find_full_default_request () ||> CCOption.to_result not_found
   ;;
 
+  let find_full_system_or_default_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE COALESCE(system_account, default_account) = 1
+      ORDER BY system_account DESC, default_account DESC
+      LIMIT 1
+    |sql}
+    |> select_smtp_sql ~with_password:true
+    |> Caqti_type.unit ->! RepoEntity.SmtpAuth.Write.t
+  ;;
+
+  let find_full_system_or_default_opt pool =
+    Database.find_opt pool find_full_system_or_default_request ()
+  ;;
+
   let find_default_request =
     let open Caqti_request.Infix in
     {sql|
@@ -244,6 +263,15 @@ module Smtp = struct
   ;;
 
   let find_all pool = Database.collect pool find_all_request ()
+
+  let find_for_experiment_request =
+    let open Caqti_request.Infix in
+    {sql|WHERE system_account = 0|sql}
+    |> select_smtp_sql
+    |> Caqti_type.unit ->* RepoEntity.SmtpAuth.t
+  ;;
+
+  let find_for_experiment pool = Database.collect pool find_for_experiment_request ()
 
   let select_count where_fragment =
     Format.asprintf
@@ -287,9 +315,17 @@ module Smtp = struct
         password,
         mechanism,
         protocol,
-        default_account
+        default_account,
+        system_account,
+        internal_regex,
+        rate_limit,
+        invitation_capacity
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
+        ?,
+        ?,
+        ?,
+        ?,
         ?,
         ?,
         ?,
@@ -323,7 +359,11 @@ module Smtp = struct
         username = $5,
         mechanism = $6,
         protocol = $7,
-        default_account = $8
+        default_account = $8,
+        system_account = $9,
+        internal_regex = $10,
+        rate_limit = $11,
+        invitation_capacity = $12
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -363,4 +403,103 @@ module Smtp = struct
   ;;
 
   let update_password pool = Database.exec pool update_password_request
+
+  (* Count invitations sent in the last [window] seconds for the given smtp_auth_id
+     (or the default account when None). Join path:
+     pool_invitations → pool_experiments → pool_smtp *)
+  let count_invitations_sent_since_default_request =
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT COUNT(*)
+      FROM pool_invitations
+      INNER JOIN pool_experiments
+        ON pool_invitations.experiment_uuid = pool_experiments.uuid
+      LEFT JOIN pool_smtp
+        ON pool_experiments.smtp_auth_uuid = pool_smtp.uuid
+      INNER JOIN user_users
+        ON pool_invitations.contact_uuid = user_users.uuid
+      WHERE pool_invitations.created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)
+        AND pool_smtp.default_account = 1
+        AND (pool_smtp.internal_regex IS NULL
+             OR user_users.email NOT REGEXP pool_smtp.internal_regex)
+    |sql}
+    |> Caqti_type.(int ->! int)
+  ;;
+
+  let count_invitations_sent_since_id_request =
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT COUNT(*)
+      FROM pool_invitations
+      INNER JOIN pool_experiments
+        ON pool_invitations.experiment_uuid = pool_experiments.uuid
+      INNER JOIN pool_smtp
+        ON pool_experiments.smtp_auth_uuid = pool_smtp.uuid
+      INNER JOIN user_users
+        ON pool_invitations.contact_uuid = user_users.uuid
+      WHERE pool_invitations.created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)
+        AND pool_smtp.uuid = UNHEX(REPLACE(?, '-', ''))
+        AND (pool_smtp.internal_regex IS NULL
+             OR user_users.email NOT REGEXP pool_smtp.internal_regex)
+    |sql}
+    |> Caqti_type.(t2 int RepoEntity.SmtpAuth.Id.t ->! int)
+  ;;
+
+  (* [count_invitations_sent_since pool smtp_auth_id window_seconds] returns the
+     number of invitations sent in the last [window_seconds] seconds via experiments
+     using the given SMTP account (or the default account when smtp_auth_id is None). *)
+  let count_invitations_sent_since pool smtp_auth_id window_seconds =
+    match smtp_auth_id with
+    | None ->
+      Database.find pool count_invitations_sent_since_default_request window_seconds
+    | Some id ->
+      Database.find pool count_invitations_sent_since_id_request (window_seconds, id)
+  ;;
+end
+
+module Contact = struct
+  let increment_smtp_bounce_request =
+    (* if the new count reaches or exceeds 5 the contact is also paused
+       and paused_version is incremented. *)
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE pool_contacts
+      INNER JOIN user_users
+        ON pool_contacts.user_uuid = user_users.uuid
+      SET
+        pool_contacts.smtp_bounces_count =
+          LEAST(pool_contacts.smtp_bounces_count + 1, 32767),
+        pool_contacts.paused =
+          CASE WHEN pool_contacts.smtp_bounces_count + 1 >= 5 THEN 1
+               ELSE pool_contacts.paused
+          END,
+        pool_contacts.paused_version =
+          CASE WHEN pool_contacts.smtp_bounces_count + 1 >= 5
+               THEN pool_contacts.paused_version + 1
+               ELSE pool_contacts.paused_version
+          END
+      WHERE user_users.email = ?
+        AND user_users.admin = 0
+    |sql}
+    |> Pool_user.Repo.EmailAddress.t ->. Caqti_type.unit
+  ;;
+
+  let increment_smtp_bounce pool email =
+    Database.exec pool increment_smtp_bounce_request email
+  ;;
+
+  let reset_smtp_bounce_request =
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE pool_contacts
+      INNER JOIN user_users
+        ON pool_contacts.user_uuid = user_users.uuid
+      SET pool_contacts.smtp_bounces_count = 0
+      WHERE user_users.email = ?
+        AND user_users.admin = 0
+    |sql}
+    |> Pool_user.Repo.EmailAddress.t ->. Caqti_type.unit
+  ;;
+
+  let reset_smtp_bounce pool email = Database.exec pool reset_smtp_bounce_request email
 end

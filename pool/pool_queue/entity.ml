@@ -78,7 +78,7 @@ module Instance = struct
     { id : Id.t
     ; name : JobName.t
     ; input : string
-    ; message_template : string option
+    ; message_template : Pool_common.MessageTemplateLabel.t option
     ; tries : int
     ; max_tries : int
     ; run_at : RunAt.t

@@ -107,7 +107,7 @@ module Instance = struct
         [ Id.t
         ; JobName.t
         ; string
-        ; option string
+        ; option Pool_common.Repo.MessageTemplateLabel.t
         ; int
         ; int
         ; RunAt.t

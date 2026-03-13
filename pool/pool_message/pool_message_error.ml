@@ -129,6 +129,7 @@ type t =
   | Smaller of (Field.t * Field.t)
   | SmtpException of string
   | SmtpLoginMissingCredentials
+  | SmtpRecipientNotFound of string
   | TerminatoryRootError
   | TerminatoryRootErrorTitle
   | TerminatoryTenantError

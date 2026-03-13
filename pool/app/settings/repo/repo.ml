@@ -4,7 +4,10 @@ module Database = Database
 
 let make_caqti ~encode ~decode =
   let encode = encode %> Yojson.Safe.to_string %> CCResult.return in
-  let decode = Yojson.Safe.from_string %> decode %> CCResult.return in
+  let decode value =
+    try Ok (value |> Yojson.Safe.from_string |> decode) with
+    | exn -> Error (Printexc.to_string exn)
+  in
   Caqti_type.(custom ~encode ~decode Caqti_type.string)
 ;;
 
@@ -101,6 +104,7 @@ module DefaultReminderLeadTime = SettingRepo (EmailReminderLeadTime)
 module DefaultTextMsgReminderLeadTime = SettingRepo (TextMsgReminderLeadTime)
 module TenantLanguages = SettingRepo (TenantLanguages)
 module TenantEmailSuffixes = SettingRepo (EmailSuffixes)
+module SystemEmailTemplates = SettingRepo (SystemEmailTemplates)
 module TenantContactEmail = SettingRepo (ContactEmail)
 module InactiveUserDisableAfter = SettingRepo (InactiveUser.DisableAfter)
 module InactiveUserWarning = SettingRepo (InactiveUser.Warning)
@@ -223,7 +227,7 @@ module PageScripts = struct
       FROM
         pool_tenant_page_scripts
       WHERE location = ?
-      AND script IS NOT NULL  
+      AND script IS NOT NULL
     |sql}
     |> Caqti_type.(string ->? string)
   ;;

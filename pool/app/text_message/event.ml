@@ -1,10 +1,9 @@
-open Ppx_yojson_conv_lib.Yojson_conv.Primitives
 open Entity
 
 type job =
   { job : t
   ; id : Pool_queue.Id.t option [@yojson.option]
-  ; message_template : string option [@yojson.option]
+  ; message_template : Pool_common.MessageTemplateLabel.t option [@yojson.option]
   ; job_ctx : Pool_queue.job_ctx option [@yojson.option]
   }
 [@@deriving eq, fields, show, yojson]

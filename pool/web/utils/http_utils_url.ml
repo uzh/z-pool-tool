@@ -139,7 +139,7 @@ module Admin = struct
       "%s/%s/%s"
       (experiment_path ~id:experiment_id ())
       Field.(human_url MessageTemplate)
-      (Message_template.Label.show label)
+      (Pool_common.MessageTemplateLabel.show label)
     |> append_opt (map Message_template.Id.value id)
     |> append_opt suffix
   ;;
@@ -198,7 +198,7 @@ module Admin = struct
       "%s/%s/%s"
       (session_path ~id:session_id experiment_id)
       Field.(human_url MessageTemplate)
-      (Message_template.Label.show label)
+      (Pool_common.MessageTemplateLabel.show label)
     |> append_opt (map Message_template.Id.value id)
     |> append_opt suffix
   ;;

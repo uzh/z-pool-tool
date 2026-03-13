@@ -19,7 +19,7 @@ let entity_hx_vals = function
 let template_label_url label suffix =
   Format.asprintf
     "/admin/message-template/%s/%s"
-    (Message_template.Label.show label)
+    (Pool_common.MessageTemplateLabel.show label)
     suffix
   |> Sihl.Web.externalize_path
 ;;
@@ -415,13 +415,12 @@ let preview_template_modal language (label, templates) =
   Component.Modal.create
     ~active:true
     language
-    (fun _ -> Label.to_human label)
+    (fun _ -> Pool_common.MessageTemplateLabel.to_human label)
     preview_modal_id
     html
 ;;
 
 let experiment_help ~entity language labels =
-  let open Message_template in
   let modal = div ~a:[ a_id preview_modal_id ] [] in
   let help_text =
     p
@@ -442,7 +441,9 @@ let experiment_help ~entity language labels =
               ; hx_swap "outerHTML"
               ; make_hx_vals hx_vals
               ]
-            [ txt (Label.to_human label); Icon.(to_html OpenOutline) ]
+            [ txt (Pool_common.MessageTemplateLabel.to_human label)
+            ; Icon.(to_html OpenOutline)
+            ]
         ]
     in
     labels |> CCList.map list_item |> ul ~a:[ a_class [ "inset"; "left"; "gap" ] ]

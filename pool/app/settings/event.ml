@@ -6,6 +6,7 @@ type event =
   | DefaultReminderLeadTimeUpdated of Pool_common.Reminder.EmailLeadTime.t
   | DefaultTextMsgReminderLeadTimeUpdated of Pool_common.Reminder.TextMessageLeadTime.t
   | EmailSuffixesUpdated of EmailSuffixes.t
+  | SystemEmailTemplatesUpdated of SystemEmailTemplates.t
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
   | InactiveUserServiceDisabled of InactiveUser.ServiceDisabled.t
@@ -20,6 +21,8 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t = function
   | LanguagesUpdated languages -> Repo.TenantLanguages.update ?user_uuid pool languages
   | EmailSuffixesUpdated suffixes ->
     Repo.TenantEmailSuffixes.update ?user_uuid pool suffixes
+  | SystemEmailTemplatesUpdated templates ->
+    Repo.SystemEmailTemplates.update ?user_uuid pool templates
   | DefaultReminderLeadTimeUpdated lead_time ->
     Repo.DefaultReminderLeadTime.update ?user_uuid pool lead_time
   | DefaultTextMsgReminderLeadTimeUpdated lead_time ->

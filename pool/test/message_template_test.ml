@@ -15,7 +15,7 @@ module Data = struct
       ]
   ;;
 
-  let label = Message_template.Label.ExperimentInvitation
+  let label = Pool_common.MessageTemplateLabel.ExperimentInvitation
 
   let create ?entity_uuid id =
     let open TemplateCommand.Create in
@@ -95,7 +95,7 @@ let create_experiment () =
 
 let create_invitation language ?entity_uuid () =
   let database_label = Test_utils.Data.database_label in
-  let label = Message_template.Label.ExperimentInvitation in
+  let label = Data.label in
   let template =
     Test_utils.Model.create_message_template ~label ~language ?entity_uuid ()
   in
@@ -111,7 +111,7 @@ module LanguageTestsData = struct
   open Message_template
 
   let database_label = Test_utils.Data.database_label
-  let invitation_label = Label.ExperimentInvitation
+  let invitation_label = Data.label
 
   let create_experiment ?language () =
     { (Test_utils.Model.create_experiment ()) with Experiment.language }
@@ -215,7 +215,6 @@ let get_template_with_experiment_language_and_template _ () =
 let get_template_with_language_missing _ () =
   let%lwt () =
     let database_label = Test_utils.Data.database_label in
-    let label = Message_template.Label.ExperimentInvitation in
     let%lwt experiment = create_experiment () in
     let template_language = Pool_common.Language.En in
     let%lwt template =
@@ -230,7 +229,7 @@ let get_template_with_language_missing _ () =
            (Message_template.find_by_label_and_language_to_send
               database_label
               ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
-              label)
+              Data.label)
     in
     (* When one entity specific template exists, expect this to be returned every time *)
     let expected = [ template; template ] in
@@ -243,7 +242,6 @@ let get_template_with_language_missing _ () =
 let get_templates_in_multile_languages _ () =
   let%lwt () =
     let database_label = Test_utils.Data.database_label in
-    let label = Message_template.Label.ExperimentInvitation in
     let%lwt experiment = create_experiment () in
     let languages = Pool_common.Language.[ De; En ] in
     let%lwt templates =
@@ -257,7 +255,7 @@ let get_templates_in_multile_languages _ () =
            (Message_template.find_by_label_and_language_to_send
               database_label
               ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
-              label)
+              Data.label)
     in
     (* Expect all created templates to be returned *)
     Alcotest.(check (list Test_utils.message_template) "succeeds" templates res)

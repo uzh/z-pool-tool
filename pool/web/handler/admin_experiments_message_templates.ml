@@ -20,7 +20,7 @@ let experiment_path experiment_id =
 ;;
 
 type form_context =
-  | New of Message_template.Label.t
+  | New of Pool_common.MessageTemplateLabel.t
   | Edit of Message_template.Id.t
 
 let form form_context req =

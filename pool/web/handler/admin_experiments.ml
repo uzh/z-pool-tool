@@ -95,7 +95,7 @@ let experiment_message_templates database_label experiment =
         Pool_common.Language.equal language experiment_language))
     ||> CCPair.make label
   in
-  Label.customizable_by_experiment |> Lwt_list.map_s find_templates
+  customizable_label_by_experiment |> Lwt_list.map_s find_templates
 ;;
 
 let index req =
@@ -377,8 +377,9 @@ let delete req =
         (`Experimenter, Some (Guard.Uuid.target_of Experiment.Id.value experiment_id))
     in
     let%lwt templates =
+      let open Pool_common.MessageTemplateLabel in
       let open Message_template in
-      Label.[ ExperimentInvitation; SessionReminder; AssignmentConfirmation ]
+      [ ExperimentInvitation; SessionReminder; AssignmentConfirmation ]
       |> Lwt_list.map_s
            (find_all_of_entity_by_label
               database_label

@@ -82,6 +82,7 @@ let show
       ?open_tab
       tenant_languages
       email_suffixes
+      system_email_templates
       contact_email
       inactive_user_disable_after
       inactive_user_warning
@@ -256,6 +257,35 @@ let show
         ]
     in
     "Contact Email", [ form ], Some hint, [ `UpdateContactEmail ]
+  in
+  let system_email_templates_html =
+    let open Pool_common.MessageTemplateLabel in
+    let form =
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ form
+            ~a:(form_attrs `UpdateSystemEmailTemplates)
+            [ csrf_element csrf ()
+            ; multi_select
+                language
+                { options = all |> CCList.map show
+                ; selected = system_email_templates |> CCList.map show
+                ; to_label = CCFun.id
+                ; to_value = CCFun.id
+                }
+                Message.Field.MessageTemplate
+                ()
+            ; submit ()
+            ]
+        ; open_system_settings_changelog Settings.Key.SystemEmailTemplates
+        ]
+    in
+    ( "System email templates"
+    , [ form ]
+    , Some
+        "Templates selected here use the SMTP system account (fallback: default SMTP \
+         account)."
+    , [ `UpdateSystemEmailTemplates ] )
   in
   let inactive_user_html =
     let open Settings.InactiveUser in
@@ -502,6 +532,7 @@ let show
     [ languages_html
     ; email_suffixes_html
     ; contact_email_html
+    ; system_email_templates_html
     ; inactive_user_html
     ; trigger_profile_update_after_html
     ; default_lead_time

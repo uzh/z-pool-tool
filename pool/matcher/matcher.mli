@@ -11,15 +11,16 @@ val experiment_has_bookable_spots : Database.Label.t -> Experiment.t -> bool Lwt
 
 val events_of_mailings
   :  ?invitation_ids:Pool_common.Id.t list
-  -> (Database.Label.t * (Mailing.t * int) list) list
-  -> (Database.Label.t, Pool_event.t list) CCPair.t list Lwt.t
+  -> Database.Label.t
+  -> (Mailing.t * int) list
+  -> Pool_event.t list Lwt.t
 
 val create_invitation_events
   :  ?invitation_ids:Pool_common.Id.t list
   -> Ptime.Span.t
-  -> Database.Label.t list
-  -> (Database.Label.t * Pool_event.t list) list Lwt.t
+  -> Database.Label.t
+  -> Pool_event.t list Lwt.t
 
-val match_invitations : Ptime.Span.t -> Database.Label.t list -> unit Lwt.t
+val match_invitations : Ptime.Span.t -> Database.Label.t -> unit Lwt.t
 val lifecycle : Sihl.Container.lifecycle
 val register : unit -> Sihl.Container.Service.t

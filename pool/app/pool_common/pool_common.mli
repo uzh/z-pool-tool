@@ -180,6 +180,48 @@ module NotifyContact : sig
   include Pool_model.Base.BooleanSig
 end
 
+module MessageTemplateLabel : sig
+  type t =
+    | AccountSuspensionNotification
+    | AssignmentCancellation
+    | AssignmentConfirmation
+    | AssignmentSessionChange
+    | ContactEmailChangeAttempt
+    | ContactRegistrationAttempt
+    | EmailVerification
+    | ExperimentInvitation
+    | InactiveContactWarning
+    | InactiveContactDeactivation
+    | Login2FAToken
+    | ManualSessionMessage
+    | MatcherNotification
+    | MatchFilterUpdateNotification
+    | PasswordChange
+    | PasswordReset
+    | PhoneVerification
+    | ProfileUpdateTrigger
+    | SignUpVerification
+    | SessionCancellation
+    | SessionReminder
+    | SessionReschedule
+    | UserImport
+    | WaitingListConfirmation
+
+  val equal : t -> t -> bool
+  val compare : t -> t -> int
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
+  val read : string -> t
+  val read_from_url : string -> t
+  val of_string : string -> (t, Pool_message.Error.t) result
+  val all : t list
+  val to_human : t -> string
+  val human_url : t -> string
+  val prefixed_human_url : t -> string
+end
+
 module Repo : sig
   val make_caqti_type
     :  'a Caqti_type.t
@@ -224,6 +266,9 @@ module Repo : sig
 
   module VerificationCode : Pool_model.Base.CaqtiSig with type t = VerificationCode.t
   module ExperimentType : Pool_model.Base.CaqtiSig with type t = ExperimentType.t
+
+  module MessageTemplateLabel :
+    Pool_model.Base.CaqtiSig with type t = MessageTemplateLabel.t
 end
 
 module Utils : sig

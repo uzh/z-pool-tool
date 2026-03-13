@@ -263,7 +263,7 @@ module Admin = struct
       ]
     in
     let add_template_label label =
-      let open Message_template.Label in
+      let open Pool_common.MessageTemplateLabel in
       label |> human_url |> Format.asprintf "/%s"
     in
     let location =
@@ -384,7 +384,7 @@ module Admin = struct
         let open Session in
         let specific =
           let message_templates =
-            let open Message_template.Label in
+            let open Pool_common.MessageTemplateLabel in
             let label_specific = label_specific_template edit_template update_template in
             [ choose
                 ~scope:(add_template_label SessionReminder)

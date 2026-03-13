@@ -115,3 +115,5 @@ module VerificationCode = struct
 
   let t = make_caqti_type Caqti_type.string CCFun.(of_string %> CCResult.return) value
 end
+
+module MessageTemplateLabel = Model.SelectorType (MessageTemplateLabel)

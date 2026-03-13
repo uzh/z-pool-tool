@@ -16,7 +16,7 @@ module Create : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?id:Message_template.Id.t
-    -> Message_template.Label.t
+    -> Pool_common.MessageTemplateLabel.t
     -> Pool_common.Id.t
     -> Pool_common.Language.t list
     -> t

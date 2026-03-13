@@ -17,6 +17,7 @@ module Smtp = struct
   let find_default = Sql.Smtp.find_default
   let find_default_opt = Sql.Smtp.find_default_opt
   let find_all = Sql.Smtp.find_all
+  let find_for_experiment = Sql.Smtp.find_for_experiment
   let insert = Sql.Smtp.insert
   let update = Sql.Smtp.update
   let delete = Sql.Smtp.delete
@@ -24,6 +25,8 @@ module Smtp = struct
   let update_password label Entity.SmtpAuth.{ id; password } =
     Sql.Smtp.update_password label (id, password)
   ;;
+
+  let count_invitations_sent_since = Sql.Smtp.count_invitations_sent_since
 
   module RepoEntity = Repo_entity_smtp_auth
 end

@@ -1,6 +1,7 @@
 open Entity
 open Message_utils
 open Tyxml.Html
+open Pool_common.MessageTemplateLabel
 
 let language = Pool_common.Language.En
 let entity_uuid = None
@@ -14,7 +15,7 @@ let add_salutation_to_text =
 let add_salutation html = div ((salutation :: html) @ [ complimentary_close ])
 
 let account_suspension_notification =
-  let label = Label.AccountSuspensionNotification in
+  let label = AccountSuspensionNotification in
   let email_text =
     [ p
         [ txt
@@ -49,7 +50,7 @@ If these attempts were not made by you, please inform an administrator.|}
 ;;
 
 let assignment_confirmation =
-  let label = Label.AssignmentConfirmation in
+  let label = AssignmentConfirmation in
   let email_text =
     [ p
         [ txt "You successfully registered to the following session/s:"
@@ -84,7 +85,7 @@ The participation in the session is compulsory.|}
 ;;
 
 let assignment_session_change =
-  let label = Label.AssignmentSessionChange in
+  let label = AssignmentSessionChange in
   let email_text =
     [ p [ txt "You have been assigned to a new session:"; br (); txt "{sessionOverview}" ]
     ; p [ txt "You are no longer signed up for the session on {oldSessionStart}." ]
@@ -117,7 +118,7 @@ You are no longer signed up for the session on {oldSessionStart}.|}
 ;;
 
 let email_verification =
-  let label = Label.EmailVerification in
+  let label = EmailVerification in
   let email_text =
     [ p
         [ txt "You recently added a new email address to your account."
@@ -164,7 +165,7 @@ If this action wasn`t performed by you, please ignore this email or reply to let
 ;;
 
 let experiment_invitation =
-  let label = Label.ExperimentInvitation in
+  let label = ExperimentInvitation in
   let email_text =
     [ p [ txt "We would like to invite you to the following experiment:" ]
     ; p [ strong [ txt "{experimentPublicTitle}" ] ]
@@ -207,7 +208,7 @@ Information about the sessions can be found here: {experimentUrl}|}
 ;;
 
 let password_change =
-  let label = Label.PasswordChange in
+  let label = PasswordChange in
   let email_text =
     [ p [ txt {|You recently changed your password for your account.|} ]
     ; p [ txt "If you did not change your password, please get in contact with us." ]
@@ -236,7 +237,7 @@ If you did not change your password, please get in contact with us.|}
 ;;
 
 let phone_verification =
-  let label = Label.PhoneVerification in
+  let label = PhoneVerification in
   let email_text =
     "Your phone number verification code: {token}" |> EmailText.of_string
   in
@@ -254,7 +255,7 @@ let phone_verification =
 ;;
 
 let profile_update_trigger =
-  let label = Label.ProfileUpdateTrigger in
+  let label = ProfileUpdateTrigger in
   let email_text =
     [ p [ txt "Your profile has not been updated in a while." ]
     ; p
@@ -287,7 +288,7 @@ Please check your profile: {profileUrl}|}
 ;;
 
 let password_reset =
-  let label = Label.PasswordReset in
+  let label = PasswordReset in
   let email_text =
     [ p
         [ txt "You recently requested to reset your password for your account."
@@ -336,7 +337,7 @@ hour.|}
 ;;
 
 let signup_verification =
-  let label = Label.SignUpVerification in
+  let label = SignUpVerification in
   let email_text =
     [ p
         [ txt "Thank your for signing up for the Pool Tool."
@@ -383,7 +384,7 @@ If this action wasn`t performed by you, please ignore this email or reply to let
 ;;
 
 let session_cancellation =
-  let label = Label.SessionCancellation in
+  let label = SessionCancellation in
   let email_text =
     [ p [ txt "The following session you have registered to was canceled:" ]
     ; p [ txt "{sessionOverview}" ]
@@ -416,7 +417,7 @@ Reason: {reason}|}
 ;;
 
 let session_reminder =
-  let label = Label.SessionReminder in
+  let label = SessionReminder in
   let email_text =
     [ p
         [ txt "Herewith we remind you about your upcoming experiment session:"
@@ -448,7 +449,7 @@ let session_reminder =
 ;;
 
 let session_reschedule =
-  let label = Label.SessionReschedule in
+  let label = SessionReschedule in
   let email_text =
     [ p
         [ txt "The following session you have registered to was rescheduled:"
@@ -492,7 +493,7 @@ New:
 ;;
 
 let contact_registration_attempt =
-  let label = Label.ContactRegistrationAttempt in
+  let label = ContactRegistrationAttempt in
   let email_text =
     [ p
         [ txt
@@ -546,7 +547,7 @@ If this action was not performed by you, you can ignore this message or inform t
 ;;
 
 let user_import =
-  let label = Label.UserImport in
+  let label = UserImport in
   let email_text =
     [ p
         [ txt "Your account was recently migrated."
@@ -585,7 +586,7 @@ let user_import =
 ;;
 
 let waiting_list_confirmation =
-  let label = Label.WaitingListConfirmation in
+  let label = WaitingListConfirmation in
   let email_text =
     [ p
         [ txt
