@@ -353,6 +353,7 @@ type hint =
   | SmtpMissing
   | SmtpSettingsDefaultFlag
   | SmtpSettingsIntro
+  | SmtpSettingsSystemAccountFlag
   | SmtpValidation
   | SurveyUrl
   | SwapSessions

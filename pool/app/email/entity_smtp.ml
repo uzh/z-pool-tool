@@ -248,6 +248,10 @@ let column_smtp_default_account =
   (Field.DefaultSmtpServer, "pool_smtp.default_account") |> Query.Column.create
 ;;
 
+let column_smtp_system_account =
+  (Field.SmtpSystemAccount, "pool_smtp.system_account") |> Query.Column.create
+;;
+
 let column_created_at = (Field.CreatedAt, "pool_smtp.created_at") |> Query.Column.create
 
 let searchable_by =
@@ -260,7 +264,11 @@ let searchable_by =
 ;;
 
 let default_sort_column = column_created_at
-let sortable_by = [ column_created_at; column_smtp_default_account ] @ searchable_by
+
+let sortable_by =
+  [ column_created_at; column_smtp_default_account; column_smtp_system_account ]
+  @ searchable_by
+;;
 
 let default_sort =
   Query.Sort.{ column = default_sort_column; order = SortOrder.Descending }

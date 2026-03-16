@@ -719,6 +719,9 @@ If you trigger the reminders manually now, no more automatic reminders will be s
 
     Note: When using the mechanism "LOGIN" a username and password are required.
     |}
+  | SmtpSettingsSystemAccountFlag ->
+    "Attention: If this setting is enabled, this SMTP configuration will be used for \
+     system-related emails, which can be configured through the system settings."
   | SmtpValidation ->
     "Please provide an email address to which a test message can be sent to validate the \
      SMTP settings."

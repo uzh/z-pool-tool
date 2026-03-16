@@ -754,6 +754,10 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
     {|Die folgende Konfiguration wird vom E-Mail Service verwendet.
 
     Beachte: Bei Verwendung des Mechanismus für "LOGIN" muss ein Benutzername und Passwort angegeben werden.|}
+  | SmtpSettingsSystemAccountFlag ->
+    "Achtung: Wenn diese Einstellung aktiviert ist, wird diese SMTP Konfiguration für \
+     systembezogene E-Mails verwendet, diese können über die Systemeinstellungen \
+     konfiguriert werden."
   | SmtpValidation ->
     "Please provide an email address to which a test message can be sent to validate the \
      SMTP settings."

@@ -99,7 +99,16 @@ let find_query_param req field decode =
 
 let find_referer req =
   let open CCOption.Infix in
-  Httpaf.Headers.get req.Opium.Request.headers "referer" >|= Uri.of_string >|= Uri.path
+  let strip_prefix path =
+    let pre =
+      Sihl.Configuration.read_string "PREFIX_PATH" |> CCOption.value ~default:""
+    in
+    CCString.chop_prefix ~pre path |> CCOption.value ~default:path
+  in
+  Httpaf.Headers.get req.Opium.Request.headers "referer"
+  >|= Uri.of_string
+  >|= Uri.path
+  >|= strip_prefix
 ;;
 
 let redirect_to_with_actions ?(skip_externalize = false) path actions =

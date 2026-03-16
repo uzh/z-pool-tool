@@ -166,6 +166,16 @@ module SmtpAuth : sig
 
   val id : t -> Id.t
   val label : t -> Label.t
+  val server : t -> Server.t
+  val port : t -> Port.t
+  val username : t -> Username.t option
+  val mechanism : t -> Mechanism.t
+  val protocol : t -> Protocol.t
+  val default : t -> Default.t
+  val system_account : t -> SystemAccount.t
+  val internal_regex : t -> InternalRegex.t option
+  val rate_limit : t -> RateLimit.t
+  val invitation_capacity : t -> InvitationCapacity.t
 
   type smtp = t
 
@@ -229,6 +239,7 @@ module SmtpAuth : sig
   val column_smtp_mechanism : Query.Column.t
   val column_smtp_protocol : Query.Column.t
   val column_smtp_default_account : Query.Column.t
+  val column_smtp_system_account : Query.Column.t
   val filterable_by : Query.Filter.human option
   val default_query : Query.t
   val searchable_by : Query.Column.t list
