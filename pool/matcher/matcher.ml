@@ -218,7 +218,7 @@ let compute_limited_mailings pool interval =
       |> find_experiment
       >>= with_spots
       >|- Pool_common.Utils.with_log_error ~level:Logs.Warning
-      ||> CCResult.to_option)
+      ||> CCResult.to_opt)
   in
   (* Normalize: if smtp_auth_id points to the default account, treat it as None
      so that mailings without a custom SMTP and those using the default are grouped together *)

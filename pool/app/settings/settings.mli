@@ -46,6 +46,7 @@ module SystemEmailTemplates : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val normalize : t -> t
+  val schema : unit -> (Pool_conformist.error_msg, t) Pool_conformist.Field.t
 end
 
 module InactiveUser : sig

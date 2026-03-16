@@ -24,7 +24,7 @@ module Admin = struct
   let settings_path = Format.asprintf "%s/%s" settings_base_path
 
   let settings_path_with_action action =
-    action |> Settings.stringify_action |> settings_path
+    action |> Settings.stringify_action |> settings_path |> Sihl.Web.externalize_path
   ;;
 
   let settings_path_with_action_param action =

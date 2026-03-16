@@ -102,7 +102,9 @@ let update_settings req =
         let open CCResult.Infix in
         function
         | `UpdateSystemEmailTemplates ->
-          UpdateSystemEmailTemplates.handle ~tags urlencoded |> lift
+          UpdateSystemEmailTemplates.(
+            urlencoded |> HttpUtils.combine_urlencoded_arrays |> decode >>= handle ~tags)
+          |> lift
         | `UpdateLanguages ->
           CCList.filter_map
             (fun (k, _) ->

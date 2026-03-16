@@ -97,9 +97,9 @@ let show
       text_messages_enabled
   =
   let open Pool_common in
-  let submit ?(control = Message.(Control.Update None)) () =
+  let submit ?(classnames = [ "flexrow" ]) ?(control = Message.(Control.Update None)) () =
     div
-      ~a:[ a_class [ "flexrow" ] ]
+      ~a:[ a_class classnames ]
       [ submit_element ~classnames:[ "push"; "small" ] language control () ]
   in
   let open_changelog url =
@@ -133,11 +133,18 @@ let show
     ]
   in
   let make_columns ?hint columns =
-    div
-      ~a:[ a_class [ "stack" ] ]
-      [ hint |> CCOption.map_or ~default:(txt "") (fun hint -> p [ txt hint ])
-      ; div ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ] columns
-      ]
+    let classnames =
+      if CCList.length columns > 1 then [ "grid-col-2"; "flex-gap" ] else []
+    in
+    let hint_paragraph =
+      CCOption.map_or ~default:[] (fun hint -> [ p [ txt hint ] ]) hint
+    in
+    let with_columns =
+      if CCList.length columns > 1
+      then [ div ~a:[ a_class classnames ] columns ]
+      else columns
+    in
+    div ~a:[ a_class [ "stack" ] ] (hint_paragraph @ with_columns)
   in
   let languages_html =
     let all_languages =
@@ -262,20 +269,19 @@ let show
     let open Pool_common.MessageTemplateLabel in
     let form =
       div
-        ~a:[ a_class [ "stack" ] ]
         [ form
             ~a:(form_attrs `UpdateSystemEmailTemplates)
             [ csrf_element csrf ()
-            ; multi_select
-                language
-                { options = all |> CCList.map show
-                ; selected = system_email_templates |> CCList.map show
-                ; to_label = CCFun.id
-                ; to_value = CCFun.id
-                }
-                Message.Field.MessageTemplate
-                ()
-            ; submit ()
+            ; div
+                ~a:[ a_class [ "grid-col-2"; "inset" ] ]
+                (multi_select_options
+                   { options = all
+                   ; selected = system_email_templates
+                   ; to_label = to_human
+                   ; to_value = show
+                   }
+                   Message.Field.MessageTemplate
+                 @ [ submit ~classnames:[ "flexrow"; "span-2" ] () ])
             ]
         ; open_system_settings_changelog Settings.Key.SystemEmailTemplates
         ]
@@ -283,8 +289,8 @@ let show
     ( "System email templates"
     , [ form ]
     , Some
-        "Templates selected here use the SMTP system account (fallback: default SMTP \
-         account)."
+        "Templates selected here use the SMTP system account. If no system account is \
+         configured, the default SMTP account will be used."
     , [ `UpdateSystemEmailTemplates ] )
   in
   let inactive_user_html =

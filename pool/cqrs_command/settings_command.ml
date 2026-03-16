@@ -94,27 +94,27 @@ end = struct
 end
 
 module UpdateSystemEmailTemplates : sig
-  include Common.CommandSig with type t = (string * string list) list
-end = struct
-  type t = (string * string list) list
+  include Common.CommandSig with type t = Pool_common.MessageTemplateLabel.t list
 
-  let handle ?(tags = Logs.Tag.empty) data =
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
+end = struct
+  type t = Pool_common.MessageTemplateLabel.t list
+
+  let schema =
+    Conformist.(make Field.[ Settings.SystemEmailTemplates.schema () ] CCFun.id)
+  ;;
+
+  let decode =
+    Conformist.decode_and_validate schema
+    %> CCResult.map_err Pool_message.to_conformist_error
+  ;;
+
+  let handle ?(tags = Logs.Tag.empty) templates =
     Logs.info ~src (fun m -> m "Handle command UpdateSystemEmailTemplates" ~tags);
-    let open CCResult.Infix in
-    let field_key = Pool_message.Field.(array_key MessageTemplate) in
-    let templates =
-      CCList.Assoc.get ~eq:CCString.equal field_key data |> CCOption.get_or ~default:[]
-    in
-    let* templates : Pool_common.MessageTemplateLabel.t list =
-      templates
-      |> CCList.map (fun label ->
-        Pool_common.MessageTemplateLabel.of_string label
-        |> CCResult.map_err
-             (CCFun.const Pool_message.(Error.Invalid Field.MessageTemplate)))
-      |> CCResult.flatten_l
-    in
-    let templates = templates |> Settings.SystemEmailTemplates.normalize in
-    Ok [ Settings.SystemEmailTemplatesUpdated templates |> Pool_event.settings ]
+    Ok
+      [ SystemEmailTemplatesUpdated (SystemEmailTemplates.normalize templates)
+        |> Pool_event.settings
+      ]
   ;;
 
   let effects = Settings.Guard.Access.update

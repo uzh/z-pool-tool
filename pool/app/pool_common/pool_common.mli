@@ -220,6 +220,7 @@ module MessageTemplateLabel : sig
   val to_human : t -> string
   val human_url : t -> string
   val prefixed_human_url : t -> string
+  val schema : unit -> ('a, t) Pool_conformist.Field.t
 end
 
 module Repo : sig

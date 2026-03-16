@@ -241,6 +241,17 @@ let multipart_to_urlencoded ingnore_fields lst =
     lst
 ;;
 
+let combine_urlencoded_arrays urlencoded =
+  let tbl = Hashtbl.create 16 in
+  CCList.iter
+    (fun (key, value) ->
+       let key' = CCString.replace ~sub:"[]" ~by:"" ~which:`Right key in
+       let existing = CCOption.value (Hashtbl.find_opt tbl key') ~default:[] in
+       Hashtbl.replace tbl key' (existing @ value))
+    urlencoded;
+  Hashtbl.to_seq tbl |> CCList.of_seq
+;;
+
 let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
 
 let is_req_from_root_host req =

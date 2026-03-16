@@ -120,6 +120,10 @@ module SystemEmailTemplates = struct
       |> normalize
     | _ -> []
   ;;
+
+  let schema () : (Pool_conformist.error_msg, t) Pool_conformist.Field.t =
+    Pool_conformist.(list @@ MessageTemplateLabel.schema ())
+  ;;
 end
 
 module EmailReminderLeadTime = struct
