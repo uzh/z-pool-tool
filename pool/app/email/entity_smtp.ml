@@ -98,7 +98,8 @@ module RateLimit = struct
   include Pool_model.Base.Integer
 
   let field = Pool_message.Field.SmtpRateLimit
-  let default : t = of_int 86400
+  let default : t = of_int 86400 (* 24h in seconds *)
+  let timediff_seconds = 86400 (* 24h in seconds *)
 
   let create n =
     if n >= 0 then Ok n else Error Pool_message.(Error.Invalid Field.SmtpRateLimit)

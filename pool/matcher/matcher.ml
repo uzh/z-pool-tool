@@ -188,21 +188,33 @@ let events_of_mailings ?invitation_ids pool limited_mailings =
     Lwt.return []
 ;;
 
-let smtp_limits_of_id pool =
-  let open Email.SmtpAuth in
-  let default = RateLimit.default, InvitationCapacity.default in
-  let limits { rate_limit; invitation_capacity; _ } = rate_limit, invitation_capacity in
-  function
-  | None -> find_default_opt pool ||> CCOption.map_or ~default limits
-  | Some id ->
-    (match%lwt find pool id with
-     | Ok smtp when Default.value smtp.default ->
-       find_default_opt pool ||> CCOption.map_or ~default limits
-     | Ok smtp -> Lwt.return (limits smtp)
-     | Error _ -> Lwt.return default)
-;;
-
 let compute_limited_mailings pool interval =
+  let open Email.SmtpAuth in
+  let smtp_by_id : (Id.t, t option) Hashtbl.t = Hashtbl.create 4 in
+  let smtp_default : t option option ref = ref None in
+  let find_smtp_opt id =
+    Utils.Lwt_cache.cached smtp_by_id id (fun () ->
+      let open Utils.Lwt_result.Infix in
+      find pool id ||> CCResult.to_opt)
+  in
+  let find_default_cached () =
+    Utils.Lwt_cache.once smtp_default (fun () -> find_default_opt pool)
+  in
+  let smtp_limits smtp_auth_id =
+    let default_limits = RateLimit.default, InvitationCapacity.default in
+    let limits smtp = rate_limit smtp, invitation_capacity smtp in
+    let find_or () =
+      let open Utils.Lwt_result.Infix in
+      find_default_cached () ||> CCOption.map_or ~default:default_limits limits
+    in
+    match smtp_auth_id with
+    | None -> find_or ()
+    | Some id ->
+      (match%lwt find_smtp_opt id with
+       | Some smtp when Default.value (default smtp) -> find_or ()
+       | Some smtp -> Lwt.return (limits smtp)
+       | None -> Lwt.return default_limits)
+  in
   let%lwt status_with_smtp =
     Mailing.Status.find_current pool interval
     >|> Lwt_list.filter_map_s (fun ({ Mailing.Status.mailing; _ } as status) ->
@@ -228,39 +240,33 @@ let compute_limited_mailings pool interval =
       match smtp_auth_id with
       | None -> Lwt.return (status, None)
       | Some id ->
-        (match%lwt Email.SmtpAuth.find pool id with
-         | Ok { Email.SmtpAuth.default; _ } when Email.SmtpAuth.Default.value default ->
-           Lwt.return (status, None)
-         | Ok _ | Error _ -> Lwt.return (status, smtp_auth_id)))
+        find_smtp_opt id
+        ||> (function
+         | Some { default; _ } when Default.value default -> status, None
+         | Some _ | None -> status, smtp_auth_id))
   in
-  let smtp_id_eq = CCOption.equal Email.SmtpAuth.Id.equal in
   let groups =
+    let eq = CCOption.equal Id.equal in
     CCList.fold_left
-      (fun acc (status, smtp_auth_id) ->
-         let existing =
-           CCList.Assoc.get ~eq:smtp_id_eq smtp_auth_id acc |> CCOption.get_or ~default:[]
-         in
-         CCList.Assoc.set ~eq:smtp_id_eq smtp_auth_id (existing @ [ status ]) acc)
+      (fun acc (status, smtp_id) ->
+         let existing = CCList.Assoc.get ~eq smtp_id acc |> CCOption.get_or ~default:[] in
+         CCList.Assoc.set ~eq smtp_id (existing @ [ status ]) acc)
       []
       status_with_smtp
   in
   groups
   |> Lwt_list.map_s (fun (smtp_auth_id, statuses) ->
-    let%lwt rate_limit, invitation_capacity = smtp_limits_of_id pool smtp_auth_id in
-    (* Daily cap = rate_limit * invitation_capacity% *)
+    let%lwt rate_limit, invitation_capacity = smtp_limits smtp_auth_id in
     let daily_cap =
       let open CCFloat in
-      CCInt.to_float (Email.SmtpAuth.RateLimit.value rate_limit)
-      *. (CCInt.to_float (Email.SmtpAuth.InvitationCapacity.value invitation_capacity)
-          /. 100.)
+      CCInt.to_float (RateLimit.value rate_limit)
+      *. (CCInt.to_float (InvitationCapacity.value invitation_capacity) /. 100.)
       |> floor
       |> to_int
     in
-    (* Rolling 24h window: count invitations already sent *)
     let%lwt already_sent =
-      Email.SmtpAuth.count_invitations_sent_since pool smtp_auth_id 86400
+      count_invitations_sent_since pool smtp_auth_id RateLimit.timediff_seconds
     in
-    (* Remaining budget for the rest of today's window *)
     let remaining = max 0 (daily_cap - already_sent) in
     Lwt.return (calculate_mailing_limits remaining statuses))
   ||> CCList.flatten

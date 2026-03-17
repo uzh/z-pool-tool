@@ -458,6 +458,8 @@ let dispatch
 ;;
 
 let dispatch_all database_label jobs =
+  let system_template_cache = Hashtbl.create 4 in
+  let resolved_system_smtp_auth_id = ref None in
   let%lwt recipients, jobs =
     Lwt_list.fold_left_s
       (fun (recipients, jobs)
@@ -467,10 +469,13 @@ let dispatch_all database_label jobs =
            | Some _, _ -> Lwt.return_none
            | None, Some template ->
              let%lwt is_system_template =
-               Job.is_system_email_template database_label template
+               Utils.Lwt_cache.cached system_template_cache template (fun () ->
+                 Job.is_system_email_template database_label template)
              in
              (match is_system_template with
-              | true -> Job.resolve_system_smtp_auth_id database_label
+              | true ->
+                Utils.Lwt_cache.once resolved_system_smtp_auth_id (fun () ->
+                  Job.resolve_system_smtp_auth_id database_label)
               | false -> Lwt.return_none)
            | None, _ -> Lwt.return_none
          in

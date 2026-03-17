@@ -414,8 +414,12 @@ module Smtp = struct
       FROM pool_invitations
       INNER JOIN pool_experiments
         ON pool_invitations.experiment_uuid = pool_experiments.uuid
-      LEFT JOIN pool_smtp
-        ON pool_experiments.smtp_auth_uuid = pool_smtp.uuid
+      INNER JOIN pool_smtp
+         ON (
+              pool_experiments.smtp_auth_uuid = pool_smtp.uuid
+              OR (pool_experiments.smtp_auth_uuid IS NULL
+                  AND pool_smtp.default_account = 1)
+            )
       INNER JOIN user_users
         ON pool_invitations.contact_uuid = user_users.uuid
       WHERE pool_invitations.created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)

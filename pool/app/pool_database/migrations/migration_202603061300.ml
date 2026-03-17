@@ -8,7 +8,7 @@ let add_smtp_rate_limit_and_capacity =
         ADD COLUMN internal_regex TEXT
           COMMENT 'Optional regex pattern to match recipient emails for this SMTP account'
           AFTER system_account,
-        ADD COLUMN rate_limit INT UNSIGNED NOT NULL DEFAULT 3600
+        ADD COLUMN rate_limit INT UNSIGNED NOT NULL DEFAULT 86400
           COMMENT 'Max emails per hour for this SMTP account'
           AFTER internal_regex,
         ADD COLUMN invitation_capacity TINYINT(3) UNSIGNED NOT NULL DEFAULT 80

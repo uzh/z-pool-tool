@@ -129,24 +129,19 @@ module SmtpAuth : sig
 
   module InternalRegex : sig
     include Pool_model.Base.StringSig
-
-    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
   module RateLimit : sig
     include Pool_model.Base.IntegerSig
 
     val default : t
-    val create : int -> (t, Pool_message.Error.t) result
-    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
+    val timediff_seconds : int
   end
 
   module InvitationCapacity : sig
     include Pool_model.Base.IntegerSig
 
     val default : t
-    val create : int -> (t, Pool_message.Error.t) result
-    val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
   end
 
   type t =
@@ -339,6 +334,7 @@ module Contact : sig
   val increment_smtp_bounce : Database.Label.t -> Pool_user.EmailAddress.t -> unit Lwt.t
   val reset_smtp_bounce : Database.Label.t -> Pool_user.EmailAddress.t -> unit Lwt.t
 end
+
 
 type verification_event =
   | Created of Pool_user.EmailAddress.t * Pool_token.t * Pool_user.Id.t

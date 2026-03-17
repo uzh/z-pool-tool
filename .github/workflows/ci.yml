@@ -81,8 +81,6 @@ jobs:
     permissions:
       packages: read
     env:
-      EMAIL_RATE_LIMIT: 3600
-      MATCHER_MAX_CAPACITY: 80
       MYSQL_DATABASE: test_econ
       MYSQL_ROOT_PASSWORD: password
     services:
