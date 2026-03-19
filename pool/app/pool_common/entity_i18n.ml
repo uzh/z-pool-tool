@@ -352,6 +352,7 @@ type hint =
   | SignUpForWaitingList
   | SmtpMissing
   | SmtpSettingsDefaultFlag
+  | SmtpSettingsInternalRegex
   | SmtpSettingsIntro
   | SmtpSettingsSystemAccountFlag
   | SmtpValidation

@@ -714,6 +714,8 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | SmtpSettingsDefaultFlag ->
     "Attention: If another SMTP configuration is marked as default, it will be \
      overwritten. Only one configuration can be marked as default."
+  | SmtpSettingsInternalRegex ->
+    {|Emails matching this regex are considered internal and will be routed through this SMTP server. Example: to match all UZH addresses use "@uzh\.ch|@.*\.uzh\.ch".|}
   | SmtpSettingsIntro ->
     {|The following configuration is used by the email service.
 

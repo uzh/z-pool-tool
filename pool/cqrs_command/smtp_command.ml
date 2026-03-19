@@ -250,8 +250,8 @@ end = struct
       ; default
       ; rate_limit = command.rate_limit
       ; invitation_capacity = command.invitation_capacity
-      ; system_account = smtp_auth.SmtpAuth.system_account
-      ; internal_regex = smtp_auth.SmtpAuth.internal_regex
+      ; system_account = command.system_account
+      ; internal_regex = command.internal_regex
       }
     in
     Ok [ Email.SmtpEdited update |> Pool_event.email; clear_cache_event ~id:clear_id () ]

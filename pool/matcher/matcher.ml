@@ -193,9 +193,7 @@ let compute_limited_mailings pool interval =
   let smtp_by_id : (Id.t, t option) Hashtbl.t = Hashtbl.create 4 in
   let smtp_default : t option option ref = ref None in
   let find_smtp_opt id =
-    Utils.Lwt_cache.cached smtp_by_id id (fun () ->
-      let open Utils.Lwt_result.Infix in
-      find pool id ||> CCResult.to_opt)
+    Utils.Lwt_cache.cached smtp_by_id id (fun () -> find pool id ||> CCResult.to_opt)
   in
   let find_default_cached () =
     Utils.Lwt_cache.once smtp_default (fun () -> find_default_opt pool)
@@ -204,7 +202,6 @@ let compute_limited_mailings pool interval =
     let default_limits = RateLimit.default, InvitationCapacity.default in
     let limits smtp = rate_limit smtp, invitation_capacity smtp in
     let find_or () =
-      let open Utils.Lwt_result.Infix in
       find_default_cached () ||> CCOption.map_or ~default:default_limits limits
     in
     match smtp_auth_id with

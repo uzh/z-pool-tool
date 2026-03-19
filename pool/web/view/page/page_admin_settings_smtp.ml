@@ -96,12 +96,14 @@ let smtp_form_inputs ?flash_fetcher language (smtp_auth : SmtpAuth.t option) =
         ?(break = false)
         ?(required = false)
         ?(field_type = `Text)
+        ?hints
         field
         decode_fcn
     =
     input_element
       ~classnames:(if break then [ "break-grid" ] else [])
       ~required
+      ?hints
       ~value:(smtp_auth |> CCOption.map_or ~default:"" decode_fcn)
       ?flash_fetcher
       language
@@ -169,6 +171,7 @@ let smtp_form_inputs ?flash_fetcher language (smtp_auth : SmtpAuth.t option) =
             Field.SmtpInvitationCapacity
         ; input_element_root
             ~field_type:`Text
+            ~hints:[ Pool_common.I18n.SmtpSettingsInternalRegex ]
             Field.SmtpInternalRegex
             (internal_regex %> CCOption.map_or ~default:"" InternalRegex.value)
         ]
