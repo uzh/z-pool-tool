@@ -153,7 +153,7 @@ let smtp_form_inputs ?flash_fetcher language (smtp_auth : SmtpAuth.t option) =
             ~value:
               (smtp_auth
                |> CCOption.map_or
-                    ~default:"10000"
+                    ~default:RateLimit.(default |> value |> CCInt.to_string)
                     (rate_limit %> RateLimit.value %> CCInt.to_string))
             language
             `Number
@@ -164,7 +164,7 @@ let smtp_form_inputs ?flash_fetcher language (smtp_auth : SmtpAuth.t option) =
             ~value:
               (smtp_auth
                |> CCOption.map_or
-                    ~default:"80"
+                    ~default:InvitationCapacity.(default |> value |> CCInt.to_string)
                     (invitation_capacity %> InvitationCapacity.value %> CCInt.to_string))
             language
             `Number

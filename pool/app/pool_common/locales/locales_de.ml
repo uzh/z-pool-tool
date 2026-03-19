@@ -293,7 +293,7 @@ let rec field_to_string =
   | SmtpPassword -> "Passwort"
   | SmtpPort -> "Port"
   | SmtpProtocol -> "Protokoll"
-  | SmtpRateLimit -> "Rate (max. E-Mails/h)"
+  | SmtpRateLimit -> "Rate (max. E-Mails/24h)"
   | SmtpServer -> "Server"
   | SmtpSystemAccount -> "Systemaccount"
   | SmtpUsername -> "Benutzername"

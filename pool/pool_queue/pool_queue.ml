@@ -179,11 +179,16 @@ let work_job job instance =
   if Instance.should_run ~is_polled:true instance
   then (
     let fail = fail database_label (AnyJob.retry_delay job) instance in
+    let cancel = Instance.cancelled %> update_and_return database_label in
     let%lwt instance =
       Lwt.catch
         (fun () ->
            let%lwt instance = handle database_label instance in
-           match%lwt run_job ~tags job instance with
+           match%lwt[@warning "-4"] run_job ~tags job instance with
+           | Error (Pool_message.Error.SmtpRecipientNotFound _ as msg) ->
+             (* Recipient does not exist — cancelling immediately without retrying *)
+             let%lwt () = (AnyJob.failed job) database_label msg instance in
+             cancel instance
            | Error msg -> fail msg
            | Ok () -> success database_label instance)
         (Printexc.to_string %> Pool_message.Error.nothandled %> fail)
