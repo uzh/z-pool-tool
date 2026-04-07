@@ -29,7 +29,7 @@ depends: [
   "mariadb" {>= "1.2.0" & < "2.0.0"}
   "ocaml" {>= "4.14.0"}
   "ocaml-lsp-server" {with-dev-setup}
-  "ocamlformat" {>= "0.18.0" & with-dev-setup}
+  "ocamlformat" {>= "0.18.0" & with-dev-setup & with-test}
   "ppx_deriving" {>= "5.2.1"}
   "ppx_inline_test" {with-test}
   "ppx_string" {= "v0.17.0"}
