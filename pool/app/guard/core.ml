@@ -35,7 +35,9 @@ module Permission = struct
   let all = [ Create; Read; Update; Delete; Manage ]
 
   let of_string_res permission =
-    try of_string permission |> CCResult.return with
-    | _ -> Error Pool_message.(Error.NotFound Field.Permission)
+    of_string_res permission
+    |> CCResult.map_err (fun msg ->
+      Logs.err (fun m -> m "Invalid permission string: %s" msg);
+      Pool_message.(Error.NotFound Field.Permission))
   ;;
 end

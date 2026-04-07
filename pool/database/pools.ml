@@ -165,8 +165,8 @@ module Make (Config : Pools_sig.ConfigSig) = struct
         Cache.remove name |> Lwt.return
     ;;
 
-    let initialize ?(additinal_pools : Entity.t list = []) () : unit =
-      Config.database :: additinal_pools
+    let initialize ?(additional_pools : Entity.t list = []) () : unit =
+      Config.database :: additional_pools
       |> CCList.filter (label %> Cache.find_opt %> CCOption.is_none)
       |> CCList.iter (create ~required:true %> Cache.replace)
     ;;

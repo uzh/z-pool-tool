@@ -2,10 +2,10 @@ open CCFun.Infix
 module BaseGuard = Guard
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
-let role_of_string = CCFun.(Format.asprintf "`%s" %> Role.Role.of_string)
+let role_of_string = CCFun.(Format.asprintf "`%s" %> Role.Role.of_string_exn)
 
 let role_uuid_of_string role uuid =
-  Format.asprintf "`%s (%s)" role uuid |> Role.Actor.of_string
+  Format.asprintf "`%s (%s)" role uuid |> Role.Actor.of_string_exn
 ;;
 
 let role_to_string =

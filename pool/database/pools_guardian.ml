@@ -7,11 +7,11 @@ module Make (Config : Pools_sig.ConfigSig) : Guardian_backend.Pools.Sig = struct
     |> Entity.Label.of_string
   ;;
 
-  let initialize ?additinal_pools =
-    let additinal_pools =
-      CCOption.map (CCList.map (CCFun.uncurry Entity.create)) additinal_pools
+  let initialize ?additional_pools =
+    let additional_pools =
+      CCOption.map (CCList.map (CCFun.uncurry Entity.create)) additional_pools
     in
-    Pool.initialize ?additinal_pools
+    Pool.initialize ?additional_pools
   ;;
 
   let connect =

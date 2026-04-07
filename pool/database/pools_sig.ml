@@ -8,7 +8,7 @@ module type Sig = sig
   module Config : ConfigSig
 
   module Pool : sig
-    val initialize : ?additinal_pools:Entity.t list -> unit -> unit
+    val initialize : ?additional_pools:Entity.t list -> unit -> unit
     val add : ?required:bool -> Entity.t -> unit
     val reset : ?required:bool -> Entity.t -> unit Lwt.t
     val drop : Entity.Label.t -> unit Lwt.t
