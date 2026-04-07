@@ -57,8 +57,7 @@
   (ocamlformat
    (and
     (>= 0.18.0)
-    :with-dev-setup
-    :with-test))
+    (or :with-dev-setup :with-test)))
   (ppx_deriving
    (>= 5.2.1))
   (ppx_inline_test :with-test)
