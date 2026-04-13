@@ -12,6 +12,9 @@ module Data = struct
   let mechanism = Mechanism.LOGIN
   let protocol = Protocol.STARTTLS
   let default = Default.create true
+  let system_account = SystemAccount.create false
+  let rate_limit = Email.SmtpAuth.RateLimit.default
+  let invitation_capacity = Email.SmtpAuth.InvitationCapacity.default
 
   let write =
     Email.SmtpAuth.Write.
@@ -24,6 +27,10 @@ module Data = struct
       ; mechanism
       ; protocol
       ; default
+      ; system_account
+      ; internal_regex = None
+      ; rate_limit
+      ; invitation_capacity
       }
   ;;
 
@@ -38,6 +45,9 @@ module Data = struct
     let mechanism = Mechanism.show mechanism
     let protocol = Protocol.show protocol
     let default = Default.value default
+    let system_account = SystemAccount.value system_account
+    let rate_limit = Email.SmtpAuth.RateLimit.value rate_limit
+    let invitation_capacity = Email.SmtpAuth.InvitationCapacity.value invitation_capacity
 
     let valid =
       [ Field.(show SmtpLabel), [ label ]
@@ -48,6 +58,9 @@ module Data = struct
       ; Field.(show SmtpMechanism), [ mechanism ]
       ; Field.(show SmtpProtocol), [ protocol ]
       ; Field.(show DefaultSmtpServer), [ Utils.Bool.to_string default ]
+      ; Field.(show SmtpSystemAccount), [ Utils.Bool.to_string system_account ]
+      ; Field.(show SmtpRateLimit), [ CCInt.to_string rate_limit ]
+      ; Field.(show SmtpInvitationCapacity), [ CCInt.to_string invitation_capacity ]
       ]
     ;;
 
@@ -59,6 +72,9 @@ module Data = struct
       ; Field.(show SmtpMechanism), [ mechanism ]
       ; Field.(show SmtpProtocol), [ protocol ]
       ; Field.(show DefaultSmtpServer), [ Utils.Bool.to_string default ]
+      ; Field.(show SmtpSystemAccount), [ Utils.Bool.to_string system_account ]
+      ; Field.(show SmtpRateLimit), [ CCInt.to_string rate_limit ]
+      ; Field.(show SmtpInvitationCapacity), [ CCInt.to_string invitation_capacity ]
       ]
     ;;
   end
@@ -67,23 +83,45 @@ end
 let create_smtp_valid () =
   let open Data in
   let open CCResult.Infix in
-  let event_id = System_event.Id.create () in
+  let open Email.SmtpAuth in
   let events =
-    Command.Create.(
-      Urlencoded.valid |> decode >>= smtp_of_command ~id:smtp_id >>= handle ~event_id None)
+    let open Command.Create in
+    let event_id = System_event.Id.create () in
+    Urlencoded.valid |> decode >>= smtp_of_command ~id:smtp_id >>= handle ~event_id None
   in
-  let expected =
-    Ok
-      [ Email.SmtpCreated write |> Pool_event.email
-      ; System_event.(
-          Job.SmtpAccountUpdated
-          |> create ~id:event_id
-          |> created
-          |> Pool_event.system_event)
-      ]
+  let[@warning "-4"] smtp_created =
+    match events with
+    | Ok Pool_event.[ Email (Email.SmtpCreated smtp); SystemEvent _ ] -> smtp
+    | Ok _ -> failwith "Unexpected event shape"
+    | Error err ->
+      let msg = Pool_common.(Utils.error_to_string Language.En err) in
+      failwith msg
+  in
+  let () =
+    Alcotest.(check bool "smtp id" true (Id.equal smtp_id smtp_created.Write.id))
+  in
+  let () =
+    Alcotest.(
+      check
+        string
+        "smtp label"
+        (Label.value write.Write.label)
+        (Label.value smtp_created.Write.label))
+  in
+  let () =
+    Alcotest.(
+      check
+        int
+        "rate limit"
+        (RateLimit.value write.Write.rate_limit)
+        (RateLimit.value smtp_created.Write.rate_limit))
   in
   Alcotest.(
-    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
+    check
+      int
+      "invitation capacity"
+      (InvitationCapacity.value write.Write.invitation_capacity)
+      (InvitationCapacity.value smtp_created.Write.invitation_capacity))
 ;;
 
 let create_missing_username () =

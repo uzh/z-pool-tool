@@ -1,4 +1,5 @@
 open Tyxml.Html
+open CCFun.Infix
 open Component.Input
 open Pool_message
 module Icon = Component.Icon
@@ -27,6 +28,7 @@ let list Pool_context.{ language; csrf; _ } location smtp_auth_list query =
     ; `column SmtpAuth.column_smtp_mechanism
     ; `column SmtpAuth.column_smtp_protocol
     ; `column SmtpAuth.column_smtp_default_account
+    ; `column SmtpAuth.column_smtp_system_account
     ; `custom create_smtp
     ]
   in
@@ -57,6 +59,8 @@ let list Pool_context.{ language; csrf; _ } location smtp_auth_list query =
     ; auth.protocol |> Protocol.show |> txt, Some Field.SmtpProtocol
     ; ( auth.default |> Default.value |> Utils.Bool.to_string |> txt
       , Some Field.DefaultSmtpServer )
+    ; ( auth.system_account |> SystemAccount.value |> Utils.Bool.to_string |> txt
+      , Some Field.SmtpSystemAccount )
     ; ( button_group
           [ edit_link (Format.asprintf "%s/%s" (base_path location) (auth.id |> Id.value))
           ; delete_button auth
@@ -92,12 +96,14 @@ let smtp_form_inputs ?flash_fetcher language (smtp_auth : SmtpAuth.t option) =
         ?(break = false)
         ?(required = false)
         ?(field_type = `Text)
+        ?hints
         field
         decode_fcn
     =
     input_element
       ~classnames:(if break then [ "break-grid" ] else [])
       ~required
+      ?hints
       ~value:(smtp_auth |> CCOption.map_or ~default:"" decode_fcn)
       ?flash_fetcher
       language
@@ -110,35 +116,72 @@ let smtp_form_inputs ?flash_fetcher language (smtp_auth : SmtpAuth.t option) =
     | None -> input_element_root ~field_type:`Password Field.SmtpPassword (CCFun.const "")
   in
   div
-    ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ]
-    [ input_element_root ~required:true Field.SmtpLabel (fun smtp ->
-        smtp.label |> Label.value)
-    ; input_element_root ~required:true Field.SmtpServer (fun smtp ->
-        smtp.server |> Server.value)
-    ; input_element_root ~required:true ~field_type:`Number Field.SmtpPort (fun smtp ->
-        smtp.port |> Port.value |> CCInt.to_string)
-    ; selector
-        ~required:true
-        language
-        Field.SmtpMechanism
-        Mechanism.show
-        Mechanism.all
-        (smtp_auth |> CCOption.map (fun smtp -> smtp.mechanism))
-        ()
-    ; selector
-        ~required:true
-        language
-        Field.SmtpProtocol
-        Protocol.show
-        Protocol.all
-        (smtp_auth |> CCOption.map (fun smtp -> smtp.protocol))
-        ()
-    ; input_element_root ~break:true Field.SmtpUsername (fun smtp ->
-        smtp.username |> CCOption.map_or ~default:"" Username.value)
-    ; password
+    ~a:[ a_class [ "stack" ] ]
+    [ div
+        ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ]
+        [ input_element_root ~required:true Field.SmtpLabel (label %> Label.value)
+        ; input_element_root ~required:true Field.SmtpServer (server %> Server.value)
+        ; input_element_root
+            ~required:true
+            ~field_type:`Number
+            Field.SmtpPort
+            (port %> Port.value %> CCInt.to_string)
+        ; selector
+            ~required:true
+            language
+            Field.SmtpMechanism
+            Mechanism.show
+            Mechanism.all
+            (smtp_auth |> CCOption.map mechanism)
+            ()
+        ; selector
+            ~required:true
+            language
+            Field.SmtpProtocol
+            Protocol.show
+            Protocol.all
+            (smtp_auth |> CCOption.map protocol)
+            ()
+        ; input_element_root
+            ~break:true
+            Field.SmtpUsername
+            (username %> CCOption.map_or ~default:"" Username.value)
+        ; password
+        ; input_element
+            ~additional_attributes:[ a_input_min (`Number 0); a_step (Some 100.0) ]
+            ~classnames:[ "break-grid" ]
+            ~value:
+              (smtp_auth
+               |> CCOption.map_or
+                    ~default:RateLimit.(default |> value |> CCInt.to_string)
+                    (rate_limit %> RateLimit.value %> CCInt.to_string))
+            language
+            `Number
+            Field.SmtpRateLimit
+        ; input_element
+            ~additional_attributes:
+              [ a_input_min (`Number 0); a_step (Some 1.0); a_input_max (`Number 100) ]
+            ~value:
+              (smtp_auth
+               |> CCOption.map_or
+                    ~default:InvitationCapacity.(default |> value |> CCInt.to_string)
+                    (invitation_capacity %> InvitationCapacity.value %> CCInt.to_string))
+            language
+            `Number
+            Field.SmtpInvitationCapacity
+        ; input_element_root
+            ~field_type:`Text
+            ~hints:[ Pool_common.I18n.SmtpSettingsInternalRegex ]
+            Field.SmtpInternalRegex
+            (internal_regex %> CCOption.map_or ~default:"" InternalRegex.value)
+        ]
     ; checkbox_element
-        ~classnames:[ "break-grid" ]
-        ?value:(smtp_auth |> CCOption.map (fun smtp -> smtp.default |> Default.value))
+        ?value:(smtp_auth |> CCOption.map (system_account %> SystemAccount.value))
+        ~hints:[ Pool_common.I18n.SmtpSettingsSystemAccountFlag ]
+        language
+        Field.SmtpSystemAccount
+    ; checkbox_element
+        ?value:(smtp_auth |> CCOption.map (default %> Default.value))
         ~hints:[ Pool_common.I18n.SmtpSettingsDefaultFlag ]
         language
         Field.DefaultSmtpServer

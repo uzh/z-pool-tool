@@ -80,6 +80,49 @@ module Default = struct
   let schema = schema Pool_message.Field.DefaultSmtpServer
 end
 
+module InternalRegex = struct
+  include Pool_model.Base.String
+
+  let field = Pool_message.Field.SmtpInternalRegex
+  let schema () = schema field ()
+end
+
+module SystemAccount = struct
+  include Pool_model.Base.Boolean
+
+  let init = false
+  let schema = schema Pool_message.Field.SmtpSystemAccount
+end
+
+module RateLimit = struct
+  include Pool_model.Base.Integer
+
+  let field = Pool_message.Field.SmtpRateLimit
+  let default : t = of_int 86400 (* 24h in seconds *)
+  let timediff_seconds = 86400 (* 24h in seconds *)
+
+  let create n =
+    if n >= 0 then Ok n else Error Pool_message.(Error.Invalid Field.SmtpRateLimit)
+  ;;
+
+  let schema = schema field create
+end
+
+module InvitationCapacity = struct
+  include Pool_model.Base.Integer
+
+  let field = Pool_message.Field.SmtpInvitationCapacity
+  let default : t = of_int 80
+
+  let create n =
+    if n >= 0 && n <= 100
+    then Ok n
+    else Error Pool_message.(Error.Invalid Field.SmtpInvitationCapacity)
+  ;;
+
+  let schema = schema field create
+end
+
 type t =
   { id : Id.t
   ; label : Label.t
@@ -89,6 +132,10 @@ type t =
   ; mechanism : Mechanism.t
   ; protocol : Protocol.t
   ; default : Default.t
+  ; system_account : SystemAccount.t
+  ; internal_regex : InternalRegex.t option [@sexp.option]
+  ; rate_limit : RateLimit.t
+  ; invitation_capacity : InvitationCapacity.t
   }
 [@@deriving eq, fields ~getters, show, sexp_of]
 
@@ -123,10 +170,28 @@ module Write = struct
     ; mechanism : Mechanism.t
     ; protocol : Protocol.t
     ; default : Default.t
+    ; system_account : SystemAccount.t
+    ; internal_regex : InternalRegex.t option
+    ; rate_limit : RateLimit.t
+    ; invitation_capacity : InvitationCapacity.t
     }
   [@@deriving eq, show]
 
-  let create ?id label server port username password mechanism protocol default =
+  let create
+        ?id
+        ?(rate_limit = RateLimit.default)
+        ?(invitation_capacity = InvitationCapacity.default)
+        ?(system_account = SystemAccount.create false)
+        ?internal_regex
+        label
+        server
+        port
+        username
+        password
+        mechanism
+        protocol
+        default
+    =
     let open CCResult.Infix in
     let* mechanism = validate_mechanism mechanism username password in
     Ok
@@ -139,6 +204,10 @@ module Write = struct
       ; mechanism
       ; protocol
       ; default
+      ; system_account
+      ; internal_regex
+      ; rate_limit
+      ; invitation_capacity
       }
   ;;
 
@@ -151,6 +220,10 @@ module Write = struct
     ; mechanism = t.mechanism
     ; protocol = t.protocol
     ; default = t.default
+    ; system_account = t.system_account
+    ; internal_regex = t.internal_regex
+    ; rate_limit = t.rate_limit
+    ; invitation_capacity = t.invitation_capacity
     }
   ;;
 end
@@ -176,6 +249,10 @@ let column_smtp_default_account =
   (Field.DefaultSmtpServer, "pool_smtp.default_account") |> Query.Column.create
 ;;
 
+let column_smtp_system_account =
+  (Field.SmtpSystemAccount, "pool_smtp.system_account") |> Query.Column.create
+;;
+
 let column_created_at = (Field.CreatedAt, "pool_smtp.created_at") |> Query.Column.create
 
 let searchable_by =
@@ -188,7 +265,11 @@ let searchable_by =
 ;;
 
 let default_sort_column = column_created_at
-let sortable_by = [ column_created_at; column_smtp_default_account ] @ searchable_by
+
+let sortable_by =
+  [ column_created_at; column_smtp_default_account; column_smtp_system_account ]
+  @ searchable_by
+;;
 
 let default_sort =
   Query.Sort.{ column = default_sort_column; order = SortOrder.Descending }

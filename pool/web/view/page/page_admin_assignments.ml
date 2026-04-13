@@ -248,7 +248,7 @@ module Partials = struct
           ~text_messages_enabled
           context
           (`Create swap_session_template)
-          Message_template.Label.AssignmentSessionChange
+          Pool_common.MessageTemplateLabel.AssignmentSessionChange
           ~languages
           ?fixed_language:experiment.Experiment.language
           ~selected_language:swap_session_template.Message_template.language
@@ -475,7 +475,7 @@ module Partials = struct
             ~text_messages_enabled:true
             context
             (`Create message_template)
-            Message_template.Label.AssignmentSessionChange
+            MessageTemplateLabel.AssignmentSessionChange
             ~languages
             ?fixed_language:experiment.Experiment.language
             ?selected_language

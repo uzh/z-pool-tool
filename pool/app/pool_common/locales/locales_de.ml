@@ -286,12 +286,16 @@ let rec field_to_string =
   | SMS -> "SMS"
   | SmsText -> "SMS Text"
   | Smtp -> "SMTP"
+  | SmtpInternalRegex -> "Interne Regex für E-Mail-Adressen"
+  | SmtpInvitationCapacity -> "Einladungskapazität (% des Limits)"
   | SmtpLabel -> "Label"
   | SmtpMechanism -> "Authentifizierungsmechanismus"
   | SmtpPassword -> "Passwort"
   | SmtpPort -> "Port"
   | SmtpProtocol -> "Protokoll"
+  | SmtpRateLimit -> "Rate (max. E-Mails/24h)"
   | SmtpServer -> "Server"
+  | SmtpSystemAccount -> "Systemaccount"
   | SmtpUsername -> "Benutzername"
   | SortOrder -> "Sortierung"
   | Start -> "Start"
@@ -680,6 +684,10 @@ let rec error_to_string =
   | SmtpLoginMissingCredentials ->
     "Der SMTP-Authentifizierungsmechanismus kann nicht auf LOGIN gesetzt werden, wenn \
      kein Benutzername oder Passwort festgelegt ist."
+  | SmtpRecipientNotFound recipient ->
+    Format.asprintf
+      "Der Empfänger der E-Mail konnte nicht gefunden werden (%s)."
+      recipient
   | TerminatoryTenantError | TerminatoryRootError ->
     "Bitte versuchen Sie es später erneut."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->

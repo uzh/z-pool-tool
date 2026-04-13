@@ -73,39 +73,51 @@ module Data = struct
   ;;
 
   module Smtp = struct
-    let id = SmtpAuth.Id.create ()
-    let server = "smtp.uzh.ch"
-    let port = 587
-    let username = "engineering@econ.uzh.ch"
-    let password = "emailemail"
-    let mechanism = SmtpAuth.Mechanism.(LOGIN, LOGIN |> show)
-    let protocol = SmtpAuth.Protocol.(STARTTLS, STARTTLS |> show)
+    module Raw = struct
+      let id = SmtpAuth.Id.create ()
+      let server = "smtp.uzh.ch"
+      let port = 587
+      let username = "engineering@econ.uzh.ch"
+      let password = "emailemail"
+      let mechanism = SmtpAuth.Mechanism.(LOGIN, LOGIN |> show)
+      let protocol = SmtpAuth.Protocol.(STARTTLS, STARTTLS |> show)
+      let system_account = false
+      let rate_limit = Email.SmtpAuth.RateLimit.default |> Email.SmtpAuth.RateLimit.value
+
+      let invitation_capacity =
+        Email.SmtpAuth.InvitationCapacity.default
+        |> Email.SmtpAuth.InvitationCapacity.value
+      ;;
+    end
 
     let urlencoded ?(default = true) () =
       [ Field.SmtpLabel, [ database_label ]
-      ; Field.SmtpServer, [ server ]
-      ; Field.SmtpPort, [ port |> CCInt.to_string ]
-      ; Field.SmtpUsername, [ username ]
-      ; Field.SmtpPassword, [ password ]
-      ; Field.SmtpMechanism, [ snd mechanism ]
-      ; Field.SmtpProtocol, [ snd protocol ]
+      ; Field.SmtpServer, [ Raw.server ]
+      ; Field.SmtpPort, [ Raw.port |> CCInt.to_string ]
+      ; Field.SmtpUsername, [ Raw.username ]
+      ; Field.SmtpPassword, [ Raw.password ]
+      ; Field.SmtpMechanism, [ snd Raw.mechanism ]
+      ; Field.SmtpProtocol, [ snd Raw.protocol ]
       ; Field.DefaultSmtpServer, [ Utils.Bool.to_string default ]
+      ; Field.SmtpSystemAccount, [ Utils.Bool.to_string Raw.system_account ]
+      ; Field.SmtpRateLimit, [ CCInt.to_string Raw.rate_limit ]
+      ; Field.SmtpInvitationCapacity, [ CCInt.to_string Raw.invitation_capacity ]
       ]
       |> CCList.map (CCPair.map_fst Field.show)
     ;;
 
     let create () =
-      let new_id = id in
+      let new_id = Raw.id in
       let open CCResult in
       let open Email.SmtpAuth in
       let auth =
         let* label = database_label |> Label.create in
-        let* server = server |> Server.create in
-        let* port = port |> Port.create in
-        let* username = username |> Username.create |> CCResult.map CCOption.pure in
-        let* password = password |> Password.create |> CCResult.map CCOption.pure in
-        let mechanism = fst mechanism in
-        let protocol = fst protocol in
+        let* server = Raw.server |> Server.create in
+        let* port = Raw.port |> Port.create in
+        let* username = Raw.username |> Username.create |> CCResult.map CCOption.pure in
+        let* password = Raw.password |> Password.create |> CCResult.map CCOption.pure in
+        let mechanism = fst Raw.mechanism in
+        let protocol = fst Raw.protocol in
         let default = Default.create true in
         Write.create
           ~id:new_id
@@ -130,10 +142,24 @@ module Data = struct
           ; mechanism
           ; protocol
           ; default
+          ; system_account
+          ; internal_regex
           ; _
           }
       =
-      { SmtpAuth.id; label; server; port; username; mechanism; protocol; default }
+      { SmtpAuth.id
+      ; label
+      ; server
+      ; port
+      ; username
+      ; mechanism
+      ; protocol
+      ; default
+      ; system_account
+      ; internal_regex
+      ; rate_limit = Email.SmtpAuth.RateLimit.default
+      ; invitation_capacity = Email.SmtpAuth.InvitationCapacity.default
+      }
     ;;
   end
 
@@ -226,7 +252,7 @@ let create_smtp_auth () =
     let open CCResult in
     let open Cqrs_command.Smtp_command.Create in
     decode (Data.Smtp.urlencoded ())
-    >>= smtp_of_command ~id:Data.Smtp.id
+    >>= smtp_of_command ~id:Data.Smtp.Raw.id
     >>= handle ~event_id:sys_event_id None
   in
   let expected =
@@ -247,7 +273,7 @@ let create_smtp_force_defaut () =
     let open CCResult in
     let open Cqrs_command.Smtp_command.Create in
     decode (Data.Smtp.urlencoded ~default:false ())
-    >>= smtp_of_command ~id:Data.Smtp.id
+    >>= smtp_of_command ~id:Data.Smtp.Raw.id
     >>= handle ~event_id:sys_event_id None
   in
   let expected =

@@ -43,9 +43,8 @@ let invitation_statistics _ () =
   in
   let invite_contacts n =
     let%lwt mailing = MailingRepo.create experiment.id in
-    Matcher.events_of_mailings [ pool, [ mailing, n ] ]
-    ||> CCList.hd
-    >|> fun (pool, events) -> Pool_event.handle_events pool current_user events
+    Matcher.events_of_mailings pool [ mailing, n ]
+    >|> Pool_event.handle_events pool current_user
   in
   let check_invitations msg expected =
     let%lwt result =

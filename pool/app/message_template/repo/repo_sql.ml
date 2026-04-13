@@ -1,7 +1,6 @@
 module Dynparam = Database.Dynparam
 module RepoEntity = Repo_entity
 module Database = Database
-open Entity
 
 let select_sql =
   {sql|
@@ -100,14 +99,12 @@ let find_all_of_entity_by_label_request =
   AND pool_message_templates.label = $2
     |}
     select_sql
-  |> Caqti_type.(t2 string string) ->* RepoEntity.t
+  |> Caqti_type.(t2 Pool_common.Repo.Id.t Pool_common.Repo.MessageTemplateLabel.t)
+     ->* RepoEntity.t
 ;;
 
 let find_all_of_entity_by_label pool entity_uuid label =
-  Database.collect
-    pool
-    find_all_of_entity_by_label_request
-    (Pool_common.Id.value entity_uuid, Label.show label)
+  Database.collect pool find_all_of_entity_by_label_request (entity_uuid, label)
 ;;
 
 let find_default_by_label_and_language_request =
@@ -123,14 +120,12 @@ let find_default_by_label_and_language_request =
       pool_message_templates.entity_uuid IS NULL
     |sql}
     select_sql
-  |> Caqti_type.(t2 string string) ->! RepoEntity.t
+  |> Caqti_type.(t2 Pool_common.Repo.MessageTemplateLabel.t Pool_common.Repo.Language.t)
+     ->! RepoEntity.t
 ;;
 
 let find_default_by_label_and_language pool language label =
-  Database.find_opt
-    pool
-    find_default_by_label_and_language_request
-    (Entity.Label.show label, Pool_common.Language.show language)
+  Database.find_opt pool find_default_by_label_and_language_request (label, language)
 ;;
 
 let find_default_by_label_request =
@@ -144,11 +139,11 @@ let find_default_by_label_request =
       pool_message_templates.entity_uuid IS NULL
     |sql}
     select_sql
-  |> Caqti_type.string ->! RepoEntity.t
+  |> Pool_common.Repo.MessageTemplateLabel.t ->! RepoEntity.t
 ;;
 
 let find_default_by_label pool label =
-  Database.collect pool find_default_by_label_request (Entity.Label.show label)
+  Database.collect pool find_default_by_label_request label
 ;;
 
 let find_by_label_and_language_to_send pool ?entity_uuids label language =
@@ -156,8 +151,8 @@ let find_by_label_and_language_to_send pool ?entity_uuids label language =
   let dyn =
     Dynparam.(
       empty
-      |> add Caqti_type.string (Label.show label)
-      |> add Caqti_type.string (Pool_common.Language.show language))
+      |> add Pool_common.Repo.MessageTemplateLabel.t label
+      |> add Pool_common.Repo.Language.t language)
   in
   let where =
     {sql|
@@ -176,10 +171,7 @@ let find_by_label_and_language_to_send pool ?entity_uuids label language =
         ids
         |> CCList.foldi
              (fun (dyn, ids) i entity_uuid ->
-                let dyn =
-                  Dynparam.(
-                    dyn |> add Caqti_type.string (Pool_common.Id.value entity_uuid))
-                in
+                let dyn = Dynparam.(dyn |> add Pool_common.Repo.Id.t entity_uuid) in
                 let ids =
                   ids @ [ Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 3) ]
                 in
@@ -225,7 +217,7 @@ let find_all_by_label_to_send pool ?entity_uuids languages label =
         ||> CCOption.get_exn_or
               (Format.asprintf
                  "Default message template %s (%s) is missing"
-                 (Label.show label)
+                 (Pool_common.MessageTemplateLabel.show label)
                  (Pool_common.Language.show lang)))
     | Some entity_uuids ->
       languages

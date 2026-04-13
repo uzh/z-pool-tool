@@ -32,7 +32,6 @@ let notifications
   =
   let open CCList in
   let open Pool_common in
-  let open Message_template in
   match experiment.Experiment.language with
   | Some _ -> txt ""
   | None ->
@@ -43,7 +42,9 @@ let notifications
       else
         filter
           (fun lang ->
-             find_opt (fun { language; _ } -> Language.equal language lang) templates
+             find_opt
+               (fun { Message_template.language; _ } -> Language.equal language lang)
+               templates
              |> CCOption.is_none)
           sys_languages
         |> function
@@ -57,18 +58,14 @@ let notifications
          |> CCList.map (fun (label, languages) ->
            Format.asprintf
              "%s: [%s]"
-             (Label.to_human label)
-             (CCString.concat ", " (CCList.map Pool_common.Language.show languages))
+             (MessageTemplateLabel.to_human label)
+             (CCString.concat ", " (CCList.map Language.show languages))
            |> txt
            |> CCList.pure
            |> li)
          |> ul
        in
-       [ p
-           [ txt Pool_common.(Utils.hint_to_string language I18n.MissingMessageTemplates)
-           ]
-       ; list
-       ]
+       [ p [ txt (Utils.hint_to_string language I18n.MissingMessageTemplates) ]; list ]
        |> Notification.create language `Warning)
 ;;
 
@@ -77,9 +74,11 @@ let message_template_buttons
       { Experiment.id; language; _ }
       message_templates
   =
-  let open Message_template in
   let build_button label =
-    experiment_path ~suffix:Label.(prefixed_human_url label) ~id ()
+    experiment_path
+      ~suffix:Pool_common.MessageTemplateLabel.(prefixed_human_url label)
+      ~id
+      ()
     |> Button.add ~is_text:true label
   in
   let exclude =
@@ -89,7 +88,8 @@ let message_template_buttons
   in
   message_templates
   |> CCList.filter_map (fun (label, templates) ->
-    if CCList.is_empty (filter_languages ?exclude sys_languages templates)
+    if
+      CCList.is_empty (Message_template.filter_languages ?exclude sys_languages templates)
     then None
     else label |> build_button |> CCOption.pure)
   |> fun buttons ->
@@ -1033,13 +1033,14 @@ let message_template_form
       form_context
   =
   let open Message_template in
+  let open Pool_common.MessageTemplateLabel in
   let open Pool_common in
   let control_to_title control =
     Layout.Experiment.Text
       (Format.asprintf
          "%s %s"
          (control |> Utils.control_to_string language)
-         (label |> Label.to_human |> CCString.lowercase_ascii))
+         (label |> to_human |> CCString.lowercase_ascii))
   in
   let control =
     match form_context with
@@ -1049,7 +1050,7 @@ let message_template_form
   let action =
     let path suffix = experiment_path ~id ~suffix () in
     match form_context with
-    | `Create t -> path (Label.prefixed_human_url t.label)
+    | `Create t -> path (prefixed_human_url t.label)
     | `Update t -> path (prefixed_template_url t)
   in
   let text_elements =

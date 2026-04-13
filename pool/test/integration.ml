@@ -151,6 +151,18 @@ let suite =
     ; ( "matcher"
       , Matcher_test.
           [ test_case "create invitations" `Slow create_invitations
+          ; test_case
+              "create invitations for different user types"
+              `Slow
+              create_invitations_for_different_user_types
+          ; test_case
+              "exclude paused and disabled/inactive contacts"
+              `Slow
+              create_invitations_exclude_paused_and_disabled_inactive
+          ; test_case
+              "exclude inactive-only contacts"
+              `Slow
+              create_invitations_exclude_inactive_only
           ; test_case "send invitations" `Slow send_invitations
           ; test_case "reset experiment invitations" `Slow reset_invitations
           ; test_case "matcher notifiaction" `Slow matcher_notification

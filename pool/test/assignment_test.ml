@@ -39,7 +39,7 @@ let confirmation_email experiment (session : Session.t) assignment =
   in
   Email.Service.Job.create ?smtp_auth_id:experiment.Experiment.smtp_auth_id email
   |> Email.create_dispatch
-       ~message_template:(Label.show label)
+       ~message_template:label
        ~job_ctx:
          Pool_queue.(
            job_ctx_create

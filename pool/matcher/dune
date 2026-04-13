@@ -3,10 +3,11 @@
  (libraries
   cqrs_command
   database
+  email
   experiment
   mailing
   pool_common
   schedule
   utils)
  (preprocess
-  (pps lwt_ppx)))
+  (pps lwt_ppx ppx_string)))

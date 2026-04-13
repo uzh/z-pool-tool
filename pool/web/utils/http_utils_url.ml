@@ -24,7 +24,7 @@ module Admin = struct
   let settings_path = Format.asprintf "%s/%s" settings_base_path
 
   let settings_path_with_action action =
-    action |> Settings.stringify_action |> settings_path
+    action |> Settings.stringify_action |> settings_path |> Sihl.Web.externalize_path
   ;;
 
   let settings_path_with_action_param action =
@@ -139,7 +139,7 @@ module Admin = struct
       "%s/%s/%s"
       (experiment_path ~id:experiment_id ())
       Field.(human_url MessageTemplate)
-      (Message_template.Label.show label)
+      (Pool_common.MessageTemplateLabel.show label)
     |> append_opt (map Message_template.Id.value id)
     |> append_opt suffix
   ;;
@@ -198,7 +198,7 @@ module Admin = struct
       "%s/%s/%s"
       (session_path ~id:session_id experiment_id)
       Field.(human_url MessageTemplate)
-      (Message_template.Label.show label)
+      (Pool_common.MessageTemplateLabel.show label)
     |> append_opt (map Message_template.Id.value id)
     |> append_opt suffix
   ;;

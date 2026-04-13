@@ -3,6 +3,7 @@ open Utils.Lwt_result.Infix
 open Integration_utils
 open Message_template
 open Pool_queue
+open Pool_common.MessageTemplateLabel
 module JobHistory = Message_template.History
 
 let get_exn = Test_utils.get_or_failwith
@@ -35,10 +36,8 @@ let check_text_message =
 
 let check_message_template ?label =
   let open Alcotest in
-  let valid_label = Message_template.Label.(Alcotest.testable pp equal) in
-  Email.message_template
-  %> CCOption.map (Message_template.Label.of_string %> Pool_common.Utils.get_or_failwith)
-  %> check (option valid_label) "correct message template" label
+  let valid_label = Pool_common.MessageTemplateLabel.(Alcotest.testable pp equal) in
+  Email.message_template %> check (option valid_label) "correct message template" label
 ;;
 
 let check_mapped_uuids expected =
@@ -57,7 +56,7 @@ let account_suspension_notification _ () =
   let%lwt res =
     AccountSuspensionNotification.create tenant (Contact.user contact) ||> get_exn
   in
-  let () = check_message_template ~label:Label.AccountSuspensionNotification res in
+  let () = check_message_template ~label:AccountSuspensionNotification res in
   let () = check_mapped_uuids [ History.User, Contact.Id.to_common contact_id ] res in
   Lwt.return_unit
 ;;
@@ -71,7 +70,7 @@ let assignment_confirmation _ () =
     AssignmentConfirmation.prepare tenant contact experiment session
     ||> fun create -> create assignment
   in
-  let () = check_message_template ~label:Label.AssignmentConfirmation res in
+  let () = check_message_template ~label:AssignmentConfirmation res in
   let () =
     check_mapped_uuids
       JobHistory.
@@ -107,7 +106,7 @@ let assignment_session_change _ () =
       ; User, Contact.Id.to_common contact_id
       ]
   in
-  let () = check_message_template ~label:Label.AssignmentSessionChange res in
+  let () = check_message_template ~label:AssignmentSessionChange res in
   let () = check_mapped_uuids expected_uuids res in
   Lwt.return_unit
 ;;
@@ -117,7 +116,7 @@ let contact_email_change_attempt _ () =
   let%lwt res =
     ContactEmailChangeAttempt.create tenant (Contact.user contact) ||> get_exn
   in
-  let () = check_message_template ~label:Label.ContactEmailChangeAttempt res in
+  let () = check_message_template ~label:ContactEmailChangeAttempt res in
   let () = check_mapped_uuids History.[ User, Contact.Id.to_common contact_id ] res in
   Lwt.return_unit
 ;;
@@ -127,7 +126,7 @@ let contact_registration_attempt _ () =
   let%lwt res =
     ContactRegistrationAttempt.create language tenant (Contact.user contact)
   in
-  let () = check_message_template ~label:Label.ContactRegistrationAttempt res in
+  let () = check_message_template ~label:ContactRegistrationAttempt res in
   let () = check_mapped_uuids History.[ User, Contact.Id.to_common contact_id ] res in
   Lwt.return_unit
 ;;
@@ -143,7 +142,7 @@ let email_verification _ () =
       ("new@email.com" |> Pool_user.EmailAddress.of_string)
       ("123123123" |> Pool_token.of_string)
   in
-  let expected = Label.EmailVerification, [ Contact.Id.to_common contact_id ] in
+  let expected = EmailVerification, [ Contact.Id.to_common contact_id ] in
   let () = check_message_template ~label:(fst expected) res in
   let () = check_mapped_uuids History.[ User, Contact.Id.to_common contact_id ] res in
   Lwt.return_unit
@@ -154,7 +153,7 @@ let experiment_invitation _ () =
   let%lwt experiment = find_experiment () in
   let invitation = Invitation.create contact in
   let%lwt res = ExperimentInvitation.create tenant experiment invitation in
-  let () = check_message_template ~label:Label.ExperimentInvitation res in
+  let () = check_message_template ~label:ExperimentInvitation res in
   let () =
     check_mapped_uuids
       History.
@@ -170,7 +169,7 @@ let experiment_invitation _ () =
 let password_change _ () =
   let%lwt contact = find_contact () in
   let%lwt res = PasswordChange.create language tenant (Contact.user contact) in
-  let () = check_message_template ~label:Label.PasswordChange res in
+  let () = check_message_template ~label:PasswordChange res in
   let () = check_mapped_uuids [ History.User, Contact.Id.to_common contact_id ] res in
   Lwt.return_unit
 ;;
@@ -181,7 +180,7 @@ let password_reset _ () =
     PasswordReset.create database_label language (Tenant tenant) (Contact.user contact)
     ||> get_exn
   in
-  let () = check_message_template ~label:Label.PasswordReset res in
+  let () = check_message_template ~label:PasswordReset res in
   let () = check_mapped_uuids [ History.User, Contact.Id.to_common contact_id ] res in
   Lwt.return_unit
 ;;
@@ -202,7 +201,7 @@ let phone_verification _ () =
   in
   let expected =
     Text_message.create_job
-      ~message_template:Label.(show PhoneVerification)
+      ~message_template:PhoneVerification
       ~job_ctx:(job_ctx_create [ History.User, Contact.Id.to_common contact_id ])
       (res |> Text_message.job)
   in
@@ -228,7 +227,7 @@ let session_reminder _ () =
       session
     ||> fun msg -> msg assignment cell_phone |> get_exn
   in
-  let expected_label = Label.SessionReminder in
+  let expected_label = SessionReminder in
   let expected_uuids =
     History.
       [ Experiment, Experiment.Id.to_common experiment_id
@@ -238,7 +237,7 @@ let session_reminder _ () =
   in
   let expected =
     Text_message.create_job
-      ~message_template:Label.(show expected_label)
+      ~message_template:expected_label
       ~job_ctx:(job_ctx_create expected_uuids)
       (text_msg_res |> Text_message.job)
   in

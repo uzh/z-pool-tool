@@ -1,4 +1,3 @@
-open Ppx_yojson_conv_lib.Yojson_conv.Primitives
 open Entity
 module User = Pool_user
 
@@ -46,7 +45,7 @@ let pp_verification_event formatter (event : verification_event) : unit =
 type dispatch =
   { job : Job.t
   ; id : Pool_queue.Id.t option [@yojson.option]
-  ; message_template : string option [@yojson.option]
+  ; message_template : Pool_common.MessageTemplateLabel.t option [@yojson.option]
   ; job_ctx : Pool_queue.job_ctx option [@yojson.option]
   }
 [@@deriving eq, fields, show, yojson]

@@ -99,7 +99,16 @@ let find_query_param req field decode =
 
 let find_referer req =
   let open CCOption.Infix in
-  Httpaf.Headers.get req.Opium.Request.headers "referer" >|= Uri.of_string >|= Uri.path
+  let strip_prefix path =
+    let pre =
+      Sihl.Configuration.read_string "PREFIX_PATH" |> CCOption.value ~default:""
+    in
+    CCString.chop_prefix ~pre path |> CCOption.value ~default:path
+  in
+  Httpaf.Headers.get req.Opium.Request.headers "referer"
+  >|= Uri.of_string
+  >|= Uri.path
+  >|= strip_prefix
 ;;
 
 let redirect_to_with_actions ?(skip_externalize = false) path actions =
@@ -239,6 +248,17 @@ let multipart_to_urlencoded ingnore_fields lst =
     (fun (key, value) ->
        if CCList.mem key ingnore_fields then None else Some (key, [ value ]))
     lst
+;;
+
+let combine_urlencoded_arrays urlencoded =
+  let tbl = Hashtbl.create 16 in
+  CCList.iter
+    (fun (key, value) ->
+       let key' = CCString.replace ~sub:"[]" ~by:"" ~which:`Right key in
+       let existing = CCOption.value (Hashtbl.find_opt tbl key') ~default:[] in
+       Hashtbl.replace tbl key' (existing @ value))
+    urlencoded;
+  Hashtbl.to_seq tbl |> CCList.of_seq
 ;;
 
 let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "

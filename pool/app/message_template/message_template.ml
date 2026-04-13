@@ -5,8 +5,17 @@ include Message_utils
 module Guard = Entity_guard
 module VersionHistory = Version_history
 module Queue = Pool_queue
+open Pool_common.MessageTemplateLabel
 
 let src = Logs.Src.create "message_template"
+
+let customizable_label_by_experiment =
+  [ ExperimentInvitation
+  ; SessionReminder
+  ; AssignmentConfirmation
+  ; WaitingListConfirmation
+  ]
+;;
 
 module History = struct
   open Queue.History
@@ -31,14 +40,12 @@ end
 let create_email_job ?smtp_auth_id label mapping_uuids email =
   Email.Service.Job.create ?smtp_auth_id email
   |> Email.create_dispatch
-       ~message_template:(Label.show label)
+       ~message_template:label
        ~job_ctx:(Queue.job_ctx_create mapping_uuids)
 ;;
 
 let create_text_message_job ?message_template ?(entity_uuids = []) =
-  Text_message.create_job
-    ?message_template:(CCOption.map Label.show message_template)
-    ~job_ctx:(Queue.job_ctx_create entity_uuids)
+  Text_message.create_job ?message_template ~job_ctx:(Queue.job_ctx_create entity_uuids)
 ;;
 
 let find = Repo.find
@@ -279,7 +286,7 @@ let session_message_uuids experiment session contact =
 
 module AccountSuspensionNotification = struct
   let email_params = global_params
-  let label = Label.AccountSuspensionNotification
+  let label = AccountSuspensionNotification
 
   let create ({ Pool_tenant.database_label; _ } as tenant) user =
     let open Message_utils in
@@ -306,7 +313,7 @@ end
 module AssignmentCancellation = struct
   open Assignment
 
-  let label = Label.AssignmentCancellation
+  let label = AssignmentCancellation
   let base_params layout contact = contact.Contact.user |> global_params layout
 
   let email_params ?follow_up_sessions language layout experiment session assignment =
@@ -350,7 +357,7 @@ end
 module AssignmentConfirmation = struct
   open Assignment
 
-  let label = Label.AssignmentConfirmation
+  let label = AssignmentConfirmation
   let base_params layout contact = contact.Contact.user |> global_params layout
 
   let email_params ?follow_up_sessions language layout experiment session assignment =
@@ -395,7 +402,7 @@ module AssignmentConfirmation = struct
 end
 
 module AssignmentSessionChange = struct
-  let label = Label.AssignmentSessionChange
+  let label = AssignmentSessionChange
 
   let message_uuids experiment new_session old_session { Assignment.contact; _ } =
     History.
@@ -437,7 +444,7 @@ module AssignmentSessionChange = struct
 end
 
 module ContactEmailChangeAttempt = struct
-  let label = Label.ContactEmailChangeAttempt
+  let label = ContactEmailChangeAttempt
 
   let email_params layout tenant_url user =
     let reset_url = create_public_url tenant_url "/request-reset-password" in
@@ -460,10 +467,7 @@ module ContactEmailChangeAttempt = struct
         contact_language sys_langs contact |> Lwt_result.return
     in
     let%lwt template =
-      find_by_label_and_language_to_send
-        pool
-        Label.ContactEmailChangeAttempt
-        message_language
+      find_by_label_and_language_to_send pool ContactEmailChangeAttempt message_language
     in
     let layout = layout_from_tenant tenant in
     let tenant_url = tenant.Pool_tenant.url in
@@ -483,7 +487,7 @@ module ContactEmailChangeAttempt = struct
 end
 
 module ContactRegistrationAttempt = struct
-  let label = Label.ContactRegistrationAttempt
+  let label = ContactRegistrationAttempt
 
   let email_params layout tenant_url user =
     let reset_url = create_public_url tenant_url "/request-reset-password" in
@@ -515,7 +519,7 @@ module ContactRegistrationAttempt = struct
 end
 
 module EmailVerification = struct
-  let label = Label.EmailVerification
+  let label = EmailVerification
 
   let email_params layout validation_url contact =
     global_params layout contact.Contact.user @ [ "verificationUrl", validation_url ]
@@ -523,7 +527,7 @@ module EmailVerification = struct
 
   let create pool language layout contact email_address token =
     let%lwt template =
-      find_by_label_and_language_to_send pool Label.EmailVerification language
+      find_by_label_and_language_to_send pool EmailVerification language
     in
     let layout = create_layout layout in
     let%lwt url = Pool_tenant.Url.of_pool pool in
@@ -551,7 +555,7 @@ module EmailVerification = struct
 end
 
 module ExperimentInvitation = struct
-  let label = Label.ExperimentInvitation
+  let label = ExperimentInvitation
   let optout_link = Verified
 
   let email_params layout experiment contact =
@@ -567,7 +571,7 @@ module ExperimentInvitation = struct
         pool
         ~entity_uuids:[ Experiment.(Id.to_common experiment.Experiment.id) ]
         sys_langs
-        Label.ExperimentInvitation
+        ExperimentInvitation
     in
     let smtp_auth_id = experiment.Experiment.smtp_auth_id in
     let%lwt sender = sender_of_experiment pool experiment in
@@ -622,7 +626,7 @@ module ExperimentInvitation = struct
 end
 
 module InactiveContactWarning = struct
-  let label = Label.InactiveContactWarning
+  let label = InactiveContactWarning
 
   let email_params layout contact ~last_login =
     global_params layout contact.Contact.user
@@ -656,7 +660,7 @@ module InactiveContactWarning = struct
 end
 
 module InactiveContactDeactivation = struct
-  let label = Label.InactiveContactDeactivation
+  let label = InactiveContactDeactivation
   let email_params layout contact = global_params layout contact.Contact.user
 
   let prepare pool =
@@ -683,7 +687,7 @@ module InactiveContactDeactivation = struct
 end
 
 module Login2FAToken = struct
-  let label = Label.Login2FAToken
+  let label = Login2FAToken
 
   let email_params layout user token =
     global_params layout user @ [ "token", Authentication.Token.value token ]
@@ -710,7 +714,7 @@ module Login2FAToken = struct
 end
 
 module ManualSessionMessage = struct
-  let label = Label.ManualSessionMessage
+  let label = ManualSessionMessage
   let base_params layout contact = contact.Contact.user |> global_params layout
 
   let email_params language layout experiment session assignment =
@@ -759,7 +763,7 @@ module ManualSessionMessage = struct
 end
 
 module MatcherNotification = struct
-  let label = Label.MatcherNotification
+  let label = MatcherNotification
 
   let email_params layout user experiment =
     global_params layout user @ experiment_params layout experiment
@@ -779,7 +783,7 @@ module MatcherNotification = struct
 end
 
 module MatchFilterUpdateNotification = struct
-  let label = Label.MatchFilterUpdateNotification
+  let label = MatchFilterUpdateNotification
 
   let message_uuids experiment sessions admin =
     let open History in
@@ -836,7 +840,7 @@ end
 
 module PasswordChange = struct
   let email_params = global_params
-  let label = Label.PasswordChange
+  let label = PasswordChange
 
   let create language tenant user =
     let pool = tenant.Pool_tenant.database_label in
@@ -859,7 +863,7 @@ module PasswordChange = struct
 end
 
 module PasswordReset = struct
-  let label = Label.PasswordReset
+  let label = PasswordReset
 
   let email_params layout reset_url user =
     global_params layout user @ [ "resetUrl", reset_url ]
@@ -868,9 +872,7 @@ module PasswordReset = struct
   let create pool language layout user =
     let open Utils.Lwt_result.Infix in
     let email = Pool_user.email user in
-    let%lwt template =
-      find_by_label_and_language_to_send pool Label.PasswordReset language
-    in
+    let%lwt template = find_by_label_and_language_to_send pool PasswordReset language in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let%lwt sender = default_sender_of_pool pool in
     let open Pool_common in
@@ -908,7 +910,7 @@ module PasswordReset = struct
 end
 
 module PhoneVerification = struct
-  let label = Label.PhoneVerification
+  let label = PhoneVerification
   let message_params token = [ "token", Pool_common.VerificationCode.value token ]
 
   let create_text_message
@@ -937,7 +939,7 @@ module PhoneVerification = struct
 end
 
 module ProfileUpdateTrigger = struct
-  let label = Label.ProfileUpdateTrigger
+  let label = ProfileUpdateTrigger
 
   let email_params layout tenant_url contact =
     let profile_url = create_public_url tenant_url "/user/personal-details" in
@@ -947,9 +949,7 @@ module ProfileUpdateTrigger = struct
   let prepare pool tenant =
     let open Message_utils in
     let%lwt sys_langs = Settings.find_languages pool in
-    let%lwt templates =
-      find_all_by_label_to_send pool sys_langs Label.SessionReschedule
-    in
+    let%lwt templates = find_all_by_label_to_send pool sys_langs SessionReschedule in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let%lwt sender = default_sender_of_pool pool in
     let layout = layout_from_tenant tenant in
@@ -974,7 +974,7 @@ module ProfileUpdateTrigger = struct
 end
 
 module SessionCancellation = struct
-  let label = Label.SessionCancellation
+  let label = SessionCancellation
 
   let email_params
         language
@@ -996,9 +996,7 @@ module SessionCancellation = struct
 
   let prepare pool tenant experiment sys_langs session follow_up_sessions =
     let open Message_utils in
-    let%lwt templates =
-      find_all_by_label_to_send pool sys_langs Label.SessionCancellation
-    in
+    let%lwt templates = find_all_by_label_to_send pool sys_langs SessionCancellation in
     let%lwt sender = sender_of_experiment pool experiment in
     let layout = layout_from_tenant tenant in
     let fnc reason (contact : Contact.t) =
@@ -1027,9 +1025,7 @@ module SessionCancellation = struct
         follow_up_sessions
     =
     let open Message_utils in
-    let%lwt templates =
-      find_all_by_label_to_send pool sys_langs Label.SessionCancellation
-    in
+    let%lwt templates = find_all_by_label_to_send pool sys_langs SessionCancellation in
     let%lwt gtx_config = Gtx_config.find_exn pool in
     let layout = layout_from_tenant tenant in
     let fnc reason (contact : Contact.t) cell_phone =
@@ -1054,7 +1050,7 @@ module SessionCancellation = struct
 end
 
 module SessionReminder = struct
-  let label = Label.SessionReminder
+  let label = SessionReminder
 
   let email_params lang layout experiment session assignment =
     global_params layout assignment.Assignment.contact.Contact.user
@@ -1135,7 +1131,7 @@ module SessionReminder = struct
           ]
         pool
         sys_langs
-        Label.SessionReminder
+        SessionReminder
     in
     let%lwt gtx_config = Gtx_config.find_exn pool in
     let layout = layout_from_tenant tenant in
@@ -1161,7 +1157,7 @@ module SessionReminder = struct
 end
 
 module SessionReschedule = struct
-  let label = Label.SessionReschedule
+  let label = SessionReschedule
 
   let email_params lang layout experiment session new_start new_duration contact =
     let open Pool_model.Time in
@@ -1198,7 +1194,7 @@ module SessionReschedule = struct
 end
 
 module SignUpVerification = struct
-  let label = Label.SignUpVerification
+  let label = SignUpVerification
 
   let email_params layout verification_url firstname lastname =
     let firstname = firstname |> Pool_user.Firstname.value in
@@ -1259,7 +1255,7 @@ module SignUpVerification = struct
 end
 
 module UserImport = struct
-  let label = Label.UserImport
+  let label = UserImport
 
   let to_user = function
     | `Admin admin -> Admin.user admin
@@ -1328,7 +1324,7 @@ module UserImport = struct
 end
 
 module WaitingListConfirmation = struct
-  let label = Label.WaitingListConfirmation
+  let label = WaitingListConfirmation
   let base_params layout contact = contact.Contact.user |> global_params layout
 
   let email_params layout contact experiment =

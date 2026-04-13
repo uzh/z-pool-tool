@@ -284,12 +284,16 @@ let rec field_to_string =
   | SMS -> "SMS"
   | SmsText -> "SMS text"
   | Smtp -> "smtp"
+  | SmtpInternalRegex -> "internal regex for email addresses"
+  | SmtpInvitationCapacity -> "invitation capacity (% of the rate limit)"
   | SmtpLabel -> "label"
   | SmtpMechanism -> "mechanism"
   | SmtpPassword -> "password"
   | SmtpPort -> "port"
   | SmtpProtocol -> "protocol"
+  | SmtpRateLimit -> "rate limit (emails/24h)"
   | SmtpServer -> "server"
+  | SmtpSystemAccount -> "system account"
   | SmtpUsername -> "username"
   | SortOrder -> "sort order"
   | Start -> "start"
@@ -658,6 +662,8 @@ let rec error_to_string =
   | SmtpException exn -> exn
   | SmtpLoginMissingCredentials ->
     "SMTP auth mechanism cannot be set to LOGIN when no username or password is set."
+  | SmtpRecipientNotFound recipient ->
+    Format.asprintf "The recipient of the email could not be found (%s)." recipient
   | TerminatoryTenantError | TerminatoryRootError -> "Please try again later."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle -> "An error occurred"
   | TermsAndConditionsMissing -> "Terms and conditions have to be added first."

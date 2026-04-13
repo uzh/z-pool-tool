@@ -109,6 +109,26 @@ module Bool = struct
   let to_string = Bool.to_string
 end
 
+module Lwt_cache = struct
+  let once r f =
+    match !r with
+    | Some v -> Lwt.return v
+    | None ->
+      let%lwt v = f () in
+      r := Some v;
+      Lwt.return v
+  ;;
+
+  let cached tbl key f =
+    match Hashtbl.find_opt tbl key with
+    | Some v -> Lwt.return v
+    | None ->
+      let%lwt v = f () in
+      Hashtbl.replace tbl key v;
+      Lwt.return v
+  ;;
+end
+
 module Html = struct
   open Tyxml.Html
 

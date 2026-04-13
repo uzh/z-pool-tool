@@ -716,24 +716,13 @@ type 'a multi_select =
   ; to_value : 'a -> string
   }
 
-let multi_select
-      language
+let multi_select_options
+      ?additional_attributes
+      ?(disabled = false)
+      ?flash_values
       { options; selected; to_label; to_value }
       group_field
-      ?(classnames = [])
-      ?(disabled = false)
-      ?(orientation = `Horizontal)
-      ?(required = false)
-      ?additional_attributes
-      ?append_html
-      ?error
-      ?flash_values
-      ?hints
-      ?label_field
-      ()
   =
-  let error = Elements.error language error in
-  let help_html = Elements.hints ~classnames:[ "flex-basis-100" ] language hints in
   CCList.map
     (fun option ->
        let value = to_value option in
@@ -765,6 +754,32 @@ let multi_select
        let label = label ~a:[ a_label_for value ] [ txt (option |> to_label) ] in
        div [ input_elm; label ])
     options
+;;
+
+let multi_select
+      language
+      { options; selected; to_label; to_value }
+      group_field
+      ?(classnames = [])
+      ?(disabled = false)
+      ?(orientation = `Horizontal)
+      ?(required = false)
+      ?additional_attributes
+      ?append_html
+      ?error
+      ?flash_values
+      ?hints
+      ?label_field
+      ()
+  =
+  let error = Elements.error language error in
+  let help_html = Elements.hints ~classnames:[ "flex-basis-100" ] language hints in
+  multi_select_options
+    ?additional_attributes
+    ~disabled
+    ?flash_values
+    { options; selected; to_label; to_value }
+    group_field
   |> fun inputs ->
   let classnames =
     if CCOption.(is_some append_html || is_some hints)

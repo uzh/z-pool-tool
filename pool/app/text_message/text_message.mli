@@ -47,7 +47,7 @@ module Service : sig
   val dispatch
     :  ?id:Pool_queue.Id.t
     -> ?new_recipient:Pool_user.CellPhone.t
-    -> ?message_template:string
+    -> ?message_template:Pool_common.MessageTemplateLabel.t
     -> ?job_ctx:Pool_queue.job_ctx
     -> Database.Label.t
     -> t
@@ -57,7 +57,7 @@ end
 type job =
   { job : t
   ; id : Pool_queue.Id.t option
-  ; message_template : string option
+  ; message_template : Pool_common.MessageTemplateLabel.t option
   ; job_ctx : Pool_queue.job_ctx option
   }
 
@@ -67,12 +67,12 @@ val show_job : job -> string
 val yojson_of_job : job -> Yojson.Safe.t
 val job : job -> t
 val id : job -> Pool_queue.Id.t option
-val message_template : job -> string option
+val message_template : job -> Pool_common.MessageTemplateLabel.t option
 val job_ctx : job -> Pool_queue.job_ctx option
 
 val create_job
   :  ?id:Pool_queue.Id.t
-  -> ?message_template:string
+  -> ?message_template:Pool_common.MessageTemplateLabel.t
   -> ?job_ctx:Pool_queue.job_ctx
   -> t
   -> job
@@ -121,7 +121,7 @@ val handle_event : Database.Label.t -> event -> unit Lwt.t
 
 val create_sent
   :  ?id:Pool_queue.Id.t
-  -> ?message_template:string
+  -> ?message_template:Pool_common.MessageTemplateLabel.t
   -> ?job_ctx:Pool_queue.job_ctx
   -> ?new_recipient:Pool_user.CellPhone.t
   -> t

@@ -426,7 +426,7 @@ let swap_session_get_helper action req =
             [ Session.Id.to_common session_id; Experiment.Id.to_common experiment_id ]
           database_label
           [ template_lang ]
-          Label.AssignmentSessionChange)
+          Pool_common.MessageTemplateLabel.AssignmentSessionChange)
       ||> CCList.head_opt
       ||> CCOption.to_result (Error.NotFound Field.Template)
     in

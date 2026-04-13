@@ -57,7 +57,10 @@ let list Pool_context.{ language; _ } queue_table url (queued_jobs, query) =
     [ txt (instance |> name), Some Field.Name
     ; ( txt (instance |> Instance.status |> Status.show |> CCString.capitalize_ascii)
       , Some Field.Status )
-    ; ( txt (instance |> Instance.message_template |> CCOption.value ~default:"")
+    ; ( txt
+          (instance
+           |> Instance.message_template
+           |> CCOption.map_or Pool_common.MessageTemplateLabel.to_human ~default:"")
       , Some Field.MessageTemplate )
     ; txt recipient, Some Field.Recipient
     ; ( instance

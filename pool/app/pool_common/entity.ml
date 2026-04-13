@@ -299,3 +299,68 @@ module NotifyContact = struct
   let init = false
   let schema = schema Pool_message.Field.NotifyContact
 end
+
+module MessageTemplateLabel = struct
+  module Core = struct
+    let field = Pool_message.Field.MessageTemplate
+
+    type t =
+      | AccountSuspensionNotification [@name "account_suspension_notification"]
+      [@printer print "account_suspension_notification"]
+      | AssignmentCancellation [@name "assignment_cancellation"]
+      [@printer print "assignment_cancellation"]
+      | AssignmentConfirmation [@name "assignment_confirmation"]
+      [@printer print "assignment_confirmation"]
+      | AssignmentSessionChange [@name "assignment_session_change"]
+      [@printer print "assignment_session_change"]
+      | ContactEmailChangeAttempt [@name "contact_email_change_attempt"]
+      [@printer print "contact_email_change_attempt"]
+      | ContactRegistrationAttempt [@name "contact_registration_attempt"]
+      [@printer print "contact_registration_attempt"]
+      | EmailVerification [@name "email_verification"]
+      [@printer print "email_verification"]
+      | ExperimentInvitation [@name "experiment_invitation"]
+      [@printer print "experiment_invitation"]
+      | InactiveContactWarning [@name "inactive_contact_warning"]
+      [@printer print "inactive_contact_warning"]
+      | InactiveContactDeactivation [@name "inactive_contact_deactivation"]
+      [@printer print "inactive_contact_deactivation"]
+      | Login2FAToken [@name "login_2fa_token"] [@printer print "login_2fa_token"]
+      | ManualSessionMessage [@name "manual_session_message"]
+      [@printer print "manual_session_message"]
+      | MatcherNotification [@name "matcher_notification"]
+      [@printer print "matcher_notification"]
+      | MatchFilterUpdateNotification [@name "match_filter_update_notification"]
+      [@printer print "match_filter_update_notification"]
+      | PasswordChange [@name "password_change"] [@printer print "password_change"]
+      | PasswordReset [@name "password_reset"] [@printer print "password_reset"]
+      | PhoneVerification [@name "phone_verification"]
+      [@printer print "phone_verification"]
+      | ProfileUpdateTrigger [@name "profile_update_trigger"]
+      [@printer print "profile_update_trigger"]
+      | SignUpVerification [@name "signup_verification"]
+      [@printer print "signup_verification"]
+      | SessionCancellation [@name "session_cancellation"]
+      [@printer print "session_cancellation"]
+      | SessionReminder [@name "session_reminder"] [@printer print "session_reminder"]
+      | SessionReschedule [@name "session_reschedule"]
+      [@printer print "session_reschedule"]
+      | UserImport [@name "user_import"] [@printer print "user_import"]
+      | WaitingListConfirmation [@name "waiting_list_confirmation"]
+      [@printer print "waiting_list_confirmation"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson, variants]
+  end
+
+  include Pool_model.Base.SelectorType (Core)
+  include Core
+  open CCFun.Infix
+
+  let read_from_url = CCString.replace ~which:`All ~sub:"-" ~by:"_" %> read
+  let of_string = create
+  let to_human = show %> CCString.replace ~sub:"_" ~by:" " %> CCString.capitalize_ascii
+  let human_url = show %> CCString.replace ~sub:"_" ~by:"-"
+
+  let prefixed_human_url =
+    human_url %> Format.asprintf "%s/%s" Pool_message.Field.(human_url MessageTemplate)
+  ;;
+end

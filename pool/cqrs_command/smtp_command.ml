@@ -17,6 +17,10 @@ type create =
   ; mechanism : SmtpAuth.Mechanism.t
   ; protocol : SmtpAuth.Protocol.t
   ; default : SmtpAuth.Default.t
+  ; system_account : SmtpAuth.SystemAccount.t
+  ; internal_regex : SmtpAuth.InternalRegex.t option
+  ; rate_limit : SmtpAuth.RateLimit.t
+  ; invitation_capacity : SmtpAuth.InvitationCapacity.t
   }
 
 type update =
@@ -27,10 +31,37 @@ type update =
   ; mechanism : SmtpAuth.Mechanism.t
   ; protocol : SmtpAuth.Protocol.t
   ; default : SmtpAuth.Default.t
+  ; system_account : SmtpAuth.SystemAccount.t
+  ; internal_regex : SmtpAuth.InternalRegex.t option
+  ; rate_limit : SmtpAuth.RateLimit.t
+  ; invitation_capacity : SmtpAuth.InvitationCapacity.t
   }
 
-let update_command label server port username mechanism protocol default =
-  { label; server; port; username; mechanism; protocol; default }
+let update_command
+      label
+      server
+      port
+      username
+      mechanism
+      protocol
+      default
+      system_account
+      internal_regex
+      rate_limit
+      invitation_capacity
+  =
+  { label
+  ; server
+  ; port
+  ; username
+  ; mechanism
+  ; protocol
+  ; default
+  ; system_account
+  ; internal_regex
+  ; rate_limit
+  ; invitation_capacity
+  }
 ;;
 
 let update_schema =
@@ -44,6 +75,10 @@ let update_schema =
         ; SmtpAuth.Mechanism.schema ()
         ; SmtpAuth.Protocol.schema ()
         ; SmtpAuth.Default.schema ()
+        ; SmtpAuth.SystemAccount.schema ()
+        ; Conformist.optional @@ SmtpAuth.InternalRegex.schema ()
+        ; SmtpAuth.RateLimit.schema ()
+        ; SmtpAuth.InvitationCapacity.schema ()
         ]
       update_command)
 ;;
@@ -67,8 +102,33 @@ module Create : sig
 end = struct
   type t = create
 
-  let command label server port username password mechanism protocol default =
-    { label; server; port; username; password; mechanism; protocol; default }
+  let command
+        label
+        server
+        port
+        username
+        password
+        mechanism
+        protocol
+        default
+        system_account
+        internal_regex
+        rate_limit
+        invitation_capacity
+    =
+    { label
+    ; server
+    ; port
+    ; username
+    ; password
+    ; mechanism
+    ; protocol
+    ; default
+    ; system_account
+    ; internal_regex
+    ; rate_limit
+    ; invitation_capacity
+    }
   ;;
 
   let schema =
@@ -83,16 +143,36 @@ end = struct
           ; SmtpAuth.Mechanism.schema ()
           ; SmtpAuth.Protocol.schema ()
           ; SmtpAuth.Default.schema ()
+          ; SmtpAuth.SystemAccount.schema ()
+          ; Conformist.optional @@ SmtpAuth.InternalRegex.schema ()
+          ; SmtpAuth.RateLimit.schema ()
+          ; SmtpAuth.InvitationCapacity.schema ()
           ]
         command)
   ;;
 
   let smtp_of_command
         ?id
-        { label; server; port; username; password; mechanism; protocol; default }
+        { label
+        ; server
+        ; port
+        ; username
+        ; password
+        ; mechanism
+        ; protocol
+        ; default
+        ; system_account
+        ; internal_regex
+        ; rate_limit
+        ; invitation_capacity
+        }
     =
     SmtpAuth.Write.create
       ?id
+      ~rate_limit
+      ~invitation_capacity
+      ~system_account
+      ?internal_regex
       label
       server
       port
@@ -168,6 +248,10 @@ end = struct
       ; mechanism = command.mechanism
       ; protocol = command.protocol
       ; default
+      ; rate_limit = command.rate_limit
+      ; invitation_capacity = command.invitation_capacity
+      ; system_account = command.system_account
+      ; internal_regex = command.internal_regex
       }
     in
     Ok [ Email.SmtpEdited update |> Pool_event.email; clear_cache_event ~id:clear_id () ]

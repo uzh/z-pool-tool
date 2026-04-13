@@ -532,7 +532,11 @@ module Model = struct
   let create_message_template ?label ?language ?entity_uuid () =
     let open Message_template in
     let exn = CCResult.get_exn in
-    let label = CCOption.value ~default:Label.AssignmentConfirmation label in
+    let label =
+      CCOption.value
+        ~default:Pool_common.MessageTemplateLabel.AssignmentConfirmation
+        label
+    in
     let language = CCOption.value ~default:Pool_common.Language.En language in
     { id = Id.create ()
     ; label

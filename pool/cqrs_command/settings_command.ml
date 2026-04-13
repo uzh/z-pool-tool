@@ -93,6 +93,33 @@ end = struct
   let effects = Settings.Guard.Access.update
 end
 
+module UpdateSystemEmailTemplates : sig
+  include Common.CommandSig with type t = Pool_common.MessageTemplateLabel.t list
+
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
+end = struct
+  type t = Pool_common.MessageTemplateLabel.t list
+
+  let schema =
+    Conformist.(make Field.[ Settings.SystemEmailTemplates.schema () ] CCFun.id)
+  ;;
+
+  let decode =
+    Conformist.decode_and_validate schema
+    %> CCResult.map_err Pool_message.to_conformist_error
+  ;;
+
+  let handle ?(tags = Logs.Tag.empty) templates =
+    Logs.info ~src (fun m -> m "Handle command UpdateSystemEmailTemplates" ~tags);
+    Ok
+      [ SystemEmailTemplatesUpdated (SystemEmailTemplates.normalize templates)
+        |> Pool_event.settings
+      ]
+  ;;
+
+  let effects = Settings.Guard.Access.update
+end
+
 module UpdateContactEmail : sig
   include Common.CommandSig with type t = Settings.ContactEmail.t
 

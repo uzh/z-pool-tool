@@ -15,12 +15,6 @@ module Id = struct
   ;;
 end
 
-module Label = struct
-  include Label
-
-  let t = Pool_common.Repo.make_caqti_type Caqti_type.string of_string show
-end
-
 module EmailSubject = struct
   include EmailSubject
 
@@ -78,7 +72,7 @@ let t =
       (t2
          Id.t
          (t2
-            Label.t
+            Pool_common.Repo.MessageTemplateLabel.t
             (t2
                (option Common.Id.t)
                (t2

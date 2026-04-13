@@ -8,11 +8,12 @@ let create_layout req = General.create_tenant_layout req
 let template_id = HttpUtils.find_id Message_template.Id.of_string Field.MessageTemplate
 
 let template_label req =
-  let open Message_template.Label in
+  let open Pool_common.MessageTemplateLabel in
   try
     Ok
       (HttpUtils.find_id read_from_url Field.Label req
-       |> fun label -> CCList.find (equal label) customizable_by_experiment)
+       |> fun label ->
+       CCList.find (equal label) Message_template.customizable_label_by_experiment)
   with
   | _ -> Error Pool_message.(Error.Invalid Field.Label)
 ;;
@@ -57,7 +58,7 @@ type redirect =
   }
 
 type action =
-  | Create of Pool_common.Id.t * Message_template.Label.t * redirect
+  | Create of Pool_common.Id.t * Pool_common.MessageTemplateLabel.t * redirect
   | Update of Message_template.Id.t * redirect
 
 let write action req =

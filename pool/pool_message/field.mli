@@ -272,12 +272,16 @@ type t =
   | SMS
   | SmsText
   | Smtp
+  | SmtpInternalRegex
+  | SmtpInvitationCapacity
   | SmtpLabel
   | SmtpMechanism
   | SmtpPassword
   | SmtpPort
   | SmtpProtocol
+  | SmtpRateLimit
   | SmtpServer
+  | SmtpSystemAccount
   | SmtpUsername
   | SortOrder
   | Start
@@ -573,12 +577,16 @@ val signupcount : t
 val sms : t
 val smstext : t
 val smtp : t
+val smtpinternalregex : t
+val smtpinvitationcapacity : t
 val smtplabel : t
 val smtpmechanism : t
 val smtppassword : t
 val smtpport : t
 val smtpprotocol : t
+val smtpratelimit : t
 val smtpserver : t
+val smtpsystemaccount : t
 val smtpusername : t
 val sortorder : t
 val start : t

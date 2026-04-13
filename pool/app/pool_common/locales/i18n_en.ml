@@ -714,11 +714,16 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | SmtpSettingsDefaultFlag ->
     "Attention: If another SMTP configuration is marked as default, it will be \
      overwritten. Only one configuration can be marked as default."
+  | SmtpSettingsInternalRegex ->
+    {|Emails matching this regex are considered internal and will be routed through this SMTP server. Example: to match all UZH addresses use "@uzh\.ch|@.*\.uzh\.ch".|}
   | SmtpSettingsIntro ->
     {|The following configuration is used by the email service.
 
     Note: When using the mechanism "LOGIN" a username and password are required.
     |}
+  | SmtpSettingsSystemAccountFlag ->
+    "Attention: If this setting is enabled, this SMTP configuration will be used for \
+     system-related emails, which can be configured through the system settings."
   | SmtpValidation ->
     "Please provide an email address to which a test message can be sent to validate the \
      SMTP settings."
