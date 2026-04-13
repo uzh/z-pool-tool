@@ -45,7 +45,7 @@ module Key : sig
     | Assignment
     | Invitation
     | Tag
-    | TaggedParticipation
+    | TagOnParticipatedExperiment
 
   type t =
     | CustomField of Custom_field.Id.t

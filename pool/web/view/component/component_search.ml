@@ -226,7 +226,7 @@ end
 module Tag = struct
   open Tags
 
-  let placeholder = "Search by tag title"
+  let placeholder = "Search by tag"
   let to_label = snd %> Title.value
   let to_value = fst %> Id.value
 
@@ -263,7 +263,7 @@ end
 module TaggedExperiment = struct
   open Tags
 
-  let placeholder = "Search by experiment tag title"
+  let placeholder = "Search by experiment tag"
   let to_label = snd %> Title.value
   let to_value = fst %> Id.value
 
