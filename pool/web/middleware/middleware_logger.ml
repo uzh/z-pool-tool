@@ -113,7 +113,7 @@ let logger =
       (fun exn ->
          Logs.err ~src (fun m -> m ~tags "%s" (Exn.to_string exn));
          Logs.err ~src (fun m -> m ~tags "%s" (Printexc.get_backtrace ()));
-         Lwt.fail exn)
+         Lwt.reraise exn)
   in
   Rock.Middleware.create ~name:"Logger" ~filter
 ;;
