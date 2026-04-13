@@ -39,8 +39,7 @@ let read_config () = Sihl.Configuration.(read schema)
 
 let notify' ?src ?tags ?labels ?(additional = "") exn trace =
   let config = read_config () in
-  let module Gitlab_notify =
-    Canary.Notifier.Gitlab (struct
+  let module Gitlab_notify = Canary.Notifier.Gitlab (struct
       let token = config |> token
       let uri_base = config |> uri_base
       let project_name = config |> project_name
@@ -69,8 +68,7 @@ let start () =
   if has_to_notify ()
   then (
     let config = read_config () in
-    let module Gitlab_notify =
-      Canary.Notifier.Gitlab (struct
+    let module Gitlab_notify = Canary.Notifier.Gitlab (struct
         let token = config |> token
         let uri_base = config |> uri_base
         let project_name = config |> project_name
