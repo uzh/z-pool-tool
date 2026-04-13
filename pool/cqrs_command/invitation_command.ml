@@ -89,6 +89,22 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) ?mailing_id create_email (invitation : t) =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Resend" ~tags);
+    let contact = invitation.Invitation.contact in
+    let* () =
+      if Contact.is_inactive contact
+      then Error Pool_message.Error.ContactIsInactive
+      else Ok ()
+    in
+    let* () =
+      if Contact.is_paused contact
+      then Error Pool_message.(Error.Disabled Field.Paused)
+      else Ok ()
+    in
+    let* () =
+      if Pool_user.Disabled.value contact.Contact.disabled
+      then Error Pool_message.(Error.Disabled Field.Contact)
+      else Ok ()
+    in
     let* email = create_email invitation in
     Ok
       [ Invitation.Resent (invitation, mailing_id) |> Pool_event.invitation

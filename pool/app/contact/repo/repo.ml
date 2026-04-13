@@ -134,6 +134,9 @@ let find_multiple_request ids =
     {sql|
       WHERE user_uuid IN ( %s )
       AND user_users.admin = 0
+      AND user_users.status != 'inactive'
+      AND pool_contacts.paused = 0
+      AND pool_contacts.disabled = 0
     |sql}
     (CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1)) ids
      |> CCString.concat ",")
