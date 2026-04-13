@@ -3,7 +3,6 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:9.7
 # Install runtime dependencies
 RUN microdnf install -y \
     ca-certificates \
-    curl \
     gmp \
     mariadb-connector-c \
     openssl-libs \
