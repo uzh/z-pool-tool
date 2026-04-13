@@ -751,7 +751,7 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
     "Achtung: Ist eine andere SMTP Konfiguration als Standard markiert, wird diese \
      Einstellung angepasst. Nur eine Konfiguration kann als Standard markiert sein."
   | SmtpSettingsInternalRegex ->
-    {|E-Mails, die auf diesen regulären Ausdruck passen, gelten als intern und werden über diesen SMTP-Server gesendet. Beispiel: Um alle UZH-Adressen zu erfassen, verwende "@uzh\.ch|@.*\.uzh\.ch".|}
+    {|E-Mails, die auf diesen regulären Ausdruck passen, gelten als intern und werden über diesen SMTP-Server gesendet. Beispiel: Um alle UZH-Adressen zu erfassen, verwenden Sie "@uzh\.ch|@.*\.uzh\.ch".|}
   | SmtpSettingsIntro ->
     {|Die folgende Konfiguration wird vom E-Mail Service verwendet.
 
