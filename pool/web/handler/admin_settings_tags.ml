@@ -93,6 +93,7 @@ let write action req =
 let create = write `Create
 let update req = write (`Update (id req)) req
 let search = Helpers.Search.htmx_search_helper `ContactTag
+let search_experiment_tags = Helpers.Search.htmx_search_helper `ExperimentTag
 
 let changelog req =
   let id = id req in

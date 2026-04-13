@@ -9,22 +9,22 @@
 (authors "Department of Economics, University of Zurich")
 
 (source
- (uri git+<https://github.com/uzh/z-pool-tool>))
+ (github uzh/z-pool-tool))
 
 (license GPL-2.0-or-later)
 
-(maintainers "<engineering@uzh.econ.ch>")
+(maintainers "Econ IT <engineering@uzh.econ.ch>")
 
-(homepage "<https://github.com/uzh/z-pool-tool>")
+(homepage "https://github.com/uzh/z-pool-tool")
 
-(bug_reports "<https://github.com/uzh/z-pool-tool>")
+(bug_reports "https://github.com/uzh/z-pool-tool")
 
-(documentation "<https://uzh.github.io/z-pool-tool-documentation/>")
+(documentation "https://uzh.github.io/z-pool-tool-documentation/")
 
 (package
  (name pool)
  (synopsis "The Z-Pool tool")
- (description "\nTODO\n")
+ (description "The central platform for subject management.")
  (depends
   (alcotest-lwt :with-test)
   canary

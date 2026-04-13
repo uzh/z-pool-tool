@@ -226,13 +226,50 @@ end
 module Tag = struct
   open Tags
 
-  let placeholder = "Search by tag title"
+  let placeholder = "Search by tag"
   let to_label = snd %> Title.value
   let to_value = fst %> Id.value
 
   let create ?disabled ?hints ?is_filter ?tag_name ?(selected = []) language =
     let dynamic_search =
       { hx_url = "/admin/settings/tags/search"
+      ; hx_method = `Post
+      ; to_label
+      ; to_value
+      ; selected
+      }
+    in
+    multi_search
+      ?disabled
+      ?hints
+      ?is_filter
+      ~placeholder
+      ?tag_name
+      language
+      Field.Tag
+      (Dynamic dynamic_search)
+  ;;
+
+  let filter_multi_search ~selected ~disabled language =
+    create ~disabled ~is_filter:true ~selected ~tag_name:Pool_message.Field.Value language
+  ;;
+
+  let query_results language items =
+    CCList.map (default_query_results_item ~to_label ~to_value) items
+    |> with_empty_message language
+  ;;
+end
+
+module TaggedExperiment = struct
+  open Tags
+
+  let placeholder = "Search by experiment tag"
+  let to_label = snd %> Title.value
+  let to_value = fst %> Id.value
+
+  let create ?disabled ?hints ?is_filter ?tag_name ?(selected = []) language =
+    let dynamic_search =
+      { hx_url = "/admin/settings/tags/search-experiment"
       ; hx_method = `Post
       ; to_label
       ; to_value

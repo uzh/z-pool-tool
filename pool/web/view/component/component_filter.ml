@@ -49,6 +49,7 @@ let value_input
       language
       query_experiments
       query_tags
+      query_tagged_experiments
       input_type
       ?(disabled = false)
       ?value
@@ -231,10 +232,40 @@ let value_input
                  | Bool _ | Date _ | Language _ | Nr _ | Option _ -> None)
                lst)
        in
-       Component_search.Tag.filter_multi_search ~selected ~disabled language ())
+       Component_search.Tag.filter_multi_search ~selected ~disabled language ()
+     | Key.QueryTaggedExperiments ->
+       let selected =
+         value
+         |> CCOption.map_or ~default:[] (function
+           | NoValue | Single _ -> []
+           | Lst lst ->
+             CCList.filter_map
+               (function
+                 | Str id ->
+                   let tag_id = id |> Tags.Id.of_string in
+                   CCList.find_opt
+                     (fun (id, _) -> Tags.Id.equal id tag_id)
+                     query_tagged_experiments
+                 | Bool _ | Date _ | Language _ | Nr _ | Option _ -> None)
+               lst)
+       in
+       Component_search.TaggedExperiment.filter_multi_search
+         ~selected
+         ~disabled
+         language
+         ())
 ;;
 
-let predicate_value_form language query_experiments query_tags ?key ?value ?operator () =
+let predicate_value_form
+      language
+      query_experiments
+      query_tags
+      query_tagged_experiments
+      ?key
+      ?value
+      ?operator
+      ()
+  =
   let open CCOption.Infix in
   let input_type = key >|= Filter.Key.type_of_key in
   let operators = key >|= Filter.Operator.operators_of_key in
@@ -247,6 +278,7 @@ let predicate_value_form language query_experiments query_tags ?key ?value ?oper
       language
       query_experiments
       query_tags
+      query_tagged_experiments
       input_type
       ~disabled:value_disabled
       ?value
@@ -263,6 +295,7 @@ let single_predicate_form
       templates_disabled
       query_experiments
       query_tags
+      query_tagged_experiments
       ?key
       ?operator
       ?value
@@ -270,7 +303,15 @@ let single_predicate_form
   =
   let toggle_id = Utils.format_identifiers ~prefix:"pred-s" identifier in
   let toggled_content =
-    predicate_value_form language query_experiments query_tags ?key ?value ?operator ()
+    predicate_value_form
+      language
+      query_experiments
+      query_tags
+      query_tagged_experiments
+      ?key
+      ?value
+      ?operator
+      ()
   in
   let key_selector =
     let attributes =
@@ -365,6 +406,7 @@ let rec predicate_form
           templates_disabled
           query_experiments
           query_tags
+          query_tagged_experiments
           query
           ?(identifier = [ 0 ])
           ()
@@ -394,6 +436,7 @@ let rec predicate_form
         templates_disabled
         query_experiments
         query_tags
+        query_tagged_experiments
     in
     let open Human in
     match query with
@@ -419,6 +462,7 @@ let rec predicate_form
         templates_disabled
         query_experiments
         query_tags
+        query_tagged_experiments
         ?key
         ?operator
         ?value
@@ -477,6 +521,7 @@ let filter_form
       template_list
       query_experiments
       query_tags
+      query_tagged_experiments
   =
   let filter, action =
     let open Experiment in
@@ -558,6 +603,7 @@ let filter_form
       templates_disabled
       query_experiments
       query_tags
+      query_tagged_experiments
       filter_query
       ()
   in
