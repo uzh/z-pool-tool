@@ -2,11 +2,8 @@
 opam-version: "2.0"
 version: "0.12.5"
 synopsis: "The Z-Pool tool"
-description: """
-
-TODO
-"""
-maintainer: ["engineering@uzh.econ.ch"]
+description: "The central platform for subject management."
+maintainer: ["Econ IT <engineering@uzh.econ.ch>"]
 authors: ["Department of Economics, University of Zurich"]
 license: "GPL-2.0-or-later"
 homepage: "https://github.com/uzh/z-pool-tool"
@@ -56,7 +53,7 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://github.com/uzh/z-pool-tool"
+dev-repo: "git+https://github.com/uzh/z-pool-tool.git"
 pin-depends: [
     # pin Sihl repos to ensure edge is available
     ["sihl.4.0.0-master+6c3c404" "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"]
