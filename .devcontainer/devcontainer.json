@@ -31,7 +31,8 @@
         "files.insertFinalNewline": true,
         "files.associations": {
           "*.ml": "ocaml",
-          "*.mli": "ocaml"
+          "*.mli": "ocaml",
+          ".env*": "dotenv"
         },
         "ocaml.sandbox": {
           "kind": "opam",

@@ -1,4 +1,4 @@
-FROM ghcr.io/uzh/z-pool-tool/ocaml:5.3-2.3
+FROM ghcr.io/uzh/z-pool-tool/ocaml:9-5.3-2.3
 
 # Set up environment
 ENV SIHL_ENV=development
@@ -22,7 +22,8 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Install file watcher
 COPY ./watcher-install.sh /tmp/watcher-install.sh
-RUN /tmp/watcher-install.sh && rm /tmp/watcher-install.sh
+RUN /tmp/watcher-install.sh && rm /tmp/watcher-install.sh \
+  && echo 'opam ALL=(ALL) NOPASSWD: ALL' | tee /etc/sudoers.d/opam > /dev/null
 
 USER opam
 

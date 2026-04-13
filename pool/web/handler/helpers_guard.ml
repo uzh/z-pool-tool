@@ -198,9 +198,7 @@ let search_role_entities target req =
     let* search_role =
       let open CCOption in
       Http_utils.find_in_urlencoded_opt Field.Role urlencoded
-      |> CCFun.flip bind (fun role ->
-        try Role.Role.of_string role |> return with
-        | _ -> None)
+      |> CCFun.flip bind Role.Role.of_string
       |> to_result (Error.NotFound Field.Role)
       |> Lwt_result.lift
     in

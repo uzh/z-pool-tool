@@ -37,6 +37,7 @@ services:
 
   database-root:
     image: mariadb:10.6
+    restart: unless-stopped
     command: --max_allowed_packet=629145600
     ports: [ 3316:3306 ]
     environment:
@@ -51,6 +52,7 @@ services:
 
   database-tenant:
     image: mariadb:10.6
+    restart: unless-stopped
     command: --max_allowed_packet=629145600
     ports: [ 3317:3306 ]
     environment:
@@ -65,7 +67,7 @@ services:
 
   adminer:
     image: adminer:standalone
-    restart: always
+    restart: unless-stopped
     ports: [ 8080:8080 ]
     depends_on:
       - database-root
@@ -73,7 +75,7 @@ services:
 
   phpmyadmin:
     image: phpmyadmin
-    restart: always
+    restart: unless-stopped
     ports:
       - 8082:80
     environment:
@@ -84,6 +86,7 @@ services:
 
   mailtrap:
     image: mailhog/mailhog
+    restart: unless-stopped
     container_name: mailtrap-pool
     hostname: mailtrap-pool
     ports:

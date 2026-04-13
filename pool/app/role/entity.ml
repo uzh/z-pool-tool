@@ -13,20 +13,22 @@ module Actor = struct
     ]
   [@@deriving show, eq, ord, yojson, sexp_of]
 
-  let name = show %> Guardian.Utils.decompose_variant_string %> fst
+  let name = show %> Guardian.Utils.decompose_variant_string_exn %> fst
 
-  let of_string_res =
-    Guardian.Utils.decompose_variant_string
-    %> function
-    | "admin", [] -> Ok `Admin
-    | "apikey", [] -> Ok `ApiKey
-    | "contact", [] -> Ok `Contact
-    | "guest", [] -> Ok `Guest
-    | "system", [] -> Ok `System
-    | role -> Error (Guardian.Utils.invalid_role role)
+  let of_string_res input =
+    Guardian.Utils.decompose_variant_string input
+    |> function
+    | Some ("admin", []) -> Ok `Admin
+    | Some ("apikey", []) -> Ok `ApiKey
+    | Some ("contact", []) -> Ok `Contact
+    | Some ("guest", []) -> Ok `Guest
+    | Some ("system", []) -> Ok `System
+    | Some role -> Error (Guardian.Utils.invalid_role role)
+    | None -> Error (Format.asprintf "Invalid actor string: %s" input)
   ;;
 
-  let of_string = of_string_res %> CCResult.get_or_failwith
+  let of_string_exn = of_string_res %> CCResult.get_or_failwith
+  let of_string = of_string_res %> CCResult.to_option
   let all = [ `Admin; `Contact; `Guest ]
 end
 
@@ -40,20 +42,22 @@ module Role = struct
     ]
   [@@deriving show, eq, ord, yojson, sexp_of]
 
-  let name = show %> Guardian.Utils.decompose_variant_string %> fst
+  let name = show %> Guardian.Utils.decompose_variant_string_exn %> fst
 
-  let of_string_res =
-    Guardian.Utils.decompose_variant_string
-    %> function
-    | "assistant", [] -> Ok `Assistant
-    | "experimenter", [] -> Ok `Experimenter
-    | "locationmanager", [] -> Ok `LocationManager
-    | "operator", [] -> Ok `Operator
-    | "recruiter", [] -> Ok `Recruiter
-    | role -> Error (Guardian.Utils.invalid_role role)
+  let of_string_res input =
+    Guardian.Utils.decompose_variant_string input
+    |> function
+    | Some ("assistant", []) -> Ok `Assistant
+    | Some ("experimenter", []) -> Ok `Experimenter
+    | Some ("locationmanager", []) -> Ok `LocationManager
+    | Some ("operator", []) -> Ok `Operator
+    | Some ("recruiter", []) -> Ok `Recruiter
+    | Some role -> Error (Guardian.Utils.invalid_role role)
+    | None -> Error (Format.asprintf "Invalid role string: %s" input)
   ;;
 
-  let of_string = of_string_res %> CCResult.get_or_failwith
+  let of_string_exn = of_string_res %> CCResult.get_or_failwith
+  let of_string = of_string_res %> CCResult.to_option
 
   let of_name str =
     str
@@ -128,57 +132,58 @@ module Target = struct
     ]
   [@@deriving show, eq, enum, ord, yojson, sexp_of]
 
-  let name t = show t |> Guardian.Utils.decompose_variant_string |> fst
+  let name t = show t |> Guardian.Utils.decompose_variant_string_exn |> fst
   let to_human t = show t |> CCString.take_drop 1 |> snd
   let to_admin m = `Admin m
 
-  let of_string_res =
-    Guardian.Utils.decompose_variant_string
-    %> function
-    | "admin", [] -> Ok `Admin
-    | "announcement", [] -> Ok `Announcement
-    | "apikey", [] -> Ok `ApiKey
-    | "assignment", [] -> Ok `Assignment
-    | "contact", [] -> Ok `Contact
-    | "contactinfo", [] -> Ok `ContactInfo
-    | "contactdirectmessage", [] -> Ok `ContactDirectMessage
-    | "contactname", [] -> Ok `ContactName
-    | "customfield", [] -> Ok `CustomField
-    | "customfieldgroup", [] -> Ok `CustomFieldGroup
-    | "duplicatecontact", [] -> Ok `DuplicateContact
-    | "experiment", [] -> Ok `Experiment
-    | "filter", [] -> Ok `Filter
-    | "i18n", [] -> Ok `I18n
-    | "invitation", [] -> Ok `Invitation
-    | "invitationnotification", [] -> Ok `InvitationNotification
-    | "location", [] -> Ok `Location
-    | "locationfile", [] -> Ok `LocationFile
-    | "mailing", [] -> Ok `Mailing
-    | "message", [] -> Ok `Message
-    | "messagetemplate", [] -> Ok `MessageTemplate
-    | "organisationalunit", [] -> Ok `OrganisationalUnit
-    | "permission", [] -> Ok `Permission
-    | "queue", [] -> Ok `Queue
-    | "role", [] -> Ok `Role
-    | "roleadmin", [] -> Ok `RoleAdmin
-    | "roleassistant", [] -> Ok `RoleAssistant
-    | "roleexperimenter", [] -> Ok `RoleExperimenter
-    | "rolelocationmanager", [] -> Ok `RoleLocationManager
-    | "roleoperator", [] -> Ok `RoleOperator
-    | "rolerecruiter", [] -> Ok `RoleRecruiter
-    | "schedule", [] -> Ok `Schedule
-    | "session", [] -> Ok `Session
-    | "sessionclose", [] -> Ok `SessionClose
-    | "signupcode", [] -> Ok `SignupCode
-    | "smtp", [] -> Ok `Smtp
-    | "statistics", [] -> Ok `Statistics
-    | "system", [] -> Ok `System
-    | "systemsetting", [] -> Ok `SystemSetting
-    | "tag", [] -> Ok `Tag
-    | "tenant", [] -> Ok `Tenant
-    | "version", [] -> Ok `Version
-    | "waitinglist", [] -> Ok `WaitingList
-    | role -> Error (Guardian.Utils.invalid_role role)
+  let of_string_res input =
+    Guardian.Utils.decompose_variant_string input
+    |> function
+    | Some ("admin", []) -> Ok `Admin
+    | Some ("announcement", []) -> Ok `Announcement
+    | Some ("apikey", []) -> Ok `ApiKey
+    | Some ("assignment", []) -> Ok `Assignment
+    | Some ("contact", []) -> Ok `Contact
+    | Some ("contactinfo", []) -> Ok `ContactInfo
+    | Some ("contactdirectmessage", []) -> Ok `ContactDirectMessage
+    | Some ("contactname", []) -> Ok `ContactName
+    | Some ("customfield", []) -> Ok `CustomField
+    | Some ("customfieldgroup", []) -> Ok `CustomFieldGroup
+    | Some ("duplicatecontact", []) -> Ok `DuplicateContact
+    | Some ("experiment", []) -> Ok `Experiment
+    | Some ("filter", []) -> Ok `Filter
+    | Some ("i18n", []) -> Ok `I18n
+    | Some ("invitation", []) -> Ok `Invitation
+    | Some ("invitationnotification", []) -> Ok `InvitationNotification
+    | Some ("location", []) -> Ok `Location
+    | Some ("locationfile", []) -> Ok `LocationFile
+    | Some ("mailing", []) -> Ok `Mailing
+    | Some ("message", []) -> Ok `Message
+    | Some ("messagetemplate", []) -> Ok `MessageTemplate
+    | Some ("organisationalunit", []) -> Ok `OrganisationalUnit
+    | Some ("permission", []) -> Ok `Permission
+    | Some ("queue", []) -> Ok `Queue
+    | Some ("role", []) -> Ok `Role
+    | Some ("roleadmin", []) -> Ok `RoleAdmin
+    | Some ("roleassistant", []) -> Ok `RoleAssistant
+    | Some ("roleexperimenter", []) -> Ok `RoleExperimenter
+    | Some ("rolelocationmanager", []) -> Ok `RoleLocationManager
+    | Some ("roleoperator", []) -> Ok `RoleOperator
+    | Some ("rolerecruiter", []) -> Ok `RoleRecruiter
+    | Some ("schedule", []) -> Ok `Schedule
+    | Some ("session", []) -> Ok `Session
+    | Some ("sessionclose", []) -> Ok `SessionClose
+    | Some ("signupcode", []) -> Ok `SignupCode
+    | Some ("smtp", []) -> Ok `Smtp
+    | Some ("statistics", []) -> Ok `Statistics
+    | Some ("system", []) -> Ok `System
+    | Some ("systemsetting", []) -> Ok `SystemSetting
+    | Some ("tag", []) -> Ok `Tag
+    | Some ("tenant", []) -> Ok `Tenant
+    | Some ("version", []) -> Ok `Version
+    | Some ("waitinglist", []) -> Ok `WaitingList
+    | Some role -> Error (Guardian.Utils.invalid_role role)
+    | None -> Error (Format.asprintf "Invalid target string: %s" input)
   ;;
 
   let of_name str =
@@ -189,7 +194,8 @@ module Target = struct
     |> CCResult.map_err (CCFun.const Pool_message.(Error.Invalid Field.Target))
   ;;
 
-  let of_string = of_string_res %> CCResult.get_or_failwith
+  let of_string_exn = of_string_res %> CCResult.get_or_failwith
+  let of_string = of_string_res %> CCResult.to_option
 
   let all =
     let open CCList in

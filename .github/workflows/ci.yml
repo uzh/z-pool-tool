@@ -12,72 +12,72 @@ env:
 
 jobs:
   build-image:
-    name: Build CI container image
+    name: Build CI container image (RHEL ${{ matrix.rhel }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rhel: "8"
+            dockerfile: docker/Dockerfile.build.rhel8
+            tag: "8-5.3-2.3"
+          - rhel: "9"
+            dockerfile: docker/Dockerfile.build
+            tag: "9-5.3-2.3"
     permissions:
       contents: read
       packages: write
-    outputs:
-      image: ${{ steps.image.outputs.image }}
-      should-build: ${{ steps.changes.outputs.docker }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Check for Docker changes
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         id: changes
         with:
           filters: |
             docker:
               - 'docker/Dockerfile.build'
+              - 'docker/Dockerfile.build.rhel8'
               - 'scripts/opam-install.sh'
+              - '.github/workflows/ci.yml'
 
       - name: Set up Docker Buildx
         if: steps.changes.outputs.docker == 'true'
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to Container Registry
         if: steps.changes.outputs.docker == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.CR_PAT }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=latest
-            type=raw,value=5.3-2.3
-
       - name: Build and push Docker image
         if: steps.changes.outputs.docker == 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
-          file: ./docker/Dockerfile.build
-          platforms: linux/amd64,linux/arm64
+          file: ./${{ matrix.dockerfile }}
+          platforms: linux/amd64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          annotations: ${{ steps.meta.outputs.annotations }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Output image
-        id: image
-        run: echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_OUTPUT
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}
+          cache-from: type=gha,scope=rhel${{ matrix.rhel }}
+          cache-to: type=gha,mode=max,scope=rhel${{ matrix.rhel }}
 
   build:
-    name: Build and test
+    name: Build and test (RHEL ${{ matrix.rhel }})
     runs-on: ubuntu-latest
     needs: build-image
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rhel: "8"
+            tag: "8-5.3-2.3"
+          - rhel: "9"
+            tag: "9-5.3-2.3"
     permissions:
       packages: read
     env:
@@ -102,17 +102,17 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Log in to Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.CR_PAT }}
 
       - name: Pull Docker image
-        run: docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:5.3-2.3
+        run: docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}
 
       - name: add commit SHA for non-production builds
         if: github.ref_type != 'tag'
@@ -122,35 +122,43 @@ jobs:
           sed -i "s/^let to_string = \".*\"/let to_string = \"${CURRENT_VERSION}-${GIT_SHA}\"/" ./pool/version/version.ml
 
       - name: Build and test with Docker
-        uses: addnab/docker-run-action@v3
         env:
           DATABASE_URL: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@database-root:3306/${{ env.MYSQL_DATABASE }}
           DATABASE_URL_TENANT_ONE: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@database-tenant:3306/${{ env.MYSQL_DATABASE }}
           SIHL_ENV: test
           SMTP_SENDER: test@econ.uzh.ch
           TEST_EMAIL: test@econ.uzh.ch
+          SERVICE_NETWORK: ${{ job.services['database-root'].network }}
+        run: |
+          docker run --rm \
+            --network "$SERVICE_NETWORK" \
+            -v "${{ github.workspace }}:/app" \
+            -w /app \
+            -e DATABASE_URL \
+            -e DATABASE_URL_TENANT_ONE \
+            -e TEST_EMAIL \
+            -e SMTP_SENDER \
+            -e SIHL_ENV \
+            -e EMAIL_RATE_LIMIT \
+            -e MATCHER_MAX_CAPACITY \
+            -e SKIP_SYS_DEPS=1 \
+            --user root \
+            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}" \
+            sh -lc '
+              set -euo pipefail
+              chown -R opam /app
+              su -s /bin/bash opam -c "cd /app && /app/scripts/build.sh"
+            '
+
+      - uses: actions/upload-artifact@v7
         with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:5.3-2.3
-          options: -v ${{ github.workspace }}:/app -w /app -e DATABASE_URL -e DATABASE_URL_TENANT_ONE -e TEST_EMAIL -e SMTP_SENDER -e SIHL_ENV -e EMAIL_RATE_LIMIT -e MATCHER_MAX_CAPACITY --user opam
-          run: |
-            # Reclaim required directory permissions
-            sudo chown -R opam .
-
-            # Build and test executable
-            /app/scripts/build.sh || exit 1
-
-            # Restore directory permissions to avoid conflicts
-            sudo chown -R 1001:123 .
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: run.exe
+          name: run.exe-rhel${{ matrix.rhel }}
           path: _build/default/pool/run/run.exe
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: tests
+          name: tests-rhel${{ matrix.rhel }}
           path: _build/default/pool/test/
 
       - name: Notify about failure
@@ -168,7 +176,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: install yarn packages
         run: yarn install
@@ -179,7 +187,7 @@ jobs:
       - name: move all assets to one folder
         run: '[ "$(ls pool/public)" ] && cp -r pool/public/* public || exit 0'
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: assets
           path: public
@@ -191,34 +199,46 @@ jobs:
           webhook: ${{ secrets.ECON_TEAMS_WEBHOOK }}
 
   build-app-image:
-    name: Build and push application Docker image
+    name: Build and push application Docker image (RHEL ${{ matrix.rhel }})
     runs-on: ubuntu-latest
     needs: [build, assets]
     if: github.ref_name == 'main' || github.ref_type == 'tag'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rhel: "8"
+            dockerfile: docker/Dockerfile.app.rhel8
+            artifact: run.exe-rhel8
+            image_suffix: "-rhel8"
+          - rhel: "9"
+            dockerfile: docker/Dockerfile.app
+            artifact: run.exe-rhel9
+            image_suffix: ""
     permissions:
       contents: read
       packages: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Download executable artifact
-        uses: actions/download-artifact@v4
+      - name: Download executable artifact (RHEL ${{ matrix.rhel }})
+        uses: actions/download-artifact@v8
         with:
-          name: run.exe
+          name: ${{ matrix.artifact }}
           path: ./artifacts/run.exe
 
       - name: Download assets artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: assets
           path: ./artifacts/public
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -226,28 +246,30 @@ jobs:
 
       - name: Extract metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/z-pool-tool
+          flavor: |
+            suffix=${{ matrix.image_suffix }},onlatest=true
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
-          file: ./docker/Dockerfile.app
+          file: ./${{ matrix.dockerfile }}
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           annotations: ${{ steps.meta.outputs.annotations }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=app-rhel${{ matrix.rhel }}
+          cache-to: type=gha,mode=max,scope=app-rhel${{ matrix.rhel }}
 
       - name: Notify about failure
         if: failure()
@@ -262,7 +284,7 @@ jobs:
     if: github.ref_name == 'main'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Trigger deploy
         uses: ./.github/actions/trigger-deploy
@@ -279,16 +301,22 @@ jobs:
       contents: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Download executable artifact
-        uses: actions/download-artifact@v4
+      - name: Download executable artifact (RHEL 8)
+        uses: actions/download-artifact@v8
         with:
-          name: run.exe
-          path: run.exe
+          name: run.exe-rhel8
+          path: run.exe-rhel8
+
+      - name: Download executable artifact (RHEL 9)
+        uses: actions/download-artifact@v8
+        with:
+          name: run.exe-rhel9
+          path: run.exe-rhel9
 
       - name: Download assets artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: assets
           path: assets
@@ -296,19 +324,21 @@ jobs:
       - name: Extract version changelog
         run: sed -nr "/^## .?v?${GITHUB_REF_NAME}/,/^## /p" CHANGELOG.md | sed '1d;2d;$d' > changes.md
 
-      - name: Compress assets
+      - name: Compress assets and executables
         run: |
           tar -zcf assets.tar.gz assets
-          tar -zcf executable.tar.gz run.exe/run.exe
+          tar -zcf executable-rhel8.tar.gz run.exe-rhel8/run.exe
+          tar -zcf executable-rhel9.tar.gz run.exe-rhel9/run.exe
 
       - name: Create release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           body_path: changes.md
           files: |
             assets.tar.gz
-            executable.tar.gz
+            executable-rhel8.tar.gz
+            executable-rhel9.tar.gz
 
       - name: Notify about failure
         if: failure()
@@ -322,7 +352,7 @@ jobs:
     needs: release
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Trigger deploy
         uses: ./.github/actions/trigger-deploy
