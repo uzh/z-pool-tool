@@ -233,6 +233,7 @@ module Key = struct
   ;;
 
   let validate_value (key_list : human list) (key : t) value =
+    let open CCResult.Infix in
     let error = Pool_message.(Error.QueryNotCompatible (Field.Value, Field.Key)) in
     let validate_single_value input_type value =
       match[@warning "-4"] value, input_type with
@@ -241,7 +242,7 @@ module Key = struct
       | Language lang, Languages languages ->
         CCList.find_opt (Pool_common.Language.equal lang) languages
         |> CCOption.to_result error
-        |> CCResult.map (CCFun.const ())
+        >|= CCFun.const ()
       | Option selected, Select options | Option selected, MultiSelect options ->
         CCList.find_opt
           (fun option -> Custom_field.SelectOption.(Id.equal option.id selected))
@@ -259,7 +260,7 @@ module Key = struct
         lst
         |> CCList.map (validate_single_value input_type)
         |> CCList.all_ok
-        |> CCResult.map (CCFun.const ())
+        >|= CCFun.const ()
     in
     match key with
     | Hardcoded v -> v |> type_of_hardcoded |> validate value
