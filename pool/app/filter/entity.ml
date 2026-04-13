@@ -121,7 +121,8 @@ module Key = struct
     | Assignment [@printer print "assignment"] [@name "assignment"]
     | Invitation [@printer print "invitation"] [@name "invitation"]
     | Tag [@printer print "tag"] [@name "tag"]
-    | TagOnParticipatedExperiment [@printer print "tag_on_participated_experiment"] [@name "tag_on_participated_experiment"]
+    | TagOnParticipatedExperiment [@printer print "tag_on_participated_experiment"]
+    [@name "tag_on_participated_experiment"]
   [@@deriving show { with_path = false }, eq, yojson, variants, enum]
 
   type human =
