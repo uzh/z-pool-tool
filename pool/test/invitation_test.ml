@@ -108,7 +108,7 @@ let resend_paused_contact () =
   let invitation = Invitation.create contact in
   let create_message _ = Ok (Model.create_email_job ()) in
   let events = handle create_message invitation in
-  let expected = Error Pool_message.Error.(Disabled Field.Paused) in
+  let expected = Error Pool_message.Error.ContactIsPaused in
   Test_utils.check_result expected events
 ;;
 
