@@ -97,7 +97,7 @@ end = struct
     in
     let* () =
       if Contact.is_paused contact
-      then Error Pool_message.(Error.Disabled Field.Paused)
+      then Error Pool_message.Error.ContactIsPaused
       else Ok ()
     in
     let* () =
