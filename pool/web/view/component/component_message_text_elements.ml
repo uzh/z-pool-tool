@@ -31,6 +31,7 @@ let message_template_hints =
   | SessionReminder
   | SessionReschedule
   | UserImport
+  | UserImportInactive
   | WaitingListConfirmation -> []
 ;;
 
@@ -265,7 +266,7 @@ let message_template_help
       verification_url
       (Contact.firstname contact)
       (Contact.lastname contact)
-  | UserImport ->
+  | UserImport | UserImportInactive ->
     let confirmation_url =
       [ Pool_message.Field.Token, token ]
       |> create_public_url_with_params tenant.Pool_tenant.url "/import-confirmation"

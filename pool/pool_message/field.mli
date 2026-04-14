@@ -1,6 +1,7 @@
 type t =
   | Action
   | Active
+  | ActiveAfterImport
   | ActiveContactsCount
   | Actor
   | Address
@@ -353,6 +354,7 @@ val url_key : t -> string
 val array_key : t -> string
 val human_url : t -> string
 val action : t
+val activeafterimport : t
 val activecontactscount : t
 val actor : t
 val admin : t

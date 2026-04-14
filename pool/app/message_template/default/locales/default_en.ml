@@ -585,6 +585,45 @@ let user_import =
   }
 ;;
 
+let user_import_inactive =
+  let label = UserImportInactive in
+  let email_text =
+    [ p
+        [ txt "Your account was recently migrated."
+        ; br ()
+        ; txt "Follow this "
+        ; a ~a:[ a_href "{confirmationUrl}" ] [ txt "link" ]
+        ; txt " to set up your password."
+        ]
+    ; p
+        [ txt
+            "If the above link does not work, please copy the following link into your \
+             browser manually: {confirmationUrl}"
+        ]
+    ]
+    |> add_salutation
+    |> html_to_string
+    |> EmailText.of_string
+  in
+  let email_subject = "Set up your account" |> EmailSubject.of_string in
+  let sms_text =
+    {|Your account was recently migrated. Follow this link to set up your password:
+
+{confirmationUrl}|}
+    |> add_salutation_to_text
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; plain_text = sms_text
+  ; sms_text
+  }
+;;
+
 let waiting_list_confirmation =
   let label = WaitingListConfirmation in
   let email_text =

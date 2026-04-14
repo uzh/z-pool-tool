@@ -29,7 +29,7 @@ let run database_label =
     ]
   in
   let make_events (jobs, events) (user, import) event_fnc =
-    let job = import_message user import.Entity.token in
+    let job = import_message user import.Entity.active_after_import import.Entity.token in
     let event = event_fnc import in
     job :: jobs, event :: events
   in

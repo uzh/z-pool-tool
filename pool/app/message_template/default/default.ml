@@ -75,6 +75,11 @@ let user_import = function
   | En -> Default_en.user_import
 ;;
 
+let user_import_inactive = function
+  | De -> Default_de.user_import_inactive
+  | En -> Default_en.user_import_inactive
+;;
+
 let waiting_list_confirmation = function
   | De -> Default_de.waiting_list_confirmation
   | En -> Default_en.waiting_list_confirmation
@@ -102,6 +107,7 @@ let default_values_tenant =
   ; session_reschedule
   ; signup_verification
   ; user_import
+  ; user_import_inactive
   ; waiting_list_confirmation
   ]
   @@@ [ En; De ]

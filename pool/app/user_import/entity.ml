@@ -38,6 +38,13 @@ module LastRemindedAt = struct
   let schema = schema Field.LastRemindedAt create
 end
 
+module ActiveAfterImport = struct
+  include Pool_model.Base.Boolean
+
+  let init = true
+  let schema = schema Pool_message.Field.ActiveAfterImport
+end
+
 type t =
   { user_uuid : Pool_user.Id.t
   ; token : Token.t
@@ -45,6 +52,7 @@ type t =
   ; notified_at : NotifiedAt.t option
   ; reminder_count : ReminderCount.t
   ; last_reminded_at : LastRemindedAt.t option
+  ; active_after_import : ActiveAfterImport.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }

@@ -24,6 +24,12 @@ module LastRemindedAt : sig
   val create : Ptime.t -> (t, Pool_message.Error.t) result
 end
 
+module ActiveAfterImport : sig
+  include Pool_model.Base.BooleanSig
+
+  val init : t
+end
+
 type t =
   { user_uuid : Pool_user.Id.t
   ; token : Token.t
@@ -31,6 +37,7 @@ type t =
   ; notified_at : NotifiedAt.t option
   ; reminder_count : ReminderCount.t
   ; last_reminded_at : LastRemindedAt.t option
+  ; active_after_import : ActiveAfterImport.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }

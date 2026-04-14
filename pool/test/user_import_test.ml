@@ -23,6 +23,7 @@ let create_user_import ?(token = Data.token) user =
   ; notified_at = None
   ; reminder_count = ReminderCount.init
   ; last_reminded_at = None
+  ; active_after_import = ActiveAfterImport.init
   ; created_at = Pool_common.CreatedAt.create_now ()
   ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
@@ -143,6 +144,78 @@ let confirm_as_contact_integration _ () =
   in
   Lwt.return_unit
 ;;
+
+module NotificationTemplate = struct
+  let database_label = Test_utils.Data.database_label
+
+  let import_message_for active_after_import =
+    let open Utils.Lwt_result.Infix in
+    let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:true () in
+    let user = `Contact contact in
+    let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
+    let%lwt import_message = Message_template.UserImport.prepare database_label tenant in
+    Lwt.return (import_message user active_after_import Data.token)
+  ;;
+
+  let active _ () =
+    let expected = Some Pool_common.MessageTemplateLabel.UserImport in
+    let%lwt dispatch = import_message_for true in
+    Alcotest.(
+      check
+        (option Test_utils.message_template_label)
+        "active_after_import=true uses UserImport template"
+        expected
+        (Email.message_template dispatch));
+    Lwt.return_unit
+  ;;
+
+  let inactive _ () =
+    let expected = Some Pool_common.MessageTemplateLabel.UserImportInactive in
+    let%lwt dispatch = import_message_for false in
+    Alcotest.(
+      check
+        (option Test_utils.message_template_label)
+        "active_after_import=false uses UserImportInactive template"
+        expected
+        (Email.message_template dispatch));
+    Lwt.return_unit
+  ;;
+
+  let inactive_fallback _ () =
+    let open Utils.Lwt_result.Infix in
+    let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:true () in
+    let user = `Contact contact in
+    let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
+    (* Remove UserImportInactive templates from DB to test the fallback *)
+    let%lwt inactive_templates =
+      Message_template.find_default_by_label
+        database_label
+        Pool_common.MessageTemplateLabel.UserImportInactive
+    in
+    let%lwt () =
+      inactive_templates
+      |> Lwt_list.iter_s (fun t ->
+        Message_template.Deleted t |> Message_template.handle_event database_label)
+    in
+    let%lwt import_message = Message_template.UserImport.prepare database_label tenant in
+    let dispatch = import_message user false Data.token in
+    let actual_label = Email.message_template dispatch in
+    (* Restore the templates *)
+    let%lwt () =
+      inactive_templates
+      |> Lwt_list.iter_s (fun t ->
+        Message_template.Created t |> Message_template.handle_event database_label)
+    in
+    Alcotest.(
+      check
+        (option Test_utils.message_template_label)
+        "active_after_import=false falls back to UserImport when UserImportInactive is \
+         not configured"
+        (Some Pool_common.MessageTemplateLabel.UserImport)
+        actual_label);
+    Lwt.return_unit
+  ;;
+end
 
 module Repo = struct
   open Utils.Lwt_result.Infix

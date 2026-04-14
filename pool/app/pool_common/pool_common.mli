@@ -205,6 +205,7 @@ module MessageTemplateLabel : sig
     | SessionReminder
     | SessionReschedule
     | UserImport
+    | UserImportInactive
     | WaitingListConfirmation
 
   val equal : t -> t -> bool

@@ -590,6 +590,10 @@ Markiert sind die Felder, welche als gleich angesehen werden. Ist ein Admin Wert
   | MessageTemplateUserImport ->
     "Diese Nachricht informiert importierte Kontakte über die Migration zum Z-Pool-Tool \
      und enthält das Token, das sie zum Zurücksetzen ihres Passworts benötigen."
+  | MessageTemplateUserImportInactive ->
+    "Diese Nachricht wird an importierte Kontakte gesendet, die noch nicht aktiv sind \
+     (z.B. müssen sie vor der ersten Einladung die AGB akzeptieren). Falls kein Template \
+     konfiguriert ist, wird das user_import Template verwendet."
   | MessageTemplateWaitingListConfirmation ->
     "Diese Nachricht bestätigt die erfolgreiche Eintragung in eine Experiment-Warteliste."
   | MissingMessageTemplates ->
