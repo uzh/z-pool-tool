@@ -222,6 +222,7 @@ module Repo : sig
     -> string
 
   val update_request : (Write.t, unit, [ `Zero ]) Caqti_request.t
+  val invitable_sql_condition : string
 end
 
 module VersionHistory : Changelog.TSig with type record = t

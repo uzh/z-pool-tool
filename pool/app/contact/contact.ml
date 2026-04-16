@@ -27,4 +27,5 @@ module Repo = struct
   let make_sql_select_columns = Repo.make_sql_select_columns
   let find_request_sql = Repo.find_request_sql
   let update_request = Repo.update_request
+  let invitable_sql_condition = Repo.invitable_sql_condition
 end

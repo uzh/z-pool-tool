@@ -129,17 +129,38 @@ let find_confirmed pool email =
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
 ;;
 
+(* SQL conditions shared by all queries that need invitable/reachable contacts:
+   confirmed account, not paused, not disabled, email verified, and either
+   import confirmed or active-after-import pending import. *)
+let invitable_sql_condition =
+  {sql|
+    user_users.admin = 0
+    AND user_users.confirmed = 1
+    AND pool_contacts.paused = 0
+    AND pool_contacts.disabled = 0
+    AND (
+      pool_contacts.import_pending = 0
+      OR EXISTS (
+        SELECT 1 FROM pool_user_imports
+        WHERE pool_user_imports.user_uuid = pool_contacts.user_uuid
+          AND pool_user_imports.confirmed_at IS NULL
+          AND pool_user_imports.active_after_import = 1
+      )
+    )
+    AND pool_contacts.email_verified IS NOT NULL
+  |sql}
+;;
+
 let find_multiple_request ids =
   Format.asprintf
     {sql|
       WHERE user_uuid IN ( %s )
-      AND user_users.admin = 0
       AND user_users.status != 'inactive'
-      AND pool_contacts.paused = 0
-      AND pool_contacts.disabled = 0
+      AND %s
     |sql}
     (CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1)) ids
      |> CCString.concat ",")
+    invitable_sql_condition
   |> find_request_sql
 ;;
 
