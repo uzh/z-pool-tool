@@ -405,6 +405,7 @@ let suite =
     ; ( "user import"
       , User_import_test.
           [ test_case "confirm as contact" `Slow confirm_as_contact_integration
+          ; test_case "disable as contact" `Slow disable_as_contact_integration
           ; test_case "find contacts to notify" `Slow Repo.find_contacts_to_notify
           ; test_case "find contacts to remind" `Slow Repo.find_contacts_to_remind
           ; test_case

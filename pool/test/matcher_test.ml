@@ -290,22 +290,49 @@ let create_invitations_for_different_user_types _ () =
   let%lwt experiment, contacts =
     setup_with_contacts
       ~title_suffix:"create_invitations_different_user_types"
-      ~n_contacts:4
+      ~n_contacts:5
       current_user
   in
-  let open_contact, pending_import_contact, paused_contact, disabled_inactive_contact =
+  let ( open_contact
+      , active_import_contact
+      , inactive_import_contact
+      , paused_contact
+      , disabled_inactive_contact )
+    =
     match contacts with
-    | [ open_contact; pending_import_contact; paused_contact; disabled_inactive_contact ]
-      -> open_contact, pending_import_contact, paused_contact, disabled_inactive_contact
-    | _ -> failwith "Expected exactly 4 contacts"
+    | [ c1; c2; c3; c4; c5 ] -> c1, c2, c3, c4, c5
+    | _ -> failwith "Expected exactly 5 contacts"
   in
-  let%lwt pending_import_contact =
+  (* active_import_contact: import_pending=true, active_after_import=true → invited *)
+  let%lwt (_ : Contact.t) =
     update_contact
       current_user
       (fun contact ->
          Contact.{ contact with import_pending = Pool_user.ImportPending.create true })
-      pending_import_contact
+      active_import_contact
   in
+  let active_import =
+    User_import_test.create_user_import
+      ~token:(Pool_common.Id.create () |> Pool_common.Id.value)
+      ~active_after_import:(User_import.ActiveAfterImport.create true)
+      (Pool_context.Contact active_import_contact)
+  in
+  let%lwt () = User_import.insert pool active_import in
+  (* inactive_import_contact: import_pending=true, active_after_import=false → not invited *)
+  let%lwt (_ : Contact.t) =
+    update_contact
+      current_user
+      (fun contact ->
+         Contact.{ contact with import_pending = Pool_user.ImportPending.create true })
+      inactive_import_contact
+  in
+  let inactive_import =
+    User_import_test.create_user_import
+      ~token:(Pool_common.Id.create () |> Pool_common.Id.value)
+      ~active_after_import:(User_import.ActiveAfterImport.create false)
+      (Pool_context.Contact inactive_import_contact)
+  in
+  let%lwt () = User_import.insert pool inactive_import in
   let%lwt (_ : Contact.t) =
     update_contact
       current_user
@@ -326,7 +353,7 @@ let create_invitations_for_different_user_types _ () =
   let%lwt mailing = experiment |> Experiment.id |> MailingRepo.create in
   let%lwt events = Matcher.events_of_mailings pool [ mailing, limit ] in
   let expected_ids =
-    [ open_contact; pending_import_contact ]
+    [ open_contact; active_import_contact ]
     |> CCList.map Contact.(id %> Id.value)
     |> CCList.sort CCString.compare
   in
@@ -335,9 +362,29 @@ let create_invitations_for_different_user_types _ () =
     Alcotest.(
       check
         (list string)
-        "only open and pending import contacts receive invitations"
+        "open and active-after-import contacts are invited; inactive-after-import, \
+         paused, and disabled contacts are not"
         expected_ids
         invitation_contact_ids)
+  in
+  (* Clean up: reset import_pending and confirm imports so they do not interfere with
+     subsequent tests *)
+  let%lwt () =
+    [ active_import_contact; inactive_import_contact ]
+    |> Lwt_list.iter_s (fun contact ->
+      let%lwt (_ : Contact.t) =
+        update_contact
+          current_user
+          (fun c ->
+             Contact.{ c with import_pending = Pool_user.ImportPending.create false })
+          contact
+      in
+      Lwt.return_unit)
+  in
+  let%lwt () =
+    [ active_import; inactive_import ]
+    |> Lwt_list.iter_s (fun import ->
+      User_import.Confirmed import |> User_import.handle_event pool)
   in
   let%lwt () = Mailing.Stopped mailing |> Mailing.handle_event pool in
   Unix.sleep 1;

@@ -8,7 +8,11 @@ end
 
 let get_exn = Test_utils.get_or_failwith
 
-let create_user_import ?(token = Data.token) user =
+let create_user_import
+      ?(token = Data.token)
+      ?(active_after_import = User_import.ActiveAfterImport.init)
+      user
+  =
   let open User_import in
   let user_uuid =
     let open Pool_context in
@@ -23,7 +27,7 @@ let create_user_import ?(token = Data.token) user =
   ; notified_at = None
   ; reminder_count = ReminderCount.init
   ; last_reminded_at = None
-  ; active_after_import = ActiveAfterImport.init
+  ; active_after_import
   ; created_at = Pool_common.CreatedAt.create_now ()
   ; updated_at = Pool_common.UpdatedAt.create_now ()
   }
@@ -107,6 +111,54 @@ let confirm_as_admin () =
   Test_utils.check_result expected result
 ;;
 
+let disable_as_contact () =
+  let contact = Test_utils.Model.create_contact ~with_terms_accepted:false () in
+  let user = contact |> Pool_context.contact in
+  let user_import = create_user_import user in
+  let result =
+    Cqrs_command.User_import_command.DisableImport.handle (user, user_import)
+  in
+  let expected =
+    Ok
+      [ Contact.ImportDisabled contact |> Pool_event.contact
+      ; User_import.Confirmed user_import |> Pool_event.user_import
+      ]
+  in
+  Test_utils.check_result expected result
+;;
+
+let disable_as_admin () =
+  let user = Test_utils.Model.create_admin () in
+  let admin =
+    let open Pool_context in
+    match user with
+    | Admin admin -> admin
+    | Guest | Contact _ -> failwith "Invalid user"
+  in
+  let user_import = create_user_import user in
+  let result =
+    Cqrs_command.User_import_command.DisableImport.handle (user, user_import)
+  in
+  let expected =
+    Ok
+      [ Admin.ImportDisabled admin |> Pool_event.admin
+      ; User_import.Confirmed user_import |> Pool_event.user_import
+      ]
+  in
+  Test_utils.check_result expected result
+;;
+
+let disable_as_guest () =
+  let user_import =
+    create_user_import (Test_utils.Model.create_contact () |> Pool_context.contact)
+  in
+  let result =
+    Cqrs_command.User_import_command.DisableImport.handle (Pool_context.Guest, user_import)
+  in
+  let expected = Error Pool_message.(Error.Invalid Field.User) in
+  Test_utils.check_result expected result
+;;
+
 let confirm_as_contact_integration _ () =
   let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:false () in
   let user = contact |> Pool_context.contact in
@@ -141,6 +193,37 @@ let confirm_as_contact_integration _ () =
   let () =
     Alcotest.(
       check bool "succeeds" true (contact.Contact.terms_accepted_at |> CCOption.is_some))
+  in
+  Lwt.return_unit
+;;
+
+let disable_as_contact_integration _ () =
+  let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:false () in
+  let user = contact |> Pool_context.contact in
+  let user_import = create_user_import user in
+  let%lwt () =
+    Cqrs_command.User_import_command.DisableImport.handle (user, user_import)
+    |> get_exn
+    |> Pool_event.handle_events Test_utils.Data.database_label user
+  in
+  let%lwt contact =
+    Contact.find Test_utils.Data.database_label (Contact.id contact) |> Lwt.map get_exn
+  in
+  let () =
+    Alcotest.(
+      check
+        bool
+        "import_pending is cleared after disable"
+        false
+        (Pool_user.ImportPending.value contact.Contact.import_pending))
+  in
+  let () =
+    Alcotest.(
+      check
+        bool
+        "terms_accepted_at is NOT set after disable"
+        false
+        (contact.Contact.terms_accepted_at |> CCOption.is_some))
   in
   Lwt.return_unit
 ;;
@@ -197,23 +280,27 @@ module NotificationTemplate = struct
       |> Lwt_list.iter_s (fun t ->
         Message_template.Deleted t |> Message_template.handle_event database_label)
     in
-    let%lwt import_message = Message_template.UserImport.prepare database_label tenant in
-    let dispatch = import_message user false Data.token in
-    let actual_label = Email.message_template dispatch in
-    (* Restore the templates *)
-    let%lwt () =
+    let restore () =
       inactive_templates
       |> Lwt_list.iter_s (fun t ->
         Message_template.Created t |> Message_template.handle_event database_label)
     in
-    Alcotest.(
-      check
-        (option Test_utils.message_template_label)
-        "active_after_import=false falls back to UserImport when UserImportInactive is \
-         not configured"
-        (Some Pool_common.MessageTemplateLabel.UserImport)
-        actual_label);
-    Lwt.return_unit
+    Lwt.finalize
+      (fun () ->
+         let%lwt import_message =
+           Message_template.UserImport.prepare database_label tenant
+         in
+         let dispatch = import_message user false Data.token in
+         let actual_label = Email.message_template dispatch in
+         Alcotest.(
+           check
+             (option Test_utils.message_template_label)
+             "active_after_import=false falls back to UserImport when UserImportInactive \
+              is not configured"
+             (Some Pool_common.MessageTemplateLabel.UserImport)
+             actual_label);
+         Lwt.return_unit)
+      restore
   ;;
 end
 
