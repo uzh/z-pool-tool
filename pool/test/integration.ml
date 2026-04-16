@@ -405,8 +405,21 @@ let suite =
     ; ( "user import"
       , User_import_test.
           [ test_case "confirm as contact" `Slow confirm_as_contact_integration
+          ; test_case "disable as contact" `Slow disable_as_contact_integration
           ; test_case "find contacts to notify" `Slow Repo.find_contacts_to_notify
           ; test_case "find contacts to remind" `Slow Repo.find_contacts_to_remind
+          ; test_case
+              "notification: active_after_import=true uses UserImport"
+              `Slow
+              NotificationTemplate.active
+          ; test_case
+              "notification: active_after_import=false uses UserImportInactive"
+              `Slow
+              NotificationTemplate.inactive
+          ; test_case
+              "notification: active_after_import=false falls back to UserImport"
+              `Slow
+              NotificationTemplate.inactive_fallback
           ] )
     ; ("user", User_test.[ test_case "failed login attempts" `Slow failed_login_attempts ])
     ; ( "time window"

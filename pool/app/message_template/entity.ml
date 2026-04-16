@@ -109,5 +109,6 @@ let template_hint label =
   | SessionReminder -> MessageTemplateSessionReminder
   | SessionReschedule -> MessageTemplateSessionReschedule
   | UserImport -> MessageTemplateUserImport
+  | UserImportInactive -> MessageTemplateUserImportInactive
   | WaitingListConfirmation -> MessageTemplateWaitingListConfirmation
 ;;

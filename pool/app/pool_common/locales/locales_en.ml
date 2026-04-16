@@ -9,6 +9,7 @@ let rec field_to_string =
   function
   | Action -> "action"
   | Active -> "active"
+  | ActiveAfterImport -> "active after import"
   | ActiveContactsCount -> "active contacts count"
   | Actor -> "actor"
   | Address -> "address"
@@ -503,6 +504,7 @@ let rec error_to_string =
   | ContactExperimentNotFound ->
     "Currently, there are no free spots to participate in this experiment."
   | ContactIsInactive -> "This contact is inactive."
+  | ContactIsPaused -> "This contact is paused."
   | ContactSignupInvalidEmail -> "Please provide a valid and unused email address."
   | ContactUnconfirmed -> "Participant isn't confirmed!"
   | CustomFieldNoOptions -> "At least one option must exist."

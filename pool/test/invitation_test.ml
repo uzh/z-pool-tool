@@ -71,8 +71,8 @@ let resend () =
   let email =
     Test_utils.Model.create_email_job ?smtp_auth_id:experiment.Experiment.smtp_auth_id ()
   in
-  let create_messge _ = Ok email in
-  let events = handle create_messge invitation in
+  let create_message _ = Ok email in
+  let events = handle create_message invitation in
   let expected =
     let open CCResult in
     Ok
@@ -80,5 +80,48 @@ let resend () =
       ; Email.sent email |> Pool_event.email
       ]
   in
+  Test_utils.check_result expected events
+;;
+
+let resend_inactive_contact () =
+  let open InvitationCommand.Resend in
+  let contact =
+    let open Contact in
+    let c = Model.create_contact () in
+    let user = Pool_user.{ c.user with status = Pool_user.Status.Inactive } in
+    { c with user }
+  in
+  let invitation = Invitation.create contact in
+  let create_message _ = Ok (Model.create_email_job ()) in
+  let events = handle create_message invitation in
+  let expected = Error Pool_message.Error.ContactIsInactive in
+  Test_utils.check_result expected events
+;;
+
+let resend_paused_contact () =
+  let open InvitationCommand.Resend in
+  let contact =
+    let open Contact in
+    let c = Model.create_contact () in
+    { c with paused = Pool_user.Paused.create true }
+  in
+  let invitation = Invitation.create contact in
+  let create_message _ = Ok (Model.create_email_job ()) in
+  let events = handle create_message invitation in
+  let expected = Error Pool_message.Error.ContactIsPaused in
+  Test_utils.check_result expected events
+;;
+
+let resend_disabled_contact () =
+  let open InvitationCommand.Resend in
+  let contact =
+    let open Contact in
+    let c = Model.create_contact () in
+    { c with disabled = Pool_user.Disabled.create true }
+  in
+  let invitation = Invitation.create contact in
+  let create_message _ = Ok (Model.create_email_job ()) in
+  let events = handle create_message invitation in
+  let expected = Error Pool_message.Error.(Disabled Field.Contact) in
   Test_utils.check_result expected events
 ;;

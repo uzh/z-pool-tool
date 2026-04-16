@@ -15,6 +15,7 @@ let nested name show fmt t =
 type t =
   | Action [@name "action"] [@printer go "action"]
   | Active [@name "active"] [@printer go "active"]
+  | ActiveAfterImport [@name "active_after_import"] [@printer go "active_after_import"]
   | ActiveContactsCount [@name "active_contacts_count"]
   [@printer go "active_contacts_count"]
   | Actor [@name "actor"] [@printer go "actor"]

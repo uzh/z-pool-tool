@@ -1256,6 +1256,7 @@ end
 
 module UserImport = struct
   let label = UserImport
+  let inactive_label = UserImportInactive
 
   let to_user = function
     | `Admin admin -> Admin.user admin
@@ -1281,18 +1282,28 @@ module UserImport = struct
   let prepare pool tenant =
     let languages = Pool_common.Language.all in
     let templates = Hashtbl.create (CCList.length languages) in
+    let inactive_templates = Hashtbl.create (CCList.length languages) in
     let%lwt () =
       find_all_by_label_to_send pool Pool_common.Language.all label
       |> Lwt.map
            (CCList.iter (fun ({ Entity.language; _ } as t) ->
               Hashtbl.add templates language t))
     in
+    (* Load UserImportInactive templates; silently ignore missing entries –
+       the fallback to UserImport is handled in the closure below. *)
+    let%lwt () =
+      Pool_common.Language.all
+      |> Lwt_list.iter_s (fun lang ->
+        let%lwt opt = Repo.find_default_by_label_and_language pool lang inactive_label in
+        CCOption.iter (fun t -> Hashtbl.add inactive_templates lang t) opt;
+        Lwt.return_unit)
+    in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let%lwt default_language = Settings.default_language pool in
     let%lwt sender = default_sender_of_pool pool in
     let layout = layout_from_tenant tenant in
     Lwt.return
-    @@ fun user token ->
+    @@ fun user active_after_import token ->
     let language = language default_language user in
     let confirmation_url =
       Pool_common.
@@ -1307,7 +1318,15 @@ module UserImport = struct
       | `Contact _ -> Some (Unverified token)
       | `Admin _ -> None
     in
-    let template = Hashtbl.find templates language in
+    (* Use UserImportInactive template when active_after_import = false,
+       falling back to UserImport template if not configured *)
+    let template =
+      if not active_after_import
+      then
+        Hashtbl.find_opt inactive_templates language
+        |> CCOption.value ~default:(Hashtbl.find templates language)
+      else Hashtbl.find templates language
+    in
     let email =
       prepare_email
         ?optout_link
@@ -1319,7 +1338,7 @@ module UserImport = struct
         (email_params layout confirmation_url user)
     in
     let entity_uuids = user_message_uuids (to_user user) in
-    create_email_job label entity_uuids email
+    create_email_job template.label entity_uuids email
   ;;
 end
 

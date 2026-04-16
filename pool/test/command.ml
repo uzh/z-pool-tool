@@ -186,6 +186,18 @@ let () =
             `Quick
             Invitation_test.create_with_experiment_smtp
         ; test_case "resend invitation" `Quick Invitation_test.resend
+        ; test_case
+            "resend invitation to inactive contact"
+            `Quick
+            Invitation_test.resend_inactive_contact
+        ; test_case
+            "resend invitation to paused contact"
+            `Quick
+            Invitation_test.resend_paused_contact
+        ; test_case
+            "resend invitation to disabled contact"
+            `Quick
+            Invitation_test.resend_disabled_contact
         ] )
     ; ( "experiment"
       , [ test_case "create experiment" `Quick Experiment_test.create
@@ -454,6 +466,12 @@ let () =
             User_import_test.confirm_without_matching_password
         ; test_case "confirm as admin" `Quick User_import_test.confirm_as_admin
         ; test_case "confirm as contact" `Quick User_import_test.confirm_as_contact
+        ; test_case "disable as contact" `Quick User_import_test.disable_as_contact
+        ; test_case "disable as admin" `Quick User_import_test.disable_as_admin
+        ; test_case
+            "disable as guest returns error"
+            `Quick
+            User_import_test.disable_as_guest
         ] )
     ; Smtp_test.(
         ( "smtp auth"
