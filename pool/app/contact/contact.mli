@@ -89,6 +89,12 @@ val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 val find_admin_comment : Database.Label.t -> Id.t -> AdminComment.t option Lwt.t
 val find_multiple : Database.Label.t -> Id.t list -> t list Lwt.t
 
+(** [find_multiple_invitable pool ids] returns the contacts matching [ids] that
+    satisfy all invitability constraints: confirmed account, not paused, not
+    disabled, email address verified, and either no pending import or an
+    active-after-import pending import. *)
+val find_multiple_invitable : Database.Label.t -> Id.t list -> t list Lwt.t
+
 val list_by_user
   :  ?query:Query.t
   -> Database.Label.t
@@ -222,6 +228,17 @@ module Repo : sig
     -> string
 
   val update_request : (Write.t, unit, [ `Zero ]) Caqti_request.t
+
+  (** SQL WHERE fragment that filters contacts to those that are
+      invitable/reachable: confirmed account, not paused, not disabled, email
+      address verified, and either no pending import or an active-after-import
+      pending import.
+
+      Requires the following tables to be joined into the query:
+      - [pool_contacts] (via [joins], already included in [find_request_sql])
+      - [user_users] (via [joins], already included in [find_request_sql])
+      - [pool_user_imports] is referenced only inside a correlated [EXISTS]
+        subquery and does not need an explicit top-level join. *)
   val invitable_sql_condition : string
 end
 

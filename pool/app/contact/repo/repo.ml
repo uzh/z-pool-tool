@@ -153,6 +153,14 @@ let invitable_sql_condition =
 
 let find_multiple_request ids =
   Format.asprintf
+    {sql| WHERE user_uuid IN ( %s ) |sql}
+    (CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1)) ids
+     |> CCString.concat ",")
+  |> find_request_sql
+;;
+
+let find_multiple_invitable_request ids =
+  Format.asprintf
     {sql|
       WHERE user_uuid IN ( %s )
       AND user_users.status != 'inactive'
@@ -164,13 +172,21 @@ let find_multiple_request ids =
   |> find_request_sql
 ;;
 
-let find_multiple pool ids =
-  let open Caqti_request.Infix in
-  let (Dynparam.Pack (pt, pv)) =
-    CCList.fold_left (fun dyn id -> dyn |> Dynparam.add Id.t id) Dynparam.empty ids
-  in
-  let request = find_multiple_request ids |> pt ->* t in
-  Database.collect pool request pv
+let collect_multiple pool request ids =
+  if CCList.is_empty ids
+  then Lwt.return []
+  else
+    let open Caqti_request.Infix in
+    let (Dynparam.Pack (pt, pv)) =
+      CCList.fold_left (fun dyn id -> dyn |> Dynparam.add Id.t id) Dynparam.empty ids
+    in
+    Database.collect pool (request ids |> pt ->* t) pv
+;;
+
+let find_multiple pool ids = collect_multiple pool find_multiple_request ids
+
+let find_multiple_invitable pool ids =
+  collect_multiple pool find_multiple_invitable_request ids
 ;;
 
 let find_all_request =
