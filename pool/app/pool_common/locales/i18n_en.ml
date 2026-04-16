@@ -560,6 +560,10 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | MessageTemplateUserImport ->
     "This message informs imported contacts about the migration to the Z-Pool-Tool and \
      contains the token they need to reset their password."
+  | MessageTemplateUserImportInactive ->
+    "This message is sent to imported contacts who are not yet active (e.g. must accept \
+     terms & conditions before their first invite). Falls back to the user_import \
+     template if not configured."
   | MessageTemplateWaitingListConfirmation ->
     "This message confirms the successful enrollment to an experiment waiting list."
   | MissingMessageTemplates ->

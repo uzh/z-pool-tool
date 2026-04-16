@@ -466,6 +466,12 @@ let () =
             User_import_test.confirm_without_matching_password
         ; test_case "confirm as admin" `Quick User_import_test.confirm_as_admin
         ; test_case "confirm as contact" `Quick User_import_test.confirm_as_contact
+        ; test_case "disable as contact" `Quick User_import_test.disable_as_contact
+        ; test_case "disable as admin" `Quick User_import_test.disable_as_admin
+        ; test_case
+            "disable as guest returns error"
+            `Quick
+            User_import_test.disable_as_guest
         ] )
     ; Smtp_test.(
         ( "smtp auth"

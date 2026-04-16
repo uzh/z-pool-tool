@@ -9,6 +9,7 @@ let rec field_to_string =
   function
   | Action -> "Aktion"
   | Active -> "Aktiv"
+  | ActiveAfterImport -> "Nach Import aktiv"
   | ActiveContactsCount -> "Anzahl aktive Kontakte"
   | Actor -> "Akteur"
   | Address -> "Addresse"

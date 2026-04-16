@@ -346,6 +346,8 @@ module MessageTemplateLabel = struct
       | SessionReschedule [@name "session_reschedule"]
       [@printer print "session_reschedule"]
       | UserImport [@name "user_import"] [@printer print "user_import"]
+      | UserImportInactive [@name "user_import_inactive"]
+      [@printer print "user_import_inactive"]
       | WaitingListConfirmation [@name "waiting_list_confirmation"]
       [@printer print "waiting_list_confirmation"]
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson, variants]

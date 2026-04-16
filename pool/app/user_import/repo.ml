@@ -41,15 +41,18 @@ module RepoEntity = struct
         , ( m.token
           , ( m.confirmed_at
             , ( m.notified_at
-              , (m.reminder_count, (m.last_reminded_at, (m.created_at, m.updated_at))) )
-            ) ) )
+              , ( m.reminder_count
+                , ( m.last_reminded_at
+                  , (m.active_after_import, (m.created_at, m.updated_at)) ) ) ) ) ) )
     in
     let decode
           ( user_uuid
           , ( token
             , ( confirmed_at
               , ( notified_at
-                , (reminder_count, (last_reminded_at, (created_at, updated_at))) ) ) ) )
+                , ( reminder_count
+                  , (last_reminded_at, (active_after_import, (created_at, updated_at))) )
+                ) ) ) )
       =
       Ok
         { user_uuid
@@ -58,6 +61,7 @@ module RepoEntity = struct
         ; notified_at
         ; reminder_count
         ; last_reminded_at
+        ; active_after_import
         ; created_at
         ; updated_at
         }
@@ -78,7 +82,7 @@ module RepoEntity = struct
                        ReminderCount.t
                        (t2
                           (option LastRemindedAt.t)
-                          (t2 Common.CreatedAt.t Common.UpdatedAt.t))))))))
+                          (t2 bool (t2 Common.CreatedAt.t Common.UpdatedAt.t)))))))))
   ;;
 
   let reminder_settings_caqti =
@@ -140,6 +144,7 @@ let sql_select_columns =
   ; "pool_user_imports.notification_sent_at"
   ; "pool_user_imports.reminder_count"
   ; "pool_user_imports.last_reminder_sent_at"
+  ; "pool_user_imports.active_after_import"
   ; "pool_user_imports.created_at"
   ; "pool_user_imports.updated_at"
   ]
@@ -340,13 +345,20 @@ let insert_request =
   {sql|
     INSERT INTO pool_user_imports (
       user_uuid,
-      token
+      token,
+      active_after_import
     ) VALUES (
       UNHEX(REPLACE($1, '-', '')),
-      $2
+      $2,
+      $3
     )
   |sql}
-  |> Caqti_type.(t2 Pool_user.Repo.Id.t string ->. unit)
+  |> Caqti_type.(t2 Pool_user.Repo.Id.t (t2 string bool) ->. unit)
 ;;
 
-let insert pool t = Database.exec pool insert_request (t.user_uuid, t.token |> Token.value)
+let insert pool t =
+  Database.exec
+    pool
+    insert_request
+    (t.user_uuid, (t.token |> Token.value, t.active_after_import))
+;;

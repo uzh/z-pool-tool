@@ -573,7 +573,11 @@ module UserImport : sig
   val prepare
     :  Database.Label.t
     -> Pool_tenant.t
-    -> ([< `Admin of Admin.t | `Contact of Contact.t ] -> string -> Email.dispatch) Lwt.t
+    -> ([< `Admin of Admin.t | `Contact of Contact.t ]
+        -> bool
+        -> string
+        -> Email.dispatch)
+         Lwt.t
 end
 
 module WaitingListConfirmation : sig

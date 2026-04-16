@@ -295,6 +295,7 @@ type hint =
   | MessageTemplateSignupVerification
   | MessageTemplateTextTemplates
   | MessageTemplateUserImport
+  | MessageTemplateUserImportInactive
   | MessageTemplateWaitingListConfirmation
   | MissingMessageTemplates
   | NumberIsDaysHint
