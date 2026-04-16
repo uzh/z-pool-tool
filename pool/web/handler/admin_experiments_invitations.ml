@@ -137,7 +137,7 @@ let create req =
           []
           contact_ids
       in
-      let%lwt contacts = Contact.find_multiple database_label contact_ids in
+      let%lwt contacts = Contact.find_multiple_invitable database_label contact_ids in
       Lwt_result.lift
       @@
       match CCList.length contact_ids == CCList.length contacts with

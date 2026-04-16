@@ -129,24 +129,64 @@ let find_confirmed pool email =
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Contact)
 ;;
 
+(* SQL conditions shared by all queries that need invitable/reachable contacts:
+   confirmed account, not paused, not disabled, email verified, and either
+   import confirmed or active-after-import pending import. *)
+let invitable_sql_condition =
+  {sql|
+    user_users.admin = 0
+    AND user_users.confirmed = 1
+    AND pool_contacts.paused = 0
+    AND pool_contacts.disabled = 0
+    AND (
+      pool_contacts.import_pending = 0
+      OR EXISTS (
+        SELECT 1 FROM pool_user_imports
+        WHERE pool_user_imports.user_uuid = pool_contacts.user_uuid
+          AND pool_user_imports.confirmed_at IS NULL
+          AND pool_user_imports.active_after_import = 1
+      )
+    )
+    AND pool_contacts.email_verified IS NOT NULL
+  |sql}
+;;
+
 let find_multiple_request ids =
   Format.asprintf
-    {sql|
-      WHERE user_uuid IN ( %s )
-      AND user_users.admin = 0
-    |sql}
+    {sql| WHERE user_uuid IN ( %s ) |sql}
     (CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1)) ids
      |> CCString.concat ",")
   |> find_request_sql
 ;;
 
-let find_multiple pool ids =
-  let open Caqti_request.Infix in
-  let (Dynparam.Pack (pt, pv)) =
-    CCList.fold_left (fun dyn id -> dyn |> Dynparam.add Id.t id) Dynparam.empty ids
-  in
-  let request = find_multiple_request ids |> pt ->* t in
-  Database.collect pool request pv
+let find_multiple_invitable_request ids =
+  Format.asprintf
+    {sql|
+      WHERE user_uuid IN ( %s )
+      AND user_users.status != 'inactive'
+      AND %s
+    |sql}
+    (CCList.mapi (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1)) ids
+     |> CCString.concat ",")
+    invitable_sql_condition
+  |> find_request_sql
+;;
+
+let collect_multiple pool request ids =
+  if CCList.is_empty ids
+  then Lwt.return []
+  else
+    let open Caqti_request.Infix in
+    let (Dynparam.Pack (pt, pv)) =
+      CCList.fold_left (fun dyn id -> dyn |> Dynparam.add Id.t id) Dynparam.empty ids
+    in
+    Database.collect pool (request ids |> pt ->* t) pv
+;;
+
+let find_multiple pool ids = collect_multiple pool find_multiple_request ids
+
+let find_multiple_invitable pool ids =
+  collect_multiple pool find_multiple_invitable_request ids
 ;;
 
 let find_all_request =

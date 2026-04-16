@@ -29,6 +29,7 @@ type t =
   | ContactDoesNotMatchFilter
   | ContactExperimentNotFound
   | ContactIsInactive
+  | ContactIsPaused
   | ContactSignupInvalidEmail
   | ContactUnconfirmed
   | CustomFieldNoOptions

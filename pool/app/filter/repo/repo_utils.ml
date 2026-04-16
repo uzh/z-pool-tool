@@ -14,14 +14,12 @@ let coalesce_value =
 
 let filtered_base_condition ?(include_invited = false) =
   let base =
-    {sql|
-    user_users.admin = 0
-    AND user_users.confirmed = 1
-    AND user_users.status != ?
-    AND pool_contacts.paused = 0
-    AND pool_contacts.disabled = 0
-    AND pool_contacts.email_verified IS NOT NULL
-    |sql}
+    Format.asprintf
+      {sql|
+        user_users.status != ?
+        AND %s
+      |sql}
+      Contact.Repo.invitable_sql_condition
   in
   let exclude_invited =
     {sql|
