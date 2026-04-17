@@ -25,7 +25,10 @@ let suite =
           ; test_case "can create smtp auth" `Slow create_smtp_auth
           ; test_case "can delete smtp auth" `Slow delete_smtp_auth
           ; test_case "cannot delete last smtp" `Slow cannot_delete_last_smtp
-          ; test_case "can delete smtp when multiple exist" `Slow can_delete_smtp_when_multiple
+          ; test_case
+              "can delete smtp when multiple exist"
+              `Slow
+              can_delete_smtp_when_multiple
           ; test_case "update gtx settings" `Slow update_gtx_settings
           ] )
     ; "dev/test", [ test_case "intercept email" `Slow Common_test.validate_email ]

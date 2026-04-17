@@ -177,14 +177,14 @@ let create_2fa_login
   create_2fa_auth ?id ?token ~tags req context user
 ;;
 
-let admin_has_smtp_manage_permission database_label (user : Pool_user.t) =
+let admin_has_smtp_permission database_label (user : Pool_user.t) =
   let open Utils.Lwt_result.Infix in
   let ctx = Database.to_ctx database_label in
   let%lwt result =
     user.Pool_user.id
     |> Admin.(Id.of_user %> find database_label)
     >>= Admin.Guard.Actor.to_authorizable ~ctx
-    >>= Guard.Persistence.validate database_label Email.Guard.Access.Smtp.create
+    >>= Guard.Persistence.validate database_label Cqrs_command.Smtp_command.Create.effects
   in
   Lwt.return (CCResult.is_ok result)
 ;;
@@ -209,7 +209,7 @@ let initiate_login
   let%lwt smtp_set = Email.SmtpAuth.defalut_is_set database_label in
   match Database.Pool.is_root database_label with
   | true ->
-    (* Root user: always go through MFA, may has to check DB manually *)
+    (* Root user: always go through MFA, may have to check the DB manually *)
     let* login_user, auth, events = create_2fa_auth ?id ?token ~tags req context user in
     Lwt_result.return (MfaRequired (login_user, auth, events))
   | false when smtp_set ->
@@ -218,13 +218,14 @@ let initiate_login
     Lwt_result.return (MfaRequired (login_user, auth, events))
   | false ->
     (* No SMTP: user type determines behaviour *)
-    (match%lwt Contact.find_by_user database_label user with
+    (match%lwt[@warning "-4"] Contact.find_by_user database_label user with
      | Ok (_ : Contact.t) -> Lwt_result.fail Pool_message.Error.ContactLoginDisabled
-     | Error (_ : Pool_message.Error.t) ->
-       let%lwt has_perm = admin_has_smtp_manage_permission database_label user in
+     | Error (Pool_message.Error.NotFound Field.Contact) ->
+       let%lwt has_perm = admin_has_smtp_permission database_label user in
        if has_perm
        then Lwt_result.return (DirectLogin user)
-       else Lwt_result.fail Pool_message.Error.AdminLoginDisabled)
+       else Lwt_result.fail Pool_message.Error.AdminLoginDisabled
+     | Error err -> Lwt_result.fail err)
 ;;
 
 let decode_2fa_confirmation database_label req ~tags =

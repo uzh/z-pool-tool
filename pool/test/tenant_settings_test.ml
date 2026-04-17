@@ -446,14 +446,42 @@ let cannot_delete_last_smtp =
 (* Test: guard passes when two or more SMTP records exist *)
 let can_delete_smtp_when_multiple =
   let test_db = Test_utils.Data.database_label in
-  let temp_id : Email.SmtpAuth.Id.t ref = ref (Email.SmtpAuth.Id.create ()) in
+  let saved_writes : Email.SmtpAuth.Write.t list ref = ref [] in
+  let temp_id1 : Email.SmtpAuth.Id.t ref = ref (Email.SmtpAuth.Id.create ()) in
+  let temp_id2 : Email.SmtpAuth.Id.t ref = ref (Email.SmtpAuth.Id.create ()) in
   Test_utils.case
     ~preparation:(fun () ->
-      let%lwt id = create_temp_smtp test_db in
-      temp_id := id;
+      (* Save existing records so we can restore them after the test *)
+      let%lwt all = Email.SmtpAuth.find_all test_db in
+      let%lwt writes =
+        Lwt_list.filter_map_p
+          (fun ({ Email.SmtpAuth.id; _ } : Email.SmtpAuth.t) ->
+             Email.SmtpAuth.find_full test_db id |> Lwt.map CCResult.to_opt)
+          all
+      in
+      saved_writes := writes;
+      (* Delete all existing SMTPs, then create exactly 2 fresh ones so the
+         test is self-contained regardless of prior database state *)
+      let%lwt () =
+        all
+        |> CCList.map (fun ({ Email.SmtpAuth.id; _ } : Email.SmtpAuth.t) ->
+          Email.SmtpDeleted id |> Pool_event.email)
+        |> Pool_event.handle_events test_db current_user
+      in
+      let%lwt id1 = create_temp_smtp test_db in
+      let%lwt id2 = create_temp_smtp test_db in
+      temp_id1 := id1;
+      temp_id2 := id2;
       Lwt_result.return ())
     ~cleanup:(fun () ->
-      [ Email.SmtpDeleted !temp_id |> Pool_event.email ]
+      let%lwt () =
+        [ Email.SmtpDeleted !temp_id1 |> Pool_event.email
+        ; Email.SmtpDeleted !temp_id2 |> Pool_event.email
+        ]
+        |> Pool_event.handle_events test_db current_user
+      in
+      !saved_writes
+      |> CCList.map (fun w -> Email.SmtpCreated w |> Pool_event.email)
       |> Pool_event.handle_events test_db current_user
       |> Lwt_result.ok)
   @@ fun () ->
