@@ -32,7 +32,18 @@ let show usage req =
       let%lwt verification =
         Contact.find_cell_phone_verification_by_contact database_label contact
       in
-      Page.Contact.contact_information contact context verification was_reset
+      let%lwt phone_verification_enabled =
+        Settings.find_phone_verification_enabled database_label
+      in
+      let%lwt text_messages_enabled = Gtx_config.text_messages_enabled database_label in
+      Page.Contact.contact_information
+        contact
+        context
+        verification
+        was_reset
+        ~text_messages_enabled
+        ~phone_verification_enabled:
+          (Settings.PhoneVerification.value phone_verification_enabled)
       |> create_layout contact_info_path
     | `LoginInformation ->
       let%lwt password_policy =
@@ -210,31 +221,50 @@ let update_cell_phone req =
            Format.asprintf "+%i%s" code cell_phone |> Pool_user.CellPhone.create)
          |> Lwt_result.lift
        in
-       let token = Pool_common.VerificationCode.create () in
-       let* () =
-         let* { Pool_context.Tenant.tenant; _ } =
-           Pool_context.Tenant.find req |> Lwt_result.lift
+       let%lwt text_messages_enabled = Gtx_config.text_messages_enabled database_label in
+       let%lwt phone_verification_enabled =
+         Settings.find_phone_verification_enabled database_label
+       in
+       if
+         text_messages_enabled
+         && Settings.PhoneVerification.value phone_verification_enabled
+       then (
+         let token = Pool_common.VerificationCode.create () in
+         let* () =
+           let* { Pool_context.Tenant.tenant; _ } =
+             Pool_context.Tenant.find req |> Lwt_result.lift
+           in
+           Message_template.PhoneVerification.create_text_message
+             database_label
+             language
+             tenant
+             contact
+             cell_phone
+             token
+           |>> Text_message.sent
+               %> Pool_event.text_message
+               %> Pool_event.handle_event database_label user
          in
-         Message_template.PhoneVerification.create_text_message
-           database_label
-           language
-           tenant
-           contact
-           cell_phone
-           token
-         |>> Text_message.sent
-             %> Pool_event.text_message
-             %> Pool_event.handle_event database_label user
-       in
-       let* events =
-         Command.AddCellPhone.handle ~tags (contact, cell_phone, token) |> Lwt_result.lift
-       in
-       let%lwt () = Pool_event.handle_events ~tags database_label user events in
-       HttpUtils.(
-         redirect_to_with_actions
-           (url_with_field_params query_parameters contact_info_path)
-           [ Message.set ~success:[ Success.CellPhoneTokenSent ] ])
-       |> Lwt_result.ok
+         let* events =
+           Command.AddCellPhone.handle ~tags (contact, cell_phone, token)
+           |> Lwt_result.lift
+         in
+         let%lwt () = Pool_event.handle_events ~tags database_label user events in
+         HttpUtils.(
+           redirect_to_with_actions
+             (url_with_field_params query_parameters contact_info_path)
+             [ Message.set ~success:[ Success.CellPhoneTokenSent ] ])
+         |> Lwt_result.ok)
+       else
+         let* events =
+           Command.SaveCellPhone.handle ~tags (contact, cell_phone) |> Lwt_result.lift
+         in
+         let%lwt () = Pool_event.handle_events ~tags database_label user events in
+         HttpUtils.(
+           redirect_to_with_actions
+             (url_with_field_params query_parameters contact_info_path)
+             [ Message.set ~success:[ Success.Updated Field.CellPhone ] ])
+         |> Lwt_result.ok
   in
   Response.handle ~src req result
 ;;
@@ -298,29 +328,44 @@ let resend_token req =
     let open Utils.Lwt_result.Infix in
     Response.bad_request_on_error contact_information
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-       let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
+       let%lwt text_messages_enabled = Gtx_config.text_messages_enabled database_label in
+       let%lwt phone_verification_enabled =
+         Settings.find_phone_verification_enabled database_label
        in
-       let* { Pool_user.UnverifiedCellPhone.cell_phone; verification_code; _ } =
-         Contact.find_full_cell_phone_verification_by_contact database_label contact
-       in
-       let* () =
-         Message_template.PhoneVerification.create_text_message
-           database_label
-           language
-           tenant
-           contact
-           cell_phone
-           verification_code
-         |>> Text_message.sent
-             %> Pool_event.text_message
-             %> Pool_event.handle_event database_label user
-       in
-       HttpUtils.(
-         redirect_to_with_actions
-           (url_with_field_params query_parameters contact_info_path)
-           [ Message.set ~success:[ Success.VerificationMessageResent ] ])
-       |> Lwt_result.ok
+       if
+         not
+           (text_messages_enabled
+            && Settings.PhoneVerification.value phone_verification_enabled)
+       then
+         HttpUtils.(
+           redirect_to_with_actions
+             (url_with_field_params query_parameters contact_info_path)
+             [ Message.set ~error:[ Error.Disabled Field.CellPhone ] ])
+         |> Lwt_result.ok
+       else
+         let* { Pool_context.Tenant.tenant; _ } =
+           Pool_context.Tenant.find req |> Lwt_result.lift
+         in
+         let* { Pool_user.UnverifiedCellPhone.cell_phone; verification_code; _ } =
+           Contact.find_full_cell_phone_verification_by_contact database_label contact
+         in
+         let* () =
+           Message_template.PhoneVerification.create_text_message
+             database_label
+             language
+             tenant
+             contact
+             cell_phone
+             verification_code
+           |>> Text_message.sent
+               %> Pool_event.text_message
+               %> Pool_event.handle_event database_label user
+         in
+         HttpUtils.(
+           redirect_to_with_actions
+             (url_with_field_params query_parameters contact_info_path)
+             [ Message.set ~success:[ Success.VerificationMessageResent ] ])
+         |> Lwt_result.ok
   in
   Response.handle ~src req result
 ;;

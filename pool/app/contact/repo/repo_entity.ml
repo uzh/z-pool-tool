@@ -53,23 +53,24 @@ let t =
           , ( language
             , ( experiment_type_preference
               , ( cell_phone
-                , ( paused
-                  , ( disabled
-                    , ( verified
-                      , ( email_verified
-                        , ( num_invitations
-                          , ( num_assignments
-                            , ( num_show_ups
-                              , ( num_no_shows
-                                , ( num_participations
-                                  , ( firstname_version
-                                    , ( lastname_version
-                                      , ( paused_version
-                                        , ( language_version
-                                          , ( experiment_type_preference_version
-                                            , ( import_pending
-                                              , (created_at, (updated_at, ())) ) ) ) ) )
-                                    ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                , ( cell_phone_verified_at
+                  , ( paused
+                    , ( disabled
+                      , ( verified
+                        , ( email_verified
+                          , ( num_invitations
+                            , ( num_assignments
+                              , ( num_show_ups
+                                , ( num_no_shows
+                                  , ( num_participations
+                                    , ( firstname_version
+                                      , ( lastname_version
+                                        , ( paused_version
+                                          , ( language_version
+                                            , ( experiment_type_preference_version
+                                              , ( import_pending
+                                                , (created_at, (updated_at, ())) ) ) ) )
+                                        ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     =
     Ok
       { user
@@ -77,6 +78,7 @@ let t =
       ; language
       ; experiment_type_preference
       ; cell_phone
+      ; cell_phone_verified_at
       ; paused
       ; disabled
       ; verified
@@ -109,6 +111,7 @@ let t =
       ; option Pool_common.Repo.Language.t
       ; option Pool_common.Repo.ExperimentType.t
       ; option Pool_user.Repo.CellPhone.t
+      ; option Caqti_type.ptime
       ; Pool_user.Repo.Paused.t
       ; Pool_user.Repo.Disabled.t
       ; option Pool_user.Repo.Verified.t
@@ -201,6 +204,7 @@ module Write = struct
           ; m.language
           ; m.experiment_type_preference
           ; m.cell_phone
+          ; m.cell_phone_verified_at
           ; m.paused
           ; m.disabled
           ; m.verified
@@ -228,6 +232,7 @@ module Write = struct
         ; option Pool_common.Repo.Language.t
         ; option Pool_common.Repo.ExperimentType.t
         ; option Pool_user.Repo.CellPhone.t
+        ; option Caqti_type.ptime
         ; Pool_user.Repo.Paused.t
         ; Pool_user.Repo.Disabled.t
         ; option Pool_user.Repo.Verified.t

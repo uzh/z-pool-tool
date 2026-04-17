@@ -25,6 +25,7 @@ module Key : sig
     | TriggerProfileUpdateAfter
     | UserImportFirstReminderAfter
     | UserImportSecondReminderAfter
+    | PhoneVerificationEnabled
 
   val show : t -> string
   val read : string -> t
@@ -100,6 +101,10 @@ module UserImportReminder : sig
 
     val validate : t -> (t, Pool_message.Error.t) result
   end
+end
+
+module PhoneVerification : sig
+  include Pool_model.Base.BooleanSig
 end
 
 module PageScript : sig
@@ -181,6 +186,7 @@ type event =
   | UserImportFirstReminderAfterUpdated of UserImportReminder.FirstReminderAfter.t
   | UserImportSecondReminderAfterUpdated of UserImportReminder.SecondReminderAfter.t
   | PageScriptUpdated of (PageScript.t option * PageScript.location)
+  | PhoneVerificationEnabledUpdated of PhoneVerification.t
 
 val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
@@ -224,6 +230,7 @@ val find_user_import_second_reminder_after
   :  Database.Label.t
   -> UserImportReminder.SecondReminderAfter.t Lwt.t
 
+val find_phone_verification_enabled : Database.Label.t -> PhoneVerification.t Lwt.t
 val id_by_key : Database.Label.t -> Key.t -> Pool_common.Id.t Lwt.t
 val default_email_session_reminder_lead_time_key_yojson : Yojson.Safe.t
 val default_text_message_session_reminder_lead_time_key_yojson : Yojson.Safe.t

@@ -353,6 +353,8 @@ type t =
   | TermsAndConditionsLastAccepted [@name "terms_and_conditions_last_accepted"]
   [@printer go "terms_and_conditions_last_accepted"]
   | TestPhoneNumber [@name "test_phone_number"] [@printer go "test_phone_number"]
+  | PhoneVerificationEnabled [@name "phone_verification_enabled"]
+  [@printer go "phone_verification_enabled"]
   | Text [@name "text"] [@printer go "text"]
   | TextMessage [@name "text_message"] [@printer go "text_message"]
   | TextMessageDlrStatus [@name "text_message_dlr_status"]

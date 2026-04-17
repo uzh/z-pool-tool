@@ -322,6 +322,7 @@ let rec field_to_string =
   | TermsAndConditions -> "terms and conditions"
   | TermsAndConditionsLastAccepted -> "terms and conditions last accepted at"
   | TestPhoneNumber -> "test phone number"
+  | PhoneVerificationEnabled -> "Phone Number Verification"
   | Text -> "text"
   | TextMessage -> "text message"
   | TextMessageDlrStatus -> "text message status"

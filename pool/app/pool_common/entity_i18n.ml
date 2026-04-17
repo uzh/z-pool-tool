@@ -210,6 +210,7 @@ type hint =
   | ContactExperimentHistory
   | ContactInformationEmailHint
   | ContactLanguage
+  | ContactCellPhoneUnverified
   | ContactNoCellPhone
   | ContactOnWaitingList
   | ContactPhoneNumberVerificationWasReset
@@ -264,6 +265,7 @@ type hint =
   | GtxKeyMissing
   | GtxKeyStored
   | GtxSender
+  | PhoneVerificationHint
   | I18nText of string
   | LocationFiles
   | LocationsIndex

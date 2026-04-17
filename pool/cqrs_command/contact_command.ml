@@ -325,6 +325,22 @@ end = struct
   let effects = Contact.Guard.Access.update
 end
 
+module SaveCellPhone : sig
+  include Common.CommandSig with type t = Contact.t * Pool_user.CellPhone.t
+
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Contact.t * Pool_user.CellPhone.t
+
+  let handle ?(tags = Logs.Tag.empty) (contact, cell_phone) =
+    Logs.info ~src (fun m -> m "Handle command SaveCellPhone" ~tags);
+    Ok [ Contact.CellPhoneSaved (contact, cell_phone) |> Pool_event.contact ]
+  ;;
+
+  let effects = Contact.Guard.Access.update
+end
+
 module VerifyCellPhone : sig
   include Common.CommandSig with type t = Contact.t * Pool_user.CellPhone.t
 

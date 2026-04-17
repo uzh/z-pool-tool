@@ -894,6 +894,10 @@ module Admin = struct
         [ get "" ~middlewares:[ Access.index ] index
         ; post "" ~middlewares:[ Access.update ] update
         ; post "delete" ~middlewares:[ Access.delete ] delete
+        ; post
+            "phone-verification"
+            ~middlewares:[ Access.update ]
+            update_phone_verification
         ]
       in
       let signup_codes =

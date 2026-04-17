@@ -313,7 +313,9 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | ContactLanguage ->
     "Some experiments choose to communicate in a different language, disregarding your \
      contact language."
-  | ContactNoCellPhone -> "You have not yet verified a phone number."
+  | ContactCellPhoneUnverified ->
+    "Your phone number has not been verified yet. Please verify it below."
+  | ContactNoCellPhone -> "You have not yet provided a phone number."
   | ContactOnWaitingList ->
     "You are on the waiting list. The recruitment team will assign you to a session."
   | ContactPhoneNumberVerificationWasReset ->
@@ -478,6 +480,10 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
   | GtxKeyMissing -> "No GTX Api key is stored, which is why no text messages are sent."
   | GtxKeyStored -> "A GTX Api key is stored. Text message service is running."
   | GtxSender -> "The displayed sender of text messages. Max. 11 characters."
+  | PhoneVerificationHint ->
+    "When enabled, contacts will be required to verify their phone number. A verified \
+     phone number is indicated by a checkmark on the contact's profile. Phone number \
+     verification is only available when a GTX API key is configured."
   | I18nText str -> str
   | LocationFiles ->
     "Additional information about the location, such as directions. Contacts who are \

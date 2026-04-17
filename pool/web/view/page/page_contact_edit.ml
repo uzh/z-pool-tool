@@ -258,6 +258,8 @@ let contact_information
       Pool_context.{ language; query_parameters; csrf; _ }
       (verification : Pool_user.UnverifiedCellPhone.t option)
       was_reset
+      ~text_messages_enabled
+      ~phone_verification_enabled
   =
   let open Contact in
   let open Pool_common in
@@ -285,6 +287,14 @@ let contact_information
       Pool_common.[ Utils.control_to_string language i18n |> txt ]
   in
   let new_form () =
+    let verified_icon =
+      match contact.cell_phone_verified_at with
+      | Some _ ->
+        span
+          ~a:[ a_class [ "color-success" ] ]
+          [ i ~a:[ a_class [ "icon-checkmark-circle-outline" ] ] [] ]
+      | None -> txt ""
+    in
     let current_hint =
       (match contact.cell_phone with
        | None -> I18n.ContactNoCellPhone
@@ -303,7 +313,7 @@ let contact_information
       [ form_title (Add (Some Field.CellPhone))
       ; div
           ~a:[ a_class [ "stack" ] ]
-          [ current_hint
+          [ div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] [ current_hint; verified_icon ]
           ; reset_hint
           ; form
               ~a:(form_attrs "/user/phone/update")
@@ -360,12 +370,27 @@ let contact_information
           ]
       ]
   in
-  let form =
-    match verification with
-    | None -> new_form ()
-    | Some { Pool_user.UnverifiedCellPhone.cell_phone; _ } -> verify_form cell_phone
+  let verification_banner =
+    if
+      text_messages_enabled
+      && phone_verification_enabled
+      && CCOption.is_some contact.cell_phone
+      && CCOption.is_none contact.cell_phone_verified_at
+    then
+      [ txt Pool_common.(Utils.hint_to_string language I18n.ContactCellPhoneUnverified) ]
+      |> Component.Notification.create language `Warning
+    else txt ""
   in
-  div [ email_hint; div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ form ] ]
+  let form =
+    match text_messages_enabled && phone_verification_enabled, verification with
+    | true, Some { Pool_user.UnverifiedCellPhone.cell_phone; _ } -> verify_form cell_phone
+    | _ -> new_form ()
+  in
+  div
+    [ email_hint
+    ; verification_banner
+    ; div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ form ]
+    ]
   |> contact_profile_layout language Pool_common.I18n.ContactInformation
 ;;
 

@@ -69,6 +69,30 @@ let () =
             "accept terms and condition"
             `Quick
             Contact_test.accept_terms_and_conditions
+        ; test_case
+            "save cell phone directly (no verification)"
+            `Quick
+            Contact_test.save_cell_phone_directly
+        ; test_case
+            "verify cell phone via token"
+            `Quick
+            Contact_test.verify_cell_phone_via_token
+        ; test_case
+            "add cell phone for verification"
+            `Quick
+            Contact_test.add_cell_phone_for_verification
+        ; test_case
+            "reset cell phone verification"
+            `Quick
+            Contact_test.reset_cell_phone_verification
+        ; test_case
+            "cell_phone_verified_at is set on verify"
+            `Quick
+            Contact_test.cell_phone_verified_at_set_on_verify
+        ; test_case
+            "cell_phone_saved clears verified_at"
+            `Quick
+            Contact_test.cell_phone_saved_clears_verified_at
         ] )
     ; ( "duplicate_contacts"
       , Duplicate_contacts_test.

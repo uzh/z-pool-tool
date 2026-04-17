@@ -179,6 +179,7 @@ module Model = struct
     ; language
     ; experiment_type_preference = None
     ; cell_phone = Some ("+41791234567" |> Pool_user.CellPhone.of_string)
+    ; cell_phone_verified_at = None
     ; paused = Pool_user.Paused.create false
     ; disabled = Pool_user.Disabled.create false
     ; verified = None

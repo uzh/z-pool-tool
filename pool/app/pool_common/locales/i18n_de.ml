@@ -318,7 +318,9 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | ContactLanguage ->
     "Bei einigen Experimenten wird in einer anderen Sprache kommuniziert, ohne Rücksicht \
      auf die Kontaktsprache."
-  | ContactNoCellPhone -> "Sie haben noch keine Mobiltelefonnummer verifiziert."
+  | ContactCellPhoneUnverified ->
+    "Ihre Telefonnummer wurde noch nicht verifiziert. Bitte verifizieren Sie sie unten."
+  | ContactNoCellPhone -> "Sie haben noch keine Telefonnummer hinterlegt."
   | ContactOnWaitingList ->
     "Sie stehen auf der Warteliste. Das Rekrutierungsteam wird Sie einer Session \
      zuweisen."
@@ -489,6 +491,11 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
     types
     |> CCString.concat ", "
     |> Format.asprintf "Zugelassen sind foldende Dateitypen: %s"
+  | PhoneVerificationHint ->
+    "Wenn aktiviert, müssen Kontakte ihre Telefonnummer verifizieren. Eine verifizierte \
+     Telefonnummer wird durch ein Häkchen im Kontaktprofil angezeigt. Die \
+     Telefonnummernverifizierung ist nur verfügbar, wenn ein GTX-API-Schlüssel \
+     konfiguriert ist."
   | GtxKeyMissing ->
     "Es wurde kein GTX Api Key hinterlegt, weshalb keine Textnachrichten verschickt \
      werden."

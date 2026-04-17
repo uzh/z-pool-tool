@@ -41,6 +41,7 @@ type t =
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
   ; cell_phone : Pool_user.CellPhone.t option
+  ; cell_phone_verified_at : Pool_model.Base.Ptime.t option
   ; paused : Pool_user.Paused.t
   ; disabled : Pool_user.Disabled.t
   ; verified : Pool_user.Verified.t option
@@ -157,6 +158,7 @@ type event =
   | MarkedAsDeleted of t
   | UnverifiedDeleted of t
   | CellPhoneAdded of t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
+  | CellPhoneSaved of t * Pool_user.CellPhone.t
   | CellPhoneVerified of t * Pool_user.CellPhone.t
   | CellPhoneVerificationReset of t
   | ImportConfirmed of t * Pool_user.Password.Plain.t

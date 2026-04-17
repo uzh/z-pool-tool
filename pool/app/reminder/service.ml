@@ -27,11 +27,15 @@ let create_reminder_text_messages pool tenant sys_languages session experiment =
       experiment
       session
   in
+  let%lwt phone_verification_enabled = Settings.find_phone_verification_enabled pool in
   let messages =
     assignments
     |> CCList.filter_map (fun ({ contact; _ } as assignments) ->
       match contact.Contact.cell_phone with
       | None -> None
+      | Some _
+        when Settings.PhoneVerification.value phone_verification_enabled
+             && CCOption.is_none contact.Contact.cell_phone_verified_at -> None
       | Some cell_phone -> Some (create_message assignments cell_phone))
   in
   messages |> CCResult.flatten_l |> Lwt_result.lift

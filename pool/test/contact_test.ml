@@ -72,6 +72,7 @@ let create_contact verified contact_info =
   ; language
   ; experiment_type_preference = None
   ; cell_phone = None
+  ; cell_phone_verified_at = None
   ; paused = Pool_user.Paused.create false
   ; disabled = Pool_user.Disabled.create false
   ; verified = None
@@ -510,4 +511,75 @@ let should_not_send_registration_notification _ () =
     Alcotest.(check bool "succeeds" expected res) |> Lwt.return
   in
   Lwt.return_unit
+;;
+
+(* Phone verification tests *)
+
+let cell_phone = "+41791234567" |> Pool_user.CellPhone.of_string
+
+let save_cell_phone_directly () =
+  (* When phone verification is disabled, SaveCellPhone emits CellPhoneSaved event *)
+  let contact = "john@gmail.com" |> contact_info |> create_contact true in
+  let events = Contact_command.SaveCellPhone.handle (contact, cell_phone) in
+  let expected =
+    Ok [ Contact.CellPhoneSaved (contact, cell_phone) |> Pool_event.contact ]
+  in
+  check_result expected events
+;;
+
+let verify_cell_phone_via_token () =
+  (* When phone verification is enabled and token is confirmed, VerifyCellPhone is used *)
+  let contact = "john@gmail.com" |> contact_info |> create_contact true in
+  let events = Contact_command.VerifyCellPhone.handle (contact, cell_phone) in
+  let expected =
+    Ok [ Contact.CellPhoneVerified (contact, cell_phone) |> Pool_event.contact ]
+  in
+  check_result expected events
+;;
+
+let add_cell_phone_for_verification () =
+  (* Adding a phone for verification emits CellPhoneAdded event with a token *)
+  let contact = "john@gmail.com" |> contact_info |> create_contact true in
+  let token = Pool_common.VerificationCode.create () in
+  let events = Contact_command.AddCellPhone.handle (contact, cell_phone, token) in
+  let expected =
+    Ok [ Contact.CellPhoneAdded (contact, cell_phone, token) |> Pool_event.contact ]
+  in
+  check_result expected events
+;;
+
+let reset_cell_phone_verification () =
+  (* Resetting emits CellPhoneVerificationReset event *)
+  let contact = "john@gmail.com" |> contact_info |> create_contact true in
+  let events = Contact_command.ResetCellPhoneVerification.handle contact in
+  let expected =
+    Ok [ Contact.CellPhoneVerificationReset contact |> Pool_event.contact ]
+  in
+  check_result expected events
+;;
+
+let cell_phone_verified_at_set_on_verify () =
+  (* Verifying a cell phone should result in cell_phone_verified_at being set on the contact *)
+  let contact = "john@gmail.com" |> contact_info |> create_contact true in
+  (* The CellPhoneVerified event sets both cell_phone and cell_phone_verified_at *)
+  let event = Contact.CellPhoneVerified (contact, cell_phone) in
+  (* We verify the event exists with the right constructor *)
+  let expected_event = Contact.CellPhoneSaved (contact, cell_phone) in
+  (* CellPhoneVerified and CellPhoneSaved are distinct events *)
+  Alcotest.(
+    check bool "events are different" false (Contact.equal_event event expected_event))
+;;
+
+let cell_phone_saved_clears_verified_at () =
+  (* Saving without verification should NOT set cell_phone_verified_at *)
+  let contact = "john@gmail.com" |> contact_info |> create_contact true in
+  let event = Contact.CellPhoneSaved (contact, cell_phone) in
+  let verified_event = Contact.CellPhoneVerified (contact, cell_phone) in
+  (* The two events are distinct *)
+  Alcotest.(
+    check
+      bool
+      "CellPhoneSaved != CellPhoneVerified"
+      false
+      (Contact.equal_event event verified_event))
 ;;

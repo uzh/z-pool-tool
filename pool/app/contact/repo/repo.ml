@@ -12,6 +12,7 @@ let make_sql_select_columns ~user_table ~contact_table =
      ; "language"
      ; "experiment_type_preference"
      ; "cell_phone"
+     ; "cell_phone_verified_at"
      ; "paused"
      ; "disabled"
      ; "verified"
@@ -353,21 +354,22 @@ let update_request =
         language = $3,
         experiment_type_preference = $4,
         cell_phone = $5,
-        paused = $6,
-        disabled = $7,
-        verified = $8,
-        email_verified = $9,
-        num_invitations = $10,
-        num_assignments = $11,
-        num_show_ups = $12,
-        num_no_shows = $13,
-        num_participations = $14,
-        firstname_version = $15,
-        lastname_version = $16,
-        paused_version = $17,
-        language_version = $18,
-        experiment_type_preference_version = $19,
-        import_pending = $20
+        cell_phone_verified_at = $6,
+        paused = $7,
+        disabled = $8,
+        verified = $9,
+        email_verified = $10,
+        num_invitations = $11,
+        num_assignments = $12,
+        num_show_ups = $13,
+        num_no_shows = $14,
+        num_participations = $15,
+        firstname_version = $16,
+        lastname_version = $17,
+        paused_version = $18,
+        language_version = $19,
+        experiment_type_preference_version = $20,
+        import_pending = $21
       WHERE
         user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

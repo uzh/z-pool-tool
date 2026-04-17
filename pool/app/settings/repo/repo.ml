@@ -112,6 +112,7 @@ module InactiveUserServiceDisabled = SettingRepo (InactiveUser.ServiceDisabled)
 module TriggerProfileUpdateAfter = SettingRepo (TriggerProfileUpdateAfter)
 module UserImportFirstReminder = SettingRepo (UserImportReminder.FirstReminderAfter)
 module UserImportSecondReminder = SettingRepo (UserImportReminder.SecondReminderAfter)
+module PhoneVerificationEnabled = SettingRepo (Entity.PhoneVerification)
 
 module PageScripts = struct
   open Entity.PageScript
