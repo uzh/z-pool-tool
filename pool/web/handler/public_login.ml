@@ -80,7 +80,6 @@ let login_post req =
           |> value ~default:(Pool_context.dashboard_path context_user)
           |> HttpUtils.url_with_field_params query_parameters
         in
-        let%lwt () = Pool_event.handle_events database_label context_user [] in
         let* () = increase_sign_in_count ~tags database_label context_user in
         HttpUtils.redirect_to_with_actions
           redirect
