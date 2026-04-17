@@ -749,8 +749,8 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
     "Das Rekrutierungsteam wird sich mit Ihnen in Verbindung setzen, um Ihnen einen \
      Termin zuzuweisen, wenn ein freier Platz vorhanden ist."
   | SmtpMissing ->
-    "Es wurde kein SMTP Konfiguration hinterlegt, weshalb keine E-Mails verschickt \
-     werden können."
+    "Kein SMTP konfiguriert: Anmeldungen sind deaktiviert, ausser für Benutzer mit der \
+     Berechtigung zur Verwaltung der SMTP-Einstellungen."
   | SmtpSettingsDefaultFlag ->
     "Achtung: Ist eine andere SMTP Konfiguration als Standard markiert, wird diese \
      Einstellung angepasst. Nur eine Konfiguration kann als Standard markiert sein."

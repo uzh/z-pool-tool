@@ -194,13 +194,15 @@ let delete_base location req =
       >|- Response.not_found
     in
     Response.bad_request_on_error index
-    @@ (Cqrs_command.Smtp_command.Delete.handle ~tags smtp.SmtpAuth.id
-        |> Lwt_result.lift
-        |>> Pool_event.handle_events ~tags database_label user
-        |>> fun () ->
-        Http_utils.redirect_to_with_actions
-          path
-          [ Message.set ~success:[ Success.Deleted Field.Smtp ] ])
+    @@
+    let* () = SmtpAuth.check_can_delete database_label in
+    Cqrs_command.Smtp_command.Delete.handle ~tags smtp.SmtpAuth.id
+    |> Lwt_result.lift
+    |>> Pool_event.handle_events ~tags database_label user
+    |>> fun () ->
+    Http_utils.redirect_to_with_actions
+      path
+      [ Message.set ~success:[ Success.Deleted Field.Smtp ] ]
   in
   Response.handle ~src req result
 ;;

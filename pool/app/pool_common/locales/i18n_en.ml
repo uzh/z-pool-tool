@@ -711,7 +711,8 @@ If you trigger the reminders manually now, no more automatic reminders will be s
        send to new contacts."
       Pool_message.Field.(human_url SignUpCode)
   | SmtpMissing ->
-    "No SMTP configuration has been stored, which is why no e-mails can be sent."
+    "No SMTP configured: Logins are disabled except for users with permission to manage \
+     SMTP settings."
   | SignUpForWaitingList ->
     "The recruitment team will contact you, to assign you to a session, if there is a \
      free place."

@@ -444,6 +444,9 @@ let rec error_to_string =
          "Too many failed login attempts. This email address is blocked until %s"
   | AccessDenied -> "Access denied"
   | AccessDeniedMessage -> "Access to the requested page is denied"
+  | AdminLoginDisabled ->
+    "Admin login is disabled because no SMTP server is configured and you do not have \
+     permission to manage SMTP settings."
   | AllLanguagesRequired field ->
     field_message
       "Please provide '"
@@ -512,6 +515,9 @@ let rec error_to_string =
   | DatabaseAddPoolFirst pool ->
     Format.asprintf "Unknown Pool '%s': Please 'add_pool' first!" pool
   | Decode field -> field_message "Cannot decode" (field_to_string field) ""
+  | ContactLoginDisabled ->
+    "Contact login is disabled because no SMTP server is configured. Please contact your \
+     administrator."
   | DirectRegistrationIsDisabled -> "You cannot assign yourself to this experiment."
   | DecodeAction -> "Cannot decode action."
   | DefaultMustNotBeUnchecked -> "'Default' must not be unchecked."
@@ -661,6 +667,7 @@ let rec error_to_string =
   | Smaller (field1, field2) ->
     Format.asprintf "%s smaller than %s" (field_to_string field1) (field_to_string field2)
   | SessionOverlap -> "This time window overlaps with another."
+  | SmtpCannotDeleteLast -> "The last SMTP configuration cannot be deleted."
   | SmtpException exn -> exn
   | SmtpLoginMissingCredentials ->
     "SMTP auth mechanism cannot be set to LOGIN when no username or password is set."

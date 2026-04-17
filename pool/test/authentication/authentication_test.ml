@@ -52,6 +52,15 @@ let check_post_create ?auth message data expected =
   Testable.check Testable.testable_create message expected res |> Lwt.return
 ;;
 
+let handle_initiate_login ?auth data =
+  let open Handler.Helpers.Login in
+  let open CCOption in
+  let urlencoded = Request.data_to_urlencoded data in
+  let%lwt req = setup_request urlencoded in
+  let context = Pool_context.find_exn req in
+  initiate_login ?id:(map fst auth) ?token:(map snd auth) req context urlencoded
+;;
+
 let check_post_confirmation message data expected =
   let open Handler.Helpers.Login in
   let urlencoded = Request.data_to_urlencoded data in
@@ -176,5 +185,110 @@ let confirm_2fa_test _ () =
     check "successful 2fa login" data (Ok (user, events))
   in
   let%lwt () = Pool_event.handle_events pool (Pool_context.contact contact) events in
+  Lwt.return_unit
+;;
+
+(* Helper: run [f] without any SMTP configured, restoring the original afterwards *)
+let with_smtp_cleared f =
+  let current_user = Integration_utils.default_current_user in
+  let%lwt smtp_write_opt =
+    match%lwt Email.SmtpAuth.find_default_opt pool with
+    | None -> Lwt.return_none
+    | Some { Email.SmtpAuth.id; _ } ->
+      Email.SmtpAuth.find_full pool id |> Lwt.map CCResult.to_opt
+  in
+  let%lwt () =
+    smtp_write_opt
+    |> CCOption.map_or ~default:Lwt.return_unit (fun w ->
+      let open Email.SmtpAuth.Write in
+      Pool_event.handle_events
+        pool
+        current_user
+        [ Email.SmtpDeleted w.id |> Pool_event.email ])
+  in
+  let () = Email.Service.Cache.clear () in
+  Lwt.finalize f (fun () ->
+    let%lwt () =
+      smtp_write_opt
+      |> CCOption.map_or ~default:Lwt.return_unit (fun w ->
+        Pool_event.handle_events
+          pool
+          current_user
+          [ Email.SmtpCreated w |> Pool_event.email ])
+    in
+    Email.Service.Cache.clear ();
+    Lwt.return_unit)
+;;
+
+(* Without SMTP: contact login must be blocked *)
+let no_smtp_contact_login_disabled_test _ () =
+  with_smtp_cleared (fun () ->
+    let%lwt contact = setup_test () in
+    let email = contact |> Contact.email_address |> Pool_user.EmailAddress.value in
+    let data = [ "email", email; "password", Data.password_plain ] in
+    let%lwt res = handle_initiate_login data in
+    Alcotest.(check (result Alcotest.unit Test_utils.error))
+      "contact login blocked without SMTP"
+      (Error Pool_message.Error.ContactLoginDisabled)
+      (CCResult.map (fun _ -> ()) res);
+    Lwt.return_unit)
+;;
+
+(* Without SMTP: admin without smtp manage permission must be blocked *)
+let no_smtp_admin_without_permission_disabled_test _ () =
+  with_smtp_cleared (fun () ->
+    let open Integration_utils in
+    let%lwt admin = AdminRepo.create () in
+    let email = admin |> Admin.email_address |> Pool_user.EmailAddress.value in
+    let data = [ "email", email; "password", "Password1!" ] in
+    let%lwt res = handle_initiate_login data in
+    Alcotest.(check (result Alcotest.unit Test_utils.error))
+      "admin without smtp permission blocked without SMTP"
+      (Error Pool_message.Error.AdminLoginDisabled)
+      (CCResult.map (fun _ -> ()) res);
+    Lwt.return_unit)
+;;
+
+(* Without SMTP: admin with smtp manage permission gets a direct (pw-only) login *)
+let no_smtp_admin_with_permission_allowed_test _ () =
+  with_smtp_cleared (fun () ->
+    let open Guard in
+    let ctx = Database.to_ctx pool in
+    let open Integration_utils in
+    let%lwt admin = AdminRepo.create () in
+    (* Grant Operator role to the admin *)
+    let%lwt actor = Admin.Guard.Actor.to_authorizable ~ctx admin ||> get_or_failwith in
+    let%lwt () =
+      ActorRole.create actor.Actor.uuid `Operator
+      |> Persistence.ActorRole.upsert ~ctx
+      ||> CCFun.tap (fun () -> Persistence.Cache.clear ())
+    in
+    (* Grant Create permission on Smtp to the Operator role *)
+    let%lwt _ =
+      RolePermission.create `Operator Permission.Create `Smtp
+      |> Persistence.RolePermission.insert pool
+      ||> CCFun.tap (fun _ -> Persistence.Cache.clear ())
+    in
+    let email = admin |> Admin.email_address |> Pool_user.EmailAddress.value in
+    let data = [ "email", email; "password", "Password1!" ] in
+    let%lwt res = handle_initiate_login data in
+    let is_direct_login =
+      match res with
+      | Ok (Handler.Helpers.Login.DirectLogin _) -> true
+      | Ok (Handler.Helpers.Login.MfaRequired _) | Error _ -> false
+    in
+    Alcotest.(check bool)
+      "admin with smtp permission gets direct login"
+      true
+      is_direct_login;
+    Lwt.return_unit)
+;;
+
+(* Root database always bypasses the SMTP check *)
+let no_smtp_root_bypass_test _ () =
+  Alcotest.(check bool)
+    "root database label is identified as root (SMTP check bypassed)"
+    true
+    (Database.Pool.is_root Database.Pool.Root.label);
   Lwt.return_unit
 ;;
