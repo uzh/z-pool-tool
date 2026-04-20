@@ -72,8 +72,12 @@ module App = struct
       |> CCList.map (fun text -> span [ txt text ])
       |> span ~a:[ a_class base_class ]
     in
-    div
+    let elements = function
+      | [] -> [ app_id ]
+      | fragments -> [ app_id; separator ] @ CCList.intersperse separator fragments
+    in
+    footer
       ~a:[ a_class [ "inset"; "vertical"; "border-top" ] ]
-      [ div ~a:[ a_class classnames ] (app_id :: CCList.intersperse separator fragments) ]
+      [ div ~a:[ a_class classnames ] (elements fragments) ]
   ;;
 end

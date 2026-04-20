@@ -329,12 +329,7 @@ let contact_information
     form
       ~a:[ a_method `Post; a_action (externalize url) ]
       [ csrf_element csrf ()
-      ; submit_element
-          ~submit_type:`Disabled
-          ~classnames:[ "small"; "secondary" ]
-          language
-          i18n
-          ()
+      ; submit_element ~submit_type:`Secondary ~classnames:[ "small" ] language i18n ()
       ]
   in
   let verify_form cell_phone =
