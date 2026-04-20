@@ -10,6 +10,5 @@ let add_expires_at_to_cell_phone_verifications =
 
 let migration () =
   Database.Migration.(
-    empty "202604200000"
-    |> add_step add_expires_at_to_cell_phone_verifications)
+    empty "202604200000" |> add_step add_expires_at_to_cell_phone_verifications)
 ;;
