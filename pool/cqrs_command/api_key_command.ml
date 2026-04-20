@@ -5,13 +5,13 @@ let src = Logs.Src.create "api_key.cqrs"
 
 type create =
   { name : Name.t
-  ; expires_at : ExpiresAt.t
+  ; expires_at : Pool_common.ExpiresAt.t
   }
 
 let create_schema =
   Pool_conformist.(
     make
-      Field.[ Name.schema (); ExpiresAt.schema () ]
+      Field.[ Name.schema (); Pool_common.ExpiresAt.schema () ]
       (fun name expires_at -> { name; expires_at }))
 ;;
 

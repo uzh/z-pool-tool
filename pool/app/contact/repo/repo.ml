@@ -526,17 +526,19 @@ let add_cell_phone_request =
     INSERT INTO pool_cell_phone_verifications (
       cell_phone,
       user_uuid,
-      token
+      token,
+      expires_at
     ) VALUES (
       $1,
       UNHEX(REPLACE($2, '-', '')),
-      $3
+      $3,
+      (NOW() + INTERVAL 1 HOUR)
     )
     ON DUPLICATE KEY UPDATE
       cell_phone = VALUES(cell_phone),
       token = VALUES(token),
-      updated_at = NOW(),
-      created_at = NOW()
+      expires_at = (NOW() + INTERVAL 1 HOUR),
+      updated_at = NOW()
     |sql}
   |> Caqti_type.(
        t3 Pool_user.Repo.CellPhone.t Id.t Pool_common.Repo.VerificationCode.t ->. unit)
@@ -554,7 +556,7 @@ let cell_phone_verifiaction_sql ?(where = "") () =
       created_at
     FROM pool_cell_phone_verifications
     WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
-    AND created_at >= (NOW() - INTERVAL 1 HOUR)
+    AND expires_at > NOW()
     %s
     LIMIT 1
     |sql}
@@ -592,7 +594,8 @@ let find_full_cell_phone_verification_by_contact_request =
     SELECT
       cell_phone,
       token,
-      created_at
+      created_at,
+      expires_at
     FROM pool_cell_phone_verifications
     WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
     LIMIT 1

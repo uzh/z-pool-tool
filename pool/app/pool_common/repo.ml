@@ -52,6 +52,12 @@ module UpdatedAt = struct
   let t = Caqti_type.ptime
 end
 
+module ExpiresAt = struct
+  include ExpiresAt
+
+  let t = Caqti_type.ptime
+end
+
 module File = struct
   include File
 
