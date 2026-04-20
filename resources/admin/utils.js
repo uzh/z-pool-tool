@@ -26,7 +26,7 @@ export function addCloseListener(notificationId) {
 export const notifyUser = (notificationId, classname, msg) => {
     const inner = document.createElement("div")
     inner.classList.add("notification", classname);
-    inner.innerHTML = msg;
+    inner.textContent = msg instanceof Error ? msg.message : String(msg);
     const closeIcon = icon(["icon-close", "notification-close"])
     const wrapper = document.createElement("div");
     wrapper.classList.add("notification-fixed");
