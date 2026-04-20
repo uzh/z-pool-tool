@@ -90,6 +90,7 @@ let handle_event ?tags pool : event -> unit Lwt.t =
   | CellPhoneAdded (contact, cell_phone, token) ->
     Repo.add_cell_phone pool contact cell_phone token
   | CellPhoneSaved (contact, cell_phone) ->
+    let%lwt () = Repo.delete_unverified_cell_phone pool contact in
     { contact with cell_phone = Some cell_phone; cell_phone_verified_at = None }
     |> Repo.update pool
   | CellPhoneVerified (contact, cell_phone) ->

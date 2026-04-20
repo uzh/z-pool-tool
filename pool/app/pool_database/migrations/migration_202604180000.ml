@@ -8,6 +8,20 @@ let add_cell_phone_verified_at =
     |sql}
 ;;
 
+let backfill_cell_phone_verified_at =
+  Database.Migration.Step.create
+    ~label:"backfill cell_phone_verified_at for existing pool_contacts"
+    {sql|
+      UPDATE pool_contacts
+      SET cell_phone_verified_at = updated_at
+      WHERE cell_phone IS NOT NULL
+        AND cell_phone_verified_at IS NULL
+    |sql}
+;;
+
 let migration () =
-  Database.Migration.(empty "202604180000" |> add_step add_cell_phone_verified_at)
+  Database.Migration.(
+    empty "202604180000"
+    |> add_step add_cell_phone_verified_at
+    |> add_step backfill_cell_phone_verified_at)
 ;;

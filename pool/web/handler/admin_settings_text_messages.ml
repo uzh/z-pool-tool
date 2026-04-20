@@ -141,6 +141,7 @@ module Access : sig
   val index : Rock.Middleware.t
   val update : Rock.Middleware.t
   val delete : Rock.Middleware.t
+  val update_phone_verification : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
@@ -149,6 +150,10 @@ end = struct
   let index = Command.UpdateGtxApiKey.effects |> Guardian.validate_admin_entity
   let update = Command.UpdateGtxApiKey.effects |> Guardian.validate_admin_entity
   let delete = Command.RemoveGtxApiKey.effects |> Guardian.validate_admin_entity
+
+  let update_phone_verification =
+    Command.UpdatePhoneVerificationEnabled.effects |> Guardian.validate_admin_entity
+  ;;
 end
 
 let update_phone_verification req =

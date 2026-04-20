@@ -896,7 +896,7 @@ module Admin = struct
         ; post "delete" ~middlewares:[ Access.delete ] delete
         ; post
             "phone-verification"
-            ~middlewares:[ Access.update ]
+            ~middlewares:[ Access.update_phone_verification ]
             update_phone_verification
         ]
       in

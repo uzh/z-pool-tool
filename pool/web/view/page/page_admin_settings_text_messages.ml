@@ -86,11 +86,7 @@ let index
                 [ txt (Utils.field_to_string language Field.GtxApiKey) ]
             ; hint
             ; form
-                ~a:
-                  [ a_action (Sihl.Web.externalize_path action)
-                  ; a_method `Post
-                  ; a_class [ "stack" ]
-                  ]
+                ~a:[ a_action action; a_method `Post; a_class [ "stack" ] ]
                 [ csrf_element csrf ()
                 ; input_element
                     language
