@@ -346,8 +346,27 @@ let resend_token req =
          let* { Pool_context.Tenant.tenant; _ } =
            Pool_context.Tenant.find req |> Lwt_result.lift
          in
-         let* { Pool_user.UnverifiedCellPhone.cell_phone; verification_code; _ } =
+         let* { Pool_user.UnverifiedCellPhone.cell_phone
+              ; verification_code
+              ; expires_at
+              ; _
+              }
+           =
            Contact.find_full_cell_phone_verification_by_contact database_label contact
+         in
+         let* () =
+           (* expires_at = last_sent_at + 1h, so last_sent_at = expires_at - 1h.
+              If expires_at is more than (1h - cooldown) in the future, the cooldown has not elapsed. *)
+           let resend_cooldown_s = 60. in
+           let token_ttl_s = 3600. in
+           let expires = Pool_common.ExpiresAt.value expires_at in
+           let time_since_last_send =
+             token_ttl_s
+             -. (Ptime.diff expires (Ptime_clock.now ()) |> Ptime.Span.to_float_s)
+           in
+           if time_since_last_send < resend_cooldown_s
+           then Lwt_result.fail Error.TokenAlreadySentRecently
+           else Lwt_result.return ()
          in
          let* () =
            Message_template.PhoneVerification.create_text_message
@@ -360,6 +379,11 @@ let resend_token req =
            |>> Text_message.sent
                %> Pool_event.text_message
                %> Pool_event.handle_event database_label user
+         in
+         let%lwt () =
+           Contact.CellPhoneTokenResent contact
+           |> Pool_event.contact
+           |> Pool_event.handle_event database_label user
          in
          HttpUtils.(
            redirect_to_with_actions

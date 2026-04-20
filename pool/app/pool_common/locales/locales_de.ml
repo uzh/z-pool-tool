@@ -713,6 +713,9 @@ let rec error_to_string =
   | TextMessageDlrAlreadyReceived -> "SMS Übermittlingsbeicht bereits erhalten."
   | TimeInPast -> "Zeitpunkt liegt in der Vergangenheint!"
   | TimeSpanPositive -> "Zeitspanne muss grösser als 0 sein!"
+  | TokenAlreadySentRecently ->
+    "Es wurde kürzlich bereits ein Token gesendet. Bitte warte einen Moment, bevor du \
+     ein neues anforderst."
   | TokenAlreadyUsed -> "Das Token wurde bereits verwendet."
   | TokenInvalidFormat -> "Ungültiges Token Format!"
   | TooShort -> "Die angegebene Dauer ist zu kurz."

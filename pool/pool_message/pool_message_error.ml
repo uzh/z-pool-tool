@@ -147,6 +147,7 @@ type t =
   | TextMessageDlrAlreadyReceived
   | TimeInPast
   | TimeSpanPositive
+  | TokenAlreadySentRecently
   | TokenAlreadyUsed
   | TokenInvalidFormat
   | TooShort

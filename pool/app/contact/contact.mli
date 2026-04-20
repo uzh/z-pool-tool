@@ -159,6 +159,7 @@ type event =
   | UnverifiedDeleted of t
   | CellPhoneAdded of t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
   | CellPhoneSaved of t * Pool_user.CellPhone.t
+  | CellPhoneTokenResent of t
   | CellPhoneVerified of t * Pool_user.CellPhone.t
   | CellPhoneVerificationReset of t
   | ImportConfirmed of t * Pool_user.Password.Plain.t

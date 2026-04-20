@@ -624,6 +624,21 @@ let delete_unverified_cell_phone pool =
   Entity.id %> Database.exec pool delete_unverified_cell_phone_requeset
 ;;
 
+let touch_cell_phone_verification_request =
+  let open Caqti_request.Infix in
+  {sql|
+    UPDATE pool_cell_phone_verifications
+    SET expires_at = (NOW() + INTERVAL 1 HOUR),
+        updated_at = NOW()
+    WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
+  |sql}
+  |> Id.t ->. Caqti_type.unit
+;;
+
+let touch_cell_phone_verification pool =
+  Entity.id %> Database.exec pool touch_cell_phone_verification_request
+;;
+
 let update_sign_in_count_request =
   let open Caqti_request.Infix in
   {sql|

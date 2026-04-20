@@ -57,14 +57,18 @@ module UnverifiedCellPhone = struct
 
   let full =
     let encode _ = failwith "Decode model only." in
-    let decode (cell_phone, verification_code, created_at) =
-      Ok { cell_phone; verification_code; created_at }
+    let decode (cell_phone, (verification_code, (created_at, expires_at))) =
+      Ok { cell_phone; verification_code; created_at; expires_at }
     in
     Caqti_type.(
       custom
         ~encode
         ~decode
-        (t3 CellPhone.t Pool_common.Repo.VerificationCode.t Pool_common.Repo.CreatedAt.t))
+        (t2
+           CellPhone.t
+           (t2
+              Pool_common.Repo.VerificationCode.t
+              (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.ExpiresAt.t))))
   ;;
 end
 

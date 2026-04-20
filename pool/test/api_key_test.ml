@@ -1,6 +1,7 @@
 open Pool_message
 module Model = Test_utils.Model
 module Command = Cqrs_command.Api_key_command
+module ExpiresAt = Pool_common.ExpiresAt
 
 let get_exn = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label

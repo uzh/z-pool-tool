@@ -142,7 +142,7 @@ module Model = struct
     Pool_user.Password.Plain.(create password_str |> validate |> get_or_failwith)
   ;;
 
-  let create_api_key ?id ?token ?(expires_at = Api_key.ExpiresAt.create_now ()) () =
+  let create_api_key ?id ?token ?(expires_at = Pool_common.ExpiresAt.create_now ()) () =
     let open Api_key in
     let name = Name.of_string "Name" in
     create ?id ?token name expires_at
