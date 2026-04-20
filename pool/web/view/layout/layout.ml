@@ -1,4 +1,4 @@
-open CCFun
+open CCFun.Infix
 open Tyxml.Html
 module File = Pool_common.File
 module Language = Pool_common.Language
@@ -18,46 +18,24 @@ module Tenant = struct
   let make_footer { database_label; language; query_parameters; _ } title_text =
     let%lwt privacy_policy_is_set = I18n.privacy_policy_is_set database_label language in
     let open Pool_common in
-    let externalize path =
-      path
-      |> Http_utils.url_with_field_params query_parameters
-      |> Sihl.Web.externalize_path
+    let of_nav = Utils.nav_link_to_string language in
+    let of_field = Utils.field_to_string_capitalized language in
+    let externalize =
+      Http_utils.url_with_field_params query_parameters %> Sihl.Web.externalize_path
     in
-    let text_fragments =
-      [ txt title_text; txt App.version ] |> App.combine_footer_fragments
-    in
-    let footer_nav =
-      let nav_to_string = Utils.nav_link_to_string language in
-      let field_to_string = Utils.field_to_string_capitalized language in
+    let fragments =
       let links =
-        [ Http_utils.Url.Admin.version_path (), nav_to_string I18n.Versions
-        ; "/credits", nav_to_string I18n.Credits
-        ; "/terms-and-conditions", field_to_string Pool_message.Field.TermsAndConditions
+        [ Http_utils.Url.Admin.version_path (), of_nav I18n.Versions
+        ; "/credits", of_nav I18n.Credits
+        ; "/terms-and-conditions", of_field Pool_message.Field.TermsAndConditions
         ]
       in
-      let links =
-        if privacy_policy_is_set
-        then links @ [ "/privacy-policy", nav_to_string I18n.PrivacyPolicy ]
-        else links
-      in
-      links
+      (if privacy_policy_is_set
+       then links @ [ "/privacy-policy", of_nav I18n.PrivacyPolicy ]
+       else links)
       |> CCList.map (fun (url, label) -> a ~a:[ a_href (externalize url) ] [ txt label ])
-      |> App.combine_footer_fragments ~column_mobile:true ~classnames:[ "footer-nav" ]
     in
-    footer
-      ~a:
-        [ a_class
-            [ "inset"
-            ; "flexrow"
-            ; "flex-gap"
-            ; "flexcolumn-mobile"
-            ; "justify-center"
-            ; "border-top"
-            ; "push"
-            ]
-        ]
-      [ text_fragments; span ~a:[ a_class [ "hidden-mobile" ] ] [ txt "|" ]; footer_nav ]
-    |> Lwt.return
+    App.create_footer ~app_name:title_text ~fragments () |> Lwt.return
   ;;
 
   let create
@@ -154,7 +132,7 @@ module Root = struct
          ~a:[ a_class body_tag_classnames ]
          [ App.navbar ~children:navbar_content query_parameters title_text
          ; main_tag [ message; content ]
-         ; App.root_footer
+         ; App.create_footer ()
          ; js_script_tag `IndexJs
          ; js_script_tag `AdminJs
          ])
@@ -173,6 +151,10 @@ module Error = struct
       (head page_title ([ charset; viewport ] @ [ `GlobalStylesheet |> css_link_tag ]))
       (body
          ~a:[ a_class body_tag_classnames ]
-         [ App.navbar [] title_text; content; App.root_footer; js_script_tag `IndexJs ])
+         [ App.navbar [] title_text
+         ; content
+         ; App.create_footer ()
+         ; js_script_tag `IndexJs
+         ])
   ;;
 end
