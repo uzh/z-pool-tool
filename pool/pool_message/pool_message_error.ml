@@ -5,6 +5,7 @@ type t =
   | AccessDenied
   | AccessDeniedMessage
   | AccountTemporarilySuspended of Utils.Ptime.t
+  | AdminLoginDisabled
   | AllLanguagesRequired of Field.t
   | AlreadyExisting of Field.t
   | AlreadyInPast
@@ -30,6 +31,7 @@ type t =
   | ContactExperimentNotFound
   | ContactIsInactive
   | ContactIsPaused
+  | ContactLoginDisabled
   | ContactSignupInvalidEmail
   | ContactUnconfirmed
   | CustomFieldNoOptions
@@ -128,6 +130,7 @@ type t =
   | SessionRegistrationViaParent
   | SessionTenantNotFound
   | Smaller of (Field.t * Field.t)
+  | SmtpCannotDeleteLast
   | SmtpException of string
   | SmtpLoginMissingCredentials
   | SmtpRecipientNotFound of string

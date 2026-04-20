@@ -227,6 +227,7 @@ module SmtpAuth : sig
   val find_for_experiment : Database.Label.t -> t list Lwt.t
   val find_by : Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
   val defalut_is_set : Database.Label.t -> bool Lwt.t
+  val check_can_delete : Database.Label.t -> (unit, Pool_message.Error.t) Lwt_result.t
   val count_invitations_sent_since : Database.Label.t -> Id.t option -> int -> int Lwt.t
   val column_label : Query.Column.t
   val column_smtp_server : Query.Column.t

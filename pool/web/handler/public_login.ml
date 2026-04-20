@@ -55,23 +55,43 @@ let login_token_confirmation req =
 let login_post req =
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result ({ Pool_context.database_label; user; query_parameters; _ } as context) =
     Response.bad_request_on_error ~urlencoded login_get
     @@
-    let handle_events = Pool_event.handle_events database_label user in
-    let* user, auth, events =
-      Helpers_login.create_2fa_login ~tags req context urlencoded
-    in
-    let success () =
-      Page.Public.login_token_confirmation
-        ~authentication_id:auth.Authentication.id
-        ?intended:(HttpUtils.find_intended_opt req)
-        ~email:(Pool_user.email user)
-        context
-      |> create_layout req ~active_navigation:"/login" context
-      >|+ Sihl.Web.Response.of_html
-    in
-    events |> handle_events >|> success
+    let* login_step = Helpers_login.initiate_login ~tags req context urlencoded in
+    match login_step with
+    | Helpers_login.MfaRequired (login_user, auth, events) ->
+      let handle_events = Pool_event.handle_events database_label user in
+      let success () =
+        Page.Public.login_token_confirmation
+          ~authentication_id:auth.Authentication.id
+          ?intended:(HttpUtils.find_intended_opt req)
+          ~email:(Pool_user.email login_user)
+          context
+        |> create_layout req ~active_navigation:"/login" context
+        >|+ Sihl.Web.Response.of_html
+      in
+      events |> handle_events >|> success
+    | Helpers_login.DirectLogin login_user ->
+      let success_and_redirect context_user =
+        let redirect =
+          let open CCOption in
+          HttpUtils.find_intended_opt req
+          |> value ~default:(Pool_context.dashboard_path context_user)
+          |> HttpUtils.url_with_field_params query_parameters
+        in
+        let* () = increase_sign_in_count ~tags database_label context_user in
+        HttpUtils.redirect_to_with_actions
+          redirect
+          [ Sihl.Web.Session.set
+              [ "user_id", login_user.Pool_user.id |> Pool_user.Id.value ]
+          ]
+        |> Lwt_result.ok
+      in
+      login_user.Pool_user.id
+      |> Admin.(Id.of_user %> find database_label)
+      >|+ Pool_context.admin
+      >>= success_and_redirect
   in
   Response.handle ~src req result
 ;;

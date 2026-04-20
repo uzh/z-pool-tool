@@ -24,6 +24,11 @@ let suite =
           ; test_case "login after terms update" `Slow login_after_terms_update
           ; test_case "can create smtp auth" `Slow create_smtp_auth
           ; test_case "can delete smtp auth" `Slow delete_smtp_auth
+          ; test_case "cannot delete last smtp" `Slow cannot_delete_last_smtp
+          ; test_case
+              "can delete smtp when multiple exist"
+              `Slow
+              can_delete_smtp_when_multiple
           ; test_case "update gtx settings" `Slow update_gtx_settings
           ] )
     ; "dev/test", [ test_case "intercept email" `Slow Common_test.validate_email ]
@@ -33,6 +38,19 @@ let suite =
           ; test_case "failed login test" `Slow failed_login_test
           ; test_case "successful create 2fa test" `Slow successful_create_2fa_test
           ; test_case "confirm 2fa test" `Slow confirm_2fa_test
+          ; test_case
+              "no smtp: contact login disabled"
+              `Slow
+              no_smtp_contact_login_disabled_test
+          ; test_case
+              "no smtp: admin without permission disabled"
+              `Slow
+              no_smtp_admin_without_permission_disabled_test
+          ; test_case
+              "no smtp: admin with permission gets direct login"
+              `Slow
+              no_smtp_admin_with_permission_allowed_test
+          ; test_case "no smtp: root bypasses check" `Slow no_smtp_root_bypass_test
           ] )
     ; ( "authorization"
       , Authorization_test.

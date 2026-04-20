@@ -453,6 +453,9 @@ let rec error_to_string =
           bis %s"
   | AccessDenied -> "Zugriff verweigert"
   | AccessDeniedMessage -> "Der Zugriff auf die gewünschte Seite ist nicht möglich."
+  | AdminLoginDisabled ->
+    "Der Admin-Login ist deaktiviert, da kein SMTP-Server konfiguriert ist und Sie keine \
+     Berechtigung zum Verwalten der SMTP-Einstellungen haben."
   | AllLanguagesRequired field ->
     field_message
       "Bitte geben Sie '"
@@ -532,6 +535,9 @@ let rec error_to_string =
   | DeleteContactUpcomingSessions ->
     "Kontakt kann nicht gelöscht werden. Dieser Kontakt ist an kommenden Sessions \
      angemeldet. Diese Anmeldungen müssen zuerst gelöscht werden."
+  | ContactLoginDisabled ->
+    "Der Kontakt-Login ist deaktiviert, da kein SMTP-Server konfiguriert ist. Bitte \
+     wenden Sie sich an Ihren Administrator."
   | DirectRegistrationIsDisabled ->
     "Sie können sich nicht selbst für dieses Experiment anmelden."
   | Disabled field -> field_message "" (field_to_string field) "ist deaktiviert."
@@ -682,6 +688,7 @@ let rec error_to_string =
   | Smaller (field1, field2) ->
     Format.asprintf "%s kleiner als %s" (field_to_string field1) (field_to_string field2)
   | SessionOverlap -> "Dieses Zeitfenster überschneidet sich mit einem anderen."
+  | SmtpCannotDeleteLast -> "Die letzte SMTP-Konfiguration kann nicht gelöscht werden."
   | SmtpException exn -> exn
   | SmtpLoginMissingCredentials ->
     "Der SMTP-Authentifizierungsmechanismus kann nicht auf LOGIN gesetzt werden, wenn \

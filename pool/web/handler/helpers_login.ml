@@ -143,26 +143,16 @@ let validate_login req ~tags database_label ~email ~password =
   email |> Pool_user.FailedLoginAttempt.Repo.find_opt database_label >|> handle_login
 ;;
 
-let create_2fa_login
-      ?id
-      ?token
-      ?tags
-      req
-      { Pool_context.database_label; language; _ }
-      urlencoded
+(* Internal helper: create 2FA auth token and email job events for a validated user *)
+let create_2fa_auth ?id ?token ~tags req { Pool_context.database_label; language; _ } user
   =
-  let tags = CCOption.value tags ~default:(Pool_context.Logger.Tags.req req) in
-  let* email, password = login_params urlencoded in
-  let* user = validate_login req ~tags database_label ~email ~password in
   let auth = Authentication.(create ?id ?token ~user ~channel:Channel.Email) () in
   let%lwt email_job =
     let open Message_template in
     let email_layout =
       match Database.Pool.is_root database_label with
       | true -> Root
-      | false ->
-        let tenant = Pool_context.Tenant.get_tenant_exn req in
-        Tenant tenant
+      | false -> Tenant (Pool_context.Tenant.get_tenant_exn req)
     in
     Login2FAToken.prepare database_label language email_layout
   in
@@ -171,6 +161,71 @@ let create_2fa_login
     |> Lwt_result.lift
   in
   Lwt_result.return (user, auth, events)
+;;
+
+let create_2fa_login
+      ?id
+      ?token
+      ?tags
+      req
+      ({ Pool_context.database_label; _ } as context)
+      urlencoded
+  =
+  let tags = CCOption.value tags ~default:(Pool_context.Logger.Tags.req req) in
+  let* email, password = login_params urlencoded in
+  let* user = validate_login req ~tags database_label ~email ~password in
+  create_2fa_auth ?id ?token ~tags req context user
+;;
+
+let admin_has_smtp_permission database_label (user : Pool_user.t) =
+  let open Utils.Lwt_result.Infix in
+  let ctx = Database.to_ctx database_label in
+  let%lwt result =
+    user.Pool_user.id
+    |> Admin.(Id.of_user %> find database_label)
+    >>= Admin.Guard.Actor.to_authorizable ~ctx
+    >>= Guard.Persistence.validate database_label Cqrs_command.Smtp_command.Create.effects
+  in
+  Lwt.return (CCResult.is_ok result)
+;;
+
+type login_step =
+  | MfaRequired of Pool_user.t * Authentication.t * Pool_event.t list
+  | DirectLogin of Pool_user.t
+
+(** Entry point for the login POST handler. Determines whether 2FA is needed based
+    on the SMTP configuration and the user type/permissions. *)
+let initiate_login
+      ?id
+      ?token
+      ?tags
+      req
+      ({ Pool_context.database_label; _ } as context)
+      urlencoded
+  =
+  let tags = CCOption.value tags ~default:(Pool_context.Logger.Tags.req req) in
+  let* email, password = login_params urlencoded in
+  let* user = validate_login req ~tags database_label ~email ~password in
+  let%lwt smtp_set = Email.SmtpAuth.defalut_is_set database_label in
+  match Database.Pool.is_root database_label with
+  | true ->
+    (* Root user: always go through MFA, may have to check the DB manually *)
+    let* login_user, auth, events = create_2fa_auth ?id ?token ~tags req context user in
+    Lwt_result.return (MfaRequired (login_user, auth, events))
+  | false when smtp_set ->
+    (* SMTP configured: all users go through MFA *)
+    let* login_user, auth, events = create_2fa_auth ?id ?token ~tags req context user in
+    Lwt_result.return (MfaRequired (login_user, auth, events))
+  | false ->
+    (* No SMTP: user type determines behaviour *)
+    (match%lwt[@warning "-4"] Contact.find_by_user database_label user with
+     | Ok (_ : Contact.t) -> Lwt_result.fail Pool_message.Error.ContactLoginDisabled
+     | Error (Pool_message.Error.NotFound Field.Contact) ->
+       let%lwt has_perm = admin_has_smtp_permission database_label user in
+       if has_perm
+       then Lwt_result.return (DirectLogin user)
+       else Lwt_result.fail Pool_message.Error.AdminLoginDisabled
+     | Error err -> Lwt_result.fail err)
 ;;
 
 let decode_2fa_confirmation database_label req ~tags =

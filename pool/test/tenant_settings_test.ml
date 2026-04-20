@@ -366,6 +366,135 @@ let delete_smtp_auth =
   Lwt.return_ok ()
 ;;
 
+(* Helper to insert one minimal SMTP record and return its id *)
+let create_temp_smtp test_db =
+  let open Email.SmtpAuth in
+  let id = Id.create () in
+  let ( let* ) = CCResult.( >>= ) in
+  let write =
+    let* label = Label.create ("test-smtp-" ^ Id.show id) in
+    let* server = Server.create "test.server.local" in
+    let* port = Port.create 2525 in
+    Write.create
+      ~id
+      label
+      server
+      port
+      None
+      None
+      Mechanism.PLAIN
+      Protocol.STARTTLS
+      (Default.create false)
+  in
+  let write = write |> Test_utils.get_or_failwith in
+  let%lwt () =
+    [ Email.SmtpCreated write |> Pool_event.email ]
+    |> Pool_event.handle_events test_db current_user
+  in
+  Lwt.return id
+;;
+
+(* Test: guard fires when only one SMTP record exists *)
+let cannot_delete_last_smtp =
+  let test_db = Test_utils.Data.database_label in
+  let saved_writes : Email.SmtpAuth.Write.t list ref = ref [] in
+  let temp_id : Email.SmtpAuth.Id.t ref = ref (Email.SmtpAuth.Id.create ()) in
+  Test_utils.case
+    ~preparation:(fun () ->
+      (* Gather full write objects before deleting so cleanup can restore them *)
+      let%lwt all = Email.SmtpAuth.find_all test_db in
+      let%lwt writes =
+        Lwt_list.filter_map_p
+          (fun ({ Email.SmtpAuth.id; _ } : Email.SmtpAuth.t) ->
+             Email.SmtpAuth.find_full test_db id |> Lwt.map CCResult.to_opt)
+          all
+      in
+      saved_writes := writes;
+      (* Delete all existing SMTPs *)
+      let%lwt () =
+        all
+        |> CCList.map (fun ({ Email.SmtpAuth.id; _ } : Email.SmtpAuth.t) ->
+          Email.SmtpDeleted id |> Pool_event.email)
+        |> Pool_event.handle_events test_db current_user
+      in
+      (* Create exactly 1 fresh SMTP so count = 1 *)
+      let%lwt id = create_temp_smtp test_db in
+      temp_id := id;
+      Lwt_result.return ())
+    ~cleanup:(fun () ->
+      (* Remove the temp SMTP *)
+      let%lwt () =
+        [ Email.SmtpDeleted !temp_id |> Pool_event.email ]
+        |> Pool_event.handle_events test_db current_user
+      in
+      (* Restore originals *)
+      !saved_writes
+      |> CCList.map (fun w -> Email.SmtpCreated w |> Pool_event.email)
+      |> Pool_event.handle_events test_db current_user
+      |> Lwt_result.ok)
+  @@ fun () ->
+  let%lwt actual = Email.SmtpAuth.check_can_delete test_db in
+  Alcotest.(
+    check
+      (result unit Test_utils.error)
+      "guard fires when only one smtp exists"
+      (Error Error.SmtpCannotDeleteLast)
+      actual);
+  Lwt.return_ok ()
+;;
+
+(* Test: guard passes when two or more SMTP records exist *)
+let can_delete_smtp_when_multiple =
+  let test_db = Test_utils.Data.database_label in
+  let saved_writes : Email.SmtpAuth.Write.t list ref = ref [] in
+  let temp_id1 : Email.SmtpAuth.Id.t ref = ref (Email.SmtpAuth.Id.create ()) in
+  let temp_id2 : Email.SmtpAuth.Id.t ref = ref (Email.SmtpAuth.Id.create ()) in
+  Test_utils.case
+    ~preparation:(fun () ->
+      (* Save existing records so we can restore them after the test *)
+      let%lwt all = Email.SmtpAuth.find_all test_db in
+      let%lwt writes =
+        Lwt_list.filter_map_p
+          (fun ({ Email.SmtpAuth.id; _ } : Email.SmtpAuth.t) ->
+             Email.SmtpAuth.find_full test_db id |> Lwt.map CCResult.to_opt)
+          all
+      in
+      saved_writes := writes;
+      (* Delete all existing SMTPs, then create exactly 2 fresh ones so the
+         test is self-contained regardless of prior database state *)
+      let%lwt () =
+        all
+        |> CCList.map (fun ({ Email.SmtpAuth.id; _ } : Email.SmtpAuth.t) ->
+          Email.SmtpDeleted id |> Pool_event.email)
+        |> Pool_event.handle_events test_db current_user
+      in
+      let%lwt id1 = create_temp_smtp test_db in
+      let%lwt id2 = create_temp_smtp test_db in
+      temp_id1 := id1;
+      temp_id2 := id2;
+      Lwt_result.return ())
+    ~cleanup:(fun () ->
+      let%lwt () =
+        [ Email.SmtpDeleted !temp_id1 |> Pool_event.email
+        ; Email.SmtpDeleted !temp_id2 |> Pool_event.email
+        ]
+        |> Pool_event.handle_events test_db current_user
+      in
+      !saved_writes
+      |> CCList.map (fun w -> Email.SmtpCreated w |> Pool_event.email)
+      |> Pool_event.handle_events test_db current_user
+      |> Lwt_result.ok)
+  @@ fun () ->
+  let%lwt actual = Email.SmtpAuth.check_can_delete test_db in
+  Alcotest.(
+    check
+      (result unit Test_utils.error)
+      "guard passes when multiple smtp records exist"
+      (Ok ())
+      actual);
+  Lwt.return_ok ()
+;;
+
 let update_gtx_settings _ () =
   let testable_gtx =
     let open Gtx_config in

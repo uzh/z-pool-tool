@@ -18,6 +18,15 @@ module SmtpAuth = struct
          let () = Email_service.Cache.add pool smtp in
          true)
   ;;
+
+  let check_can_delete pool =
+    let open Utils.Lwt_result.Infix in
+    find_all pool
+    ||> fun all ->
+    if CCList.length all <= 1
+    then Error Pool_message.Error.SmtpCannotDeleteLast
+    else Ok ()
+  ;;
 end
 
 let find_unverified_by_user pool = Repo.find_by_user pool UnverifiedC
