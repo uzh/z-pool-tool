@@ -491,11 +491,6 @@ Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
     types
     |> CCString.concat ", "
     |> Format.asprintf "Zugelassen sind foldende Dateitypen: %s"
-  | PhoneVerificationHint ->
-    "Wenn aktiviert, müssen Kontakte ihre Telefonnummer verifizieren. Eine verifizierte \
-     Telefonnummer wird durch ein Häkchen im Kontaktprofil angezeigt. Die \
-     Telefonnummernverifizierung ist nur verfügbar, wenn ein GTX-API-Schlüssel \
-     konfiguriert ist."
   | GtxKeyMissing ->
     "Es wurde kein GTX Api Key hinterlegt, weshalb keine Textnachrichten verschickt \
      werden."
@@ -635,6 +630,11 @@ Markiert sind die Felder, welche als gleich angesehen werden. Ist ein Admin Wert
      eingeladen."
   | PermissionManage -> "Beinhaltet Create, Read, Update und Destroy"
   | PermissionsExplanationLink -> "Öffne die Erklärungen der Berechtigungen"
+  | PhoneVerificationHint ->
+    "Wenn aktiviert, müssen Kontakte ihre Telefonnummer verifizieren. Eine verifizierte \
+     Telefonnummer wird durch ein Häkchen im Kontaktprofil angezeigt. Die \
+     Telefonnummernverifizierung ist nur verfügbar, wenn ein GTX-API-Schlüssel \
+     konfiguriert ist."
   | PromoteContact ->
     "Achtung: einmalige Aktion. Der Kontakt wird zu einem Admin befördert, dieser wird \
      anschliessend nicht mehr für Experimente eingeladen und kann sich nicht mehr für \

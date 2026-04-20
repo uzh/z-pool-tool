@@ -228,6 +228,7 @@ let rec field_to_string =
   | Period -> "period"
   | Permission -> "permission"
   | PermissionOn (role, target) -> Format.asprintf "permission %s of %s" target role
+  | PhoneVerificationEnabled -> "phone number verification"
   | PlainText -> "plaintext"
   | Pool -> "pool"
   | Placeholder -> "placeholder"
@@ -322,7 +323,6 @@ let rec field_to_string =
   | TermsAndConditions -> "terms and conditions"
   | TermsAndConditionsLastAccepted -> "terms and conditions last accepted at"
   | TestPhoneNumber -> "test phone number"
-  | PhoneVerificationEnabled -> "Phone Number Verification"
   | Text -> "text"
   | TextMessage -> "text message"
   | TextMessageDlrStatus -> "text message status"

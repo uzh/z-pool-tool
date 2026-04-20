@@ -232,6 +232,7 @@ let rec field_to_string =
       "Berechtiung %s von %s"
       (CCString.capitalize_ascii target)
       (CCString.capitalize_ascii role)
+  | PhoneVerificationEnabled -> "Telefonnummernverifizierung"
   | Placeholder -> "Platzhalter"
   | PlainText -> "Klartext"
   | Pool -> "Pool"
@@ -324,7 +325,6 @@ let rec field_to_string =
   | TermsAndConditions -> "Teilnahmebedingungen"
   | TermsAndConditionsLastAccepted -> "Teilnahmebedingungen zuletzt akzeptiert"
   | TestPhoneNumber -> "Testtelefonnummer"
-  | PhoneVerificationEnabled -> "Telefonnummernverifizierung"
   | Text -> "Text"
   | TextMessage -> "SMS"
   | TextMessageDlrStatus -> "SMS Status"
