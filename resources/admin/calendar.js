@@ -81,7 +81,7 @@ export const initCalendar = () => {
                     hour12: false,
                 },
                 eventDidMount: function (info) {
-                    [...info.el.querySelectorAll('.fc-list-event-title')].map(x => x.innerHTML += `<span>${info.event.extendedProps.location.name}</span>`);
+                    [...info.el.querySelectorAll('.fc-list-event-title')].forEach(x => { const span = document.createElement('span'); span.textContent = info.event.extendedProps.location.name; x.appendChild(span); });
                     tippy(info.el, {
                         arrow: false,
                         appendTo: el,
