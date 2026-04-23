@@ -3,6 +3,7 @@ open CCFun.Infix
 open Pool_message
 module Icon = Component.Icon
 module Input = Component.Input
+module ExpiresAt = Pool_common.ExpiresAt
 
 let api_key_path = Http_utils.Url.Admin.api_key_path
 let field_to_string = Pool_common.Utils.field_to_string_capitalized

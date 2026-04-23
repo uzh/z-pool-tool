@@ -73,6 +73,7 @@ type t =
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
   ; cell_phone : Pool_user.CellPhone.t option
+  ; cell_phone_verified_at : Pool_model.Base.Ptime.t option
   ; paused : Pool_user.Paused.t
   ; disabled : Pool_user.Disabled.t
   ; verified : Pool_user.Verified.t option
@@ -125,6 +126,7 @@ let create ?terms_accepted_at ?language user =
   ; language
   ; experiment_type_preference = None
   ; cell_phone = None
+  ; cell_phone_verified_at = None
   ; paused = Pool_user.Paused.create false
   ; disabled = Pool_user.Disabled.create false
   ; verified = None
@@ -152,6 +154,7 @@ module Write = struct
     ; language : Pool_common.Language.t option
     ; experiment_type_preference : Pool_common.ExperimentType.t option
     ; cell_phone : Pool_user.CellPhone.t option
+    ; cell_phone_verified_at : Pool_model.Base.Ptime.t option
     ; paused : Pool_user.Paused.t
     ; disabled : Pool_user.Disabled.t
     ; verified : Pool_user.Verified.t option
@@ -177,6 +180,7 @@ let to_write (m : t) : Write.t =
   ; language = m.language
   ; experiment_type_preference = m.experiment_type_preference
   ; cell_phone = m.cell_phone
+  ; cell_phone_verified_at = m.cell_phone_verified_at
   ; paused = m.paused
   ; disabled = m.disabled
   ; verified = m.verified

@@ -29,7 +29,7 @@ let t =
       [ Pool_common.Repo.Id.t
       ; string
       ; Token.t
-      ; ptime
+      ; Pool_common.Repo.ExpiresAt.t
       ; Pool_common.Repo.CreatedAt.t
       ; Pool_common.Repo.UpdatedAt.t
       ]
@@ -42,6 +42,9 @@ module Write = struct
       Ok Data.[ m.id; m.name; m.token; m.expires_at ]
     in
     let open Schema in
-    custom ~encode ~decode Caqti_type.[ Pool_common.Repo.Id.t; string; Token.t; ptime ]
+    custom
+      ~encode
+      ~decode
+      Caqti_type.[ Pool_common.Repo.Id.t; string; Token.t; Pool_common.Repo.ExpiresAt.t ]
   ;;
 end

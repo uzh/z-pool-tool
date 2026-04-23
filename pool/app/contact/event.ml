@@ -33,6 +33,8 @@ type event =
   | MarkedAsDeleted of t
   | UnverifiedDeleted of t
   | CellPhoneAdded of t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
+  | CellPhoneSaved of t * Pool_user.CellPhone.t
+  | CellPhoneTokenResent of t
   | CellPhoneVerified of t * Pool_user.CellPhone.t
   | CellPhoneVerificationReset of t
   | ImportConfirmed of t * Pool_user.Password.Plain.t
@@ -88,8 +90,19 @@ let handle_event ?tags pool : event -> unit Lwt.t =
   | UnverifiedDeleted contact -> contact |> Entity.id |> Repo.delete_unverified pool
   | CellPhoneAdded (contact, cell_phone, token) ->
     Repo.add_cell_phone pool contact cell_phone token
+  | CellPhoneSaved (contact, cell_phone) ->
+    let%lwt () = Repo.delete_unverified_cell_phone pool contact in
+    { contact with cell_phone = Some cell_phone; cell_phone_verified_at = None }
+    |> Repo.update pool
+  | CellPhoneTokenResent contact -> Repo.touch_cell_phone_verification pool contact
   | CellPhoneVerified (contact, cell_phone) ->
-    let%lwt () = { contact with cell_phone = Some cell_phone } |> Repo.update pool in
+    let%lwt () =
+      { contact with
+        cell_phone = Some cell_phone
+      ; cell_phone_verified_at = Some (Ptime_clock.now ())
+      }
+      |> Repo.update pool
+    in
     Repo.delete_unverified_cell_phone pool contact
   | CellPhoneVerificationReset contact -> Repo.delete_unverified_cell_phone pool contact
   | ImportConfirmed (contact, password) ->

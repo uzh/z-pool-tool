@@ -310,6 +310,7 @@ type t =
   | TermsAndConditions
   | TermsAndConditionsLastAccepted
   | TestPhoneNumber
+  | PhoneVerificationEnabled
   | Text
   | TextMessage
   | TextMessageDlrStatus

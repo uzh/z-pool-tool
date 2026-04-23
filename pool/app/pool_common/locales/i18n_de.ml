@@ -318,7 +318,9 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | ContactLanguage ->
     "Bei einigen Experimenten wird in einer anderen Sprache kommuniziert, ohne Rücksicht \
      auf die Kontaktsprache."
-  | ContactNoCellPhone -> "Sie haben noch keine Mobiltelefonnummer verifiziert."
+  | ContactCellPhoneUnverified ->
+    "Ihre Telefonnummer wurde noch nicht verifiziert. Bitte verifizieren Sie diese."
+  | ContactNoCellPhone -> "Sie haben noch keine Telefonnummer hinterlegt."
   | ContactOnWaitingList ->
     "Sie stehen auf der Warteliste. Das Rekrutierungsteam wird Sie einer Session \
      zuweisen."
@@ -628,6 +630,11 @@ Markiert sind die Felder, welche als gleich angesehen werden. Ist ein Admin Wert
      eingeladen."
   | PermissionManage -> "Beinhaltet Create, Read, Update und Destroy"
   | PermissionsExplanationLink -> "Öffne die Erklärungen der Berechtigungen"
+  | PhoneVerificationHint ->
+    "Wenn aktiviert, müssen Kontakte ihre Telefonnummer verifizieren. Eine verifizierte \
+     Telefonnummer wird durch ein Häkchen im Kontaktprofil angezeigt. Die \
+     Telefonnummernverifizierung ist nur verfügbar, wenn ein GTX-API-Schlüssel \
+     konfiguriert ist."
   | PromoteContact ->
     "Achtung: einmalige Aktion. Der Kontakt wird zu einem Admin befördert, dieser wird \
      anschliessend nicht mehr für Experimente eingeladen und kann sich nicht mehr für \

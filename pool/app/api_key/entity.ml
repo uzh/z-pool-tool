@@ -28,18 +28,11 @@ module Token = struct
   let value m = m
 end
 
-module ExpiresAt = struct
-  include Pool_model.Base.Ptime
-
-  let equal a b = Ptime.equal a b || Sihl.Configuration.is_test ()
-  let schema = schema Pool_message.Field.ExpiresAt CCResult.return
-end
-
 type t =
   { id : Id.t
   ; name : Name.t
   ; token : Token.t [@opaque]
-  ; expires_at : ExpiresAt.t
+  ; expires_at : Pool_common.ExpiresAt.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }

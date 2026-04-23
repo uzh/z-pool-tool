@@ -286,7 +286,7 @@ module MergeData = struct
     run_check T.email_address "equal email" Contact.email_address email;
     run_check T.firstname "equal firstname" Contact.firstname firstname;
     run_check T.lastname "equal lastname" Contact.lastname lastname;
-    run_check (option Test_utils.phone_nr) "equal phone" Contact.cell_phone cell_phone;
+    run_check (option Test_utils.cell_phone) "equal phone" Contact.cell_phone cell_phone;
     run_check
       (option Test_utils.language)
       "equal lang"

@@ -37,6 +37,10 @@ module UpdatedAt : sig
   include Pool_model.Base.PtimeSig
 end
 
+module ExpiresAt : sig
+  include Pool_model.Base.PtimeSig
+end
+
 module File : sig
   module Name : sig
     type t
@@ -255,6 +259,7 @@ module Repo : sig
   module Version : Pool_model.Base.CaqtiSig with type t = Version.t
   module CreatedAt : Pool_model.Base.CaqtiSig with type t = CreatedAt.t
   module UpdatedAt : Pool_model.Base.CaqtiSig with type t = UpdatedAt.t
+  module ExpiresAt : Pool_model.Base.CaqtiSig with type t = ExpiresAt.t
   module File : Pool_model.Base.CaqtiSig with type t = File.t
 
   module Reminder : sig

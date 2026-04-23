@@ -15,7 +15,13 @@ let index req =
     Response.bad_request_render_error context
     @@
     let%lwt gtx_config = Gtx_config.find_opt database_label in
-    Page.Admin.Settings.TextMessage.index context gtx_config
+    let%lwt phone_verification_enabled =
+      Settings.find_phone_verification_enabled database_label
+    in
+    Page.Admin.Settings.TextMessage.index
+      context
+      gtx_config
+      (Settings.PhoneVerification.value phone_verification_enabled)
     |> create_layout ~active_navigation req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -135,6 +141,7 @@ module Access : sig
   val index : Rock.Middleware.t
   val update : Rock.Middleware.t
   val delete : Rock.Middleware.t
+  val update_phone_verification : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
@@ -143,4 +150,31 @@ end = struct
   let index = Command.UpdateGtxApiKey.effects |> Guardian.validate_admin_entity
   let update = Command.UpdateGtxApiKey.effects |> Guardian.validate_admin_entity
   let delete = Command.RemoveGtxApiKey.effects |> Guardian.validate_admin_entity
+
+  let update_phone_verification =
+    Command.UpdatePhoneVerificationEnabled.effects |> Guardian.validate_admin_entity
+  ;;
 end
+
+let update_phone_verification req =
+  let open Utils.Lwt_result.Infix in
+  let result { Pool_context.database_label; user; _ } =
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    Response.bad_request_on_error ~urlencoded index
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* events =
+      let open CCResult.Infix in
+      Command.UpdatePhoneVerificationEnabled.(decode urlencoded >>= handle ~tags)
+      |> Lwt_result.lift
+    in
+    let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    Http_utils.redirect_to_with_actions
+      base_path
+      [ HttpUtils.Message.set
+          ~success:[ Pool_message.(Success.Updated Field.PhoneVerificationEnabled) ]
+      ]
+    |> Lwt_result.ok
+  in
+  Response.handle ~src req result
+;;

@@ -49,7 +49,6 @@ module CreatedAt = struct
 
   let field = Pool_message.Field.CreatedAt
   let schema = schema field CCResult.return
-  let equal a b = Ptime.equal a b || Sihl.Configuration.is_test ()
 end
 
 module UpdatedAt = struct
@@ -57,7 +56,13 @@ module UpdatedAt = struct
 
   let field = Pool_message.Field.UpdatedAt
   let schema = schema field CCResult.return
-  let equal a b = Ptime.equal a b || Sihl.Configuration.is_test ()
+end
+
+module ExpiresAt = struct
+  include Pool_model.Base.Ptime
+
+  let field = Pool_message.Field.ExpiresAt
+  let schema = schema field CCResult.return
 end
 
 module File = struct

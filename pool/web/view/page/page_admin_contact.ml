@@ -30,7 +30,15 @@ let heading_with_icons contact =
     [ Status.identity_with_icons Pool_common.Language.En ~context:`All true contact ]
 ;;
 
-let personal_detail ?admin_comment ?custom_fields ?tags current_user language contact =
+let personal_detail
+      ?admin_comment
+      ?custom_fields
+      ?tags
+      ~phone_verification_enabled
+      current_user
+      language
+      contact
+  =
   let open Contact in
   let open Pool_message in
   let field_to_string =
@@ -75,9 +83,21 @@ let personal_detail ?admin_comment ?custom_fields ?tags current_user language co
       [ Field.Name, fullname contact |> txt
       ; Field.Email, email_address contact |> Pool_user.EmailAddress.value |> txt
       ; ( Field.CellPhone
-        , contact.cell_phone
-          |> CCOption.map_or ~default:"" Pool_user.CellPhone.value
-          |> txt )
+        , let phone_txt =
+            contact.cell_phone
+            |> CCOption.map_or ~default:"" Pool_user.CellPhone.value
+            |> txt
+          in
+          if phone_verification_enabled
+          then (
+            let icon =
+              CCOption.is_some contact.cell_phone_verified_at
+              |> Component.Icon.bool_to_icon ~colored:true ~outlined:true
+            in
+            span
+              ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
+              [ phone_txt; icon ])
+          else phone_txt )
       ; ( Field.Language
         , contact.language |> CCOption.map_or ~default:"" Pool_common.Language.show |> txt
         )
@@ -479,6 +499,7 @@ let experiment_history_modal
 let detail
       ?admin_comment
       ~can_manage_duplicates
+      ~phone_verification_enabled
       (Pool_context.{ language; user; _ } as context)
       contact
       tags
@@ -561,7 +582,14 @@ let detail
           [ a_class [ "flexrow"; "wrap"; "flex-gap"; "justify-between"; "align-center" ] ]
         [ div [ heading_with_icons contact ]; buttons ]
     ; failed_login_attempt
-    ; personal_detail ?admin_comment ~custom_fields ~tags user language contact
+    ; personal_detail
+        ?admin_comment
+        ~phone_verification_enabled
+        ~custom_fields
+        ~tags
+        user
+        language
+        contact
     ; div
         [ subtitle Pool_common.I18n.ExternalDataIds
         ; Component.Contacts.external_data_ids language external_data_ids

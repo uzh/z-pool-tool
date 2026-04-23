@@ -53,11 +53,16 @@ let detail req =
         , true )
       | None | Some _ -> sessions, false
     in
+    let%lwt phone_verification_enabled =
+      Settings.find_phone_verification_enabled database_label
+    in
     Page.Admin.WaitingList.detail
       waiting_list
       grouped_sessions
       experiment_id
       context
+      ~phone_verification_enabled:
+        (Settings.PhoneVerification.value phone_verification_enabled)
       chronological
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html

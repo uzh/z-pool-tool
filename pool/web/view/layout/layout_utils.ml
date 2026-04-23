@@ -61,27 +61,23 @@ module App = struct
 
   let version = Format.asprintf "Z-Pool-Tool %s" Version.to_string
 
-  let combine_footer_fragments ?(column_mobile = false) ?(classnames = []) fragments =
-    let classnames = [ "flexrow"; "flex-gap" ] @ classnames in
+  let create_footer ?(app_name = app_name) ?(fragments = []) () =
+    let separator = span ~a:[ a_class [ "hidden-mobile" ] ] [ txt "|" ] in
+    let base_class = [ "flexrow"; "flex-gap" ] in
     let classnames =
-      if column_mobile then "flexcolumn-mobile" :: classnames else classnames
+      base_class @ [ "safety-margin"; "justify-center"; "flexcolumn-mobile" ]
     in
-    let separator =
-      let text = [ txt "|" ] in
-      if column_mobile then span ~a:[ a_class [ "hidden-mobile" ] ] text else span text
+    let app_id =
+      [ app_name; "|"; version ]
+      |> CCList.map (fun text -> span [ txt text ])
+      |> span ~a:[ a_class base_class ]
     in
-    let rec combine html = function
-      | [] -> html
-      | hd :: tl ->
-        (html
-         @ if CCList.length tl > 0 then [ span [ hd ]; separator ] else [ span [ hd ] ])
-        |> fun html -> combine html tl
+    let elements = function
+      | [] -> [ app_id ]
+      | fragments -> [ app_id; separator ] @ CCList.intersperse separator fragments
     in
-    combine [] fragments |> div ~a:[ a_class classnames ]
-  ;;
-
-  let root_footer =
-    let html = [ txt app_name; txt version ] |> combine_footer_fragments in
-    footer ~a:[ a_class [ "inset"; "justify-center"; "border-top"; "push" ] ] [ html ]
+    footer
+      ~a:[ a_class [ "inset"; "vertical"; "border-top" ] ]
+      [ div ~a:[ a_class classnames ] (elements fragments) ]
   ;;
 end

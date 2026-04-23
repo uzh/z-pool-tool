@@ -17,6 +17,7 @@ let create_contact () =
     ; language = Some Language.En
     ; experiment_type_preference = None
     ; cell_phone = Some (Pool_user.CellPhone.of_string "+41791234567")
+    ; cell_phone_verified_at = None
     ; paused = Paused.create false
     ; disabled = Disabled.create false
     ; verified = None

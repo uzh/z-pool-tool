@@ -12,6 +12,7 @@ let make_sql_select_columns ~user_table ~contact_table =
      ; "language"
      ; "experiment_type_preference"
      ; "cell_phone"
+     ; "cell_phone_verified_at"
      ; "paused"
      ; "disabled"
      ; "verified"
@@ -353,21 +354,22 @@ let update_request =
         language = $3,
         experiment_type_preference = $4,
         cell_phone = $5,
-        paused = $6,
-        disabled = $7,
-        verified = $8,
-        email_verified = $9,
-        num_invitations = $10,
-        num_assignments = $11,
-        num_show_ups = $12,
-        num_no_shows = $13,
-        num_participations = $14,
-        firstname_version = $15,
-        lastname_version = $16,
-        paused_version = $17,
-        language_version = $18,
-        experiment_type_preference_version = $19,
-        import_pending = $20
+        cell_phone_verified_at = $6,
+        paused = $7,
+        disabled = $8,
+        verified = $9,
+        email_verified = $10,
+        num_invitations = $11,
+        num_assignments = $12,
+        num_show_ups = $13,
+        num_no_shows = $14,
+        num_participations = $15,
+        firstname_version = $16,
+        lastname_version = $17,
+        paused_version = $18,
+        language_version = $19,
+        experiment_type_preference_version = $20,
+        import_pending = $21
       WHERE
         user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -524,17 +526,19 @@ let add_cell_phone_request =
     INSERT INTO pool_cell_phone_verifications (
       cell_phone,
       user_uuid,
-      token
+      token,
+      expires_at
     ) VALUES (
       $1,
       UNHEX(REPLACE($2, '-', '')),
-      $3
+      $3,
+      (NOW() + INTERVAL 1 HOUR)
     )
     ON DUPLICATE KEY UPDATE
       cell_phone = VALUES(cell_phone),
       token = VALUES(token),
-      updated_at = NOW(),
-      created_at = NOW()
+      expires_at = (NOW() + INTERVAL 1 HOUR),
+      updated_at = NOW()
     |sql}
   |> Caqti_type.(
        t3 Pool_user.Repo.CellPhone.t Id.t Pool_common.Repo.VerificationCode.t ->. unit)
@@ -552,7 +556,7 @@ let cell_phone_verifiaction_sql ?(where = "") () =
       created_at
     FROM pool_cell_phone_verifications
     WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
-    AND created_at >= (NOW() - INTERVAL 1 HOUR)
+    AND expires_at > NOW()
     %s
     LIMIT 1
     |sql}
@@ -590,7 +594,8 @@ let find_full_cell_phone_verification_by_contact_request =
     SELECT
       cell_phone,
       token,
-      created_at
+      created_at,
+      expires_at
     FROM pool_cell_phone_verifications
     WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
     LIMIT 1
@@ -617,6 +622,21 @@ let delete_unverified_cell_phone_requeset =
 
 let delete_unverified_cell_phone pool =
   Entity.id %> Database.exec pool delete_unverified_cell_phone_requeset
+;;
+
+let touch_cell_phone_verification_request =
+  let open Caqti_request.Infix in
+  {sql|
+    UPDATE pool_cell_phone_verifications
+    SET expires_at = (NOW() + INTERVAL 1 HOUR),
+        updated_at = NOW()
+    WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
+  |sql}
+  |> Id.t ->. Caqti_type.unit
+;;
+
+let touch_cell_phone_verification pool =
+  Entity.id %> Database.exec pool touch_cell_phone_verification_request
 ;;
 
 let update_sign_in_count_request =

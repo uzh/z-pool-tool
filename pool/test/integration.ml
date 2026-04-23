@@ -208,6 +208,18 @@ let suite =
               "should not send registration notification"
               `Slow
               should_not_send_registration_notification
+          ; test_case
+              "save cell phone persists without verified_at"
+              `Slow
+              save_cell_phone_persists_without_verified_at
+          ; test_case
+              "verify cell phone sets verified_at"
+              `Slow
+              verify_cell_phone_sets_verified_at
+          ; test_case
+              "save cell phone clears verified_at"
+              `Slow
+              save_cell_phone_clears_verified_at
           ] )
     ; ( "message_template"
       , Message_template_test.

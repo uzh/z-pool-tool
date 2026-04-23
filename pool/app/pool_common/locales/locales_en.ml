@@ -228,6 +228,7 @@ let rec field_to_string =
   | Period -> "period"
   | Permission -> "permission"
   | PermissionOn (role, target) -> Format.asprintf "permission %s of %s" target role
+  | PhoneVerificationEnabled -> "phone number verification"
   | PlainText -> "plaintext"
   | Pool -> "pool"
   | Placeholder -> "placeholder"
@@ -685,6 +686,8 @@ let rec error_to_string =
   | TextMessageDlrAlreadyReceived -> "Text message delivery report already received."
   | TimeInPast -> "Time is in the past!"
   | TimeSpanPositive -> "Time span must be positive!"
+  | TokenAlreadySentRecently ->
+    "A token was already sent recently. Please wait before requesting a new one."
   | TokenAlreadyUsed -> "The token was already used."
   | TokenInvalidFormat -> "Invalid Token Format!"
   | TooShort -> "The duration specified is too short."

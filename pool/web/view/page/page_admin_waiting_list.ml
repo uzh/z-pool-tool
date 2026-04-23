@@ -185,12 +185,17 @@ let detail
       sessions
       experiment_id
       (Pool_context.{ language; csrf; user; flash_fetcher; _ } as context)
+      ~phone_verification_enabled
       chronological
   =
   let waiting_list_detail =
     div
       ~a:[ a_class [ "stack" ] ]
-      [ Page_admin_contact.personal_detail user language contact
+      [ Page_admin_contact.personal_detail
+          ~phone_verification_enabled
+          user
+          language
+          contact
       ; form
           ~a:
             [ a_class [ "stack" ]

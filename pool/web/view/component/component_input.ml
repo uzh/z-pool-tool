@@ -9,6 +9,7 @@ let submit_type_to_class = function
   | `Error -> "error"
   | `Primary -> "primary"
   | `Success -> "success"
+  | `Secondary -> "secondary"
 ;;
 
 let button_group buttons =

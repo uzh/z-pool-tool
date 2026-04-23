@@ -59,6 +59,8 @@ module Key = struct
     [@printer printer "user_import_first_reminder_after"]
     | UserImportSecondReminderAfter [@name "user_import_second_reminder_after"]
     [@printer printer "user_import_second_reminder_after"]
+    | PhoneVerificationEnabled [@name "phone_verification_enabled"]
+    [@printer printer "phone_verification_enabled"]
   [@@deriving eq, show { with_path = false }, yojson]
 
   let read = Utils.Json.read_variant t_of_yojson
@@ -223,6 +225,15 @@ module UserImportReminder = struct
     let validate = validate
     let key = Key.UserImportSecondReminderAfter
   end
+end
+
+module PhoneVerification = struct
+  let field = Pool_message.Field.PhoneVerificationEnabled
+
+  include Pool_model.Base.Boolean
+
+  let schema = schema ~default:false field
+  let key = Key.PhoneVerificationEnabled
 end
 
 module PageScript = struct

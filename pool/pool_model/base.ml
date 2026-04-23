@@ -229,6 +229,18 @@ module Ptime = struct
   type t = Ptime.t [@@deriving eq, show]
   type date = Ptime.date
 
+  let equal a b =
+    if not (Sihl.Configuration.is_test ())
+    then equal a b
+    else (
+      (* Allowed tolerance for Ptime equality comparisons, in seconds.
+         Covers second-precision truncation from RFC 3339 serialisation and
+         MariaDB DATETIME storage (max diff ≈ 0.999 s). *)
+      let stderr = 1.0 in
+      let diff = Ptime.diff a b |> Ptime.Span.to_float_s |> Float.abs in
+      diff <= stderr)
+  ;;
+
   let sexp_of_t = Time.ptime_to_sexp
   let t_of_yojson = Utils.Ptime.ptime_of_yojson
   let yojson_of_t = Utils.Ptime.yojson_of_ptime

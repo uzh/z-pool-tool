@@ -24,7 +24,7 @@ let message_template_label = Pool_common.MessageTemplateLabel.(Alcotest.testable
 let partial_update = Custom_field.PartialUpdate.(Alcotest.testable pp equal)
 let password = Pool_user.Password.(Alcotest.testable pp equal)
 let password_plain = Pool_user.Password.Plain.(Alcotest.testable pp equal)
-let phone_nr = Pool_user.CellPhone.(Alcotest.testable pp equal)
+let cell_phone = Pool_user.CellPhone.(Alcotest.testable pp equal)
 let pool_version = Pool_version.(Alcotest.testable pp equal)
 let smtp_auth = Email.SmtpAuth.(Alcotest.testable pp equal)
 let time_window_testable = Time_window.(Alcotest.testable pp equal)
@@ -142,7 +142,7 @@ module Model = struct
     Pool_user.Password.Plain.(create password_str |> validate |> get_or_failwith)
   ;;
 
-  let create_api_key ?id ?token ?(expires_at = Api_key.ExpiresAt.create_now ()) () =
+  let create_api_key ?id ?token ?(expires_at = Pool_common.ExpiresAt.create_now ()) () =
     let open Api_key in
     let name = Name.of_string "Name" in
     create ?id ?token name expires_at
@@ -179,6 +179,7 @@ module Model = struct
     ; language
     ; experiment_type_preference = None
     ; cell_phone = Some ("+41791234567" |> Pool_user.CellPhone.of_string)
+    ; cell_phone_verified_at = None
     ; paused = Pool_user.Paused.create false
     ; disabled = Pool_user.Disabled.create false
     ; verified = None

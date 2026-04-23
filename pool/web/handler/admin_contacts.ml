@@ -98,9 +98,14 @@ let detail req =
         database_label
         (Contact.email_address contact)
     in
+    let%lwt phone_verification_enabled =
+      Settings.find_phone_verification_enabled database_label
+    in
     Page.Admin.Contact.detail
       ?admin_comment
       ~can_manage_duplicates
+      ~phone_verification_enabled:
+        (Settings.PhoneVerification.value phone_verification_enabled)
       context
       contact
       contact_tags

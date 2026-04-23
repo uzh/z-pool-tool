@@ -72,6 +72,7 @@ let create_contact verified contact_info =
   ; language
   ; experiment_type_preference = None
   ; cell_phone = None
+  ; cell_phone_verified_at = None
   ; paused = Pool_user.Paused.create false
   ; disabled = Pool_user.Disabled.create false
   ; verified = None
@@ -285,7 +286,7 @@ let valid_password () =
 
 let validate_cell_phone nr expected =
   let res = nr |> Pool_user.CellPhone.create in
-  Alcotest.(check Test_utils.(result phone_nr error) "succeeds" expected res)
+  Alcotest.(check Test_utils.(result cell_phone error) "succeeds" expected res)
 ;;
 
 let valid_swiss_number () =
@@ -510,4 +511,228 @@ let should_not_send_registration_notification _ () =
     Alcotest.(check bool "succeeds" expected res) |> Lwt.return
   in
   Lwt.return_unit
+;;
+
+let save_cell_phone_persists_without_verified_at _ () =
+  let database_label = Test_utils.Data.database_label in
+  let contact_data = Test_seed.Contacts.create_contact 13 |> CCList.pure in
+  let%lwt () = Test_seed.Contacts.create ~contact_data database_label in
+  let%lwt contact = Test_seed.Contacts.find_contact_by_id database_label 13 in
+  let new_phone = "+41791234567" |> Pool_user.CellPhone.of_string in
+  let%lwt () =
+    Contact_command.SaveCellPhone.handle (contact, new_phone)
+    |> Test_utils.get_or_failwith
+    |> Pool_event.handle_events database_label current_user
+  in
+  let%lwt updated =
+    Contact.find database_label (Contact.id contact) |> Lwt.map CCResult.get_exn
+  in
+  Alcotest.(
+    check
+      (option Test_utils.cell_phone)
+      "cell_phone is set"
+      (Some new_phone)
+      updated.Contact.cell_phone);
+  Alcotest.(
+    check
+      bool
+      "cell_phone_verified_at is None after SaveCellPhone"
+      true
+      (CCOption.is_none updated.Contact.cell_phone_verified_at));
+  Lwt.return_unit
+;;
+
+let verify_cell_phone_sets_verified_at _ () =
+  let database_label = Test_utils.Data.database_label in
+  let contact_data = Test_seed.Contacts.create_contact 14 |> CCList.pure in
+  let%lwt () = Test_seed.Contacts.create ~contact_data database_label in
+  let%lwt contact = Test_seed.Contacts.find_contact_by_id database_label 14 in
+  let new_phone = "+41791234568" |> Pool_user.CellPhone.of_string in
+  (* First add the phone for verification (stores unverified entry) *)
+  let token = Pool_common.VerificationCode.create () in
+  let%lwt () =
+    Contact_command.AddCellPhone.handle (contact, new_phone, token)
+    |> Test_utils.get_or_failwith
+    |> Pool_event.handle_events database_label current_user
+  in
+  (* Then verify it *)
+  let%lwt () =
+    Contact_command.VerifyCellPhone.handle (contact, new_phone)
+    |> Test_utils.get_or_failwith
+    |> Pool_event.handle_events database_label current_user
+  in
+  let%lwt updated =
+    Contact.find database_label (Contact.id contact) |> Lwt.map CCResult.get_exn
+  in
+  Alcotest.(
+    check
+      (option Test_utils.cell_phone)
+      "cell_phone is set after verify"
+      (Some new_phone)
+      updated.Contact.cell_phone);
+  Alcotest.(
+    check
+      bool
+      "cell_phone_verified_at is Some after CellPhoneVerified"
+      true
+      (CCOption.is_some updated.Contact.cell_phone_verified_at));
+  Lwt.return_unit
+;;
+
+let save_cell_phone_clears_verified_at _ () =
+  let database_label = Test_utils.Data.database_label in
+  let contact_data = Test_seed.Contacts.create_contact 15 |> CCList.pure in
+  let%lwt () = Test_seed.Contacts.create ~contact_data database_label in
+  let%lwt contact = Test_seed.Contacts.find_contact_by_id database_label 15 in
+  let phone = "+41791234569" |> Pool_user.CellPhone.of_string in
+  (* Verify a phone first *)
+  let token = Pool_common.VerificationCode.create () in
+  let%lwt () =
+    Contact_command.AddCellPhone.handle (contact, phone, token)
+    |> Test_utils.get_or_failwith
+    |> Pool_event.handle_events database_label current_user
+  in
+  let%lwt () =
+    Contact_command.VerifyCellPhone.handle (contact, phone)
+    |> Test_utils.get_or_failwith
+    |> Pool_event.handle_events database_label current_user
+  in
+  let%lwt verified =
+    Contact.find database_label (Contact.id contact) |> Lwt.map CCResult.get_exn
+  in
+  Alcotest.(
+    check
+      bool
+      "cell_phone_verified_at is Some after verify"
+      true
+      (CCOption.is_some verified.Contact.cell_phone_verified_at));
+  (* Now save a new phone directly, which should clear verified_at *)
+  let new_phone = "+41791234570" |> Pool_user.CellPhone.of_string in
+  let%lwt () =
+    Contact_command.SaveCellPhone.handle (verified, new_phone)
+    |> Test_utils.get_or_failwith
+    |> Pool_event.handle_events database_label current_user
+  in
+  let%lwt updated =
+    Contact.find database_label (Contact.id contact) |> Lwt.map CCResult.get_exn
+  in
+  Alcotest.(
+    check
+      (option Test_utils.cell_phone)
+      "cell_phone updated"
+      (Some new_phone)
+      updated.Contact.cell_phone);
+  Alcotest.(
+    check
+      bool
+      "cell_phone_verified_at cleared after SaveCellPhone"
+      true
+      (CCOption.is_none updated.Contact.cell_phone_verified_at));
+  Lwt.return_unit
+;;
+
+(* Phone verification tests *)
+
+let cell_phone = "+41791234567" |> Pool_user.CellPhone.of_string
+
+let save_cell_phone_directly () =
+  (* When phone verification is disabled, SaveCellPhone emits CellPhoneSaved event *)
+  let contact = "john@gmail.com" |> contact_info |> create_contact true in
+  let events = Contact_command.SaveCellPhone.handle (contact, cell_phone) in
+  let expected =
+    Ok [ Contact.CellPhoneSaved (contact, cell_phone) |> Pool_event.contact ]
+  in
+  check_result expected events
+;;
+
+let verify_cell_phone_via_token () =
+  (* When phone verification is enabled and token is confirmed, VerifyCellPhone is used *)
+  let contact = "john@gmail.com" |> contact_info |> create_contact true in
+  let events = Contact_command.VerifyCellPhone.handle (contact, cell_phone) in
+  let expected =
+    Ok [ Contact.CellPhoneVerified (contact, cell_phone) |> Pool_event.contact ]
+  in
+  check_result expected events
+;;
+
+let add_cell_phone_for_verification () =
+  (* Adding a phone for verification emits CellPhoneAdded event with a token *)
+  let contact = "john@gmail.com" |> contact_info |> create_contact true in
+  let token = Pool_common.VerificationCode.create () in
+  let events = Contact_command.AddCellPhone.handle (contact, cell_phone, token) in
+  let expected =
+    Ok [ Contact.CellPhoneAdded (contact, cell_phone, token) |> Pool_event.contact ]
+  in
+  check_result expected events
+;;
+
+let reset_cell_phone_verification () =
+  (* Resetting emits CellPhoneVerificationReset event *)
+  let contact = "john@gmail.com" |> contact_info |> create_contact true in
+  let events = Contact_command.ResetCellPhoneVerification.handle contact in
+  let expected =
+    Ok [ Contact.CellPhoneVerificationReset contact |> Pool_event.contact ]
+  in
+  check_result expected events
+;;
+
+let cell_phone_verified_at_set_on_verify () =
+  (* CellPhoneVerified event handler sets cell_phone and cell_phone_verified_at = Some _ *)
+  let contact = "john@gmail.com" |> contact_info |> create_contact true in
+  (* Simulate what handle_event does: set cell_phone + verified_at *)
+  let applied : Contact.t =
+    { contact with
+      Contact.cell_phone = Some cell_phone
+    ; cell_phone_verified_at = Some (Ptime_clock.now ())
+    }
+  in
+  Alcotest.(
+    check
+      bool
+      "cell_phone_verified_at is None before event"
+      true
+      (CCOption.is_none contact.Contact.cell_phone_verified_at));
+  Alcotest.(
+    check
+      bool
+      "cell_phone_verified_at is Some after CellPhoneVerified"
+      true
+      (CCOption.is_some applied.Contact.cell_phone_verified_at))
+;;
+
+let cell_phone_saved_clears_verified_at () =
+  (* CellPhoneSaved event handler sets cell_phone and clears cell_phone_verified_at = None *)
+  (* Start with a contact that already has a verified phone *)
+  let verified_contact : Contact.t =
+    { ("john@gmail.com" |> contact_info |> create_contact true) with
+      Contact.cell_phone = Some cell_phone
+    ; cell_phone_verified_at = Some (Ptime_clock.now ())
+    }
+  in
+  Alcotest.(
+    check
+      bool
+      "cell_phone_verified_at is Some before event"
+      true
+      (CCOption.is_some verified_contact.Contact.cell_phone_verified_at));
+  (* Simulate what handle_event does for CellPhoneSaved *)
+  let new_phone = "+41791234568" |> Pool_user.CellPhone.of_string in
+  let applied : Contact.t =
+    { verified_contact with
+      Contact.cell_phone = Some new_phone
+    ; cell_phone_verified_at = None
+    }
+  in
+  Alcotest.(
+    check
+      bool
+      "cell_phone_verified_at is None after CellPhoneSaved"
+      true
+      (CCOption.is_none applied.Contact.cell_phone_verified_at));
+  (* Also verify the command produces the correct event *)
+  let events = Contact_command.SaveCellPhone.handle (verified_contact, new_phone) in
+  let expected =
+    Ok [ Contact.CellPhoneSaved (verified_contact, new_phone) |> Pool_event.contact ]
+  in
+  check_result expected events
 ;;

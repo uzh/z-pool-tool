@@ -196,7 +196,7 @@ let login_information
           ; input_element
               language
               `Email
-              Pool_message.Field.Email
+              Message.Field.Email
               ~value:(contact.user.Pool_user.email |> Pool_user.EmailAddress.value)
           ; div
               ~a:[ a_class [ "flexrow" ] ]
@@ -258,6 +258,8 @@ let contact_information
       Pool_context.{ language; query_parameters; csrf; _ }
       (verification : Pool_user.UnverifiedCellPhone.t option)
       was_reset
+      ~text_messages_enabled
+      ~phone_verification_enabled
   =
   let open Contact in
   let open Pool_common in
@@ -273,18 +275,20 @@ let contact_information
     let link =
       HttpUtils.url_with_field_params query_parameters "/user/login-information"
     in
-    [ txt Pool_common.(Utils.hint_to_string language I18n.ContactInformationEmailHint) ]
-    |> Notification.create
-         language
-         ~link:(link, Pool_common.I18n.LoginInformation)
-         `Warning
+    [ txt (Utils.hint_to_string language I18n.ContactInformationEmailHint) ]
+    |> Notification.create language ~link:(link, I18n.LoginInformation) `Warning
   in
   let form_title i18n =
-    h2
-      ~a:[ a_class [ "heading-3" ] ]
-      Pool_common.[ Utils.control_to_string language i18n |> txt ]
+    h2 ~a:[ a_class [ "heading-3" ] ] [ Utils.control_to_string language i18n |> txt ]
   in
   let new_form () =
+    let verified_icon =
+      if phone_verification_enabled
+      then
+        CCOption.is_some contact.cell_phone_verified_at
+        |> Component.Icon.bool_to_icon ~colored:true ~outlined:true
+      else txt ""
+    in
     let current_hint =
       (match contact.cell_phone with
        | None -> I18n.ContactNoCellPhone
@@ -303,7 +307,7 @@ let contact_information
       [ form_title (Add (Some Field.CellPhone))
       ; div
           ~a:[ a_class [ "stack" ] ]
-          [ current_hint
+          [ div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] [ current_hint; verified_icon ]
           ; reset_hint
           ; form
               ~a:(form_attrs "/user/phone/update")
@@ -321,10 +325,12 @@ let contact_information
           ]
       ]
   in
-  let form_as_link url i18n =
+  let subform url i18n =
     form
       ~a:[ a_method `Post; a_action (externalize url) ]
-      [ csrf_element csrf (); submit_element ~classnames:[ "as-link" ] language i18n () ]
+      [ csrf_element csrf ()
+      ; submit_element ~submit_type:`Secondary ~classnames:[ "small" ] language i18n ()
+      ]
   in
   let verify_form cell_phone =
     div
@@ -339,10 +345,7 @@ let contact_information
           ; form
               ~a:(form_attrs "/user/phone/verify")
               [ csrf_element csrf ()
-              ; input_element (* TODO: Add 2 part input (pre and nr) *)
-                  language
-                  `Text
-                  Pool_message.Field.Token
+              ; input_element ~orientation:`Horizontal language `Text Message.Field.Token
               ; div
                   ~a:[ a_class [ "flexrow" ] ]
                   [ submit_element
@@ -353,24 +356,34 @@ let contact_information
                   ]
               ]
           ; div
-              ~a:[ a_class [ "flexrow"; "flex-gap"; "gap"; "justify-end" ] ]
-              [ form_as_link "/user/phone/resend-token" (Resend (Some Field.Token))
-              ; form_as_link "/user/phone/reset" EnterNewCellPhone
+              ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+              [ subform "/user/phone/resend-token" (Resend (Some Field.Token))
+              ; subform "/user/phone/reset" EnterNewCellPhone
               ]
           ]
       ]
   in
-  let form =
-    match verification with
-    | None -> new_form ()
-    | Some { Pool_user.UnverifiedCellPhone.cell_phone; _ } -> verify_form cell_phone
+  let verification_banner =
+    if
+      text_messages_enabled
+      && phone_verification_enabled
+      && CCOption.is_some contact.cell_phone
+      && CCOption.is_none contact.cell_phone_verified_at
+    then
+      [ txt (Utils.hint_to_string language I18n.ContactCellPhoneUnverified) ]
+      |> Component.Notification.create language `Warning
+    else txt ""
   in
-  div [ email_hint; div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ form ] ]
-  |> contact_profile_layout language Pool_common.I18n.ContactInformation
+  let form =
+    match text_messages_enabled && phone_verification_enabled, verification with
+    | true, Some { Pool_user.UnverifiedCellPhone.cell_phone; _ } -> verify_form cell_phone
+    | _ -> div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ new_form () ]
+  in
+  div [ email_hint; verification_banner; form ]
+  |> contact_profile_layout language I18n.ContactInformation
 ;;
 
 let pause_account Pool_context.{ language; query_parameters; csrf; _ } ?token () =
-  let open Pool_common in
   let externalize = HttpUtils.externalize_path_with_params query_parameters in
   let action =
     match token with
@@ -378,9 +391,10 @@ let pause_account Pool_context.{ language; query_parameters; csrf; _ } ?token ()
     | Some token ->
       Message.add_field_query_params
         "/unsubscribe"
-        [ Pool_message.Field.Token, User_import.Token.value token ]
+        [ Message.Field.Token, User_import.Token.value token ]
       |> externalize
   in
+  let open Pool_common in
   let open Utils in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]

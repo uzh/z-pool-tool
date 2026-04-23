@@ -187,6 +187,7 @@ module UnverifiedCellPhone : sig
     { cell_phone : CellPhone.t
     ; verification_code : Pool_common.VerificationCode.t
     ; created_at : Pool_common.CreatedAt.t
+    ; expires_at : Pool_common.ExpiresAt.t
     }
 end
 
