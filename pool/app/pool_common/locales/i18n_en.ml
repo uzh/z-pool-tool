@@ -314,7 +314,7 @@ When inviting contacts, the filter will prefer the overriding value if both are 
     "Some experiments choose to communicate in a different language, disregarding your \
      contact language."
   | ContactCellPhoneUnverified ->
-    "Your phone number has not been verified yet. Please verify it below."
+    "Your phone number has not been verified yet. Please verify it."
   | ContactNoCellPhone -> "You have not yet provided a phone number."
   | ContactOnWaitingList ->
     "You are on the waiting list. The recruitment team will assign you to a session."

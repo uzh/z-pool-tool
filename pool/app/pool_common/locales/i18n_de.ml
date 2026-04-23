@@ -319,7 +319,7 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
     "Bei einigen Experimenten wird in einer anderen Sprache kommuniziert, ohne Rücksicht \
      auf die Kontaktsprache."
   | ContactCellPhoneUnverified ->
-    "Ihre Telefonnummer wurde noch nicht verifiziert. Bitte verifizieren Sie sie unten."
+    "Ihre Telefonnummer wurde noch nicht verifiziert. Bitte verifizieren Sie sie diese."
   | ContactNoCellPhone -> "Sie haben noch keine Telefonnummer hinterlegt."
   | ContactOnWaitingList ->
     "Sie stehen auf der Warteliste. Das Rekrutierungsteam wird Sie einer Session \
