@@ -58,10 +58,7 @@ val deactivate : Database.Label.t -> t -> unit Lwt.t
 (** [deactivate_all_by_data database_label data] deactivates all active tokens
     whose data matches [data]. This ensures no stale tokens remain active after
     a new token is issued for the same key. *)
-val deactivate_all_by_data
-  :  Database.Label.t
-  -> (string * string) list
-  -> unit Lwt.t
+val deactivate_all_by_data : Database.Label.t -> (string * string) list -> unit Lwt.t
 
 (** [activate database_label token] re-activates the token. Depending on the backend of
     the token service a blacklist is used to store the token. *)
