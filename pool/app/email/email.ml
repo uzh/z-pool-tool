@@ -41,12 +41,7 @@ let find_active_token pool address =
 ;;
 
 let renew_token pool address =
-  let%lwt () =
-    let%lwt old_token = find_active_token pool address in
-    match old_token with
-    | None -> Lwt.return_unit
-    | Some old_token -> Pool_token.deactivate pool old_token
-  in
+  let%lwt () = token_data address |> Pool_token.deactivate_all_by_data pool in
   create_token pool address
 ;;
 
