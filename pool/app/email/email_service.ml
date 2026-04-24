@@ -343,14 +343,28 @@ module Job = struct
         (template : Pool_common.MessageTemplateLabel.t)
     : bool Lwt.t
     =
-    let open Utils.Lwt_result.Infix in
-    Settings.find_system_email_templates database_label
-    ||> (CCList.mem ~eq:Pool_common.MessageTemplateLabel.equal) template
+    if Database.Pool.is_root database_label
+    then Lwt.return_false
+    else
+      let open Utils.Lwt_result.Infix in
+      Settings.find_system_email_templates database_label
+      ||> (CCList.mem ~eq:Pool_common.MessageTemplateLabel.equal) template
   ;;
 
   let resolve_system_smtp_auth_id database_label =
     let%lwt auth = Repo_sql.Smtp.find_full_system_or_default_opt database_label in
     auth |> CCOption.map SmtpAuth.Write.(fun { id; _ } -> id) |> Lwt.return
+  ;;
+
+  let%test_unit "is_system_email_template returns false for root database" =
+    Lwt_main.run
+      (let%lwt result =
+         is_system_email_template
+           Database.Pool.Root.label
+           Pool_common.MessageTemplateLabel.Login2FAToken
+       in
+       assert (not result);
+       Lwt.return_unit)
   ;;
 
   let encode = yojson_of_t %> Yojson.Safe.to_string
