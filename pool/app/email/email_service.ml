@@ -343,9 +343,12 @@ module Job = struct
         (template : Pool_common.MessageTemplateLabel.t)
     : bool Lwt.t
     =
-    let open Utils.Lwt_result.Infix in
-    Settings.find_system_email_templates database_label
-    ||> (CCList.mem ~eq:Pool_common.MessageTemplateLabel.equal) template
+    if Database.Pool.is_root database_label
+    then Lwt.return_false
+    else
+      let open Utils.Lwt_result.Infix in
+      Settings.find_system_email_templates database_label
+      ||> (CCList.mem ~eq:Pool_common.MessageTemplateLabel.equal) template
   ;;
 
   let resolve_system_smtp_auth_id database_label =
