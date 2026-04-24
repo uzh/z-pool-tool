@@ -40,6 +40,16 @@ let find_active_token pool address =
   token_data address |> Pool_token.find_active_by_data pool
 ;;
 
+let renew_token pool address =
+  let%lwt () =
+    let%lwt old_token = find_active_token pool address in
+    match old_token with
+    | None -> Lwt.return_unit
+    | Some old_token -> Pool_token.deactivate pool old_token
+  in
+  create_token pool address
+;;
+
 module Service = Email_service
 module Guard = Entity_guard
 

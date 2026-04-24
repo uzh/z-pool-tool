@@ -219,22 +219,20 @@ let request_reset_password_post req =
             (id user)
         in
         let open Email in
-        user
-        |> Pool_user.email
-        |> find_active_token database_label
-        >|> function
-        | None -> Lwt_result.fail Pool_message.(Error.NotFound Field.Token)
-        | Some token -> make_message token |> Lwt_result.ok
+        renew_token database_label email_address >|> make_message
       in
       let make_message = function
-        | None -> verification_message ()
+        | None -> verification_message () |> Lwt_result.ok
         | Some (_ : Pool_user.EmailVerified.t) -> reset_message ()
       in
       let open Pool_context in
       let%lwt user = context_user_of_user database_label user in
       match user with
       | Guest -> Lwt_result.fail Pool_message.(Error.NotFound Field.User)
-      | Admin { Admin.email_verified; _ } -> make_message email_verified
+      | Admin admin ->
+        (match admin.Admin.email_verified with
+         | None -> verification_message () |> Lwt_result.ok
+         | Some _ -> reset_message ())
       | Contact { Contact.email_verified; _ } -> make_message email_verified
     in
     let handle () =
