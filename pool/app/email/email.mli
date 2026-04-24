@@ -73,6 +73,8 @@ val find_active_token
   -> Pool_user.EmailAddress.t
   -> Pool_token.t option Lwt.t
 
+val renew_token : Database.Label.t -> Pool_user.EmailAddress.t -> Pool_token.t Lwt.t
+
 module SmtpAuth : sig
   module Id : module type of Pool_common.Id
   module Label : Pool_model.Base.StringSig

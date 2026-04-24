@@ -107,7 +107,7 @@ let update_email req =
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let send_verification_mail unverified_contact =
          let* email_event =
-           let%lwt token = Email.create_token database_label new_email in
+           let%lwt token = Email.renew_token database_label new_email in
            let%lwt verification_mail =
              let open Message_template in
              EmailVerification.create

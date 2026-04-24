@@ -451,7 +451,18 @@ let suite =
               `Slow
               NotificationTemplate.inactive_fallback
           ] )
-    ; ("user", User_test.[ test_case "failed login attempts" `Slow failed_login_attempts ])
+    ; ( "user"
+      , User_test.
+          [ test_case "failed login attempts" `Slow failed_login_attempts
+          ; test_case
+              "resend verification deactivates old token"
+              `Slow
+              resend_verification_deactivates_old_token
+          ; test_case
+              "email created event replaces unverified record"
+              `Slow
+              email_created_event_replaces_unverified_record
+          ] )
     ; ( "time window"
       , Time_window_test.[ test_case "confirm as contact" `Slow find_overlapping ] )
     ; ( "duplicate contacts"

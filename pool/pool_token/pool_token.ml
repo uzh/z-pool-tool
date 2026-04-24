@@ -85,6 +85,8 @@ let deactivate label token =
   Repo.update label updated
 ;;
 
+let deactivate_all_by_data label data = Repo.deactivate_all_by_data label data
+
 let activate label token =
   let open Repo.Model in
   let%lwt token = Repo.find label token in

@@ -137,7 +137,7 @@ module Sql = struct
     |> Format.asprintf
          {sql| SELECT %s
         FROM token_tokens
-        WHERE 
+        WHERE
           token_tokens.token_data = $1
           AND token_tokens.status = $2
           AND token_tokens.expires_at > NOW()
@@ -195,6 +195,21 @@ module Sql = struct
   ;;
 
   let update label = Database.exec label update_request
+
+  let deactivate_all_by_data_request =
+    let open Caqti_request.Infix in
+    {sql|
+        UPDATE token_tokens
+        SET status = 'inactive'
+        WHERE token_tokens.token_data = $1
+          AND token_tokens.status = 'active'
+      |sql}
+    |> Caqti_type.(string ->. unit)
+  ;;
+
+  let deactivate_all_by_data label data =
+    Database.exec label deactivate_all_by_data_request Model.(Data.to_string data)
+  ;;
 
   let clean_request =
     let open Caqti_request.Infix in
@@ -259,3 +274,4 @@ let find_opt = Sql.find_opt
 let find_by_id = Sql.find_by_id
 let insert = Sql.insert
 let update = Sql.update
+let deactivate_all_by_data = Sql.deactivate_all_by_data
