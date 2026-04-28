@@ -4,6 +4,33 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.13.0](https://github.com/uzh/z-pool-tool/tree/0.13.0) - 2026-04-28
+
+### Added
+
+- Phone number verification feature
+- Filter experiments by participation (experiment tags)
+- System account with per-pool limit evaluation
+- Tests for import processes, invitations and active-after-import path
+- Specialized error page when tenant is missing
+
+### Fixed
+
+- Some Security vulnerabilities
+- Allow operator login when no SMTP server is configured; disable other login methods accordingly
+- Remove authentication tokens for unverified users
+- `tenant.create` command
+- Minor typo in translation
+- UI fixes (footer layout, discussions, submit button type class)
+- Renew email verification token on resend
+
+### Changed
+
+- Base Docker image changed to RHEL 9
+- Updated OCaml packages; use `pin-depends` for OCaml package pins
+- Use `Lwt.reraise` instead of `Lwt.fail`
+- Moved `ExpiresAt` type to `pool_common`
+
 ## [0.12.5](https://github.com/uzh/z-pool-tool/tree/0.12.5) - 2025-12-04
 
 ### Fixed
@@ -12,8 +39,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - set token on redirect when password reset validation fails
 
 ### Added
-- add queue create permission to recruiter role
 
+- add queue create permission to recruiter role
 
 ## [0.12.4](https://github.com/uzh/z-pool-tool/tree/0.12.4) - 2025-11-11
 
