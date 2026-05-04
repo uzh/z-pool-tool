@@ -19,21 +19,6 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
   && ln -s /opt/yarn-v*/bin/yarn /usr/local/bin/yarn \
   && ln -s /opt/yarn-v*/bin/yarnpkg /usr/local/bin/yarnpkg
 
-# copy hadolint
-COPY --from=hadolint/hadolint:latest-alpine /bin/hadolint /bin/hadolint
-
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-# Install file watcher
-COPY ./watcher-install.sh /tmp/watcher-install.sh
-RUN /tmp/watcher-install.sh && rm /tmp/watcher-install.sh \
-  && echo 'opam ALL=(ALL) NOPASSWD: ALL' | tee /etc/sudoers.d/opam > /dev/null
-
 USER opam
 
-# Install and configure zsh with oh-my-zsh
-# hadolint ignore=SC2016
-RUN wget --progress=dot:giga https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -q -O - | zsh \
-  && cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc \
-  && sed -i "/^plugins=/c\plugins=(git dotenv)" ~/.zshrc \
-  && echo 'alias make="make -f /workspace/.devcontainer/Makefile"' >> ~/.zshrc
+RUN touch /home/opam/.gitconfig_empty

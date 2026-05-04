@@ -6,9 +6,9 @@ services:
     volumes:
       # default user is "opam"
       - ..:/workspace:cached
+      - build:/workspace/_build:cached
       - node_modules:/workspace/node_modules:cached
       - opam:/home/opam/.opam:cached
-      - build:/workspace/_build:cached
       # Add database folders to dev container
       - db-root:/databases/db-root/:ro
       - db-tenant:/databases/db-tenant/:ro
@@ -92,8 +92,8 @@ services:
       - "8026:8025"
 
 volumes:
-  opam:
-  node_modules:
   build:
+  node_modules:
+  opam:
   db-root:
   db-tenant:

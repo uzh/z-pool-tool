@@ -1,0 +1,107 @@
+name: ai-pool-dev
+
+services:
+  ai-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.ai
+    volumes:
+      # default user is "opam"
+      - ../..:/workspace:cached
+      - build:/workspace/_build:cached
+      - node_modules:/workspace/node_modules:cached
+      - opam:/home/opam/.opam:cached
+      # Add database folders to dev container
+      - db-root:/databases/db-root/:ro
+      - db-tenant:/databases/db-tenant/:ro
+    environment:
+      # Configure ssh and git for self contained development environment
+      SSH_AUTH_SOCK: ""
+      GIT_CONFIG_GLOBAL: /home/opam/.gitconfig_empty
+      GIT_CONFIG_SYSTEM: /home/opam/.gitconfig_empty
+      # Configure application environment variables
+      DATABASE_URL: mariadb://root@database-root-ai:3306/development
+      DATABASE_URL_TENANT_ONE: mariadb://root@database-tenant-ai:3306/dev_econ
+      DATABASE_SKIP_DEFAULT_POOL_CREATION: true
+      DATABASE_CHOOSE_POOL: root
+      OPAMSOLVERTIMEOUT: 180
+      PUBLIC_URL: http://localhost:3000
+      SMTP_SENDER: test+ai@econ.uzh.ch
+      VERSION: dev
+      MATCHER_RUN: 'false'
+    depends_on:
+      - database-root-ai
+      - database-tenant-ai
+      - mailtrap-ai
+    networks:
+      - ai_internal
+      - ai_external
+    command: sleep infinity
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  database-root-ai:
+    image: mariadb:10.6
+    restart: unless-stopped
+    command: --max_allowed_packet=629145600 --innodb-use-native-aio=0
+    networks:
+      ai_internal:
+        aliases:
+          - database-root-ai
+    ports: [ 3316:3306 ]
+    environment:
+      - TZ=Europe/Zurich
+      - MYSQL_ALLOW_EMPTY_PASSWORD='yes'
+      - MYSQL_ROOT_HOST=%
+      - MYSQL_DATABASE=development
+      - MYSQL_USER=root
+    volumes:
+      - db-root:/var/lib/mysql
+      - ../init_root:/docker-entrypoint-initdb.d/:ro
+
+  database-tenant-ai:
+    image: mariadb:10.6
+    restart: unless-stopped
+    command: --max_allowed_packet=629145600 --innodb-use-native-aio=0
+    networks:
+      ai_internal:
+        aliases:
+          - database-tenant-ai
+    ports: [ 3317:3306 ]
+    environment:
+      - TZ=Europe/Zurich
+      - MYSQL_ALLOW_EMPTY_PASSWORD='yes'
+      - MYSQL_ROOT_HOST=%
+      - MYSQL_DATABASE=dev_econ
+      - MYSQL_USER=root
+    volumes:
+      - db-tenant:/var/lib/mysql
+      - ../init_tenant:/docker-entrypoint-initdb.d/:ro
+
+  mailtrap-ai:
+    image: mailhog/mailhog
+    restart: unless-stopped
+    container_name: mailtrap-ai-pool
+    hostname: mailtrap-pool
+    networks:
+      ai_internal:
+        aliases:
+          - mailtrap-pool
+    ports:
+      - "1026:1025"
+      - "8026:8025"
+
+volumes:
+  build:
+  node_modules:
+  opam:
+  db-root:
+  db-tenant:
+
+networks:
+  ai_internal:
+    internal: true
+  ai_external:
+    driver: bridge
