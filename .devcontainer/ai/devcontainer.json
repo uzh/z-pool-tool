@@ -36,6 +36,24 @@
           "*": true
         },
         "chat.agent.enabled": true,
+        "github.copilot.chat.agent.alwaysAllowedCommands": [
+          "make",
+          "dune",
+          "opam install",
+          "opam list",
+          "opam show",
+          "yarn",
+          "git status",
+          "git log",
+          "git diff",
+          "git show",
+          "git branch",
+          "git stash",
+          "git add",
+          "git commit",
+          "git checkout",
+          "git switch"
+        ],
         "git.useIntegratedAskPass": false,
         "git.autofetch": false,
         "remote.autoForwardPorts": false
