@@ -48,7 +48,7 @@ module DemoInstance = struct
       - Tenant System Settings (to restrict changes to Page Scripts due to Security concerns)
       - SMTP Configuration (to ensure only preconfigured SMTP (Mailtrap) is used)
       - API Keys (to avoid creation of API Keys and prevent automated traffic)
-      - Permissions (to ensure Permission Restrictions applied by this Seed cannot be change by the user)
+      - Permissions (to ensure Permission Restrictions applied by this Seed cannot be changed by the user)
   *)
 
   let src = Logs.Src.create "database.seed.demo"
