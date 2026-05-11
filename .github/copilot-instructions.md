@@ -97,7 +97,7 @@ UUIDs are stored as `BINARY(16)` and require `UNHEX(REPLACE(...))` on insert/que
 Use TyXML (`ppx_tyxml`) — no template files. Components live in `pool/web/view/component/`, full pages in `pool/web/view/page/`. Add HTMX attributes via helpers in `pool/web/view/htmx/`.
 
 ### Migrations
-Add timestamped `.ml` files under `pool/app/pool_database/migrations/`. Register them in [root.ml](../pool/app/pool_database/root.ml) or [tenant.ml](../pool/app/pool_database/tenant.ml).
+Add timestamped `.ml` files under `pool/app/pool_database/migrations/`. Filename format: `migration_yyyymmddHHMM.ml` (e.g. `migration_202605110000.ml`). The internal `empty` timestamp string must match the filename timestamp exactly. Register them in [root.ml](../pool/app/pool_database/root.ml) or [tenant.ml](../pool/app/pool_database/tenant.ml).
 
 ## AI Agent Workflow
 
