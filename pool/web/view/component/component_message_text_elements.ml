@@ -10,6 +10,7 @@ let message_template_hints =
     ; "experimentSurveyUrl", ExperimentSurveyUrl
     ]
   | AccountSuspensionNotification
+  | AdminAccountCreated
   | AssignmentCancellation
   | AssignmentConfirmation
   | AssignmentSessionChange
@@ -124,6 +125,13 @@ let message_template_help
   | AccountSuspensionNotification ->
     let contact = create_contact () in
     AccountSuspensionNotification.email_params layout contact.Contact.user
+  | AdminAccountCreated ->
+    let verification_url =
+      [ Pool_message.Field.Token, token ]
+      |> create_public_url_with_params tenant.Pool_tenant.url "/email-verified"
+    in
+    let admin = create_admin () in
+    AdminAccountCreated.email_params layout verification_url admin.Admin.user
   | AssignmentCancellation ->
     let session = create_session () in
     AssignmentCancellation.email_params

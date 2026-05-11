@@ -59,6 +59,62 @@ Wenn diese Versuche nicht von Ihnen durchgeführt wurden, informieren Sie bitte 
   }
 ;;
 
+let admin_account_created =
+  let label = AdminAccountCreated in
+  let email_text =
+    [ p
+        [ txt "Für Sie wurde ein Admin-Konto erstellt."
+        ; br ()
+        ; txt
+            "Um Ihr Konto zu aktivieren und Ihr Passwort zu setzen, verifizieren Sie \
+             bitte Ihre E-Mail-Adresse, indem Sie diesem"
+        ; a ~a:[ a_href "{verificationUrl}" ] [ txt " Link" ]
+        ; txt " folgen."
+        ]
+    ; p
+        [ txt
+            "Nach der Verifizierung erhalten Sie eine zweite E-Mail mit einem Link zum \
+             Setzen Ihres Passworts."
+        ]
+    ; p
+        [ txt
+            "Falls diese Aktion nicht von Ihnen durchgeführt wurde, ignorieren Sie bitte \
+             diese E-Mail oder antworten Sie, um uns zu informieren."
+        ]
+    ; p
+        [ txt
+            "Falls der obige Link nicht funktioniert, kopieren Sie bitte den folgenden \
+             Link manuell in Ihren Browser: {verificationUrl}"
+        ]
+    ]
+    |> add_salutation
+    |> html_to_string
+    |> EmailText.of_string
+  in
+  let email_subject = "Ihr Admin-Konto wurde erstellt" |> EmailSubject.of_string in
+  let sms_text =
+    {|Für Sie wurde ein Admin-Konto erstellt.
+Um Ihr Konto zu aktivieren und Ihr Passwort zu setzen, verifizieren Sie bitte Ihre E-Mail-Adresse über den folgenden Link.
+
+{verificationUrl}
+
+Nach der Verifizierung erhalten Sie eine zweite E-Mail mit einem Link zum Setzen Ihres Passworts.
+
+Falls diese Aktion nicht von Ihnen durchgeführt wurde, ignorieren Sie bitte diese E-Mail oder antworten Sie, um uns zu informieren.|}
+    |> add_salutation_to_text
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; plain_text = sms_text
+  ; sms_text
+  }
+;;
+
 let assignment_confirmation =
   let label = AssignmentConfirmation in
   let email_text =

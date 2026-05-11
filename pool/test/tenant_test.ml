@@ -556,3 +556,61 @@ let create_operator () =
   Alcotest.(
     check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
 ;;
+
+let create_operator_with_verification_email () =
+  let open Data in
+  let id = Admin.Id.create () in
+  let token = Pool_token.of_string "testtoken" in
+  let user_id = Admin.Id.to_user id in
+  let verification_email =
+    let open Message_template in
+    let sender = "test@econ.uzh.ch" in
+    let ({ email_subject; email_text; label; _ } : Message_template.t) =
+      Test_utils.Model.create_message_template ()
+    in
+    Sihl_email.
+      { sender
+      ; recipient = email
+      ; subject = email_subject |> EmailSubject.value
+      ; text = ""
+      ; html = Some (email_text |> EmailText.value)
+      ; cc = []
+      ; bcc = []
+      }
+    |> Email.Service.Job.create
+    |> Email.create_dispatch ~message_template:label
+  in
+  let events =
+    let open CCResult.Infix in
+    let open Admin_command.CreateAdmin in
+    Data.urlencoded
+    |> decode
+    >>= fun cmd ->
+    handle ~id ~roles:[ `Operator, None ] cmd
+    >>= fun admin_events ->
+    Ok (admin_events @ email_verification_events id token verification_email cmd)
+  in
+  let expected =
+    let open CCResult in
+    let* email = email |> Pool_user.EmailAddress.create in
+    let password = password |> Pool_user.Password.Plain.create in
+    let* firstname = firstname |> Pool_user.Firstname.create in
+    let* lastname = lastname |> Pool_user.Lastname.create in
+    let admin : Admin.create =
+      { id = Some id
+      ; Admin.email
+      ; password
+      ; firstname
+      ; lastname
+      ; roles = [ `Operator, None ]
+      }
+    in
+    Ok
+      [ Admin.Created admin |> Pool_event.admin
+      ; Email.Created (email, token, user_id) |> Pool_event.email_verification
+      ; Email.sent verification_email |> Pool_event.email
+      ]
+  in
+  Alcotest.(
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
+;;

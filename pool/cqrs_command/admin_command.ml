@@ -23,6 +23,13 @@ module CreateAdmin : sig
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
 
+  val email_verification_events
+    :  Admin.Id.t
+    -> Pool_token.t
+    -> Email.dispatch
+    -> t
+    -> Pool_event.t list
+
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
 end = struct
   type t = User_command.create_user
@@ -33,19 +40,24 @@ end = struct
     let* () =
       Pool_user.EmailAddress.validate allowed_email_suffixes command.User_command.email
     in
-    (* TODO: pass Id or Tenant to Admin.Created function as option to further pass down to
-       permissions *)
     let admin : Admin.create =
-      User_command.
-        { id
-        ; Admin.email = command.email
-        ; password = command.password
-        ; firstname = command.firstname
-        ; lastname = command.lastname
-        ; roles
-        }
+      { id
+      ; Admin.email = command.User_command.email
+      ; password = command.User_command.password
+      ; firstname = command.User_command.firstname
+      ; lastname = command.User_command.lastname
+      ; roles
+      }
     in
     Ok [ Admin.Created admin |> Pool_event.admin ]
+  ;;
+
+  let email_verification_events id token dispatch command =
+    let user_id = Admin.Id.to_user id in
+    [ Email.Created (command.User_command.email, token, user_id)
+      |> Pool_event.email_verification
+    ; Email.sent dispatch |> Pool_event.email
+    ]
   ;;
 
   let decode data =

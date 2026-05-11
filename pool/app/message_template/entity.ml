@@ -87,6 +87,7 @@ let template_hint label =
   let open Pool_common.I18n in
   match label with
   | AccountSuspensionNotification -> MessageTemplateAccountSuspensionNotification
+  | AdminAccountCreated -> MessageTemplateAdminAccountCreated
   | AssignmentCancellation -> MessageTemplateAssignmentCancellation
   | AssignmentConfirmation -> MessageTemplateAssignmentConfirmation
   | AssignmentSessionChange -> MessageTemplateAssignmentSessionChange

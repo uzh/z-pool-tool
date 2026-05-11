@@ -310,6 +310,40 @@ module AccountSuspensionNotification = struct
   ;;
 end
 
+module AdminAccountCreated = struct
+  let label = AdminAccountCreated
+
+  let email_params layout verification_url user =
+    global_params layout user @ [ "verificationUrl", verification_url ]
+  ;;
+
+  let create pool language tenant user token =
+    let%lwt template = find_by_label_and_language_to_send pool label language in
+    let%lwt url = Pool_tenant.Url.of_pool pool in
+    let%lwt sender = default_sender_of_pool pool in
+    let verification_url =
+      Pool_common.
+        [ ( Pool_message.Field.Language
+          , language |> Language.show |> CCString.lowercase_ascii )
+        ; Pool_message.Field.Token, Pool_token.value token
+        ]
+      |> create_public_url_with_params url "/email-verified"
+    in
+    let layout = layout_from_tenant tenant in
+    let entity_uuids = user_message_uuids user in
+    let email =
+      prepare_email
+        language
+        template
+        sender
+        user.Pool_user.email
+        layout
+        (email_params layout verification_url user)
+    in
+    create_email_job label entity_uuids email |> Lwt.return
+  ;;
+end
+
 module AssignmentCancellation = struct
   open Assignment
 

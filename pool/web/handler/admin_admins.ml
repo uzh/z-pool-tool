@@ -100,12 +100,13 @@ let new_form req =
 ;;
 
 let create_admin req =
-  let result { Pool_context.database_label; user; _ } =
+  let result { Pool_context.database_label; language; user; _ } =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     Response.bad_request_on_error ~urlencoded new_form
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let id = Admin.Id.create () in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
     let validate_user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
       ||> CCOption.to_result Error.EmailAddressMissingAdmin
@@ -114,7 +115,28 @@ let create_admin req =
     in
     let events =
       let open Cqrs_command.Admin_command.CreateAdmin in
-      decode urlencoded |> Lwt_result.lift >== handle ~id ~tags
+      let* cmd = decode urlencoded |> Lwt_result.lift in
+      let user : Pool_user.t =
+        { Pool_user.id = Admin.Id.to_user id
+        ; email = cmd.Cqrs_command.User_command.email
+        ; firstname = cmd.Cqrs_command.User_command.firstname
+        ; lastname = cmd.Cqrs_command.User_command.lastname
+        ; status = Pool_user.Status.Active
+        ; admin = Pool_user.IsAdmin.create true
+        ; confirmed = Pool_user.Confirmed.create false
+        }
+      in
+      let%lwt token = Email.create_token database_label user.Pool_user.email in
+      let%lwt dispatch =
+        Message_template.AdminAccountCreated.create
+          database_label
+          language
+          tenant
+          user
+          token
+      in
+      let* admin_events = handle ~id ~tags cmd |> Lwt_result.lift in
+      Lwt_result.return (admin_events @ email_verification_events id token dispatch cmd)
     in
     let handle events =
       Pool_event.handle_events ~tags database_label user events |> Lwt_result.ok

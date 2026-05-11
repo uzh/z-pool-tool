@@ -1,27 +1,42 @@
 let hour = Ptime.Span.of_int_s @@ (60 * 60)
 
+let create_user ?(as_admin = false) () : Pool_user.t =
+  let user_email, user_firstname, user_lastname =
+    match as_admin with
+    | true -> "admin@econ.uzh.ch", "System", "Admin"
+    | false -> "jane.doe@econ.uzh.ch", "Jane", "Doe"
+  in
+  Pool_user.
+    { id = Id.create ()
+    ; email = EmailAddress.of_string user_email
+    ; lastname = Lastname.of_string user_lastname
+    ; firstname = Firstname.of_string user_firstname
+    ; status = Status.Active
+    ; admin = IsAdmin.create as_admin
+    ; confirmed = Confirmed.create true
+    }
+;;
+
+let create_admin () : Admin.t =
+  { Admin.user = create_user ~as_admin:true ()
+  ; email_verified = None
+  ; import_pending = Pool_user.ImportPending.create false
+  }
+;;
+
 let create_contact () =
   let open Pool_common in
-  let open Pool_user in
   Contact.
-    { user =
-        { Pool_user.id = Pool_user.Id.create ()
-        ; email = EmailAddress.of_string "jane.doe@econ.uzh.ch"
-        ; lastname = Lastname.of_string "Doe"
-        ; firstname = Firstname.of_string "Jane"
-        ; status = Status.Active
-        ; admin = IsAdmin.create false
-        ; confirmed = Confirmed.create true
-        }
-    ; terms_accepted_at = TermsAccepted.create_now () |> CCOption.pure
+    { user = create_user ()
+    ; terms_accepted_at = Pool_user.TermsAccepted.create_now () |> CCOption.pure
     ; language = Some Language.En
     ; experiment_type_preference = None
     ; cell_phone = Some (Pool_user.CellPhone.of_string "+41791234567")
     ; cell_phone_verified_at = None
-    ; paused = Paused.create false
-    ; disabled = Disabled.create false
+    ; paused = Pool_user.Paused.create false
+    ; disabled = Pool_user.Disabled.create false
     ; verified = None
-    ; email_verified = () |> Ptime_clock.now |> EmailVerified.create |> CCOption.pure
+    ; email_verified = Some (Pool_user.EmailVerified.create_now ())
     ; num_invitations = NumberOfInvitations.init
     ; num_assignments = NumberOfAssignments.init
     ; num_show_ups = NumberOfShowUps.init
@@ -37,8 +52,6 @@ let create_contact () =
     ; updated_at = UpdatedAt.create_now ()
     }
 ;;
-
-let create_user () = () |> create_contact |> fun { Contact.user; _ } -> user
 
 let location =
   let open Pool_location in

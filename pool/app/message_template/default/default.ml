@@ -5,6 +5,11 @@ let account_suspension_notification = function
   | En -> Default_en.account_suspension_notification
 ;;
 
+let admin_account_created = function
+  | De -> Default_de.admin_account_created
+  | En -> Default_en.admin_account_created
+;;
+
 let assignment_confirmation = function
   | De -> Default_de.assignment_confirmation
   | En -> Default_en.assignment_confirmation
@@ -93,6 +98,7 @@ let default_values_root = [ password_reset ] @@@ [ En; De ]
 
 let default_values_tenant =
   [ account_suspension_notification
+  ; admin_account_created
   ; assignment_confirmation
   ; assignment_session_change
   ; contact_registration_attempt
