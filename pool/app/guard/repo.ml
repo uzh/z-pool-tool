@@ -233,6 +233,14 @@ module RolePermission = struct
 
   let insert pool = insert ~ctx:(Database.to_ctx pool)
 
+  let delete_all_request =
+    let open Caqti_request.Infix in
+    {sql| TRUNCATE TABLE guardian_role_permissions |sql}
+    |> Caqti_type.(unit ->. unit)
+  ;;
+
+  let delete_all pool = Database.exec pool delete_all_request ()
+
   let find_by_target_and_permissions_request permissions =
     let select_from_actor_roles =
       {sql|

@@ -279,18 +279,10 @@ module DemoInstance = struct
     ;;
   end
 
-  let remove_permission pool permission =
-    let tags = Database.Logger.Tags.create pool in
-    Logs.debug ~src (fun m ->
-      m ~tags "Removing permission: %s" ([%show: Guard.RolePermission.t] permission));
-    Guard.RolePermissionDeleted permission |> Guard.handle_event pool
-  ;;
-
   let remove_all_permissions pool =
     let tags = Database.Logger.Tags.create pool in
     Logs.info ~src (fun m -> m ~tags "Removing all default role permissions");
-    Guard.all_role_permissions @ Guard.all_role_assignment_permissions
-    |> Lwt_list.iter_s (remove_permission pool)
+    Guard.RolePermissionsCleared |> Guard.handle_event pool
   ;;
 
   let restore_allowed_permissions pool =
