@@ -70,7 +70,7 @@ let tenant_data_contacts_specific =
 let demo_instance =
   let name = "seed.demo" in
   let description =
-    "Initialize a demo instance with restricted functionality and demo data"
+    "Initialize a demo instance with demo data and restricted permissions"
   in
   Command_utils.make_pool_specific name description (fun pool ->
     (* Seed Demo Instance with DEV Data *)
@@ -83,7 +83,8 @@ let demo_instance =
 let demo_instance_clean =
   let name = "seed.demo.clean" in
   let description =
-    "Clean database and initialize a demo instance with restricted functionality"
+    "Clean database and initialize a demo instance with demo data and restricted \
+     permissions"
   in
   Command_utils.make_pool_specific name description (fun pool ->
     let%lwt () = Database.clean_all pool in
