@@ -1,0 +1,87 @@
+{
+  "name": "Pool Tool (AI)",
+  "dockerComposeFile": [
+    "docker-compose.ai.yml"
+  ],
+  "service": "ai-agent",
+  "runServices": [
+    "ai-agent",
+    "database-root-ai",
+    "database-tenant-ai"
+  ],
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+  "postCreateCommand": "/bin/bash .devcontainer/wait-for-database.sh -d db-root/test -d db-tenant/dev_zhaw -d db-tenant/test_econ .devcontainer/postCreate.sh",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/bin/zsh"
+          }
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "editor.formatOnSave": true,
+        "files.insertFinalNewline": true,
+        "files.associations": {
+          "*.ml": "ocaml",
+          "*.mli": "ocaml",
+          ".env*": "dotenv"
+        },
+        "ocaml.sandbox": {
+          "kind": "opam",
+          "switch": "5.3.0"
+        },
+        "github.copilot.enable": {
+          "*": true
+        },
+        "chat.agent.enabled": true,
+        "github.copilot.chat.agent.alwaysAllowedCommands": [
+          "make build",
+          "make test",
+          "make test-migrate",
+          "make test-clean",
+          "make format",
+          "make sihl",
+          "dune build",
+          "dune test",
+          "dune fmt",
+          "dune clean",
+          "opam install",
+          "opam list",
+          "opam show",
+          "yarn",
+          "git status",
+          "git log",
+          "git diff",
+          "git show",
+          "git branch",
+          "git stash",
+          "git add",
+          "git commit",
+          "git checkout",
+          "git switch"
+        ],
+        "git.useIntegratedAskPass": false,
+        "git.autofetch": false,
+        "remote.autoForwardPorts": false
+      },
+      "extensions": [
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
+      ],
+      "mcp": {
+        "servers": {
+          "gitkraken": {
+            "command": "npx",
+            "args": [
+              "-y",
+              "@gitkraken/mcp-server"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "remoteUser": "opam"
+}
