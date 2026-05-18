@@ -60,8 +60,20 @@ module DemoInstance = struct
     open Guard
 
     let map =
+      (* the following block list contains the entity types which are potentially dangerous
+         for a user to have in a demo environment therefore these entity types
+         will all be set to read only *)
+      let restricted_entity_types =
+        [ `ApiKey; `Permission; `Smtp; `SystemSetting; `System; `RoleOperator ]
+      in
       CCList.map (fun (role, permission, model) ->
-        RolePermission.create role permission model)
+        let computed_permission =
+          CCList.find_opt (Role.Target.equal model) restricted_entity_types
+          |> function
+          | Some _ -> Permission.Read
+          | None -> permission
+        in
+        RolePermission.create role computed_permission model)
     ;;
 
     (** see [Guard.operator_permissions false] *)
@@ -69,8 +81,7 @@ module DemoInstance = struct
       let open Permission in
       [ `Operator, Manage, `Admin
       ; `Operator, Manage, `Announcement
-        (* Restricted for demo *)
-        (* ; `Operator, Manage, `ApiKey *)
+      ; `Operator, Manage, `ApiKey
       ; `Operator, Manage, `Assignment
       ; `Operator, Manage, `Contact
       ; `Operator, Manage, `ContactInfo
@@ -90,30 +101,21 @@ module DemoInstance = struct
       ; `Operator, Manage, `Message
       ; `Operator, Manage, `MessageTemplate
       ; `Operator, Manage, `OrganisationalUnit
-        (* Restricted for demo *)
-        (* ; `Operator, Manage, `Permission *)
+      ; `Operator, Manage, `Permission
       ; `Operator, Manage, `Queue
       ; `Operator, Manage, `Role
       ; `Operator, Manage, `Schedule
       ; `Operator, Manage, `Session
       ; `Operator, Manage, `SessionClose
       ; `Operator, Manage, `SignupCode
-        (* Restricted for demo *)
-        (* ; `Operator, Manage, `Smtp *)
+      ; `Operator, Manage, `Smtp
       ; `Operator, Manage, `Statistics
       ; `Operator, Manage, `System
-        (* Restricted for demo *)
-        (* ; `Operator, Manage, `SystemSetting *)
+      ; `Operator, Manage, `SystemSetting
       ; `Operator, Manage, `Tag
       ; `Operator, Manage, `Tenant
       ; `Operator, Manage, `Version
       ; `Operator, Manage, `WaitingList
-        (* Restricted permission overrides *)
-        (* Allow read on entities with restricted permission *)
-      ; `Operator, Read, `ApiKey
-      ; `Operator, Read, `Permission
-      ; `Operator, Read, `Smtp
-      ; `Operator, Read, `SystemSetting
       ]
       |> map
     ;;
