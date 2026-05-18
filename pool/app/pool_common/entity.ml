@@ -312,6 +312,8 @@ module MessageTemplateLabel = struct
     type t =
       | AccountSuspensionNotification [@name "account_suspension_notification"]
       [@printer print "account_suspension_notification"]
+      | AdminAccountCreated [@name "admin_account_created"]
+      [@printer print "admin_account_created"]
       | AssignmentCancellation [@name "assignment_cancellation"]
       [@printer print "assignment_cancellation"]
       | AssignmentConfirmation [@name "assignment_confirmation"]

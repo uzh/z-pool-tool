@@ -195,6 +195,18 @@ module AccountSuspensionNotification : sig
     -> (Email.dispatch, Pool_message.Error.t) Lwt_result.t
 end
 
+module AdminAccountCreated : sig
+  val email_params : email_layout -> string -> Pool_user.t -> (string * string) list
+
+  val create
+    :  Database.Label.t
+    -> Pool_common.Language.t
+    -> Pool_tenant.t
+    -> Pool_user.t
+    -> Pool_token.t
+    -> Email.dispatch Lwt.t
+end
+
 module AssignmentCancellation : sig
   val email_params
     :  ?follow_up_sessions:Session.t list

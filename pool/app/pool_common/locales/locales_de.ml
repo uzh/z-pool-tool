@@ -386,6 +386,9 @@ let success_to_string =
     {|Falls die angegebene E-Mail-Adresse verfügbar ist, wurde eine E-Mail mit einem Bestätigungslink an diese Adresse geschickt. Bitte bestätige die Adresse mit dem Öffnen dieses Links.
 
 Solange die neue E-Mail-Adresse nicht bestätigt ist, wird weiterhin die aktuelle Adresse verwendet.|}
+  | AdminEmailVerifiedPasswordResetSent ->
+    "E-Mail erfolgreich verifiziert. Sie werden in Kürze einen Link erhalten, um ihr \
+     Passwort zu setzen."
   | EmailVerified -> "E-Mail erfolgreich verifiziert."
   | FileDeleted -> "File wurde erfolgreich gelöscht."
   | ImportCompleted -> "Der Import Ihres Kontos wurde erfolgreich abgeschlossen."

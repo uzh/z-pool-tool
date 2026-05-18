@@ -381,6 +381,8 @@ let success_to_string =
     {|If the email address you entered is still available, an email with a confirmation link has been sent to this address. Please confirm the address by opening this link.
 
 As long as the new e-mail address has not been confirmed, the current address will remain in use.|}
+  | AdminEmailVerifiedPasswordResetSent ->
+    "Email successfully verified. You will receive a link to set your password shortly."
   | EmailVerified -> "Email successfully verified."
   | FileDeleted -> "File was successfully deleted."
   | ImportCompleted -> "The import of your account has successfully been completed."
