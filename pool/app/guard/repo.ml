@@ -235,8 +235,7 @@ module RolePermission = struct
 
   let delete_all_request =
     let open Caqti_request.Infix in
-    {sql| TRUNCATE TABLE guardian_role_permissions |sql}
-    |> Caqti_type.(unit ->. unit)
+    {sql| TRUNCATE TABLE guardian_role_permissions |sql} |> Caqti_type.(unit ->. unit)
   ;;
 
   let delete_all pool = Database.exec pool delete_all_request ()
