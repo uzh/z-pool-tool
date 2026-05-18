@@ -91,6 +91,27 @@ end = struct
   let effects = Guard.Access.Permission.manage
 end
 
+module ClearRolePermissions : sig
+  include Common.CommandSig with type t = unit
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> unit
+    -> (Pool_event.t list, Pool_message.Error.t) result
+end = struct
+  type t = unit
+
+  let handle ?(tags = Logs.Tag.empty) () =
+    Logs.info ~src (fun m -> m "Handle command ClearRolePermissions" ~tags);
+    Ok
+      [ Guard.RolePermissionsCleared |> Pool_event.guard
+      ; Common.guardian_cache_cleared_event ()
+      ]
+  ;;
+
+  let effects = Guard.Access.Permission.manage
+end
+
 module UpdateRolePermissions : sig
   include Common.CommandSig with type t = (Guard.Permission.t * bool) list
 
