@@ -4,6 +4,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.13.1](https://github.com/uzh/z-pool-tool/tree/0.13.1) - 2026-05-21
+
+### Added
+
+- Demo instance setup
+
+### Changed
+
+- Improved Admin creation flow
+- New Devcontainer for AI Assisted Coding
+
 ## [0.13.0](https://github.com/uzh/z-pool-tool/tree/0.13.0) - 2026-04-28
 
 ### Added
