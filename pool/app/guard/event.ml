@@ -14,6 +14,7 @@ let log_role_permission ~decode ~tags =
 
 type event =
   | DefaultRestored of RolePermission.t list
+  | RolePermissionsCleared
   | RolesGranted of ActorRole.t list
   | RolesRevoked of ActorRole.t list
   | RolePermissionSaved of RolePermission.t list
@@ -33,6 +34,7 @@ let handle_event database_label : event -> unit Lwt.t =
       |> log_role_permission ~decode:[%show: RolePermission.t list] ~tags
     in
     Lwt.return_unit
+  | RolePermissionsCleared -> Repo.RolePermission.delete_all database_label
   | RolesGranted actor_roles -> Lwt_list.iter_s (Repo.ActorRole.upsert ~ctx) actor_roles
   | RolesRevoked actor_roles -> Lwt_list.iter_s (Repo.ActorRole.delete ~ctx) actor_roles
   | RolePermissionSaved permissions ->
