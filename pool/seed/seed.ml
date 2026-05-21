@@ -302,7 +302,7 @@ module DemoInstance = struct
       let* text =
         Text.create
           [ ( Pool_common.Language.En
-            , "This is a publiciy available Demo instance. For your privacy, please do \
+            , "This is a publicly available Demo instance. For your privacy, please do \
                not enter any important, personal, confidential, or otherwise sensitive \
                information. All data submitted here may be visible to others and is \
                periodically reset." )
