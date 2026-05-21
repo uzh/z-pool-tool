@@ -67,24 +67,24 @@ let admin_account_created =
         ; br ()
         ; txt
             "Um Ihr Konto zu aktivieren und Ihr Passwort zu setzen, verifizieren Sie \
-             bitte Ihre E-Mail-Adresse, indem Sie diesem"
+             bitte Ihre E-Mail-Adresse. Klicken Sie dazu auf diesen"
         ; a ~a:[ a_href "{verificationUrl}" ] [ txt " Link" ]
-        ; txt " folgen."
+        ; txt "."
         ]
     ; p
         [ txt
-            "Nach der Verifizierung erhalten Sie eine zweite E-Mail mit einem Link zum \
-             Setzen Ihres Passworts."
+            "Nach erfolgreicher Verifizierung senden wir Ihnen eine zweite E-Mail mit \
+             einem Link zum Setzen Ihres Passworts zu."
         ]
     ; p
         [ txt
-            "Falls diese Aktion nicht von Ihnen durchgeführt wurde, ignorieren Sie bitte \
-             diese E-Mail oder antworten Sie, um uns zu informieren."
+            "Wenn Sie diese Aktion nicht durchgeführt haben, bitten wir Sie, diese \
+             E-Mail zu ignorieren oder uns zu kontaktieren."
         ]
     ; p
         [ txt
-            "Falls der obige Link nicht funktioniert, kopieren Sie bitte den folgenden \
-             Link manuell in Ihren Browser: {verificationUrl}"
+            "Sollte der Link nicht funktioniert, kopieren Sie bitte den folgenden Link \
+             manuell in Ihren Browser: {verificationUrl}"
         ]
     ]
     |> add_salutation
