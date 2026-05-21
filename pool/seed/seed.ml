@@ -293,11 +293,54 @@ module DemoInstance = struct
     Guard.DefaultRestored AllowedPermissions.all |> Guard.handle_event pool
   ;;
 
+  let add_notification pool =
+    let open Utils.Lwt_result.Infix in
+    let open CCResult.Infix in
+    let tags = Database.Logger.Tags.create pool in
+    let new_announcement =
+      let open Announcement in
+      let* text =
+        Text.create
+          [ ( Pool_common.Language.En
+            , "This is a publicly available Demo instance. For your privacy, please do \
+               not enter any important, personal, confidential, or otherwise sensitive \
+               information. All data submitted here may be visible to others and is \
+               periodically reset." )
+          ; ( Pool_common.Language.De
+            , "Diese Demo-Instanz ist öffentlich zugänglich. Bitte geben Sie aus \
+               Sicherheitsgründen keine wichtigen, personenbezogenen, vertraulichen oder \
+               anderweitig sensiblen Daten ein. Eingegebene Inhalte können für Dritte \
+               sichtbar sein und werden regelmässig zurückgesetzt." )
+          ]
+      in
+      Ok
+        (Announcement.create
+           text
+           None
+           None
+           (ShowToAdmins.create true)
+           (ShowToContacts.create true))
+    in
+    let%lwt tenant_ids =
+      Pool_tenant.find_all () ||> CCList.map (fun Pool_tenant.{ id; _ } -> id)
+    in
+    match new_announcement with
+    | Ok ann ->
+      Logs.info ~src (fun m -> m ~tags "Adding notification to demo instance");
+      Announcement.Created (ann, tenant_ids)
+      |> Announcement.handle_event Database.Pool.Root.label
+    | Error e ->
+      Logs.warn ~src (fun m ->
+        m ~tags "Failed to create Announcement: %s" (Pool_message.Error.show e));
+      Lwt.return_unit
+  ;;
+
   let create pool =
     let tags = Database.Logger.Tags.create pool in
     Logs.info ~src (fun m -> m ~tags "Initializing demo instance");
     let%lwt () = remove_all_permissions pool in
     let%lwt () = restore_allowed_permissions pool in
+    let%lwt () = add_notification pool in
     Logs.info ~src (fun m -> m ~tags "Demo instance initialization complete");
     Lwt.return_unit
   ;;
