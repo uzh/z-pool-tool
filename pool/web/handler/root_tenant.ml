@@ -90,11 +90,13 @@ let create_operator req =
   in
   let redirect_path = pool_path ~id:tenant_id () in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result { Pool_context.user; _ } =
+  let result { Pool_context.language; user; _ } =
     Response.bad_request_on_error ~urlencoded manage_operators
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* tenant_db = Pool_tenant.(find_full tenant_id >|+ Write.database_label) in
+    let id = Admin.Id.create () in
+    let* tenant = Pool_tenant.find tenant_id in
+    let tenant_db = tenant.Pool_tenant.database_label in
     let validate_user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
       ||> CCOption.to_result Error.EmailAddressMissingAdmin
@@ -102,9 +104,27 @@ let create_operator req =
       >>= HttpUtils.validate_email_existance tenant_db
     in
     let events =
-      let open CCResult.Infix in
+      let open Utils.Lwt_result.Infix in
       let open Cqrs_command.Admin_command.CreateAdmin in
-      urlencoded |> decode >>= handle ~roles:[ `Operator, None ] ~tags |> Lwt_result.lift
+      let* cmd = decode urlencoded |> Lwt_result.lift in
+      let user : Pool_user.t =
+        { Pool_user.id = Admin.Id.to_user id
+        ; email = cmd.Cqrs_command.User_command.email
+        ; firstname = cmd.Cqrs_command.User_command.firstname
+        ; lastname = cmd.Cqrs_command.User_command.lastname
+        ; status = Pool_user.Status.Active
+        ; admin = Pool_user.IsAdmin.create true
+        ; confirmed = Pool_user.Confirmed.create false
+        }
+      in
+      let%lwt token = Email.create_token tenant_db user.Pool_user.email in
+      let%lwt dispatch =
+        Message_template.AdminAccountCreated.create tenant_db language tenant user token
+      in
+      let* admin_events =
+        handle ~id ~roles:[ `Operator, None ] ~tags cmd |> Lwt_result.lift
+      in
+      Lwt_result.return (admin_events @ email_verification_events id token dispatch cmd)
     in
     let handle events =
       events |> Pool_event.handle_events ~tags tenant_db user |> Lwt_result.ok

@@ -520,6 +520,9 @@ Markiert sind die Felder, welche als gleich angesehen werden. Ist ein Admin Wert
   | MessageTemplateAccountSuspensionNotification ->
     "Diese Nachricht wird an einen Benutzer gesendet, nachdem sein Konto wegen zu vieler \
      fehlgeschlagener Anmeldeversuche vorübergehend gesperrt wurde."
+  | MessageTemplateAdminAccountCreated ->
+    "Diese Nachricht wird an neu erstellte Admin-Konten gesendet, um ihre E-Mail-Adresse \
+     zu verifizieren und ihr Passwort zu setzen."
   | MessageTemplateAssignmentCancellation ->
     "Diese Nachricht wird verwendet, um Kontakte über die Annullierung einer \
      Sessionanmeldung zu informieren."

@@ -187,6 +187,7 @@ end
 module MessageTemplateLabel : sig
   type t =
     | AccountSuspensionNotification
+    | AdminAccountCreated
     | AssignmentCancellation
     | AssignmentConfirmation
     | AssignmentSessionChange

@@ -109,6 +109,10 @@ let () =
         ; test_case "update tenant details" `Quick Tenant_test.update_tenant_details
         ; test_case "update tenant database" `Quick Tenant_test.update_tenant_database
         ; test_case "create operator" `Quick Tenant_test.create_operator
+        ; test_case
+            "create operator with verification email"
+            `Quick
+            Tenant_test.create_operator_with_verification_email
         ] )
     ; ( "root"
       , [ test_case "create root" `Quick Root_test.create_root

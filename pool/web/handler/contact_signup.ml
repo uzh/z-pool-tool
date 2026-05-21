@@ -157,7 +157,9 @@ let sign_up_create req =
 let email_verification req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
-  let result ({ Pool_context.database_label; query_parameters; user; _ } as context) =
+  let result
+        ({ Pool_context.database_label; language; query_parameters; user; _ } as context)
+    =
     (* TODO: Is this endpoint only used for unverified users? Or also to update user email?
 
        * We probably need a redirect response to redirect if the user is logged in
@@ -189,7 +191,7 @@ let email_verification req =
       >>= Email.find_unverified_by_address database_label
       |> Lwt_result.map_error (fun _ -> Error.Invalid Field.Token)
     in
-    let* events =
+    let* events, is_admin_email_verification =
       let open UserCommand in
       let signup_code =
         let open Signup_code in
@@ -208,10 +210,30 @@ let email_verification req =
       in
       let update_email user = UpdateEmail.(handle ~tags user email) |> Lwt_result.lift in
       match email |> Email.user_is_confirmed, contact, admin with
-      | false, Ok contact, _ -> verify_email ?signup_code (Contact contact)
-      | true, Ok contact, _ -> update_email (Contact contact)
-      | false, Error _, Ok admin -> verify_email (Admin admin)
-      | true, _, Ok admin -> update_email (Admin admin)
+      | false, Ok contact, _ ->
+        verify_email ?signup_code (Contact contact) >|+ fun e -> e, false
+      | true, Ok contact, _ -> update_email (Contact contact) >|+ fun e -> e, false
+      | false, Error _, Ok admin ->
+        let* verify_events = verify_email (Admin admin) in
+        let tenant = Pool_context.Tenant.get_tenant_exn req in
+        let%lwt pw_reset_result =
+          Message_template.PasswordReset.create
+            database_label
+            language
+            (Message_template.Tenant tenant)
+            (Admin.user admin)
+        in
+        let pw_reset_events =
+          match pw_reset_result with
+          | Ok pw_reset_email -> [ Email.sent pw_reset_email |> Pool_event.email ]
+          | Error err ->
+            let (_ : Pool_message.Error.t) =
+              Pool_common.Utils.with_log_error ~src ~tags err
+            in
+            []
+        in
+        Lwt_result.return (verify_events @ pw_reset_events, true)
+      | true, _, Ok admin -> update_email (Admin admin) >|+ fun e -> e, false
       | true, Error _, Error _ | false, Error _, Error _ ->
         Logs.err (fun m ->
           m
@@ -219,13 +241,20 @@ let email_verification req =
             "Impossible email update tried: %s with context: %s"
             ([%show: Email.t] email)
             ([%show: Pool_context.t] context));
-        Lwt.return_ok []
+        Lwt.return_ok ([], false)
     in
     let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let success_messages, redirect =
+      if is_admin_email_verification
+      then
+        ( [ Pool_message.Success.AdminEmailVerifiedPasswordResetSent ]
+        , HttpUtils.url_with_field_params query_parameters "/login" )
+      else
+        ( [ Pool_message.Success.EmailVerified ]
+        , HttpUtils.url_with_field_params query_parameters redirect_path )
+    in
     HttpUtils.(
-      redirect_to_with_actions
-        (url_with_field_params query_parameters redirect_path)
-        [ Message.set ~success:[ Success.EmailVerified ] ])
+      redirect_to_with_actions redirect [ Message.set ~success:success_messages ])
     |> Lwt_result.ok
   in
   Response.handle ~src req result

@@ -49,6 +49,62 @@ If these attempts were not made by you, please inform an administrator.|}
   }
 ;;
 
+let admin_account_created =
+  let label = AdminAccountCreated in
+  let email_text =
+    [ p
+        [ txt "An admin account has been created for you."
+        ; br ()
+        ; txt
+            "To activate your account and set your password, please verify your email by \
+             following this"
+        ; a ~a:[ a_href "{verificationUrl}" ] [ txt " link" ]
+        ; txt "."
+        ]
+    ; p
+        [ txt
+            "After verification you will receive a second email with a link to set your \
+             password."
+        ]
+    ; p
+        [ txt
+            "If this action wasn't performed by you, please ignore this email or reply \
+             to let us know."
+        ]
+    ; p
+        [ txt
+            "If the above link does not work, please copy the following link into your \
+             browser manually: {verificationUrl}"
+        ]
+    ]
+    |> add_salutation
+    |> html_to_string
+    |> EmailText.of_string
+  in
+  let email_subject = "Your admin account has been created" |> EmailSubject.of_string in
+  let sms_text =
+    {|An admin account has been created for you.
+To activate your account and set your password, please verify your email using the link below.
+
+{verificationUrl}
+
+After verification you will receive a second email with a link to set your password.
+
+If this action wasn't performed by you, please ignore this email or reply to let us know.|}
+    |> add_salutation_to_text
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; plain_text = sms_text
+  ; sms_text
+  }
+;;
+
 let assignment_confirmation =
   let label = AssignmentConfirmation in
   let email_text =

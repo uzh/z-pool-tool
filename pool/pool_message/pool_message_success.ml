@@ -3,6 +3,7 @@ open Ppx_yojson_conv_lib.Yojson_conv
 
 type t =
   | AddedToWaitingList
+  | AdminEmailVerifiedPasswordResetSent
   | AssignmentCreated
   | Canceled of Field.t
   | CellPhoneTokenSent

@@ -274,6 +274,7 @@ type hint =
   | MailingLimitExceedsMatchingContacts
   | MergeContacts
   | MessageTemplateAccountSuspensionNotification
+  | MessageTemplateAdminAccountCreated
   | MessageTemplateAssignmentCancellation
   | MessageTemplateAssignmentConfirmation
   | MessageTemplateAssignmentSessionChange
