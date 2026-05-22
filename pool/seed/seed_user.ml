@@ -38,95 +38,12 @@ let answer_custom_fields fields contact =
     PartialUpdate (PartialUpdate.Custom field, contact, Pool_context.Contact contact))
 ;;
 
-let create_rand_persons ?tags n_persons =
-  let open Cohttp in
-  let open Cohttp_lwt_unix in
-  let min_allowed = 1 in
-  let max_allowed = 100 in
-  if n_persons < min_allowed && n_persons > max_allowed
-  then
-    Logs.warn ~src (fun m ->
-      m
-        ?tags
-        "Contact generator: Limit number! (Allowed range from %d to %d)"
-        min_allowed
-        max_allowed);
-  let api_url =
-    (* NOTE: API returns object directly if only 1 is requested *)
-    Format.asprintf
-      "https://random-data-api.com/api/v2/users?size=%d"
-      (max min_allowed (min max_allowed n_persons))
-  in
-  let%lwt resp, body = Client.get (Uri.of_string api_url) in
-  if resp |> Response.status |> Code.code_of_status |> CCInt.equal 200
-  then (
-    let%lwt json = Cohttp_lwt.Body.to_string body in
-    json |> Yojson.Safe.from_string |> persons_of_yojson |> Lwt.return)
-  else failwith "Could not find or decode any person data."
-;;
-
 let create_persons_from_file () =
   let sep = if Sys.win32 then CCString.of_char '\\' else "/" in
   Logs.info ~src (fun m -> m "Seed: load person data");
   CCString.concat sep [ Sys.getcwd (); "pool"; "seed"; "seed_user_data.json" ]
   |> Yojson.Safe.from_file
   |> persons_of_yojson
-;;
-
-let create_persons_from_api db_label n_persons =
-  let open CCList in
-  let open Utils.Lwt_result.Infix in
-  let tags = Database.Logger.Tags.create db_label in
-  let chunk_size = 100 in
-  let sum = fold_left ( + ) 0 in
-  let%lwt contacts = Contact.all db_label ||> fst ||> map Contact.email_address in
-  let%lwt admins =
-    Admin.all db_label ||> fst ||> map (fun admin -> admin |> Admin.email_address)
-  in
-  let flatten_filter_combine a b =
-    let filter_existing =
-      filter (fun { email; _ } ->
-        mem (Pool_user.EmailAddress.of_string email) (admins @ contacts) |> not)
-    in
-    (flatten b |> filter_existing) @ a
-    |> uniq ~eq:(fun p1 p2 -> CCString.equal p1.email p2.email)
-  in
-  let generate_persons =
-    flip repeat [ 1 ]
-    %> chunks chunk_size
-    %> map sum
-    %> Lwt_list.map_s (create_rand_persons ~tags)
-  in
-  let rec persons_chunked acc =
-    let current_count = length acc in
-    let log_amount current =
-      Logs.info ~src (fun m ->
-        m ~tags "Seed: generating person data (%i/%i)" current n_persons)
-    in
-    if current_count < n_persons
-    then (
-      log_amount current_count;
-      let%lwt iter =
-        max 2 (n_persons - current_count)
-        |> generate_persons
-        ||> flatten_filter_combine acc
-      in
-      persons_chunked iter)
-    else (
-      log_amount n_persons;
-      take_drop n_persons acc |> fst |> Lwt.return)
-  in
-  persons_chunked []
-;;
-
-let create_persons db_label n_persons =
-  let%lwt persons =
-    try create_persons_from_file () |> Lwt.return with
-    | Sys_error _ -> create_persons_from_api db_label n_persons
-  in
-  if n_persons > CCList.length persons
-  then create_persons_from_api db_label n_persons
-  else Lwt.return persons
 ;;
 
 let admins db_label =
@@ -210,7 +127,7 @@ let contacts db_label =
     <*> booleans
   in
   Logs.info ~src (fun m -> m ~tags "Seed: start generate contacts");
-  let%lwt persons = create_persons db_label n_contacts in
+  let persons = create_persons_from_file () in
   let () =
     if n_contacts < CCList.length combinations
     then
