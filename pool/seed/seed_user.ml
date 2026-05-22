@@ -127,7 +127,27 @@ let contacts db_label =
     <*> booleans
   in
   Logs.info ~src (fun m -> m ~tags "Seed: start generate contacts");
-  let persons = create_persons_from_file () in
+  let persons =
+    try create_persons_from_file () with
+    | Sys_error msg ->
+      let error_message =
+        CCFormat.sprintf
+          "User seed: failed to load contact persons from the JSON seed file used by \
+           create_persons_from_file (): %s"
+          msg
+      in
+      Logs.err ~src (fun m -> m ~tags "%s" error_message);
+      failwith error_message
+    | Yojson.Json_error msg ->
+      let error_message =
+        CCFormat.sprintf
+          "User seed: invalid JSON while loading contact persons from the JSON seed file \
+           used by create_persons_from_file (): %s"
+          msg
+      in
+      Logs.err ~src (fun m -> m ~tags "%s" error_message);
+      failwith error_message
+  in
   let () =
     if n_contacts < CCList.length combinations
     then
