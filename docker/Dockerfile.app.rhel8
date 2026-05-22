@@ -16,6 +16,7 @@ WORKDIR /app
 
 COPY artifacts/run.exe/run.exe /app/run.exe
 COPY artifacts/public /app/public
+COPY pool/seed/seed_user_data.json /app/pool/seed/seed_user_data.json
 COPY docker/entrypoint.sh /app/entrypoint.sh
 
 # WORKAROUND: https://github.com/mirage/ocaml-cohttp/issues/675
