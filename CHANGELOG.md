@@ -4,6 +4,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.13.2](https://github.com/uzh/z-pool-tool/tree/0.13.2) - 2026-05-22
+
+### Changed
+
+- Removed User Data seeding from Random Data API
+
 ## [0.13.1](https://github.com/uzh/z-pool-tool/tree/0.13.1) - 2026-05-21
 
 ### Added
