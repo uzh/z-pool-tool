@@ -24,6 +24,6 @@ runs:
           --fail \
           -F token=${{ inputs.token }} \
           -F "ref=main" \
-          -F "variables[REF_NAME]=$GITHUB_REF_NAME" \
-          -F "variables[POOL_DEPLOY_TARGET]=${{ inputs.target }}" \
+          -F "inputs[REF_NAME]=$GITHUB_REF_NAME" \
+          -F "inputs[POOL_DEPLOY_TARGET]=${{ inputs.target }}" \
           ${{ inputs.url }}
