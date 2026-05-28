@@ -37,14 +37,14 @@
         },
         "chat.agent.enabled": true,
         "github.copilot.chat.agent.alwaysAllowedCommands": [
-          "make build",
-          "make test",
+          "make build *",
+          "make test *",
           "make test-migrate",
           "make test-clean",
           "make format",
           "make sihl",
-          "dune build",
-          "dune test",
+          "dune build *",
+          "dune test *",
           "dune fmt",
           "dune clean",
           "opam install",
@@ -62,6 +62,13 @@
           "git checkout",
           "git switch"
         ],
+        "chat.tools.terminal.autoApprove": {
+          "dune test": true,
+          "make test": true,
+          "dune build": true,
+          "make build": true,
+          "ls": true
+        },
         "git.useIntegratedAskPass": false,
         "git.autofetch": false,
         "remote.autoForwardPorts": false

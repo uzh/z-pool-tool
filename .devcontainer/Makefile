@@ -1,5 +1,5 @@
 SHELL = zsh
-EXCLUDE_PATTERN = (_build|public|logs|Makefile|\.vscode|\.devcontainer|\.git|\.DS_Store|node_modules|resources|.*\.ctf)
+EXCLUDE_PATTERN = (_build|logs|Makefile|\.vscode|\.devcontainer|\.git|\.DS_Store|node_modules|resources|.*\.ctf)
 PORT = 3000
 
 ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
