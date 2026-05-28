@@ -4,6 +4,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.13.3](https://github.com/uzh/z-pool-tool/tree/0.13.3) - 2026-05-28
+
+### Changed
+
+- Add user_data_seed.json to Docker Image
+
+### Fixed
+
+- Gitlab Deployment Pipeline Trigger still using variables rather than inputs
+
 ## [0.13.2](https://github.com/uzh/z-pool-tool/tree/0.13.2) - 2026-05-22
 
 ### Changed
