@@ -276,6 +276,14 @@ module History = struct
     | User -> "pool_queue_job_user", "user_uuid"
   ;;
 
+  let source_table = function
+    | Assignment -> "pool_assignments"
+    | Experiment -> "pool_experiments"
+    | Invitation -> "pool_invitations"
+    | Session -> "pool_sessions"
+    | User -> "user_users"
+  ;;
+
   let all_models : model list =
     let open CCList in
     range min_model max_model
