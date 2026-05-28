@@ -610,7 +610,7 @@ let user_import =
         ; br ()
         ; txt "Follow this "
         ; a ~a:[ a_href "{confirmationUrl}" ] [ txt "link" ]
-        ; txt " to reactivate your account."
+        ; txt " to set your password."
         ]
     ; p
         [ txt
@@ -622,9 +622,9 @@ let user_import =
     |> html_to_string
     |> EmailText.of_string
   in
-  let email_subject = "Reactivation of your account" |> EmailSubject.of_string in
+  let email_subject = "Account activation" |> EmailSubject.of_string in
   let sms_text =
-    {|Your account was recently migrated. Follow this link to reactivate your account:
+    {|Your account was recently migrated. Follow this link to set your password:
 
 {confirmationUrl}|}
     |> add_salutation_to_text
@@ -649,7 +649,7 @@ let user_import_inactive =
         ; br ()
         ; txt "Follow this "
         ; a ~a:[ a_href "{confirmationUrl}" ] [ txt "link" ]
-        ; txt " to set up your password."
+        ; txt " to activate your account."
         ]
     ; p
         [ txt
@@ -661,9 +661,9 @@ let user_import_inactive =
     |> html_to_string
     |> EmailText.of_string
   in
-  let email_subject = "Set up your account" |> EmailSubject.of_string in
+  let email_subject = "Activate your account" |> EmailSubject.of_string in
   let sms_text =
-    {|Your account was recently migrated. Follow this link to set up your password:
+    {|Your account was recently migrated. Follow this link to activate your account:
 
 {confirmationUrl}|}
     |> add_salutation_to_text

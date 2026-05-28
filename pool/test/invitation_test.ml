@@ -64,6 +64,37 @@ let create_with_experiment_smtp () =
   test_creation ~ids:[ id ] experiment contact expected
 ;;
 
+let create_ignores_duplicate_contacts () =
+  let open InvitationCommand.Create in
+  let experiment = Model.create_experiment () in
+  let contact = Model.create_contact () in
+  let id = Pool_common.Id.create () in
+  let invitation = Invitation.create ~id contact in
+  let expected =
+    let email = Matcher_test.create_message invitation |> CCResult.get_exn in
+    let contact_update =
+      let open Contact in
+      contact |> update_num_invitations ~step:1 |> updated |> Pool_event.contact
+    in
+    Ok
+      [ Invitation.(Created { invitations = [ invitation ]; mailing = None; experiment })
+        |> Pool_event.invitation
+      ; Email.BulkSent [ email ] |> Pool_event.email
+      ; contact_update
+      ]
+  in
+  let events =
+    { experiment
+    ; mailing = None
+    ; contacts = [ contact; contact ]
+    ; invited_contacts = []
+    ; create_message = Matcher_test.create_message
+    }
+    |> handle ~ids:[ id ]
+  in
+  Test_utils.check_result expected events
+;;
+
 let resend () =
   let open InvitationCommand.Resend in
   let invitation = create_invitation () in

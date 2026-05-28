@@ -385,6 +385,8 @@ As long as the new e-mail address has not been confirmed, the current address wi
     "Email successfully verified. You will receive a link to set your password shortly."
   | EmailVerified -> "Email successfully verified."
   | FileDeleted -> "File was successfully deleted."
+  | ImportActivationPasswordResetSent ->
+    "Your account has been activated. You'll receive a password reset email shortly."
   | ImportCompleted -> "The import of your account has successfully been completed."
   | MarkedAsDeleted field ->
     field_message "" (field_to_string field) "was marked as deleted."
@@ -780,6 +782,7 @@ let control_to_string =
   | Unassign field -> format_submit "unassign" field
   | Unblock -> format_submit "unblock" None
   | Unverify -> "Mark as unverified"
+  | Unsubscribe -> format_submit "unsubscribe" None
   | Update field -> format_submit "update" field
   | UpdateAssignmentsMatchFilter -> format_submit "rerun filter" None
   | UpdateOrder -> format_submit "update order" None

@@ -64,6 +64,8 @@ let sort_contacts contacts =
     CCList.stable_sort (fun c1 c2 -> Contact.(Id.compare (id c1) (id c2))) contacts
 ;;
 
+let deduplicate_contacts = Cqrs_command.Invitation_command.deduplicate_contacts
+
 let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
   let open Utils.Lwt_result.Infix in
   let%lwt ({ Experiment.id; filter; _ } as experiment) =
@@ -133,7 +135,7 @@ let events_of_mailings ?invitation_ids pool limited_mailings =
       | [] -> notify_all_invited pool tenant experiment |> Lwt_result.ok
       | contacts ->
         let open Cqrs_command.Invitation_command in
-        let contacts = sort_contacts contacts in
+        let contacts = contacts |> sort_contacts |> deduplicate_contacts in
         let%lwt create_message =
           Message_template.ExperimentInvitation.prepare tenant experiment
         in

@@ -9,6 +9,9 @@ module Ptime = struct
 end
 
 type t =
+  | ActivateAccountButton of string
+  | ActivateAccountNote
+  | ActivateAccountTitle
   | Activity
   | Address
   | AdminComment
@@ -370,6 +373,8 @@ type hint =
   | TestPhoneNumber
   | TextLengthMax of int
   | TextLengthMin of int
+  | UnsubscribeExperimentInvitationsTitle
+  | UnsubscribeExperimentInvitationsInfo of string
   | UserImportInterval
   | VerifyContact
   | WaitingListPhoneMissingContact
@@ -407,3 +412,4 @@ type confirmable =
   | ResetInvitations
   | RevokeRole
   | StopMailing
+  | UnsubscribeExperimentInvitation

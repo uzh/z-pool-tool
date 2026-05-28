@@ -631,7 +631,7 @@ let user_import =
         ; br ()
         ; txt "Nutzen Sie diesen"
         ; a ~a:[ a_href "{confirmationUrl}" ] [ txt " Link " ]
-        ; txt "um Ihren Account wieder zu aktivieren."
+        ; txt "um Ihr Passwort festzulegen."
         ]
     ; p
         [ txt
@@ -643,9 +643,9 @@ let user_import =
     |> html_to_string
     |> EmailText.of_string
   in
-  let email_subject = "Reaktivierung Ihres Accounts" |> EmailSubject.of_string in
+  let email_subject = "Account aktivieren" |> EmailSubject.of_string in
   let sms_text =
-    {|Ihr Account wurde kürzlich migriert. Nutzen Sie den folgenden Link um Ihren Account wieder zu aktivieren:
+    {|Ihr Account wurde kürzlich migriert. Nutzen Sie den folgenden Link um Ihr Passwort festzulegen:
 
 {confirmationUrl}|}
     |> add_salutation_to_text
@@ -670,7 +670,7 @@ let user_import_inactive =
         ; br ()
         ; txt "Nutzen Sie diesen"
         ; a ~a:[ a_href "{confirmationUrl}" ] [ txt " Link " ]
-        ; txt "um Ihr Passwort einzurichten."
+        ; txt "um Ihren Account zu aktivieren."
         ]
     ; p
         [ txt
@@ -682,9 +682,9 @@ let user_import_inactive =
     |> html_to_string
     |> EmailText.of_string
   in
-  let email_subject = "Passwort einrichten" |> EmailSubject.of_string in
+  let email_subject = "Account aktivieren" |> EmailSubject.of_string in
   let sms_text =
-    {|Ihr Account wurde kürzlich migriert. Nutzen Sie den folgenden Link um Ihr Passwort einzurichten:
+    {|Ihr Account wurde kürzlich migriert. Nutzen Sie den folgenden Link um Ihren Account zu aktivieren:
 
 {confirmationUrl}|}
     |> add_salutation_to_text

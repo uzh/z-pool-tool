@@ -213,6 +213,10 @@ let () =
             "create invitation with experiment smtp"
             `Quick
             Invitation_test.create_with_experiment_smtp
+        ; test_case
+            "create invitation ignores duplicate contacts"
+            `Quick
+            Invitation_test.create_ignores_duplicate_contacts
         ; test_case "resend invitation" `Quick Invitation_test.resend
         ; test_case
             "resend invitation to inactive contact"
@@ -494,6 +498,34 @@ let () =
             User_import_test.confirm_without_matching_password
         ; test_case "confirm as admin" `Quick User_import_test.confirm_as_admin
         ; test_case "confirm as contact" `Quick User_import_test.confirm_as_contact
+        ; test_case "activate as contact" `Quick User_import_test.activate_as_contact
+        ; test_case
+            "active import post uses confirm command"
+            `Quick
+            User_import_test
+            .import_confirmation_events_for_active_import_uses_confirm_command
+        ; test_case
+            "inactive import post uses activate command"
+            `Quick
+            User_import_test
+            .import_confirmation_events_for_inactive_import_uses_activate_command
+        ; test_case
+            "public import actor is guest"
+            `Quick
+            User_import_test.public_import_post_dispatch_actor_is_guest
+        ; test_case
+            "active import confirmation page has password and confirmation"
+            `Quick
+            User_import_test
+            .active_import_confirmation_page_renders_password_and_confirmation_fields
+        ; test_case
+            "inactive import confirmation page"
+            `Quick
+            User_import_test.inactive_import_confirmation_page_renders_activation_form
+        ; test_case
+            "unsubscribe page"
+            `Quick
+            User_import_test.unsubscribe_page_renders_pause_form
         ; test_case "disable as contact" `Quick User_import_test.disable_as_contact
         ; test_case "disable as admin" `Quick User_import_test.disable_as_admin
         ; test_case

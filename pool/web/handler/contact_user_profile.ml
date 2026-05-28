@@ -473,8 +473,14 @@ let completion_post req =
 
 let pause_account req =
   let open Utils.Lwt_result.Infix in
-  let result context =
-    Page.Contact.pause_account context ()
+  let result ({ Pool_context.user; _ } as context) =
+    let email =
+      match user with
+      | Pool_context.Contact contact ->
+        contact |> Contact.email_address |> Pool_user.EmailAddress.value
+      | Pool_context.Admin _ | Pool_context.Guest -> ""
+    in
+    Page.Contact.pause_account context ~email ()
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
     |> Response.bad_request_on_error personal_details

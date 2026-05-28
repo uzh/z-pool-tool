@@ -43,6 +43,7 @@ let tenant_middlewares =
   @ [ CustomMiddleware.Tenant.validate ()
     ; CustomMiddleware.Context.context ()
     ; CustomMiddleware.Logger.logger
+    ; CustomMiddleware.PauseAccountRedirect.middleware ()
     ]
 ;;
 
@@ -116,15 +117,16 @@ module Public = struct
             ; get "/import-pending" Import.import_pending
             ; get "/import-confirmation" Import.import_confirmation
             ; post "/import-confirmation" Import.import_confirmation_post
-            ; get "/unsubscribe" Import.unsubscribe
-            ; post "/unsubscribe" Import.unsubscribe_post
             ]
         ; choose
             ~middlewares:
               [ CustomMiddleware.Guardian.require_user_type_of
                   Pool_context.UserType.[ Guest; Contact ]
               ]
-            [ choose ~scope:"/experiments" experiment ]
+            [ choose ~scope:"/experiments" experiment
+            ; get "/unsubscribe" Import.unsubscribe
+            ; post "/unsubscribe" Import.unsubscribe_post
+            ]
         ; choose ~scope:"/admin/settings/queue" [ queue ]
         ; choose
             ~middlewares:
@@ -186,7 +188,6 @@ module Contact = struct
       [ get "/user/personal-details" UserProfile.personal_details
       ; get "/user/login-information" UserProfile.login_information
       ; get "/user/contact-information" UserProfile.contact_information
-      ; get "/user/pause-account" UserProfile.pause_account
       ; post "/user/update" UserProfile.update
       ; post "/user/update/pause" UserProfile.toggle_paused
       ; post "/user/update-email" UserProfile.update_email

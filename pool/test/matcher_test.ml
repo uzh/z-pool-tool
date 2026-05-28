@@ -600,6 +600,14 @@ let matcher_notification _ () =
   Lwt.return_unit
 ;;
 
+let deduplicate_contacts_by_id _ () =
+  let contact = Test_utils.Model.create_contact () in
+  let contacts = [ contact; contact ] in
+  let deduped = Matcher.deduplicate_contacts contacts in
+  Alcotest.(check int "duplicate contact removed" 1 (CCList.length deduped));
+  Lwt.return_unit
+;;
+
 let create_invitations_for_online_experiment _ () =
   let open MatcherTestUtils in
   let%lwt current_user = current_user () in

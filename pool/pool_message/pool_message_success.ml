@@ -17,6 +17,7 @@ type t =
   | EmailUpdateConfirmationMessage
   | EmailVerified
   | FileDeleted
+  | ImportActivationPasswordResetSent
   | ImportCompleted
   | MarkedAsDeleted of Field.t
   | PasswordChanged

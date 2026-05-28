@@ -119,12 +119,14 @@ let contacts db_label =
     let languages = Pool_common.Language.[ Some En; Some De; None ] in
     let terms_accepted_at = [ Some (Ptime_clock.now ()); None ] in
     let booleans = [ true; false ] in
-    (fun a b c d e -> a, b, c, d, e)
+    let active_after_import = [ Some true; Some false; None ] in
+    (fun a b c d e f -> a, b, c, d, e, f)
     <$> languages
     <*> terms_accepted_at
     <*> booleans
     <*> booleans
     <*> booleans
+    <*> active_after_import
   in
   Logs.info ~src (fun m -> m ~tags "Seed: start generate contacts");
   let persons =
@@ -162,7 +164,7 @@ let contacts db_label =
   let users =
     persons
     |> CCList.mapi (fun idx person ->
-      let language, terms_accepted_at, paused, disabled, verified =
+      let language, terms_accepted_at, paused, disabled, verified, active_after_import =
         CCList.get_at_idx_exn (idx mod CCList.length combinations) combinations
       in
       ( person.uid |> Contact.Id.of_string
@@ -173,7 +175,8 @@ let contacts db_label =
       , terms_accepted_at |> CCOption.map User.TermsAccepted.create
       , paused
       , disabled
-      , verified ))
+      , verified
+      , active_after_import ))
   in
   let password =
     Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD"
@@ -182,23 +185,23 @@ let contacts db_label =
   in
   let%lwt () =
     users
-    |> Lwt_list.filter_map_s
+    |> Lwt_list.iter_s
          (fun
-             (user_id, firstname, lastname, email, language, terms_accepted_at, _, _, _)
+             (user_id, firstname, lastname, email, language, terms_accepted_at, _, _, _, _)
             ->
             match%lwt Pool_user.find_by_email_opt db_label email with
             | None ->
-              Lwt.return_some
-                [ Contact.Created
-                    { Contact.user_id
-                    ; email
-                    ; password
-                    ; firstname
-                    ; lastname
-                    ; terms_accepted_at
-                    ; language
-                    }
-                ]
+              [ Contact.Created
+                  { Contact.user_id
+                  ; email
+                  ; password
+                  ; firstname
+                  ; lastname
+                  ; terms_accepted_at
+                  ; language
+                  }
+              ]
+              |> Lwt_list.iter_s (Contact.handle_event db_label)
             | Some { Pool_user.id; _ } ->
               Logs.debug ~src (fun m ->
                 m
@@ -207,14 +210,13 @@ let contacts db_label =
                   (db_label |> Database.Label.value)
                   Pool_user.Id.pp
                   id);
-              Lwt.return_none)
-    ||> CCList.flatten
-    >|> Lwt_list.iter_s (Contact.handle_event db_label)
+              Lwt.return_unit)
   in
   Logs.info ~src (fun m -> m ~tags "Seed: add additional infos to contacts");
   let%lwt contact_events, field_events =
     Lwt_list.fold_left_s
-      (fun (contacts, fields) (user_id, _, _, _, _, _, paused, disabled, verified) ->
+      (fun (contacts, fields)
+        (user_id, _, _, _, _, _, paused, disabled, verified, active_after_import_opt) ->
          let%lwt contact = Contact.find db_label user_id in
          let custom_fields contact =
            let open Custom_field in
@@ -224,6 +226,44 @@ let contacts db_label =
          in
          match contact with
          | Ok contact ->
+           let%lwt import_events =
+             match active_after_import_opt with
+             | None -> Lwt.return []
+             | Some active_after_import ->
+               let user_uuid = Contact.(id contact |> Id.to_user) in
+               let%lwt pending_import =
+                 User_import.find_pending_by_user_id_opt db_label user_uuid
+               in
+               let%lwt () =
+                 match pending_import with
+                 | Some _ -> Lwt.return_unit
+                 | None ->
+                   let token =
+                     Pool_common.Id.(create () |> value)
+                     |> User_import.Token.create
+                     |> get_or_failwith
+                   in
+                   User_import.
+                     { user_uuid
+                     ; token
+                     ; confirmed_at = None
+                     ; notified_at = None
+                     ; reminder_count = ReminderCount.init
+                     ; last_reminded_at = None
+                     ; active_after_import = ActiveAfterImport.create active_after_import
+                     ; created_at = Pool_common.CreatedAt.create_now ()
+                     ; updated_at = Pool_common.UpdatedAt.create_now ()
+                     }
+                   |> User_import.insert db_label
+               in
+               Lwt.return
+                 [ Contact.(
+                     Updated
+                       { contact with
+                         import_pending = Pool_user.ImportPending.create true
+                       })
+                 ]
+           in
            let%lwt custom_fields = custom_fields contact in
            let field_events =
              if verified then answer_custom_fields custom_fields contact else []
@@ -238,9 +278,12 @@ let contacts db_label =
                      ; disabled = Pool_user.Disabled.create true
                      })
                ]
-             else [] @ if verified then [ Contact.EmailVerified contact ] else []
+             else if verified
+             then [ Contact.EmailVerified contact ]
+             else []
            in
-           (contacts @ contact_events, fields @ field_events) |> Lwt.return
+           (contacts @ import_events @ contact_events, fields @ field_events)
+           |> Lwt.return
          | Error err ->
            let _ = Pool_common.Utils.with_log_error ~src ~tags ~level:Logs.Debug err in
            (contacts, fields) |> Lwt.return)
