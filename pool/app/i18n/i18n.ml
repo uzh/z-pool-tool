@@ -51,3 +51,7 @@ let find_by_key database_label key language =
     let () = I18nCache.add database_label key language i18n in
     Lwt.return i18n
 ;;
+
+let extract_by_key_exn (i18n : t list) (searchkey : Key.t) : t =
+  CCList.find CCFun.(key %> Key.equal searchkey) i18n
+;;

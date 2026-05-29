@@ -4,13 +4,14 @@ module Key : sig
     | ActorPermissionHint
     | AssistantRoleHint
     | CreditsText
-    | DashboardUpcomingSessions
-    | DashboardOnlineStudies
-    | DashboardExperimentRegistration
     | DashboardExperimentHistory
-    | DashboardWaitinglist
-    | ExperimentNavigationTitle
+    | DashboardExperimentRegistration
+    | DashboardIntro
+    | DashboardOnlineStudies
+    | DashboardUpcomingSessions
+    | DashboardWaitingList
     | ExperimenterRoleHint
+    | ExperimentNavigationTitle
     | GreetingsText
     | PasswordPolicyText
     | PrivacyPolicy
@@ -70,6 +71,9 @@ val find_by_key_opt
 
 val find_all : Database.Label.t -> unit -> t list Lwt.t
 val terms_and_conditions_last_updated : Database.Label.t -> Ptime.t Lwt.t
+
+(* Extract an i18n entry by its key from a list of i18n entries, raises [Not_found] *)
+val extract_by_key_exn : t list -> Key.t -> t
 
 module I18nCache : sig
   val clear : unit -> unit

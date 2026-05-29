@@ -20,57 +20,56 @@ let dashboard req =
     let* contact = context_user context in
     Response.bad_request_render_error context
     @@
-    let%lwt upcoming_sessions =
-      let open Session in
-      let query =
-        let open Query in
-        let filter =
-          let open Filter in
-          Condition.[ Checkbox (Public.column_past, true) ]
-        in
-        let pagination = Pagination.create ~limit:2 ~page:0 () in
-        create ~pagination ~filter ()
-      in
-      query_by_contact ~query database_label contact
-    in
-    let%lwt experiment_list =
-      Experiment.find_upcoming database_label (`Dashboard 2) contact `OnSite
-    in
-    let%lwt online_studies =
-      Experiment.find_upcoming database_label (`Dashboard 2) contact `Online
+    let%lwt i18n = I18n.find_all database_label () in
+    let%lwt dashboard_intro =
+      I18n.find_by_key database_label I18n.Key.DashboardIntro language
     in
     let%lwt custom_fields_anwsered =
       Custom_field.all_answered database_label (Contact.id contact)
     in
-    let%lwt waiting_list =
-      Experiment.find_pending_waitinglists_by_contact database_label contact
-    in
-    let%lwt i18n =
-      let find key = I18n.find_by_key database_label key language in
-      let%lwt upcoming_sessions = find I18n.Key.DashboardUpcomingSessions in
-      let%lwt online_studies = find I18n.Key.DashboardOnlineStudies in
-      let%lwt experiment_registration = find I18n.Key.DashboardExperimentRegistration in
-      let%lwt experiment_history = find I18n.Key.DashboardExperimentHistory in
-      let%lwt waiting_list = find I18n.Key.DashboardWaitinglist in
-      Lwt.return
-        Page.Contact.Experiment.
-          { upcoming_sessions
-          ; online_studies
-          ; experiment_registration
-          ; experiment_history
-          ; waiting_list
-          }
-    in
-    Page.Contact.Experiment.index
-      experiment_list
-      online_studies
-      upcoming_sessions
-      waiting_list
-      custom_fields_anwsered
-      i18n
-      context
-    |> create_layout ~active_navigation:"/experiments" req context
-    >|+ Sihl.Web.Response.of_html
+    let%lwt profile_only = Settings.find_profile_only database_label in
+    match Settings.ProfileOnly.value profile_only with
+    | true ->
+      Page.Contact.Dashboard.create_profile_only
+        context
+        dashboard_intro
+        custom_fields_anwsered
+      |> create_layout ~active_navigation:"/experiments" req context
+      >|+ Sihl.Web.Response.of_html
+    | false ->
+      let%lwt upcoming_sessions =
+        let open Session in
+        let query =
+          let open Query in
+          let filter =
+            let open Filter in
+            Condition.[ Checkbox (Public.column_past, true) ]
+          in
+          let pagination = Pagination.create ~limit:2 ~page:0 () in
+          create ~pagination ~filter ()
+        in
+        query_by_contact ~query database_label contact
+      in
+      let%lwt experiment_list =
+        Experiment.find_upcoming database_label (`Dashboard 2) contact `OnSite
+      in
+      let%lwt online_studies =
+        Experiment.find_upcoming database_label (`Dashboard 2) contact `Online
+      in
+      let%lwt waiting_list =
+        Experiment.find_pending_waitinglists_by_contact database_label contact
+      in
+      Page.Contact.Dashboard.(
+        prepare_content
+          i18n
+          experiment_list
+          online_studies
+          upcoming_sessions
+          waiting_list
+          context
+        |> create context dashboard_intro custom_fields_anwsered)
+      |> create_layout ~active_navigation:"/experiments" req context
+      >|+ Sihl.Web.Response.of_html
   in
   Response.handle ~src req result
 ;;

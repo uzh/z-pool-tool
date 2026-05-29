@@ -113,6 +113,7 @@ module TriggerProfileUpdateAfter = SettingRepo (TriggerProfileUpdateAfter)
 module UserImportFirstReminder = SettingRepo (UserImportReminder.FirstReminderAfter)
 module UserImportSecondReminder = SettingRepo (UserImportReminder.SecondReminderAfter)
 module PhoneVerificationEnabled = SettingRepo (Entity.PhoneVerification)
+module ProfileOnly = SettingRepo (Entity.ProfileOnly)
 
 module PageScripts = struct
   open Entity.PageScript

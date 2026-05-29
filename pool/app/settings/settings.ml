@@ -20,6 +20,7 @@ let find_default_text_msg_reminder_lead_time = Repo.DefaultTextMsgReminderLeadTi
 let find_user_import_first_reminder_after = Repo.UserImportFirstReminder.find
 let find_user_import_second_reminder_after = Repo.UserImportSecondReminder.find
 let find_phone_verification_enabled = Repo.PhoneVerificationEnabled.find
+let find_profile_only = Repo.ProfileOnly.find
 let id_by_key = Repo.id_by_key
 
 let default_language_of_list languages =

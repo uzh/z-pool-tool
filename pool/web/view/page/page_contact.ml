@@ -1,4 +1,5 @@
 module Assignment = Page_contact_assignment
+module Dashboard = Page_contact_dashboard
 module Experiment = Page_contact_experiment
 module Location = Page_contact_location
 module Session = Page_contact_sessions
