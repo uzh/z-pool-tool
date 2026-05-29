@@ -5,8 +5,8 @@ module HttpUtils = Http_utils
 
 let txt_to_string lang m = txt (Pool_common.Utils.text_to_string lang m)
 
-let import_confirmation_action query_parameters =
-  "/import-confirmation" |> HttpUtils.externalize_path_with_params query_parameters
+let import_confirmation_action =
+  CCFun.flip HttpUtils.externalize_path_with_params "/import-confirmation"
 ;;
 
 let password_fields language password_policy =
@@ -53,9 +53,7 @@ let import_confirmation_form
 
 let import_confirmation_already_active context token password_policy terms_and_conditions =
   let Pool_context.{ language; query_parameters; _ } = context in
-  let action = import_confirmation_action query_parameters in
   let to_string = txt_to_string language in
-  let password_fields = password_fields language password_policy in
   let submit =
     submit_element
       ~classnames:[ "push" ]
@@ -69,11 +67,11 @@ let import_confirmation_already_active context token password_policy terms_and_c
     ; p [ to_string ImportConfirmationNote ]
     ; import_confirmation_form
         context
-        ~action
+        ~action:(import_confirmation_action query_parameters)
         ~token
         ~terms_and_conditions
         ~submit
-        ~password_fields
+        ~password_fields:(password_fields language password_policy)
         ()
     ]
 ;;

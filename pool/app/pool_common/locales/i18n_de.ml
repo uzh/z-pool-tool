@@ -808,7 +808,7 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
   | UnsubscribeExperimentInvitationsInfo email ->
     Format.asprintf
       "Die E-Mail-Adresse \"%s\" wird künftig keine Experimenteinladungen mehr erhalten. \
-       Sie können dies in ihren Kontoeinstellungen wieder aktivieren."
+       Sie können dies in Ihren Kontoeinstellungen wieder aktivieren."
       email
   | UnsubscribeExperimentInvitationsTitle -> "Abmelden"
   | UserImportInterval ->
