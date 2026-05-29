@@ -22,6 +22,7 @@
   organisational_unit
   page
   pool_common
+  pool_token
   pool_version
   reminder
   schedule

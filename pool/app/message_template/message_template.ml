@@ -588,8 +588,21 @@ end
 module ExperimentInvitation = struct
   let label = ExperimentInvitation
 
-  let optout_link { Invitation.id; _ } =
-    Message_utils.Unverified (Pool_common.Id.value id)
+  let find_or_create_unsubscribe_token pool contact =
+    let user_id = Contact.id contact |> Contact.Id.value in
+    let data = [ "user_id", user_id; "type", "unsubscribe" ] in
+    match%lwt Pool_token.find_active_by_data pool data with
+    | Some token ->
+      let%lwt () = Pool_token.extend_expiry pool token Sihl.Time.OneYear in
+      Lwt.return token
+    | None ->
+      let%lwt token = Pool_token.create ~expires_in:Sihl.Time.OneYear pool data in
+      Lwt.return token
+  ;;
+
+  let find_or_create_optout_link pool { Invitation.contact; _ } =
+    let%lwt token = find_or_create_unsubscribe_token pool contact in
+    Lwt.return (Message_utils.Unverified token)
   ;;
 
   let email_params layout experiment contact =
@@ -610,12 +623,11 @@ module ExperimentInvitation = struct
     let smtp_auth_id = experiment.Experiment.smtp_auth_id in
     let%lwt sender = sender_of_experiment pool experiment in
     let layout = layout_from_tenant tenant in
-    let fnc ({ Invitation.contact; _ } as invitation) =
+    let fnc ({ Invitation.contact; _ } as invitation) optout_link =
       let open CCResult in
       let message_language = experiment_message_language sys_langs experiment contact in
       let* lang, template = find_template_by_language templates message_language in
       let params = email_params layout experiment contact in
-      let optout_link = optout_link invitation in
       let email =
         prepare_email
           ~optout_link
@@ -632,6 +644,29 @@ module ExperimentInvitation = struct
     Lwt.return fnc
   ;;
 
+  let with_optout_link pool create_fn contacts =
+    let%lwt token_pairs =
+      Lwt_list.map_s
+        (fun contact ->
+           let%lwt token = find_or_create_unsubscribe_token pool contact in
+           Lwt.return (Contact.id contact, Message_utils.Unverified token))
+        contacts
+    in
+    let fnc ({ Invitation.contact; _ } as invitation) =
+      let opt_out_link =
+        CCList.assoc_opt ~eq:Contact.Id.equal (Contact.id contact) token_pairs
+        |> CCOption.get_or ~default:Message_utils.Verified
+      in
+      create_fn invitation opt_out_link
+    in
+    Lwt.return fnc
+  ;;
+
+  let prepare_with_optout_link pool tenant experiment contacts =
+    let%lwt create_fn = prepare tenant experiment in
+    with_optout_link pool create_fn contacts
+  ;;
+
   let create
         ({ Pool_tenant.database_label; _ } as tenant)
         experiment
@@ -645,7 +680,7 @@ module ExperimentInvitation = struct
     let%lwt sender = sender_of_experiment database_label experiment in
     let layout = layout_from_tenant tenant in
     let params = email_params layout experiment contact in
-    let optout_link = optout_link invitation in
+    let%lwt optout_link = find_or_create_optout_link database_label invitation in
     let email =
       prepare_email
         ~optout_link

@@ -304,7 +304,11 @@ let experiment_invitation_with_sender _ () =
     let%lwt experiment = Experiment.find database_label experiment_id ||> get_exn in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
     let%lwt create_message =
-      Message_template.ExperimentInvitation.prepare tenant experiment
+      Message_template.ExperimentInvitation.prepare_with_optout_link
+        database_label
+        tenant
+        experiment
+        [ contact ]
     in
     let events =
       let open Cqrs_command.Invitation_command.Create in

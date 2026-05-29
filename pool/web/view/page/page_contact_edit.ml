@@ -389,7 +389,9 @@ let pause_account Pool_context.{ language; query_parameters; csrf; _ } ?token ~e
     match token with
     | None -> "/user/update/pause" |> externalize
     | Some token ->
-      Message.add_field_query_params "/unsubscribe" [ Message.Field.Token, token ]
+      Message.add_field_query_params
+        "/unsubscribe"
+        [ Message.Field.Token, Pool_token.value token ]
       |> externalize
   in
   let open Pool_common in

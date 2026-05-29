@@ -8,6 +8,7 @@
   invitation
   pool_common
   pool_tenant
+  pool_token
   pool_user
   session
   settings

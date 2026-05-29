@@ -341,7 +341,7 @@ let inactive_import_confirmation_page_renders_activation_form () =
 
 let unsubscribe_page_renders_pause_form () =
   let context = Test_request.mock_context () in
-  let token = Data.token in
+  let token = Pool_token.of_string Data.token in
   let email = "mymail@test.com" in
   let html =
     Page.Contact.pause_account context ~token ~email ()
@@ -366,7 +366,11 @@ let unsubscribe_page_renders_pause_form () =
     "contains unsubscribe submit"
     true
     (CCString.find ~sub:unsubscribe_label html_lower >= 0);
-  check bool "contains token in form" true (CCString.find ~sub:Data.token html_lower >= 0)
+  check
+    bool
+    "contains token in form"
+    true
+    (CCString.find ~sub:(Pool_token.value token) html_lower >= 0)
 ;;
 
 let confirm_as_contact_integration _ () =

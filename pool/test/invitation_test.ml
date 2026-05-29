@@ -105,7 +105,6 @@ let resend () =
   let create_message _ = Ok email in
   let events = handle create_message invitation in
   let expected =
-    let open CCResult in
     Ok
       [ Invitation.(Resent (invitation, None)) |> Pool_event.invitation
       ; Email.sent email |> Pool_event.email

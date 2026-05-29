@@ -312,6 +312,16 @@ module ExperimentInvitation : sig
   val prepare
     :  Pool_tenant.t
     -> Experiment.t
+    -> (Invitation.t
+        -> Message_utils.opt_out_link
+        -> (Email.dispatch, Pool_message.Error.t) result)
+         Lwt.t
+
+  val prepare_with_optout_link
+    :  Database.Label.t
+    -> Pool_tenant.t
+    -> Experiment.t
+    -> Contact.t list
     -> (Invitation.t -> (Email.dispatch, Pool_message.Error.t) result) Lwt.t
 end
 

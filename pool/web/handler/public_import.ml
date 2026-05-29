@@ -179,9 +179,12 @@ let import_confirmation_post req =
 
 let contact_import_from_req { Pool_context.database_label; user; _ } req =
   let open Utils.Lwt_result.Infix in
-  let contact_from_invitation token =
-    Invitation.find database_label (Pool_common.Id.of_string token)
-    ||> CCResult.map (fun invitation -> Some token, invitation.Invitation.contact)
+  let contact_from_unsubscribe_token token =
+    match%lwt Pool_token.read database_label token ~k:"user_id" with
+    | None -> Lwt_result.fail Pool_message.(Error.NotFound Field.Token)
+    | Some user_id ->
+      Contact.find database_label (Contact.Id.of_string user_id)
+      ||> CCResult.map (fun contact -> Some token, contact)
   in
   let contact_from_context_user () =
     match user with
@@ -190,7 +193,7 @@ let contact_import_from_req { Pool_context.database_label; user; _ } req =
       Lwt.return_error Pool_message.(Error.NotFound Field.Contact)
   in
   match Sihl.Web.Request.query Field.(show Token) req with
-  | Some token -> contact_from_invitation token
+  | Some token -> Pool_token.of_string token |> contact_from_unsubscribe_token
   | None -> contact_from_context_user ()
 ;;
 
@@ -217,13 +220,19 @@ let unsubscribe_post req =
     contact_import_from_req context req
     >|> function
     | Error (_ : Error.t) -> Lwt_result.fail Response.generic_not_found
-    | Ok (_, contact) ->
+    | Ok (token, contact) ->
       let paused = Pool_user.Paused.(create true) in
       Cqrs_command.Contact_command.TogglePaused.handle ~tags contact paused
       |> Lwt_result.lift
       |> Response.bad_request_on_error unsubscribe
       |>> fun events ->
       let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      let%lwt () =
+        CCOption.map_or
+          ~default:Lwt.return_unit
+          Pool_token.(deactivate database_label)
+          token
+      in
       Http_utils.(
         redirect_to_with_actions
           (url_with_field_params query_parameters "/index")

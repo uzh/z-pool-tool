@@ -14,7 +14,7 @@ type email_layout =
 
 type opt_out_link =
   | Verified
-  | Unverified of string
+  | Unverified of Pool_token.t
 
 let opt_out_link_url { link; _ } = function
   | Verified -> Utils.Url.join_path link "/unsubscribe"
@@ -23,7 +23,7 @@ let opt_out_link_url { link; _ } = function
       "%s?%s=%s"
       (Utils.Url.join_path link "/unsubscribe")
       Pool_message.Field.(show Token)
-      token
+      (Pool_token.value token)
 ;;
 
 let create_public_url_with_params pool_url path =

@@ -122,6 +122,21 @@ let is_valid ?secret:_ label token =
 
 let find_active_by_data = Repo.Sql.find_active_by_data
 
+let extend_expiry label token duration =
+  let open Repo.Model in
+  let%lwt model_opt = Repo.find_opt label (value token) in
+  match model_opt with
+  | None -> Lwt.return_unit
+  | Some model when is_valid_token model ->
+    let expires_at =
+      match Ptime.add_span (Ptime_clock.now ()) (Sihl.Time.duration_to_span duration) with
+      | Some t -> t
+      | None -> failwith "Pool_token.extend_expiry: could not compute expiry"
+    in
+    Repo.update label { model with expires_at }
+  | Some _ -> Lwt.return_unit
+;;
+
 let start () =
   (* Make sure that configuration is valid *)
   Sihl.Configuration.require configuration_schema;
