@@ -125,16 +125,13 @@ let find_active_by_data = Repo.Sql.find_active_by_data
 let extend_expiry label token duration =
   let open Repo.Model in
   let%lwt model_opt = Repo.find_opt label (value token) in
-  match model_opt with
-  | None -> Lwt.return_unit
-  | Some ({ expires_at; _ } as model) when is_valid_token model ->
-    let expires_at =
-      Sihl.Time.duration_to_span duration
-      |> Ptime.add_span (Ptime_clock.now ())
-      |> CCOption.get_or ~default:expires_at
-    in
+  let new_expiry =
+    Sihl.Time.duration_to_span duration |> Ptime.add_span (Ptime_clock.now ())
+  in
+  match model_opt, new_expiry with
+  | Some model, Some expires_at when is_valid_token model ->
     Repo.update label { model with expires_at }
-  | Some _ -> Lwt.return_unit
+  | _, _ -> Lwt.return_unit
 ;;
 
 let start () =
