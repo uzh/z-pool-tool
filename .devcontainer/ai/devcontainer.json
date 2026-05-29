@@ -39,6 +39,7 @@
         "github.copilot.chat.codeGeneration.useInstructionFiles": true,
         "chat.tools.terminal.autoApprove": {
           "/.*/": true,
+          "/rm .*/": false,
           "git rebase": false,
           "git merge": false,
           "git push": false

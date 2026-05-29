@@ -180,11 +180,13 @@ let import_confirmation_post req =
 let contact_import_from_req { Pool_context.database_label; user; _ } req =
   let open Utils.Lwt_result.Infix in
   let contact_from_unsubscribe_token token =
-    match%lwt Pool_token.read database_label token ~k:"user_id" with
-    | None -> Lwt_result.fail Pool_message.(Error.NotFound Field.Token)
-    | Some user_id ->
+    let%lwt user_id_opt = Pool_token.read database_label token ~k:"user_id" in
+    let%lwt token_type_opt = Pool_token.read database_label token ~k:"type" in
+    match token_type_opt, user_id_opt with
+    | Some "unsubscribe", Some user_id ->
       Contact.find database_label (Contact.Id.of_string user_id)
       ||> CCResult.map (fun contact -> Some token, contact)
+    | _ -> Lwt_result.fail Pool_message.(Error.NotFound Field.Token)
   in
   let contact_from_context_user () =
     match user with

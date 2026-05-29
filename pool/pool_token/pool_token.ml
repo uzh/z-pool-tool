@@ -127,11 +127,11 @@ let extend_expiry label token duration =
   let%lwt model_opt = Repo.find_opt label (value token) in
   match model_opt with
   | None -> Lwt.return_unit
-  | Some model when is_valid_token model ->
+  | Some ({ expires_at; _ } as model) when is_valid_token model ->
     let expires_at =
-      match Ptime.add_span (Ptime_clock.now ()) (Sihl.Time.duration_to_span duration) with
-      | Some t -> t
-      | None -> failwith "Pool_token.extend_expiry: could not compute expiry"
+      Sihl.Time.duration_to_span duration
+      |> Ptime.add_span (Ptime_clock.now ())
+      |> CCOption.get_or ~default:expires_at
     in
     Repo.update label { model with expires_at }
   | Some _ -> Lwt.return_unit

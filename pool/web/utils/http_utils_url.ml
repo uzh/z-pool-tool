@@ -7,8 +7,6 @@ let append_opt suffix path =
   suffix |> CCOption.map_or ~default:path (Format.asprintf "%s/%s" path)
 ;;
 
-let join_link_path = Utils.Url.join_path
-
 let announcement_path ?suffix ?id () =
   ("/" ^ Field.(show Announcement))
   |> append_opt (map Announcement.Id.value id)
