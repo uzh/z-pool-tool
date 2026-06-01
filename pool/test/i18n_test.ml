@@ -32,8 +32,10 @@ let update_terms_and_conditions () =
   let expected =
     terms
     |> CCList.map (fun (i18n, system_event_id) ->
-      let content = I18n.Content.of_string content in
-      [ I18n.Updated (i18n, Some content) |> Pool_event.i18n
+      let content =
+        I18n.Content.create_opt content |> Pool_message.Error.get_or_failwith
+      in
+      [ I18n.Updated (i18n, content) |> Pool_event.i18n
       ; System_event.(
           Job.I18nPageUpdated
           |> create ~id:system_event_id

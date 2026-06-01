@@ -36,7 +36,21 @@ end = struct
   ;;
 
   let decode data =
-    Conformist.decode_and_validate schema data
+    let open CCOption.Infix in
+    let normalized_data =
+      let open Pool_message.Field in
+      let field = Translation in
+      CCList.assoc_opt ~eq:CCString.equal (show field) data
+      <+> CCList.assoc_opt ~eq:CCString.equal (array_key field) data
+      |> CCOption.map CCList.head_opt
+      |> CCOption.flatten
+      |> CCOption.map CCString.trim
+      |> function
+      | None -> []
+      | Some value when CCString.is_empty value -> []
+      | Some value -> [ show field, [ value ] ]
+    in
+    Conformist.decode_and_validate schema normalized_data
     |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
