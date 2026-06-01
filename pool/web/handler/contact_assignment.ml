@@ -29,7 +29,8 @@ let create req =
     let* () =
       if Experiment.Id.equal session.Session.experiment.Experiment.id experiment_id
       then Lwt_result.return ()
-      else Lwt_result.fail (Response.not_found Pool_message.Error.ContactExperimentNotFound)
+      else
+        Lwt_result.fail (Response.not_found Pool_message.Error.ContactExperimentNotFound)
     in
     Response.bad_request_on_error Contact_session.show
     @@

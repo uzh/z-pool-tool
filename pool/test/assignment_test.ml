@@ -383,7 +383,9 @@ let assign_to_second_main_session_of_same_experiment () =
     in
     AssignmentCommand.Create.handle command first_confirmation_email false
   in
-  let () = Alcotest.(check bool "first registration succeeds" true (CCResult.is_ok first_events)) in
+  let () =
+    Alcotest.(check bool "first registration succeeds" true (CCResult.is_ok first_events))
+  in
   let second_events =
     let command =
       AssignmentCommand.Create.
