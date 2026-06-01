@@ -78,8 +78,13 @@ let update_terms_and_conditions_accepts_empty_content () =
 
 let extract_by_key_exn_filters_by_language () =
   let key = I18n.Key.TermsAndConditions in
-  let de = I18n.create key Pool_common.Language.De (Some (I18n.Content.of_string "Bedingungen")) in
-  let en = I18n.create key Pool_common.Language.En (Some (I18n.Content.of_string "Terms")) in
+  let de =
+    I18n.create key Pool_common.Language.De (Some (I18n.Content.of_string "Bedingungen"))
+  in
+  let en =
+    I18n.create key Pool_common.Language.En (Some (I18n.Content.of_string "Terms"))
+  in
   let extracted = I18n.extract_by_key_exn [ de; en ] key Pool_common.Language.En in
-  Alcotest.(check bool "extracts entry for requested language" true (I18n.equal extracted en))
+  Alcotest.(
+    check bool "extracts entry for requested language" true (I18n.equal extracted en))
 ;;
