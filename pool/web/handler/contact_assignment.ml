@@ -30,7 +30,7 @@ let create req =
       if Experiment.Id.equal session.Session.experiment.Experiment.id experiment_id
       then Lwt_result.return ()
       else
-        Lwt_result.fail (Response.not_found Pool_message.Error.ContactExperimentNotFound)
+        Lwt_result.fail (Response.not_found Pool_message.(Error.NotFound Field.Session))
     in
     Response.bad_request_on_error Contact_session.show
     @@

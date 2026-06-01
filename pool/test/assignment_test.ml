@@ -488,6 +488,30 @@ let assign_contact_from_waiting_list () =
     events
 ;;
 
+let assign_contact_from_waiting_list_of_other_experiment_fails () =
+  let waiting_list_experiment = Model.create_experiment () in
+  let session_experiment = Model.create_experiment () in
+  let session = Model.create_session ~experiment:session_experiment () in
+  let waiting_list =
+    Model.create_waiting_list_from_experiment_and_contact
+      waiting_list_experiment
+      (Model.create_contact ())
+  in
+  let already_enrolled = false in
+  let confirmation_email =
+    confirmation_email waiting_list.Waiting_list.experiment session
+  in
+  let events =
+    let command =
+      AssignmentCommand.CreateFromWaitingList.
+        { session; follow_up_sessions = []; waiting_list; already_enrolled }
+    in
+    AssignmentCommand.CreateFromWaitingList.handle command confirmation_email
+  in
+  let expected = Error (Error.NotFound Field.Session) in
+  check_result expected events
+;;
+
 let assign_contact_from_waiting_list_with_follow_ups () =
   let experiment = Model.create_experiment () in
   let session = Model.create_session ~experiment () in

@@ -179,6 +179,10 @@ let () =
               `Quick
               assign_contact_from_waiting_list
           ; test_case
+              "assign user from waiting list of other experiment fails"
+              `Quick
+              assign_contact_from_waiting_list_of_other_experiment_fails
+          ; test_case
               "assign contact from waiting list with follow-ups"
               `Quick
               assign_contact_from_waiting_list_with_follow_ups
