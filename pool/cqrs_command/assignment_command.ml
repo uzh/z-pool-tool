@@ -100,6 +100,15 @@ end = struct
     let open Pool_message.Error in
     let all_sessions = session :: follow_up_sessions in
     let* () = if Contact.is_inactive contact then Error ContactIsInactive else Ok () in
+    let* () =
+      if
+        CCList.for_all
+          (fun ({ Session.experiment = { Experiment.id; _ }; _ } : Session.t) ->
+             Experiment.Id.equal id experiment.Experiment.id)
+          all_sessions
+      then Ok ()
+      else Error (NotFound Pool_message.Field.Session)
+    in
     if already_enrolled
     then Error AlreadySignedUpForExperiment
     else
@@ -208,6 +217,15 @@ end = struct
     let all_sessions = session :: follow_up_sessions in
     Logs.info ~src (fun m -> m "Handle command CreateFromWaitingList" ~tags);
     let open CCResult in
+    let* () =
+      if
+        CCList.for_all
+          (fun ({ Session.experiment = { Experiment.id; _ }; _ } : Session.t) ->
+             Experiment.Id.equal id waiting_list.Waiting_list.experiment.Experiment.id)
+          all_sessions
+      then Ok ()
+      else Error (Pool_message.Error.NotFound Pool_message.Field.Session)
+    in
     if already_enrolled
     then Error Pool_message.Error.AlreadySignedUpForExperiment
     else (

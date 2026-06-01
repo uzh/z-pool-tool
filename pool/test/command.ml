@@ -158,6 +158,14 @@ let () =
               `Quick
               assign_to_session_contact_is_already_assigned
           ; test_case
+              "assign to session of other experiment fails"
+              `Quick
+              assign_to_session_of_other_experiment_fails
+          ; test_case
+              "assign to second main session of same experiment"
+              `Quick
+              assign_to_second_main_session_of_same_experiment
+          ; test_case
               "assign to experiment with direct registration disabled"
               `Quick
               Assignment_test.assign_to_experiment_with_direct_registration_disabled

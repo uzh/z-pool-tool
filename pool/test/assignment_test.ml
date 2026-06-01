@@ -353,6 +353,48 @@ let assign_to_session_contact_is_already_assigned () =
   check_result expected events
 ;;
 
+let assign_to_session_of_other_experiment_fails () =
+  let experiment = Model.create_experiment () in
+  let other_experiment = Model.create_experiment () in
+  let session = Model.create_session ~experiment:other_experiment () in
+  let contact = Model.create_contact () in
+  let confirmation_email = confirmation_email experiment session in
+  let events =
+    let command =
+      AssignmentCommand.Create.{ contact; session; follow_up_sessions = []; experiment }
+    in
+    AssignmentCommand.Create.handle command confirmation_email false
+  in
+  let expected = Error (Error.NotFound Field.Session) in
+  check_result expected events
+;;
+
+let assign_to_second_main_session_of_same_experiment () =
+  let experiment = Model.create_experiment () in
+  let first_session = Model.create_session ~experiment () in
+  let second_session = Model.create_session ~experiment () in
+  let contact = Model.create_contact () in
+  let first_confirmation_email = confirmation_email experiment first_session in
+  let second_confirmation_email = confirmation_email experiment second_session in
+  let first_events =
+    let command =
+      AssignmentCommand.Create.
+        { contact; session = first_session; follow_up_sessions = []; experiment }
+    in
+    AssignmentCommand.Create.handle command first_confirmation_email false
+  in
+  let () = Alcotest.(check bool "first registration succeeds" true (CCResult.is_ok first_events)) in
+  let second_events =
+    let command =
+      AssignmentCommand.Create.
+        { contact; session = second_session; follow_up_sessions = []; experiment }
+    in
+    AssignmentCommand.Create.handle command second_confirmation_email true
+  in
+  let expected_second = Error Error.AlreadySignedUpForExperiment in
+  check_result expected_second second_events
+;;
+
 let assign_to_canceled_session () =
   let { session; experiment; contact } = assignment_data () in
   let confirmation_email = confirmation_email experiment session in

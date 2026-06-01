@@ -26,6 +26,11 @@ let create req =
       >|- Response.not_found
     in
     let* session = Session.find_open database_label id >|- Response.not_found in
+    let* () =
+      if Experiment.Id.equal session.Session.experiment.Experiment.id experiment_id
+      then Lwt_result.return ()
+      else Lwt_result.fail (Response.not_found Pool_message.Error.ContactExperimentNotFound)
+    in
     Response.bad_request_on_error Contact_session.show
     @@
     let%lwt follow_up_sessions = Session.find_follow_ups database_label id in
@@ -39,7 +44,10 @@ let create req =
         session
     in
     let%lwt already_enrolled =
-      Assignment.assignment_to_experiment_exists database_label experiment_id contact
+      Assignment.assignment_to_experiment_exists
+        database_label
+        session.Session.experiment.Experiment.id
+        contact
     in
     let events =
       let open Cqrs_command.Assignment_command.Create in
