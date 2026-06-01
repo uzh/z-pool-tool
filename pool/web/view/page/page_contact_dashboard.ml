@@ -86,7 +86,9 @@ let notification custom_fields_answered language =
 
 let create Pool_context.{ language; _ } dashboard_intro custom_fields_answered content =
   let intro =
-    p [ dashboard_intro |> I18n.content |> I18n.Content.value |> Unsafe.data ]
+    div
+      ~a:[ a_class [ "rich-text" ] ]
+      [ dashboard_intro |> I18n.content_to_string |> Unsafe.data ]
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
@@ -115,7 +117,7 @@ let prepare_content
       waiting_list
       (Pool_context.{ language; query_parameters; _ } as context)
   =
-  let find_key = I18n.extract_by_key_exn i18n in
+  let find_key key = I18n.extract_by_key_exn i18n key language in
   let experiment_item experiment =
     let open Experiment in
     let html =

@@ -219,7 +219,7 @@ let reset_password
 ;;
 
 let terms_and_conditions language terms terms_last_updated =
-  let terms = terms |> I18n.content |> I18n.Content.value in
+  let terms = terms |> I18n.content_to_string in
   let title =
     Pool_common.(
       Utils.field_to_string_capitalized language Pool_message.Field.TermsAndConditions)

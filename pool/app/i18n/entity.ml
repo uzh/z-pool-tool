@@ -70,13 +70,14 @@ module Content = struct
 
   let field = Pool_message.Field.Translation
   let schema () = schema field ()
+  let create_opt content = create content |> CCResult.map CCOption.some
 end
 
 type t =
   { id : Common.Id.t
   ; key : Key.t
   ; language : Common.Language.t
-  ; content : Content.t
+  ; content : Content.t option
   }
 [@@deriving eq, show]
 
@@ -86,4 +87,4 @@ let id m = m.id
 let key m = m.key
 let language m = m.language
 let content m = m.content
-let content_to_string m = m.content |> Content.value
+let content_to_string m = m.content |> CCOption.map_or ~default:"" Content.value

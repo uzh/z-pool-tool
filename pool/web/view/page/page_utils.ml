@@ -3,7 +3,7 @@ open Tyxml.Html
 let i18n_page ?(narrow = true) i18n =
   let classnames = [ "trim"; "safety-margin" ] in
   let classnames = if narrow then classnames @ [ "narrow" ] else classnames in
-  div ~a:[ a_class classnames ] I18n.[ i18n |> content |> Content.value |> Unsafe.data ]
+  div ~a:[ a_class classnames ] I18n.[ i18n |> content_to_string |> Unsafe.data ]
 ;;
 
 let note page_title info =

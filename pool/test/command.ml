@@ -126,6 +126,14 @@ let () =
             "update terms and conditions"
             `Quick
             I18n_test.update_terms_and_conditions
+        ; test_case
+            "update terms and conditions accepts empty content"
+            `Quick
+            I18n_test.update_terms_and_conditions_accepts_empty_content
+        ; test_case
+            "extract by key filters by language"
+            `Quick
+            I18n_test.extract_by_key_exn_filters_by_language
         ] )
     ; ( "assignment"
       , Assignment_test.
