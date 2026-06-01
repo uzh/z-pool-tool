@@ -52,16 +52,12 @@ let update_assignment_count_event ~step contact =
   contact |> update_num_assignments ~step |> updated |> Pool_event.contact
 ;;
 
-let check_assignment_creation_events ~msg ~contact ~session_ids result =
+let check_assignment_creation_events ~msg ~contact ~session_ids =
   let expected_contact =
-    let open Contact in
-    contact |> update_num_assignments ~step:(CCList.length session_ids)
+    contact |> Contact.update_num_assignments ~step:(CCList.length session_ids)
   in
-  let sorted_ids ids =
-    ids
-    |> CCList.sort (fun a b -> CCString.compare (Session.Id.value a) (Session.Id.value b))
-  in
-  match result with
+  let sorted_ids = CCList.sort Session.Id.compare in
+  function
   | Error err ->
     Alcotest.failf
       "%s: expected Ok events, got error %s"
