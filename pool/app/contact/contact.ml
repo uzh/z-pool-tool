@@ -19,6 +19,18 @@ let has_terms_accepted pool (contact : t) =
   |> Lwt.return
 ;;
 
+let deduplicate contacts =
+  let seen : (string, unit) Hashtbl.t = Hashtbl.create (CCList.length contacts) in
+  contacts
+  |> CCList.filter (fun { user = { Pool_user.id; _ }; _ } ->
+    let id = Id.of_user id in
+    match Hashtbl.find_opt seen id with
+    | Some () -> false
+    | None ->
+      Hashtbl.add seen id ();
+      true)
+;;
+
 module Repo = struct
   include Repo_entity
 

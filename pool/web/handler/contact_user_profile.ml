@@ -474,16 +474,18 @@ let completion_post req =
 let pause_account req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.user; _ } as context) =
-    let email =
+    Response.bad_request_on_error personal_details
+    @@
+    let* email =
       match user with
       | Pool_context.Contact contact ->
-        contact |> Contact.email_address |> Pool_user.EmailAddress.value
-      | Pool_context.Admin _ | Pool_context.Guest -> ""
+        contact |> Contact.email_address |> User.EmailAddress.value |> Lwt_result.return
+      | Pool_context.Admin _ | Pool_context.Guest ->
+        Lwt_result.fail (Error.NotFound Field.User)
     in
     Page.Contact.pause_account context ~email ()
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
-    |> Response.bad_request_on_error personal_details
   in
   Response.handle ~src req result
 ;;

@@ -91,10 +91,9 @@ let import_confirmation_events urlencoded user_import user =
 ;;
 
 let target_user_message_language default_language = function
-  | Pool_context.Admin _ -> default_language
+  | Pool_context.Admin _ | Pool_context.Guest -> default_language
   | Pool_context.Contact contact ->
     CCOption.value ~default:default_language contact.Contact.language
-  | Pool_context.Guest -> default_language
 ;;
 
 let target_user_pool_user = function

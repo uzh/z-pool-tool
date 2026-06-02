@@ -618,7 +618,7 @@ let matcher_notification _ () =
 let deduplicate_contacts_by_id _ () =
   let contact = Test_utils.Model.create_contact () in
   let contacts = [ contact; contact ] in
-  let deduped = Matcher.deduplicate_contacts contacts in
+  let deduped = Contact.deduplicate contacts in
   Alcotest.(check int "duplicate contact removed" 1 (CCList.length deduped));
   Lwt.return_unit
 ;;

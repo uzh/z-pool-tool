@@ -5,18 +5,6 @@ let contact_partition invited =
     CCList.mem ~eq:Contact.Id.equal (Contact.id contact) invited)
 ;;
 
-let deduplicate_contacts contacts =
-  let seen : (string, unit) Hashtbl.t = Hashtbl.create (CCList.length contacts) in
-  contacts
-  |> CCList.filter (fun contact ->
-    let id = Contact.(id contact |> Id.value) in
-    match Hashtbl.find_opt seen id with
-    | Some () -> false
-    | None ->
-      Hashtbl.add seen id ();
-      true)
-;;
-
 let contact_update_on_invitation_sent contacts =
   let open CCFun in
   let open CCList in
@@ -59,7 +47,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCFun.Infix in
     let open CCList in
-    let contacts = deduplicate_contacts contacts in
+    let contacts = Contact.deduplicate contacts in
     let errors, contacts = contact_partition invited_contacts contacts in
     let errors = errors >|= Contact.(id %> Id.value) in
     let invitations = mapi (fun i -> Invitation.create ?id:(nth_opt ids i)) contacts in

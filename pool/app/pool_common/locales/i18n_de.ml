@@ -887,7 +887,7 @@ let confirmable_to_string confirmable =
           Einladung." )
    | RevokeRole -> "die Rolle", "entfernen", None
    | StopMailing -> "den Versand", "stoppen", None
-   | UnsubscribeExperimentInvitation -> "die Einladungen", "abbestellen", None)
+   | UnsubscribeExperimentInvitation -> "künftig keine Einladungen mehr", "erhalten", None)
   |> fun (obj, action, additive) ->
   Format.asprintf "Sind Sie sicher, dass Sie %s %s wollen?" obj action
   |> fun msg ->

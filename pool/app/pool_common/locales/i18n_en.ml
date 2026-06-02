@@ -844,7 +844,7 @@ let confirmable_to_string confirmable =
           contacts who have already been invited will receive a further invitation." )
    | RevokeRole -> "role", "revoke", None
    | StopMailing -> "mailing", "stop", None
-   | UnsubscribeExperimentInvitation -> "experiment invitations", "unsubscribe", None)
+   | UnsubscribeExperimentInvitation -> "experiment invitations", "unsubscribe from", None)
   |> fun (obj, action, additive) ->
   Format.asprintf "Are you sure you want to %s the %s?" action obj
   |> fun msg -> additive |> CCOption.map_or ~default:msg (Format.asprintf "%s %s" msg)

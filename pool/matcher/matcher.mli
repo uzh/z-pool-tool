@@ -7,7 +7,6 @@ val find_contacts_by_mailing
        Lwt_result.t
 
 val sort_contacts : Contact.t list -> Contact.t list
-val deduplicate_contacts : Contact.t list -> Contact.t list
 val experiment_has_bookable_spots : Database.Label.t -> Experiment.t -> bool Lwt.t
 
 val events_of_mailings
