@@ -94,6 +94,7 @@ let rec field_to_string =
   | EmailSuffix -> "email suffix"
   | EmailText -> "email text"
   | End -> "end"
+  | EnrollFromMain -> "enroll participants from main session"
   | ExampleValue -> "example value"
   | Exclude -> "exclude"
   | ExcludeRolesOf -> "exclude roles of"

@@ -317,6 +317,12 @@ let session_form
           ?flash_fetcher
       ]
   in
+  let enroll_from_main_checkbox () =
+    match follow_up_to, session with
+    | Some _, None ->
+      checkbox_element ?flash_fetcher ~value:true language Field.EnrollFromMain
+    | _ -> div []
+  in
   form
     ~a:
       [ a_class [ "stack" ]
@@ -405,6 +411,7 @@ let session_form
         [ h3
             ~a:[ a_class [ "heading-3" ] ]
             [ txt (Utils.text_to_string language I18n.Reminder) ]
+        ; enroll_from_main_checkbox ()
         ; div
             ~a:[ a_class [ "grid-col-2" ] ]
             [ lead_time_group

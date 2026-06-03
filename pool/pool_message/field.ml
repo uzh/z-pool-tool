@@ -107,6 +107,7 @@ type t =
   | EmailSuffix [@name "email_suffix"] [@printer go "email_suffix"]
   | EmailText [@name "email_text"] [@printer go "email_text"]
   | End [@name "end"] [@printer go "end"]
+  | EnrollFromMain [@name "enroll_from_main"] [@printer go "enroll_from_main"]
   | ExampleValue [@name "example_value"] [@printer go "example_value"]
   | Exclude [@name "exclude"] [@printer go "exclude"]
   | ExcludeRolesOf [@name "exclude_roles_of"] [@printer go "exclude_roles_of"]
