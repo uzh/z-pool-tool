@@ -54,12 +54,7 @@ let find_by_key database_label key language =
     Lwt.return i18n
 ;;
 
-let extract_by_key_exn
-      (i18n : t list)
-      (searchkey : Key.t)
-      (language : Pool_common.Language.t)
-  : t
-  =
+let extract_by_key_exn i18n searchkey language =
   CCList.find
     (fun i18n ->
        Key.equal searchkey (key i18n)

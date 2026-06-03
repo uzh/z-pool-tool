@@ -42,8 +42,7 @@ end = struct
       let field = Translation in
       CCList.assoc_opt ~eq:CCString.equal (show field) data
       <+> CCList.assoc_opt ~eq:CCString.equal (array_key field) data
-      |> CCOption.map CCList.head_opt
-      |> CCOption.flatten
+      |> CCOption.flat_map CCList.head_opt
       |> CCOption.map CCString.trim
       |> function
       | None -> []
