@@ -159,6 +159,220 @@ let disable_as_guest () =
   Test_utils.check_result expected result
 ;;
 
+let activate_as_contact () =
+  let contact = Test_utils.Model.create_contact ~with_terms_accepted:false () in
+  let user = contact |> Pool_context.contact in
+  let user_import =
+    create_user_import
+      ~active_after_import:(User_import.ActiveAfterImport.create false)
+      user
+  in
+  let result =
+    Cqrs_command.User_import_command.ActivateImport.handle (user_import, user)
+  in
+  let expected =
+    Ok
+      [ Contact.TermsAccepted contact |> Pool_event.contact
+      ; Contact.ImportDisabled contact |> Pool_event.contact
+      ; User_import.Confirmed user_import |> Pool_event.user_import
+      ]
+  in
+  Test_utils.check_result expected result
+;;
+
+let import_confirmation_events_for_active_import_uses_confirm_command () =
+  let contact = Test_utils.Model.create_contact ~with_terms_accepted:false () in
+  let user = contact |> Pool_context.contact in
+  let user_import = create_user_import user in
+  let urlencoded =
+    let open Field in
+    [ Token |> show, [ Data.token ]
+    ; Password |> show, [ Data.password ]
+    ; PasswordConfirmation |> show, [ Data.password ]
+    ]
+  in
+  let result =
+    Handler.Public.Import.import_confirmation_events urlencoded user_import user
+    |> Lwt_main.run
+  in
+  let expected =
+    Ok
+      [ Contact.ImportConfirmed (contact, Pool_user.Password.Plain.create Data.password)
+        |> Pool_event.contact
+      ; User_import.Confirmed user_import |> Pool_event.user_import
+      ]
+  in
+  Test_utils.check_result expected result
+;;
+
+let import_confirmation_events_for_inactive_import_uses_activate_command () =
+  let contact = Test_utils.Model.create_contact ~with_terms_accepted:false () in
+  let user = contact |> Pool_context.contact in
+  let user_import =
+    create_user_import
+      ~active_after_import:(User_import.ActiveAfterImport.create false)
+      user
+  in
+  let urlencoded =
+    let open Field in
+    [ Token |> show, [ Data.token ] ]
+  in
+  let result =
+    Handler.Public.Import.import_confirmation_events urlencoded user_import user
+    |> Lwt_main.run
+  in
+  let expected =
+    Ok
+      [ Contact.TermsAccepted contact |> Pool_event.contact
+      ; Contact.ImportDisabled contact |> Pool_event.contact
+      ; User_import.Confirmed user_import |> Pool_event.user_import
+      ]
+  in
+  Test_utils.check_result expected result
+;;
+
+let active_import_confirmation_page_renders_password_and_confirmation_fields () =
+  let context = Test_request.mock_context () in
+  let email = "mymail@test.com" in
+  let token = User_import.Token.create Data.token |> get_exn in
+  let terms =
+    I18n.create
+      I18n.Key.TermsAndConditions
+      context.Pool_context.language
+      (I18n.Content.create "<p>Terms</p>" |> get_exn)
+  in
+  let password_policy =
+    I18n.create
+      I18n.Key.PasswordPolicyText
+      context.Pool_context.language
+      (I18n.Content.create "Use a strong password" |> get_exn)
+  in
+  let html =
+    Page.Public.Import.import_confirmation
+      ~active_after_import:true
+      ~email
+      context
+      token
+      password_policy
+      terms
+    |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
+  in
+  let html_lower = html |> CCString.lowercase_ascii in
+  let open Alcotest in
+  check
+    bool
+    "contains password field"
+    true
+    (CCString.find ~sub:"name=\"password\"" html_lower >= 0);
+  check
+    bool
+    "contains password confirmation field"
+    true
+    (CCString.find ~sub:"name=\"password_confirmation\"" html_lower >= 0)
+;;
+
+let public_import_post_dispatch_actor_is_guest () =
+  let user = Test_utils.Model.create_contact () |> Pool_context.contact in
+  let context_user = Pool_context.Guest in
+  let user_uuid_of = function
+    | Pool_context.Guest -> None
+    | Pool_context.Contact contact ->
+      Contact.(id contact |> Id.to_common) |> CCOption.return
+    | Pool_context.Admin admin -> Admin.(id admin |> Id.to_common) |> CCOption.return
+  in
+  let target_uuid = user_uuid_of user in
+  let actor_uuid = user_uuid_of context_user in
+  let open Alcotest in
+  check bool "target user has uuid" true (CCOption.is_some target_uuid);
+  check bool "guest actor has no uuid" true (CCOption.is_none actor_uuid)
+;;
+
+let inactive_import_confirmation_page_renders_activation_form () =
+  let context = Test_request.mock_context () in
+  let email = "mymail@test.com" in
+  let token = User_import.Token.create Data.token |> get_exn in
+  let terms =
+    I18n.create
+      I18n.Key.TermsAndConditions
+      context.Pool_context.language
+      (I18n.Content.create "<p>Terms</p>" |> get_exn)
+  in
+  let password_policy =
+    I18n.create
+      I18n.Key.PasswordPolicyText
+      context.Pool_context.language
+      (I18n.Content.create "unused" |> get_exn)
+  in
+  let html =
+    Page.Public.Import.import_confirmation
+      ~active_after_import:false
+      ~email
+      context
+      token
+      password_policy
+      terms
+    |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
+  in
+  let reactivate_label = "activate account for" in
+  let html_lower = html |> CCString.lowercase_ascii in
+  let open Alcotest in
+  check
+    bool
+    "contains terms checkbox"
+    true
+    (CCString.find ~sub:"terms_accepted" html_lower >= 0);
+  check
+    bool
+    "contains reactivate submit"
+    true
+    (CCString.find ~sub:reactivate_label html_lower >= 0);
+  check bool "contains activation email" true (CCString.find ~sub:email html_lower >= 0);
+  check
+    bool
+    "does not render password input"
+    false
+    (CCString.find ~sub:"name=\"password\"" html_lower >= 0);
+  check
+    bool
+    "does not render password confirmation input"
+    false
+    (CCString.find ~sub:"name=\"password_confirmation\"" html_lower >= 0)
+;;
+
+let unsubscribe_page_renders_pause_form () =
+  let context = Test_request.mock_context () in
+  let token = Pool_token.of_string Data.token in
+  let email = "mymail@test.com" in
+  let html =
+    Page.Contact.pause_account context ~token ~email ()
+    |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
+  in
+  let html_lower = html |> CCString.lowercase_ascii in
+  let unsubscribe_label =
+    Pool_common.Utils.control_to_string
+      context.Pool_context.language
+      Pool_message.Control.Unsubscribe
+    |> CCString.lowercase_ascii
+  in
+  let open Alcotest in
+  check
+    bool
+    "contains unsubscribe title"
+    true
+    (CCString.find ~sub:"unsubscribe" html_lower >= 0);
+  check bool "contains unsubscribed email" true (CCString.find ~sub:email html_lower >= 0);
+  check
+    bool
+    "contains unsubscribe submit"
+    true
+    (CCString.find ~sub:unsubscribe_label html_lower >= 0);
+  check
+    bool
+    "contains token in form"
+    true
+    (CCString.find ~sub:(Pool_token.value token) html_lower >= 0)
+;;
+
 let confirm_as_contact_integration _ () =
   let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:false () in
   let user = contact |> Pool_context.contact in

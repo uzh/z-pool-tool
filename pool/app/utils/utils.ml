@@ -71,6 +71,11 @@ let ignore_res = function
 ;;
 
 module Url = struct
+  let join_path link path =
+    let link = CCString.chop_suffix ~suf:"/" link |> CCOption.value ~default:link in
+    if CCString.prefix ~pre:"/" path then link ^ path else link ^ "/" ^ path
+  ;;
+
   let public_host =
     let open CCOption in
     let decode_host url =

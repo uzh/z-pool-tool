@@ -14,12 +14,16 @@ type email_layout =
 
 type opt_out_link =
   | Verified
-  | Unverified of string
+  | Unverified of Pool_token.t
 
 let opt_out_link_url { link; _ } = function
-  | Verified -> Format.asprintf "%s/user/pause-account" link
+  | Verified -> Utils.Url.join_path link "/unsubscribe"
   | Unverified token ->
-    Format.asprintf "%s/unsubscribe?%s=%s" link Pool_message.Field.(show Token) token
+    Format.asprintf
+      "%s?%s=%s"
+      (Utils.Url.join_path link "/unsubscribe")
+      Pool_message.Field.(show Token)
+      (Pool_token.value token)
 ;;
 
 let create_public_url_with_params pool_url path =
@@ -45,7 +49,7 @@ let layout_from_tenant (tenant : Pool_tenant.t) =
       |> CCOption.map_or ~default:"" file_url
   in
   let logo_alt = tenant.title |> Title.value |> Format.asprintf "Logo %s" in
-  let link = tenant.url |> Url.value |> Format.asprintf "https://%s" in
+  let link = create_public_url tenant.url "/" in
   let site_title = tenant.title |> Title.value in
   { link; logo_src; logo_alt; site_title }
 ;;

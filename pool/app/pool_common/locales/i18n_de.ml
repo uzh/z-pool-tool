@@ -3,6 +3,10 @@ open Entity_i18n
 let error_to_string = Locales_de.error_to_string
 
 let to_string = function
+  | ActivateAccountButton email -> Format.asprintf "Konto für \"%s\" aktivieren" email
+  | ActivateAccountNote ->
+    "Ihr Konto wurde migriert. Bitte aktivieren Sie Ihr Konto, um fortzufahren."
+  | ActivateAccountTitle -> "Aktivieren Sie Ihr Konto"
   | Activity -> "Aktivität"
   | Address -> "Addresse"
   | AdminComment -> "Administrator Kommentar"
@@ -801,6 +805,12 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
      +41791234567 sein."
   | TextLengthMax i -> error_to_string (Pool_message.Error.TextLengthMax i)
   | TextLengthMin i -> error_to_string (Pool_message.Error.TextLengthMin i)
+  | UnsubscribeExperimentInvitationsInfo email ->
+    Format.asprintf
+      "Die E-Mail-Adresse \"%s\" wird künftig keine Experimenteinladungen mehr erhalten. \
+       Sie können dies in Ihren Kontoeinstellungen wieder aktivieren."
+      email
+  | UnsubscribeExperimentInvitationsTitle -> "Abmelden"
   | UserImportInterval ->
     {|<p>Legen Sie fest, nach wie vielen Tagen eine Erinnerung an Kontakte gesendet werden soll, die den Import noch nicht bestätigt haben.</p>
 <p><strong>Die Einstellung "Zweite Erinnerung" legt fest, wie lange nach der ersten Erinnerung die zweite Erinnerung gesendet wird.</strong></p>|}
@@ -876,7 +886,8 @@ let confirmable_to_string confirmable =
           ignoriert, heisst bereits zuvor Eingeladene Kontakte erhalten erneut eine \
           Einladung." )
    | RevokeRole -> "die Rolle", "entfernen", None
-   | StopMailing -> "den Versand", "stoppen", None)
+   | StopMailing -> "den Versand", "stoppen", None
+   | UnsubscribeExperimentInvitation -> "künftig keine Einladungen mehr", "erhalten", None)
   |> fun (obj, action, additive) ->
   Format.asprintf "Sind Sie sicher, dass Sie %s %s wollen?" obj action
   |> fun msg ->

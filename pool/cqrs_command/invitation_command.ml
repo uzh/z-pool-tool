@@ -45,17 +45,16 @@ end = struct
         { invited_contacts; contacts; create_message; experiment; mailing }
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
-    let open CCResult in
     let open CCFun.Infix in
     let open CCList in
+    let contacts = Contact.deduplicate contacts in
     let errors, contacts = contact_partition invited_contacts contacts in
     let errors = errors >|= Contact.(id %> Id.value) in
     let invitations = mapi (fun i -> Invitation.create ?id:(nth_opt ids i)) contacts in
-    let emails = invitations >|= create_message in
     if is_empty errors |> not
     then Error Pool_message.(Error.AlreadyInvitedToExperiment errors)
     else (
-      match all_ok emails with
+      match map create_message invitations |> all_ok with
       | Ok emails when is_empty emails -> Ok []
       | Ok emails ->
         Ok
@@ -87,25 +86,26 @@ end = struct
   type t = Invitation.t
 
   let handle ?(tags = Logs.Tag.empty) ?mailing_id create_email (invitation : t) =
-    let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Resend" ~tags);
     let contact = invitation.Invitation.contact in
-    let* () =
-      if Contact.is_inactive contact
-      then Error Pool_message.Error.ContactIsInactive
-      else Ok ()
-    in
-    let* () =
-      if Contact.is_paused contact
-      then Error Pool_message.Error.ContactIsPaused
-      else Ok ()
-    in
-    let* () =
+    let open CCResult in
+    let checks =
+      (if Contact.is_inactive contact
+       then Error Pool_message.Error.ContactIsInactive
+       else Ok ())
+      >>= fun () ->
+      (if Contact.is_paused contact
+       then Error Pool_message.Error.ContactIsPaused
+       else Ok ())
+      >>= fun () ->
       if Pool_user.Disabled.value contact.Contact.disabled
       then Error Pool_message.(Error.Disabled Field.Contact)
       else Ok ()
     in
-    let* email = create_email invitation in
+    checks
+    >>= fun () ->
+    create_email invitation
+    >>= fun email ->
     Ok
       [ Invitation.Resent (invitation, mailing_id) |> Pool_event.invitation
       ; Email.sent email |> Pool_event.email

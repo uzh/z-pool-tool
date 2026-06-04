@@ -85,3 +85,29 @@ end = struct
     | Pool_context.Guest -> Error Pool_message.(Error.Invalid Field.User)
   ;;
 end
+
+module ActivateImport : sig
+  type t = User_import.t * Pool_context.user
+
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
+end = struct
+  type t = User_import.t * Pool_context.user
+
+  let handle ?(tags = Logs.Tag.empty) (user_import, user) =
+    let open CCResult in
+    Logs.info ~src (fun m -> m "Handle command ActivateImport" ~tags);
+    let user_import_confirmed =
+      User_import.Confirmed user_import |> Pool_event.user_import
+    in
+    match user with
+    | Pool_context.Admin admin ->
+      Ok [ Admin.ImportDisabled admin |> Pool_event.admin; user_import_confirmed ]
+    | Pool_context.Contact contact ->
+      Ok
+        [ Contact.TermsAccepted contact |> Pool_event.contact
+        ; Contact.ImportDisabled contact |> Pool_event.contact
+        ; user_import_confirmed
+        ]
+    | Pool_context.Guest -> Error Pool_message.(Error.Invalid Field.User)
+  ;;
+end

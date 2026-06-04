@@ -64,6 +64,19 @@ let forge_token =
   Lwt.return_ok ()
 ;;
 
+let extend_expiry_of_expired_token =
+  case
+  @@ fun () ->
+  let%lwt token =
+    Pool_token.create ~expires_in:Sihl.Time.OneSecond database_label [ "foo", "expired" ]
+  in
+  let%lwt () = Lwt_unix.sleep 1.1 in
+  let%lwt () = Pool_token.extend_expiry database_label token Sihl.Time.OneYear in
+  let%lwt is_valid = Pool_token.is_valid database_label token in
+  Alcotest.(check bool "expired token is not extended" false is_valid);
+  Lwt.return_ok ()
+;;
+
 let suite =
   [ ( "token"
     , [ test_case "create and find token" `Quick create_and_read_token
@@ -72,6 +85,7 @@ let suite =
           `Quick
           deactivate_and_reactivate_token
       ; test_case "forge token" `Quick forge_token
+      ; test_case "does not extend expired token" `Quick extend_expiry_of_expired_token
       ] )
   ]
 ;;

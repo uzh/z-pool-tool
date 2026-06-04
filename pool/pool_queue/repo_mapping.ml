@@ -1,25 +1,56 @@
 open Entity_mapping
 module Dynparam = Database.Dynparam
 
+let src = Logs.Src.create "pool_queue.repo_mapping"
 let sql_write_columns = [ "queue_uuid"; "entity_uuid" ]
 
 let insert_request { entity; _ } =
   let open Caqti_request.Infix in
   let table, column = Entity.History.model_sql entity in
+  let source_table = Entity.History.source_table entity in
   [%string
     {sql|
       INSERT INTO %{table} (
         queue_uuid,
         %{column}
-      ) VALUES (
+      )
+      SELECT
         %{Entity.Id.sql_value_fragment "$1"},
         %{Entity.Id.sql_value_fragment "$2"}
-      )
+      FROM %{source_table}
+      WHERE uuid = %{Entity.Id.sql_value_fragment "$2"}
     |sql}]
   |> Repo_entity.Mapping.t ->. Caqti_type.unit
 ;;
 
-let insert pool t = Database.exec pool (insert_request t) t
+let exists_request model =
+  let open Caqti_request.Infix in
+  let source_table = Entity.History.source_table model in
+  [%string
+    {sql|
+      SELECT %{Pool_common.Id.sql_select_fragment ~field:"uuid"}
+      FROM %{source_table}
+      WHERE uuid = %{Pool_common.Id.sql_value_fragment "?"}
+    |sql}]
+  |> Pool_common.Repo.Id.t ->? Pool_common.Repo.Id.t
+;;
+
+let insert pool ({ entity; entity_uuid; queue_uuid; _ } as t) =
+  let open Lwt.Infix in
+  Database.find_opt pool (exists_request entity) entity_uuid
+  >>= function
+  | Some _ -> Database.exec pool (insert_request t) t
+  | None ->
+    Logs.warn ~src (fun m ->
+      m
+        ~tags:(Database.Logger.Tags.create pool)
+        "Skipping queue mapping insert for missing %s uuid=%s (queue_uuid=%s)"
+        (Entity.History.show_model entity)
+        (Pool_common.Id.value entity_uuid)
+        (Entity.Id.value queue_uuid));
+    Lwt.return_unit
+;;
+
 let insert_all label = Lwt_list.iter_s (insert label)
 
 let duplicate_mapping_request model =

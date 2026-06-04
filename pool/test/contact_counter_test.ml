@@ -150,6 +150,7 @@ module InviteContact = struct
   let invite _ () =
     let%lwt contact, experiment, _, _, current_user = initialize () in
     let%lwt () =
+      let open Utils.Lwt_result.Infix in
       Invitation_command.Create.(
         handle
           { experiment
@@ -158,8 +159,9 @@ module InviteContact = struct
           ; invited_contacts = []
           ; create_message = invitation_mail
           })
-      |> get_exn
-      |> Pool_event.handle_events database_label current_user
+      |> Lwt.return
+      |>> Pool_event.handle_events database_label current_user
+      ||> get_exn
     in
     let%lwt res = get_contact contact_id in
     let expected = contact |> Contact.update_num_invitations ~step:1 in

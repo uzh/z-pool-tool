@@ -154,9 +154,13 @@ let create req =
         experiment
     in
     let%lwt create_message =
-      Message_template.ExperimentInvitation.prepare tenant experiment
+      Message_template.ExperimentInvitation.prepare_with_optout_link
+        database_label
+        tenant
+        experiment
+        contacts
     in
-    let%lwt events =
+    let* events =
       let open Cqrs_command.Invitation_command.Create in
       handle
         ~tags
@@ -169,7 +173,7 @@ let create req =
         redirect_path
         [ HttpMessage.set ~success:[ Success.SentList Field.Invitations ] ]
     in
-    events |> Lwt_result.lift |>> handle
+    handle events |> Lwt_result.ok
   in
   Response.handle ~src req result
 ;;
@@ -192,19 +196,21 @@ let resend req =
     @@
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let%lwt create_email =
-      Message_template.ExperimentInvitation.prepare tenant experiment
+      Message_template.ExperimentInvitation.prepare_with_optout_link
+        database_label
+        tenant
+        experiment
+        [ invitation.Invitation.contact ]
     in
-    let events =
+    let* events =
       let open Cqrs_command.Invitation_command.Resend in
-      handle ~tags create_email invitation |> Lwt.return
+      handle ~tags create_email invitation |> Lwt_result.lift
     in
-    let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
-      Http_utils.redirect_to_with_actions
-        redirect_path
-        [ HttpMessage.set ~success:[ Success.SentList Field.Invitations ] ]
-    in
-    events |>> handle
+    let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    Http_utils.redirect_to_with_actions
+      redirect_path
+      [ HttpMessage.set ~success:[ Success.SentList Field.Invitations ] ]
+    |> Lwt_result.ok
   in
   Response.handle ~src req result
 ;;

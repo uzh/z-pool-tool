@@ -81,5 +81,11 @@ val is_expired : ?secret:string -> Database.Label.t -> t -> bool Lwt.t
 val is_valid : ?secret:string -> Database.Label.t -> t -> bool Lwt.t
 
 val find_active_by_data : Database.Label.t -> (string * string) list -> t option Lwt.t
+
+(** [extend_expiry database_label token duration] extends the expiry of [token] to
+    [duration] from now. Does nothing if the token cannot be found or is no
+    longer valid. *)
+val extend_expiry : Database.Label.t -> t -> Sihl.Time.duration -> unit Lwt.t
+
 val lifecycle : Sihl.Container.lifecycle
 val register : unit -> Sihl.Container.Service.t

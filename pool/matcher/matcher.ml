@@ -133,9 +133,13 @@ let events_of_mailings ?invitation_ids pool limited_mailings =
       | [] -> notify_all_invited pool tenant experiment |> Lwt_result.ok
       | contacts ->
         let open Cqrs_command.Invitation_command in
-        let contacts = sort_contacts contacts in
+        let contacts = contacts |> Contact.deduplicate |> sort_contacts in
         let%lwt create_message =
-          Message_template.ExperimentInvitation.prepare tenant experiment
+          Message_template.ExperimentInvitation.prepare_with_optout_link
+            pool
+            tenant
+            experiment
+            contacts
         in
         let create_new contacts =
           Create.(
@@ -151,8 +155,8 @@ let events_of_mailings ?invitation_ids pool limited_mailings =
         in
         let resend_existing invitations =
           invitations
-          |> CCList.map (fun invitation ->
-            Resend.(handle ~tags ~mailing_id:mailing.Mailing.id create_message invitation))
+          |> CCList.map
+               (Resend.handle ~tags ~mailing_id:mailing.Mailing.id create_message)
           |> CCList.all_ok
           |> CCResult.map CCList.flatten
         in
@@ -171,9 +175,10 @@ let events_of_mailings ?invitation_ids pool limited_mailings =
                      | Some invitation -> invitations @ [ invitation ], contacts))
                 ([], [])
            >|> fun (invitations, contacts) ->
-           let* resend_events = resend_existing invitations |> Lwt_result.lift in
-           let* create_events = create_new contacts |> Lwt_result.lift in
-           Lwt_result.return (create_events @ resend_events)))
+           CCResult.(
+             both (resend_existing invitations) (create_new contacts)
+             >|= fun (r, c) -> c @ r)
+           |> Lwt_result.lift))
     ||> CCList.all_ok
     >|+ CCList.flatten
   in

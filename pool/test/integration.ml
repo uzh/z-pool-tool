@@ -184,6 +184,7 @@ let suite =
           ; test_case "send invitations" `Slow send_invitations
           ; test_case "reset experiment invitations" `Slow reset_invitations
           ; test_case "matcher notifiaction" `Slow matcher_notification
+          ; test_case "dedupe matcher contacts" `Slow deduplicate_contacts_by_id
           ; test_case
               "online experiment matcher"
               `Slow

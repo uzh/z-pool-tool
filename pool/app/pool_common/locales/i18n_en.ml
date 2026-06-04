@@ -4,6 +4,10 @@ let capitalize = CCString.capitalize_ascii
 let error_to_string = Locales_en.error_to_string
 
 let to_string = function
+  | ActivateAccountButton email -> Format.asprintf "Activate account for \"%s\"" email
+  | ActivateAccountNote ->
+    "Your account has been migrated. Please activate your account to continue."
+  | ActivateAccountTitle -> "Activate your account"
   | Activity -> "activity"
   | Address -> "address"
   | AdminComment -> "admin comment"
@@ -766,6 +770,12 @@ Only sessions with open spots can be selected.|}
      api key. The number must have the format +41791234567."
   | TextLengthMax i -> error_to_string (Pool_message.Error.TextLengthMax i)
   | TextLengthMin i -> error_to_string (Pool_message.Error.TextLengthMin i)
+  | UnsubscribeExperimentInvitationsTitle -> "Unsubscribe from experiment invitations"
+  | UnsubscribeExperimentInvitationsInfo email ->
+    Format.asprintf
+      "The email address \"%s\" is unsubscribed from receiving experiment invitations. \
+       You can reactivate it in your account settings."
+      email
   | UserImportInterval ->
     {|<p>Define after how many days a reminder will be sent to contacts that have not confirmed the import yet.</p>
 <p><strong>The 'second reminder' setting defines how long after the first reminder the second reminder is sent.</strong></p>|}
@@ -833,7 +843,8 @@ let confirmable_to_string confirmable =
          "Subsequently, all previous invitations up to the now are ignored, i.e. \
           contacts who have already been invited will receive a further invitation." )
    | RevokeRole -> "role", "revoke", None
-   | StopMailing -> "mailing", "stop", None)
+   | StopMailing -> "mailing", "stop", None
+   | UnsubscribeExperimentInvitation -> "experiment invitations", "unsubscribe from", None)
   |> fun (obj, action, additive) ->
   Format.asprintf "Are you sure you want to %s the %s?" action obj
   |> fun msg -> additive |> CCOption.map_or ~default:msg (Format.asprintf "%s %s" msg)

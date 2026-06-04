@@ -6,6 +6,7 @@ module Error = Middleware_error
 module Guardian = Middleware_guardian
 module Logger = Middleware_logger
 module NotAllowed = Middleware_not_allowed
+module PauseAccountRedirect = Middleware_pause_account_redirect
 module Root = Middleware_root
 module Tenant = Middleware_tenant
 module TrailingSlash = Middleware_trailing_slash

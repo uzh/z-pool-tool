@@ -81,6 +81,7 @@ val sexp_of_t : t -> Sexplib0.Sexp.t
 val yojson_of_t : t -> Yojson.Safe.t
 val show : t -> string
 val compare : t -> t -> int
+val deduplicate : t list -> t list
 val set_email_address : t -> Pool_user.EmailAddress.t -> t
 val set_firstname : t -> Pool_user.Firstname.t -> t
 val set_lastname : t -> Pool_user.Lastname.t -> t

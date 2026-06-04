@@ -383,7 +383,7 @@ let contact_information
   |> contact_profile_layout language I18n.ContactInformation
 ;;
 
-let pause_account Pool_context.{ language; query_parameters; csrf; _ } ?token () =
+let pause_account Pool_context.{ language; query_parameters; csrf; _ } ?token ~email () =
   let externalize = HttpUtils.externalize_path_with_params query_parameters in
   let action =
     match token with
@@ -391,21 +391,21 @@ let pause_account Pool_context.{ language; query_parameters; csrf; _ } ?token ()
     | Some token ->
       Message.add_field_query_params
         "/unsubscribe"
-        [ Message.Field.Token, User_import.Token.value token ]
+        [ Message.Field.Token, Pool_token.value token ]
       |> externalize
   in
   let open Pool_common in
-  let open Utils in
+  let to_txt i18n = Utils.hint_to_string language i18n |> txt in
   div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 [ txt (control_to_string language Message.Control.PauseAccount) ]
-    ; p [ txt (hint_to_string language I18n.PauseAccountContact) ]
-    ; p [ txt (confirmable_to_string language I18n.PauseAccount) ]
+    ~a:[ a_class [ "trim"; "safety-margin"; "stack" ] ]
+    [ h1 [ to_txt I18n.UnsubscribeExperimentInvitationsTitle ]
+    ; p [ to_txt (I18n.UnsubscribeExperimentInvitationsInfo email) ]
+    ; p
+        [ txt (Utils.confirmable_to_string language I18n.UnsubscribeExperimentInvitation)
+        ]
     ; form
         ~a:[ a_method `Post; a_action action ]
         Component.Input.
-          [ csrf_element csrf ()
-          ; submit_element language Message.Control.PauseAccount ()
-          ]
+          [ csrf_element csrf (); submit_element language Message.Control.Unsubscribe () ]
     ]
 ;;

@@ -68,6 +68,7 @@ type t =
   | ToggleAll
   | Unassign of Field.t option
   | Unblock
+  | Unsubscribe
   | Unverify
   | Update of Field.t option
   | UpdateAssignmentsMatchFilter

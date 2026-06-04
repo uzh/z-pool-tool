@@ -391,6 +391,9 @@ Solange die neue E-Mail-Adresse nicht bestätigt ist, wird weiterhin die aktuell
      Link, um Ihr Passwort festzulegen."
   | EmailVerified -> "E-Mail erfolgreich verifiziert."
   | FileDeleted -> "File wurde erfolgreich gelöscht."
+  | ImportActivationPasswordResetSent ->
+    "Ihr Konto wurde aktiviert. Sie erhalten in Kürze eine E-Mail zum Zurücksetzen Ihres \
+     Passworts."
   | ImportCompleted -> "Der Import Ihres Kontos wurde erfolgreich abgeschlossen."
   | MarkedAsDeleted field ->
     field_message "" (field_to_string field) "wurde als gelöscht markiert."
@@ -808,6 +811,7 @@ let control_to_string =
   | ToggleAll -> "alle umschalten"
   | Unassign field -> format_submit "entfernen" field
   | Unblock -> format_submit "entsperren" None
+  | Unsubscribe -> format_submit "abmelden" None
   | Unverify -> "Als unverifiziert markieren"
   | Update field -> format_submit "aktualisieren" field
   | UpdateAssignmentsMatchFilter -> format_submit "Filter erneut ausführen" None
