@@ -728,10 +728,19 @@ let create_follow_up req =
     Response.bad_request_on_error ~urlencoded follow_up
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let enroll_participants_from_main_session =
+    let%lwt enroll_participants_from_main_session, msg_error =
       HttpUtils.find_in_urlencoded_opt Field.EnrollFromMain urlencoded
       |> CCOption.map Utils.Bool.of_string
-      |> CCOption.value ~default:false
+      |> function
+      | None | Some false -> Lwt.return (false, [])
+      | Some true ->
+        Helpers.Guard.has_permission
+          database_label
+          user
+          (Cqrs_command.Assignment_command.Create.effects experiment_id)
+        ||> (function
+         | true -> true, []
+         | false -> false, [ Error.AccessDenied ])
     in
     let* location = location urlencoded database_label in
     let* experiment = Experiment.find database_label experiment_id in
@@ -784,7 +793,7 @@ let create_follow_up req =
     let%lwt () = Pool_event.handle_events ~tags database_label user enroll_events in
     Http_utils.redirect_to_with_actions
       (session_path experiment_id)
-      [ Message.set ~success:[ Success.Created Field.Session ] ]
+      [ Message.set ~success:[ Success.Created Field.Session ] ~error:msg_error ]
     |> Lwt_result.ok
   in
   Response.handle ~src req result
