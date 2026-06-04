@@ -12,8 +12,8 @@ type assignment_data =
   }
 
 let assignment_data () =
-  let session = Model.create_session () in
   let experiment = Model.create_experiment () in
+  let session = Model.create_session ~experiment () in
   let contact = Model.create_contact () in
   { session; experiment; contact }
 ;;
@@ -52,30 +52,77 @@ let update_assignment_count_event ~step contact =
   contact |> update_num_assignments ~step |> updated |> Pool_event.contact
 ;;
 
+let check_assignment_creation_events ~msg ~contact ~session_ids =
+  let expected_contact =
+    contact |> Contact.update_num_assignments ~step:(CCList.length session_ids)
+  in
+  let sorted_ids = CCList.sort Session.Id.compare in
+  function
+  | Error err ->
+    Alcotest.failf
+      "%s: expected Ok events, got error %s"
+      msg
+      (Pool_message.Error.show err)
+  | Ok events ->
+    let has_email_event =
+      events
+      |> CCList.exists ((function
+        | Pool_event.Email (Email.Sent _) -> true
+        | _ -> false)
+        [@warning "-4"])
+    in
+    let created_session_ids =
+      events
+      |> CCList.filter_map ((function
+        | Pool_event.Assignment (Assignment.Created (_, session_id)) -> Some session_id
+        | _ -> None)
+        [@warning "-4"])
+    in
+    let has_expected_contact_update =
+      events
+      |> CCList.exists ((function
+        | Pool_event.Contact (Contact.Updated contact) ->
+          Contact.equal contact expected_contact
+        | _ -> false)
+        [@warning "-4"])
+    in
+    Alcotest.(check bool) (msg ^ ": includes sent email") true has_email_event;
+    Alcotest.(check int)
+      (msg ^ ": created assignment count")
+      (CCList.length session_ids)
+      (CCList.length created_session_ids);
+    Alcotest.(check bool)
+      (msg ^ ": created session ids")
+      true
+      (CCList.equal
+         Session.Id.equal
+         (sorted_ids session_ids)
+         (sorted_ids created_session_ids));
+    Alcotest.(check bool)
+      (msg ^ ": includes contact assignment counter update")
+      true
+      has_expected_contact_update
+;;
+
 let create () =
   let { session; experiment; contact } = assignment_data () in
   let confirmation_email = confirmation_email experiment session in
-  let assignment = Assignment.create contact in
   let events =
     let command =
       AssignmentCommand.Create.{ contact; session; follow_up_sessions = []; experiment }
     in
     AssignmentCommand.Create.handle command confirmation_email false
   in
-  let expected =
-    Ok
-      [ Email.(sent (confirmation_email assignment)) |> Pool_event.email
-      ; Assignment.(Created (create contact, session.Session.id)) |> Pool_event.assignment
-      ; update_assignment_count_event ~step:1 contact
-      ]
-  in
-  check_result expected events
+  check_assignment_creation_events
+    ~msg:"create assignment"
+    ~contact
+    ~session_ids:[ session.Session.id ]
+    events
 ;;
 
 let create_with_experiment_smtp () =
   let { session; experiment; contact } = assignment_data () in
   let smtp_auth_id = Email.SmtpAuth.Id.create () in
-  let assignment = Assignment.create contact in
   let experiment = { experiment with Experiment.smtp_auth_id = Some smtp_auth_id } in
   let confirmation_email = confirmation_email experiment session in
   let events =
@@ -84,14 +131,11 @@ let create_with_experiment_smtp () =
     in
     AssignmentCommand.Create.handle command confirmation_email false
   in
-  let expected =
-    Ok
-      [ Email.(sent (confirmation_email assignment)) |> Pool_event.email
-      ; Assignment.(Created (create contact, session.Session.id)) |> Pool_event.assignment
-      ; update_assignment_count_event ~step:1 contact
-      ]
-  in
-  check_result expected events
+  check_assignment_creation_events
+    ~msg:"create assignment with smtp"
+    ~contact
+    ~session_ids:[ session.Session.id ]
+    events
 ;;
 
 let create_inactive_user () =
@@ -316,7 +360,6 @@ let assign_to_experiment_with_direct_registration_disabled () =
 let assign_to_experiment_with_direct_registration_disabled_as_admin () =
   let { session; experiment; contact } = assignment_data () in
   let confirmation_email = confirmation_email experiment session in
-  let assignment = Assignment.create contact in
   let experiment =
     Experiment.
       { experiment with
@@ -329,14 +372,11 @@ let assign_to_experiment_with_direct_registration_disabled_as_admin () =
     let command = { contact; session; follow_up_sessions = []; experiment } in
     handle ~direct_enrollment_by_admin:true command confirmation_email false
   in
-  let expected =
-    Ok
-      [ Email.(sent (confirmation_email assignment)) |> Pool_event.email
-      ; Assignment.Created (assignment, session.Session.id) |> Pool_event.assignment
-      ; update_assignment_count_event ~step:1 contact
-      ]
-  in
-  check_result expected events
+  check_assignment_creation_events
+    ~msg:"admin direct enrollment"
+    ~contact
+    ~session_ids:[ session.Session.id ]
+    events
 ;;
 
 let assign_to_session_contact_is_already_assigned () =
@@ -351,6 +391,54 @@ let assign_to_session_contact_is_already_assigned () =
   in
   let expected = Error Error.AlreadySignedUpForExperiment in
   check_result expected events
+;;
+
+let assign_to_session_of_other_experiment_fails () =
+  let experiment = Model.create_experiment () in
+  let other_experiment = Model.create_experiment () in
+  let session = Model.create_session ~experiment:other_experiment () in
+  let contact = Model.create_contact () in
+  let confirmation_email = confirmation_email experiment session in
+  let events =
+    let command =
+      AssignmentCommand.Create.{ contact; session; follow_up_sessions = []; experiment }
+    in
+    AssignmentCommand.Create.handle command confirmation_email false
+  in
+  let expected = Error (Error.NotFound Field.Session) in
+  check_result expected events
+;;
+
+let assign_to_second_main_session_of_same_experiment () =
+  let experiment = Model.create_experiment () in
+  let first_session = Model.create_session ~experiment () in
+  let second_session = Model.create_session ~experiment () in
+  let contact = Model.create_contact () in
+  let first_confirmation_email = confirmation_email experiment first_session in
+  let second_confirmation_email = confirmation_email experiment second_session in
+  let first_events =
+    let command =
+      AssignmentCommand.Create.
+        { contact; session = first_session; follow_up_sessions = []; experiment }
+    in
+    AssignmentCommand.Create.handle command first_confirmation_email false
+  in
+  let () =
+    check_assignment_creation_events
+      ~msg:"first main session registration"
+      ~contact
+      ~session_ids:[ first_session.Session.id ]
+      first_events
+  in
+  let second_events =
+    let command =
+      AssignmentCommand.Create.
+        { contact; session = second_session; follow_up_sessions = []; experiment }
+    in
+    AssignmentCommand.Create.handle command second_confirmation_email true
+  in
+  let expected_second = Error Error.AlreadySignedUpForExperiment in
+  check_result expected_second second_events
 ;;
 
 let assign_to_canceled_session () =
@@ -372,12 +460,15 @@ let assign_to_canceled_session () =
 ;;
 
 let assign_contact_from_waiting_list () =
-  let session = Model.create_session () in
   let experiment = Model.create_experiment () in
-  let waiting_list = Model.create_waiting_list () in
+  let session = Model.create_session ~experiment () in
+  let waiting_list =
+    Model.create_waiting_list_from_experiment_and_contact
+      experiment
+      (Model.create_contact ())
+  in
   let already_enrolled = false in
   let contact = waiting_list.Waiting_list.contact in
-  let assignment = Assignment.create contact in
   let confirmation_email = confirmation_email experiment session in
   let events =
     let command =
@@ -386,27 +477,48 @@ let assign_contact_from_waiting_list () =
     in
     AssignmentCommand.CreateFromWaitingList.handle command confirmation_email
   in
-  let expected =
-    let create =
-      Assignment.(create waiting_list.Waiting_list.contact, session.Session.id)
-    in
-    Ok
-      [ Email.(sent (confirmation_email assignment)) |> Pool_event.email
-      ; Assignment.Created create |> Pool_event.assignment
-      ; update_assignment_count_event ~step:1 contact
-      ]
+  check_assignment_creation_events
+    ~msg:"assign from waiting list"
+    ~contact
+    ~session_ids:[ session.Session.id ]
+    events
+;;
+
+let assign_contact_from_waiting_list_of_other_experiment_fails () =
+  let waiting_list_experiment = Model.create_experiment () in
+  let session_experiment = Model.create_experiment () in
+  let session = Model.create_session ~experiment:session_experiment () in
+  let waiting_list =
+    Model.create_waiting_list_from_experiment_and_contact
+      waiting_list_experiment
+      (Model.create_contact ())
   in
+  let already_enrolled = false in
+  let confirmation_email =
+    confirmation_email waiting_list.Waiting_list.experiment session
+  in
+  let events =
+    let command =
+      AssignmentCommand.CreateFromWaitingList.
+        { session; follow_up_sessions = []; waiting_list; already_enrolled }
+    in
+    AssignmentCommand.CreateFromWaitingList.handle command confirmation_email
+  in
+  let expected = Error (Error.NotFound Field.Session) in
   check_result expected events
 ;;
 
 let assign_contact_from_waiting_list_with_follow_ups () =
-  let session = Model.create_session () in
   let experiment = Model.create_experiment () in
-  let follow_up = Model.create_session ~follow_up_to:session.Session.id () in
-  let waiting_list = Model.create_waiting_list () in
+  let session = Model.create_session ~experiment () in
+  let follow_up = Model.create_session ~experiment ~follow_up_to:session.Session.id () in
+  let waiting_list =
+    Model.create_waiting_list_from_experiment_and_contact
+      experiment
+      (Model.create_contact ())
+  in
   let already_enrolled = false in
   let contact = waiting_list.Waiting_list.contact in
-  let assignment = Assignment.create contact in
   let confirmation_email = confirmation_email experiment session in
   let events =
     let command =
@@ -415,35 +527,27 @@ let assign_contact_from_waiting_list_with_follow_ups () =
     in
     AssignmentCommand.CreateFromWaitingList.handle command confirmation_email
   in
-  let expected =
-    let create_events =
-      [ session; follow_up ]
-      |> CCList.map (fun session ->
-        let create =
-          Assignment.(create waiting_list.Waiting_list.contact, session.Session.id)
-        in
-        Assignment.Created create |> Pool_event.assignment)
-    in
-    Ok
-      (((Email.(sent (confirmation_email assignment)) |> Pool_event.email)
-        :: create_events)
-       @ [ update_assignment_count_event ~step:2 contact ])
-  in
-  Test_utils.check_result expected events
+  check_assignment_creation_events
+    ~msg:"assign from waiting list with follow ups"
+    ~contact
+    ~session_ids:[ session.Session.id; follow_up.Session.id ]
+    events
 ;;
 
 let assign_contact_from_waiting_list_to_disabled_experiment () =
-  let session = Model.create_session () in
   let experiment = Model.create_experiment () in
   let experiment =
     Experiment.
       { experiment with registration_disabled = true |> RegistrationDisabled.create }
   in
-  let waiting_list = Model.create_waiting_list () in
-  let waiting_list = { waiting_list with Waiting_list.experiment } in
-  let contact = waiting_list.Waiting_list.contact in
+  let session = Model.create_session ~experiment () in
+  let waiting_list =
+    Model.create_waiting_list_from_experiment_and_contact
+      experiment
+      (Model.create_contact ())
+  in
   let already_enrolled = false in
-  let assignment = Assignment.create contact in
+  let contact = waiting_list.Waiting_list.contact in
   let confirmation_email = confirmation_email experiment session in
   let events =
     let command =
@@ -452,28 +556,18 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
     in
     AssignmentCommand.CreateFromWaitingList.handle command confirmation_email
   in
-  let expected =
-    let create_event =
-      let create =
-        Assignment.(create waiting_list.Waiting_list.contact, session.Session.id)
-      in
-      Assignment.Created create |> Pool_event.assignment
-    in
-    Ok
-      [ Email.(sent (confirmation_email assignment)) |> Pool_event.email
-      ; create_event
-      ; update_assignment_count_event ~step:1 contact
-      ]
-  in
-  check_result expected events
+  check_assignment_creation_events
+    ~msg:"assign from waiting list to disabled experiment"
+    ~contact
+    ~session_ids:[ session.Session.id ]
+    events
 ;;
 
 let assign_to_session_with_follow_ups () =
   let { session; experiment; contact } = assignment_data () in
-  let assignment = Assignment.create contact in
   let confirmation_email = confirmation_email experiment session in
   let follow_up =
-    let base = Model.(create_session ~start:(in_an_hour ())) () in
+    let base = Model.(create_session ~experiment ~start:(in_an_hour ())) () in
     Session.
       { base with id = Session.Id.create (); follow_up_to = Some session.Session.id }
   in
@@ -484,22 +578,11 @@ let assign_to_session_with_follow_ups () =
     in
     AssignmentCommand.Create.handle command confirmation_email false
   in
-  let expected =
-    let sessions = [ session; follow_up ] in
-    let create_events =
-      sessions
-      |> CCList.map (fun session ->
-        Assignment.(Created (create contact, session.Session.id)) |> Pool_event.assignment)
-    in
-    let increase_num_events =
-      update_assignment_count_event ~step:(CCList.length sessions) contact
-    in
-    let email_event =
-      [ Email.sent (confirmation_email assignment) |> Pool_event.email ]
-    in
-    email_event @ create_events @ [ increase_num_events ] |> CCResult.return
-  in
-  check_result expected events
+  check_assignment_creation_events
+    ~msg:"assign to session with follow ups"
+    ~contact
+    ~session_ids:[ session.Session.id; follow_up.Session.id ]
+    events
 ;;
 
 let mark_uncanceled_as_deleted () =

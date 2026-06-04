@@ -367,6 +367,11 @@ let enroll_contact_post req =
       >|+ Session.Id.of_string
       >>= Session.find database_label
     in
+    let* () =
+      if Experiment.Id.equal session.Session.experiment.Experiment.id experiment_id
+      then Lwt_result.return ()
+      else Lwt_result.fail (Pool_message.Error.NotFound Field.Session)
+    in
     let%lwt follow_up_sessions =
       Session.find_follow_ups database_label session.Session.id
     in
@@ -380,7 +385,10 @@ let enroll_contact_post req =
         session
     in
     let%lwt contact_is_enrolled =
-      Experiment.contact_is_enrolled database_label experiment_id contact_id
+      Experiment.contact_is_enrolled
+        database_label
+        session.Session.experiment.Experiment.id
+        contact_id
     in
     let events =
       let open Cqrs_command.Assignment_command.Create in
