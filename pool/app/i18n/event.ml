@@ -3,13 +3,13 @@ open Entity
 type create =
   { key : Key.t
   ; language : Pool_common.Language.t
-  ; content : Content.t
+  ; content : Content.t option
   }
 [@@deriving eq, show]
 
 type event =
   | Created of create
-  | Updated of t * Content.t
+  | Updated of t * Content.t option
 [@@deriving eq, show]
 
 let insert_i18n pool i18n =

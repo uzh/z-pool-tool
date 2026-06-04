@@ -40,17 +40,20 @@ module Key = struct
   type t =
     | ContactEmail [@name "contact_email"] [@printer printer "contact_email"]
     | EmailSuffixes [@name "email_suffixes"] [@printer printer "email_suffixes"]
-    | SystemEmailTemplates [@name "system_email_templates"]
-    [@printer printer "system_email_templates"]
     | InactiveUserDisableAfter [@name "inactive_user_disable_after"]
     [@printer printer "inactive_user_disable_after"]
-    | InactiveUserWarning [@name "inactive_user_warning"]
-    [@printer printer "inactive_user_warning"]
     | InactiveUserServiceDisabled [@name "inactive_user_service_disabled"]
     [@printer printer "inactive_user_service_disabled"]
+    | InactiveUserWarning [@name "inactive_user_warning"]
+    [@printer printer "inactive_user_warning"]
     | Languages [@name "languages"] [@printer printer "languages"]
+    | PhoneVerificationEnabled [@name "phone_verification_enabled"]
+    [@printer printer "phone_verification_enabled"]
+    | ProfileOnly [@name "profile_only"] [@printer printer "profile_only"]
     | ReminderLeadTime [@name "default_reminder_lead_time"]
     [@printer printer "default_reminder_lead_time"]
+    | SystemEmailTemplates [@name "system_email_templates"]
+    [@printer printer "system_email_templates"]
     | TextMsgReminderLeadTime [@name "default_text_msg_reminder_lead_time"]
     [@printer printer "default_text_msg_reminder_lead_time"]
     | TriggerProfileUpdateAfter [@name "trigger_profile_update_after"]
@@ -59,12 +62,18 @@ module Key = struct
     [@printer printer "user_import_first_reminder_after"]
     | UserImportSecondReminderAfter [@name "user_import_second_reminder_after"]
     [@printer printer "user_import_second_reminder_after"]
-    | PhoneVerificationEnabled [@name "phone_verification_enabled"]
-    [@printer printer "phone_verification_enabled"]
   [@@deriving eq, show { with_path = false }, yojson]
 
   let read = Utils.Json.read_variant t_of_yojson
   let to_json_string key = key |> yojson_of_t |> Yojson.Safe.to_string
+end
+
+module ProfileOnly = struct
+  include Pool_model.Base.Boolean
+
+  let key = Key.ProfileOnly
+  let field = Pool_message.Field.ProfileOnly
+  let schema = schema ~default:false field
 end
 
 module ContactEmail = struct

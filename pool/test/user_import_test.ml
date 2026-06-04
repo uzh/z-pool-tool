@@ -239,13 +239,13 @@ let active_import_confirmation_page_renders_password_and_confirmation_fields () 
     I18n.create
       I18n.Key.TermsAndConditions
       context.Pool_context.language
-      (I18n.Content.create "<p>Terms</p>" |> get_exn)
+      (I18n.Content.create_opt "<p>Terms</p>" |> get_exn)
   in
   let password_policy =
     I18n.create
       I18n.Key.PasswordPolicyText
       context.Pool_context.language
-      (I18n.Content.create "Use a strong password" |> get_exn)
+      (I18n.Content.create_opt "Use a strong password" |> get_exn)
   in
   let html =
     Page.Public.Import.import_confirmation
@@ -295,13 +295,13 @@ let inactive_import_confirmation_page_renders_activation_form () =
     I18n.create
       I18n.Key.TermsAndConditions
       context.Pool_context.language
-      (I18n.Content.create "<p>Terms</p>" |> get_exn)
+      (I18n.Content.create_opt "<p>Terms</p>" |> get_exn)
   in
   let password_policy =
     I18n.create
       I18n.Key.PasswordPolicyText
       context.Pool_context.language
-      (I18n.Content.create "unused" |> get_exn)
+      (I18n.Content.create_opt "unused" |> get_exn)
   in
   let html =
     Page.Public.Import.import_confirmation

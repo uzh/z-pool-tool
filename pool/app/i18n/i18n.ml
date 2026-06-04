@@ -1,3 +1,4 @@
+open CCFun.Infix
 include Entity
 include Event
 module Guard = Entity_guard
@@ -36,7 +37,8 @@ let privacy_policy_is_set database_label language =
   | Some bool -> Lwt.return bool
   | None ->
     let%lwt existing =
-      find_by_key_opt database_label Key.PrivacyPolicy language ||> CCOption.is_some
+      find_by_key_opt database_label Key.PrivacyPolicy language
+      ||> CCOption.map_or ~default:false (content %> CCOption.is_some)
     in
     let () = Hashtbl.add I18nCache.privacy_policy (database_label, language) existing in
     Lwt.return existing
@@ -50,4 +52,12 @@ let find_by_key database_label key language =
     let%lwt i18n = Repo.find_by_key database_label key language in
     let () = I18nCache.add database_label key language i18n in
     Lwt.return i18n
+;;
+
+let extract_by_key_exn i18n searchkey language =
+  CCList.find
+    (fun i18n ->
+       Key.equal searchkey (key i18n)
+       && Pool_common.Language.equal language (Entity.language i18n))
+    i18n
 ;;

@@ -11,7 +11,10 @@ let update_terms_and_conditions () =
     CCList.map
       (fun lang ->
          let system_event_id = System_event.Id.create () in
-         ( I18n.create I18n.Key.TermsAndConditions lang (I18n.Content.of_string content)
+         ( I18n.create
+             I18n.Key.TermsAndConditions
+             lang
+             (Some (I18n.Content.of_string content))
          , system_event_id ))
       languages
   in
@@ -29,7 +32,9 @@ let update_terms_and_conditions () =
   let expected =
     terms
     |> CCList.map (fun (i18n, system_event_id) ->
-      let content = I18n.Content.of_string content in
+      let content =
+        I18n.Content.create_opt content |> Pool_message.Error.get_or_failwith
+      in
       [ I18n.Updated (i18n, content) |> Pool_event.i18n
       ; System_event.(
           Job.I18nPageUpdated
@@ -42,4 +47,46 @@ let update_terms_and_conditions () =
   in
   Alcotest.(
     check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
+;;
+
+let update_terms_and_conditions_accepts_empty_content () =
+  let system_event_id = System_event.Id.create () in
+  let i18n =
+    I18n.create
+      I18n.Key.TermsAndConditions
+      Pool_common.Language.En
+      (Some (I18n.Content.of_string "Terms and Conditions"))
+  in
+  let events =
+    let open CCResult in
+    let open I18nCommand.Update in
+    [ Pool_message.Field.(show Translation), [ "" ] ]
+    |> decode
+    >>= handle ~system_event_id i18n
+  in
+  let expected =
+    Ok
+      [ I18n.Updated (i18n, None) |> Pool_event.i18n
+      ; System_event.(
+          Job.I18nPageUpdated
+          |> create ~id:system_event_id
+          |> created
+          |> Pool_event.system_event)
+      ]
+  in
+  Alcotest.(
+    check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
+;;
+
+let extract_by_key_exn_filters_by_language () =
+  let key = I18n.Key.TermsAndConditions in
+  let de =
+    I18n.create key Pool_common.Language.De (Some (I18n.Content.of_string "Bedingungen"))
+  in
+  let en =
+    I18n.create key Pool_common.Language.En (Some (I18n.Content.of_string "Terms"))
+  in
+  let extracted = I18n.extract_by_key_exn [ de; en ] key Pool_common.Language.En in
+  Alcotest.(
+    check bool "extracts entry for requested language" true (I18n.equal extracted en))
 ;;

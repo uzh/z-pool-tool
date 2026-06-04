@@ -14,20 +14,21 @@ module Key = struct
       | AssistantRoleHint [@name "assistant_role_hint"]
       [@printer print "assistant_role_hint"]
       | CreditsText [@name "credits_text"] [@printer print "credits_text"]
-      | DashboardUpcomingSessions [@name "dashboard_upcoming_sessions"]
-      [@printer print "dashboard_upcoming_sessions"]
-      | DashboardOnlineStudies [@name "dashboard_online_studies"]
-      [@printer print "dashboard_online_studies"]
-      | DashboardExperimentRegistration [@name "dashboard_experiment_registration"]
-      [@printer print "dashboard_experiment_registration"]
       | DashboardExperimentHistory [@name "dashboard_experiment_history"]
       [@printer print "dashboard_experiment_history"]
-      | DashboardWaitinglist [@name "dashboard_waiting_list"]
+      | DashboardExperimentRegistration [@name "dashboard_experiment_registration"]
+      [@printer print "dashboard_experiment_registration"]
+      | DashboardIntro [@name "dashboard_intro"] [@printer print "dashboard_intro"]
+      | DashboardOnlineStudies [@name "dashboard_online_studies"]
+      [@printer print "dashboard_online_studies"]
+      | DashboardUpcomingSessions [@name "dashboard_upcoming_sessions"]
+      [@printer print "dashboard_upcoming_sessions"]
+      | DashboardWaitingList [@name "dashboard_waiting_list"]
       [@printer print "dashboard_waiting_list"]
-      | ExperimentNavigationTitle [@name "experiment_navigation_title"]
-      [@printer print "experiment_navigation_title"]
       | ExperimenterRoleHint [@name "experimenter_role_hint"]
       [@printer print "experimenter_role_hint"]
+      | ExperimentNavigationTitle [@name "experiment_navigation_title"]
+      [@printer print "experiment_navigation_title"]
       | GreetingsText [@name "greetings_text"] [@printer print "greetings_text"]
       | PasswordPolicyText [@name "password_policy_text"]
       [@printer print "password_policy_text"]
@@ -47,6 +48,7 @@ module Key = struct
     | ActorPermissionHint
     | AssistantRoleHint
     | CreditsText
+    | DashboardIntro
     | ExperimenterRoleHint
     | GreetingsText
     | PrivacyPolicy
@@ -59,7 +61,7 @@ module Key = struct
     | DashboardExperimentRegistration
     | DashboardExperimentHistory
     | ExperimentNavigationTitle
-    | DashboardWaitinglist -> `TextInput
+    | DashboardWaitingList -> `TextInput
   ;;
 end
 
@@ -68,13 +70,14 @@ module Content = struct
 
   let field = Pool_message.Field.Translation
   let schema () = schema field ()
+  let create_opt content = create content |> CCResult.map CCOption.some
 end
 
 type t =
   { id : Common.Id.t
   ; key : Key.t
   ; language : Common.Language.t
-  ; content : Content.t
+  ; content : Content.t option
   }
 [@@deriving eq, show]
 
@@ -84,4 +87,4 @@ let id m = m.id
 let key m = m.key
 let language m = m.language
 let content m = m.content
-let content_to_string m = m.content |> Content.value
+let content_to_string m = m.content |> CCOption.map_or ~default:"" Content.value

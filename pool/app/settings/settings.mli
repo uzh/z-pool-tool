@@ -15,21 +15,26 @@ module Key : sig
   type t =
     | ContactEmail
     | EmailSuffixes
-    | SystemEmailTemplates
     | InactiveUserDisableAfter
-    | InactiveUserWarning
     | InactiveUserServiceDisabled
+    | InactiveUserWarning
     | Languages
+    | PhoneVerificationEnabled
+    | ProfileOnly
     | ReminderLeadTime
+    | SystemEmailTemplates
     | TextMsgReminderLeadTime
     | TriggerProfileUpdateAfter
     | UserImportFirstReminderAfter
     | UserImportSecondReminderAfter
-    | PhoneVerificationEnabled
 
   val show : t -> string
   val read : string -> t
   val to_json_string : t -> string
+end
+
+module ProfileOnly : sig
+  include Pool_model.Base.BooleanSig
 end
 
 module ContactEmail : sig
@@ -196,6 +201,7 @@ val find_languages : Database.Label.t -> Pool_common.Language.t list Lwt.t
 val find_email_suffixes : Database.Label.t -> EmailSuffix.t list Lwt.t
 val find_system_email_templates : Database.Label.t -> SystemEmailTemplates.t Lwt.t
 val find_contact_email : Database.Label.t -> ContactEmail.t Lwt.t
+val find_profile_only : Database.Label.t -> ProfileOnly.t Lwt.t
 
 val find_inactive_user_disable_after
   :  Database.Label.t

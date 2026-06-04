@@ -4,13 +4,14 @@ module Key : sig
     | ActorPermissionHint
     | AssistantRoleHint
     | CreditsText
-    | DashboardUpcomingSessions
-    | DashboardOnlineStudies
-    | DashboardExperimentRegistration
     | DashboardExperimentHistory
-    | DashboardWaitinglist
-    | ExperimentNavigationTitle
+    | DashboardExperimentRegistration
+    | DashboardIntro
+    | DashboardOnlineStudies
+    | DashboardUpcomingSessions
+    | DashboardWaitingList
     | ExperimenterRoleHint
+    | ExperimentNavigationTitle
     | GreetingsText
     | PasswordPolicyText
     | PrivacyPolicy
@@ -29,6 +30,8 @@ end
 
 module Content : sig
   include Pool_model.Base.StringSig
+
+  val create_opt : string -> (t option, Pool_conformist.error_msg) result
 end
 
 type t
@@ -36,23 +39,23 @@ type t
 val show : t -> string
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
-val create : Key.t -> Pool_common.Language.t -> Content.t -> t
+val create : Key.t -> Pool_common.Language.t -> Content.t option -> t
 
 type create =
   { key : Key.t
   ; language : Pool_common.Language.t
-  ; content : Content.t
+  ; content : Content.t option
   }
 
 val id : t -> Pool_common.Id.t
 val key : t -> Key.t
 val language : t -> Pool_common.Language.t
-val content : t -> Content.t
+val content : t -> Content.t option
 val content_to_string : t -> string
 
 type event =
   | Created of create
-  | Updated of t * Content.t
+  | Updated of t * Content.t option
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
@@ -70,6 +73,9 @@ val find_by_key_opt
 
 val find_all : Database.Label.t -> unit -> t list Lwt.t
 val terms_and_conditions_last_updated : Database.Label.t -> Ptime.t Lwt.t
+
+(* Extract an i18n entry by its key from a list of i18n entries, raises [Not_found] *)
+val extract_by_key_exn : t list -> Key.t -> Pool_common.Language.t -> t
 
 module I18nCache : sig
   val clear : unit -> unit

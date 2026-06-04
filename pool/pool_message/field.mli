@@ -71,9 +71,9 @@ type t =
   | Disabled
   | Distribution
   | DistributionField
-  | Duration
   | Duplicate
   | DuplicateWeighting
+  | Duration
   | Email
   | EmailAddress
   | EmailAddressUnverified
@@ -117,8 +117,8 @@ type t =
   | GtxSender
   | HideCanceled
   | HideClosed
-  | HideInactive
   | HideIgnored
+  | HideInactive
   | HideMakedAsDeleted
   | HidePast
   | HidePaused
@@ -132,8 +132,8 @@ type t =
   | ImportPending
   | Inactive
   | InactiveUserDisableAfter
-  | InactiveUserWarning
   | InactiveUserDisableService
+  | InactiveUserWarning
   | Input
   | Institution
   | InternalDescription
@@ -200,8 +200,8 @@ type t =
   | Override
   | Page
   | PageCount
-  | PageScriptsHead
   | PageScriptsBody
+  | PageScriptsHead
   | Participant
   | ParticipantCount
   | Participants
@@ -217,14 +217,16 @@ type t =
   | Period
   | Permission
   | PermissionOn of string * string
+  | PhoneVerificationEnabled
   | Placeholder
   | PlainText
   | Pool
   | Predicate
-  | Profile
-  | PromptOnRegistration
   | PrimaryUser
   | PrimaryUsers
+  | Profile
+  | ProfileOnly
+  | PromptOnRegistration
   | PublicDescription
   | PublicTitle
   | PublishedAt
@@ -264,9 +266,9 @@ type t =
   | Setting
   | Settings
   | ShowExteralDataIdLinks
-  | ShowUpCount
   | ShowToAdmins
   | ShowToContacts
+  | ShowUpCount
   | SignedUpAt
   | SignUpCode
   | SignUpCount
@@ -310,7 +312,6 @@ type t =
   | TermsAndConditions
   | TermsAndConditionsLastAccepted
   | TestPhoneNumber
-  | PhoneVerificationEnabled
   | Text
   | TextMessage
   | TextMessageDlrStatus
@@ -537,6 +538,7 @@ val plaintext : t
 val predicate : t
 val promptonregistration : t
 val profile : t
+val profileonly : t
 val publicdescription : t
 val publictitle : t
 val publishedat : t

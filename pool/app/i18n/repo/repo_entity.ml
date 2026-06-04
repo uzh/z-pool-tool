@@ -8,26 +8,15 @@ module Content = struct
   let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
-let t =
-  let encode m = Ok (m.id, (m.key, (m.language, m.content))) in
-  let decode (id, (key, (language, content))) = Ok { id; key; language; content } in
-  Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      (t2 Common.Repo.Id.t (t2 Key.t (t2 Common.Repo.Language.t Content.t))))
-;;
-
-let t_with_default_content =
-  let encode _ = failwith "Decode model only." in
-  let decode (id, (key, (language, content))) =
-    let open CCResult in
-    let content = CCOption.value ~default:"" content |> Content.of_string in
-    Ok { id; key; language; content }
+let t : t Caqti_type.t =
+  let open Database.Caqti_encoders in
+  let encode m : ('a Data.t, string) result =
+    Ok Data.[ m.id; m.key; m.language; m.content ]
   in
-  Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      (t2 Common.Repo.Id.t (t2 Key.t (t2 Common.Repo.Language.t (option string)))))
+  let decode (id, (key, (language, (content, ())))) = Ok { id; key; language; content } in
+  let open Schema in
+  custom
+    ~encode
+    ~decode
+    Caqti_type.[ Common.Repo.Id.t; Key.t; Common.Repo.Language.t; option Content.t ]
 ;;

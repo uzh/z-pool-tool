@@ -5,7 +5,7 @@ let src = Logs.Src.create "i18n.cqrs"
 module Update : sig
   include Common.CommandSig
 
-  type t = I18n.Content.t
+  type t = I18n.Content.t option
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -17,9 +17,11 @@ module Update : sig
   val decode : (string * string list) list -> (t, Pool_message.Error.t) result
   val effects : Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = I18n.Content.t
+  type t = I18n.Content.t option
 
-  let schema = Conformist.(make Field.[ I18n.Content.schema () ] CCFun.id)
+  let schema =
+    Conformist.(make Field.[ Conformist.optional (I18n.Content.schema ()) ] CCFun.id)
+  ;;
 
   let handle ?(tags = Logs.Tag.empty) ?system_event_id property (command : t) =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
@@ -34,7 +36,20 @@ end = struct
   ;;
 
   let decode data =
-    Conformist.decode_and_validate schema data
+    let open CCOption.Infix in
+    let normalized_data =
+      let open Pool_message.Field in
+      let field = Translation in
+      CCList.assoc_opt ~eq:CCString.equal (show field) data
+      <+> CCList.assoc_opt ~eq:CCString.equal (array_key field) data
+      |> CCOption.flat_map CCList.head_opt
+      |> CCOption.map CCString.trim
+      |> function
+      | None -> []
+      | Some value when CCString.is_empty value -> []
+      | Some value -> [ show field, [ value ] ]
+    in
+    Conformist.decode_and_validate schema normalized_data
     |> CCResult.map_err Pool_message.to_conformist_error
   ;;
 
