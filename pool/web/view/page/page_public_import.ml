@@ -1,30 +1,11 @@
 open Tyxml.Html
 open Component.Input
 open Pool_common.I18n
-module HttpUtils = Http_utils
 
 let txt_to_string lang m = txt (Pool_common.Utils.text_to_string lang m)
 
 let import_confirmation_action =
-  CCFun.flip HttpUtils.externalize_path_with_params "/import-confirmation"
-;;
-
-let password_fields language password_policy =
-  div
-    [ input_element
-        ~hints:[ I18nText (password_policy |> I18n.content_to_string) ]
-        ~required:true
-        ~value:""
-        language
-        `Password
-        Pool_message.Field.Password
-    ; input_element
-        ~required:true
-        ~value:""
-        language
-        `Password
-        Pool_message.Field.PasswordConfirmation
-    ]
+  CCFun.flip Http_utils.externalize_path_with_params "/import-confirmation"
 ;;
 
 let import_confirmation_form

@@ -518,7 +518,6 @@ let show
                 ~value:(profile_only |> Settings.ProfileOnly.value)
                 language
                 Pool_message.Field.ProfileOnly
-                ~required:true
             ; submit ~control:Message.(Control.Update None) ()
             ]
         ; open_system_settings_changelog Settings.Key.ProfileOnly

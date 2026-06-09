@@ -37,7 +37,7 @@ let render_import_confirmation_page req context user_import user =
   let { Pool_context.database_label; language; _ } = context in
   let { User_import.token; active_after_import; _ } = user_import in
   let* email, terms_and_conditions =
-    Response.bad_request_render_error context
+    Lwt_result.map_error Response.not_found
     @@
     match user with
     | Guest -> Lwt.return_error (Pool_message.Error.NotFound Field.User)
