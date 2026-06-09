@@ -99,10 +99,7 @@ let handle_event ?tags pool : event -> unit Lwt.t =
     in
     Repo.delete_unverified_cell_phone pool contact
   | CellPhoneVerificationReset contact -> Repo.delete_unverified_cell_phone pool contact
-  | ImportPendingDisabled contact ->
-    Repo.update
-      pool
-      { contact with import_pending = Pool_user.ImportPending.create false }
+  | ImportPendingDisabled contact -> Repo.disable_import_pending pool contact
   | ProfileUpdateTriggeredAtUpdated contacts ->
     contacts |> CCList.map id |> Repo.update_profile_updated_triggered pool
   | RegistrationAttemptNotificationSent t ->

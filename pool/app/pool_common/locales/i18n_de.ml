@@ -101,9 +101,9 @@ let to_string = function
   | HasGlobalRole role -> Format.asprintf "Hat globale Rolle %s" role
   | Help -> "Hilfe"
   | ImportConfirmationNote ->
-    "Bitte geben Sie ein neues Paswort an. Ihre restlichen Angaben wurden automatisch \
-     übernommen."
-  | ImportConfirmationTitle -> "Neues Passwort"
+    "Bitte folgen Sie dem Prozess um den Import abzuschliessen. Anschliessend erhalten \
+     sie eine weiter E-Mail um Ihr Passwort zurückzusetzen."
+  | ImportConfirmationTitle -> "Account Import Abschliessen"
   | ImportPendingNote ->
     "Der Import Ihres Users ist noch nicht abgeschlossen. Bitte kontrollieren Sie Ihren \
      Posteingang oder kontaktieren Sie einen Administrator."

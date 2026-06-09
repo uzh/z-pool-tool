@@ -99,9 +99,9 @@ let to_string = function
   | HasGlobalRole role -> Format.asprintf "Has global %s role" role
   | Help -> "Help"
   | ImportConfirmationNote ->
-    "Please enter a new password. The rest of your data has been automatically taken \
-     over."
-  | ImportConfirmationTitle -> "New password"
+    "Please follow the process to complete the import. You will then receive an email to \
+     reset your password."
+  | ImportConfirmationTitle -> "Complete Account Import"
   | ImportPendingNote ->
     "The import of your user is not completed yet. Please check your inbox or contact an \
      administrator."
