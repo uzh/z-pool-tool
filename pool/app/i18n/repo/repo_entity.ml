@@ -1,3 +1,4 @@
+open CCFun.Infix
 open Entity
 module Common = Pool_common
 module Key = Pool_common.Repo.Model.SelectorType (Key)
@@ -5,7 +6,12 @@ module Key = Pool_common.Repo.Model.SelectorType (Key)
 module Content = struct
   include Content
 
-  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.string
+      (of_string %> CCResult.return)
+      value
+  ;;
 end
 
 let t : t Caqti_type.t =

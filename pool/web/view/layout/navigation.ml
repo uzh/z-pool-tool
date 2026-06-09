@@ -28,7 +28,14 @@ module NavElements = struct
     let icon = Icon.Person
 
     let dropdown_items pool ?(contact = false) () =
-      let%lwt show_contact_info = Gtx_config.text_messages_enabled pool in
+      let%lwt is_phone_verification_enabled =
+        Settings.find_phone_verification_enabled pool
+      in
+      let%lwt show_contact_info =
+        if Settings.PhoneVerification.value is_phone_verification_enabled
+        then Gtx_config.text_messages_enabled pool
+        else Lwt.return true
+      in
       (match contact with
        | true ->
          let details = "/user/personal-details", PersonalDetails in
@@ -132,11 +139,15 @@ module NavElements = struct
   let contact ({ Pool_context.database_label; _ } as context) =
     let%lwt experiments_title = contact_experiment_title context in
     let%lwt profile = Profile.nav database_label ~contact:true () in
+    let%lwt is_profile_only = Settings.find_profile_only database_label in
     let links =
-      [ Single ("/experiments", experiments_title, Set Guard.ValidationSet.empty)
-        |> NavElement.create
-      ; profile
-      ]
+      (if Settings.ProfileOnly.value is_profile_only
+       then []
+       else
+         [ Single ("/experiments", experiments_title, Set Guard.ValidationSet.empty)
+           |> NavElement.create
+         ])
+      @ [ profile ]
     in
     links @ [ NavElement.logout () ]
     |> NavUtils.create_nav_with_language_switch context

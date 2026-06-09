@@ -53,8 +53,7 @@ type event =
   | EmailVerified of t
   | Disabled of t
   | Enabled of t
-  | ImportConfirmed of t * Pool_user.Password.Plain.t
-  | ImportDisabled of t
+  | ImportPendingDisabled of t
   | PromotedContact of Pool_user.Id.t
   | SignInCounterUpdated of t
 

@@ -27,8 +27,7 @@ type event =
   | EmailVerified of t
   | Disabled of t
   | Enabled of t
-  | ImportConfirmed of t * User.Password.Plain.t
-  | ImportDisabled of t
+  | ImportPendingDisabled of t
   | PromotedContact of Pool_user.Id.t
   | SignInCounterUpdated of t
 [@@deriving eq, show]
@@ -91,17 +90,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     let%lwt (_ : Pool_user.t) = User.confirm pool admin.user in
     { admin with email_verified = Some (Pool_user.EmailVerified.create_now ()) }
     |> Repo.update pool
-  | ImportConfirmed (admin, password) ->
-    let (_ : (unit, Pool_message.Error.t) Lwt_result.t) =
-      User.Password.define
-        pool
-        (admin |> user |> Pool_user.id)
-        password
-        (Pool_user.Password.to_confirmed password)
-      >|- Pool_common.Utils.with_log_error ~src ~tags
-    in
-    Repo.update pool { admin with import_pending = Pool_user.ImportPending.create false }
-  | ImportDisabled admin ->
+  | ImportPendingDisabled admin ->
     Repo.update pool { admin with import_pending = Pool_user.ImportPending.create false }
   | PromotedContact contact_id ->
     let target =

@@ -26,6 +26,7 @@ let to_string = function
   | Canceled -> "Abgesagt"
   | CanceledSessionsTitle -> "Ihre abgesagten Sessions"
   | Closed -> "Geschlossen"
+  | ConfirmAccountImport email -> Format.asprintf "Import für \"%s\" abschliessen" email
   | ContactWaitingListEmpty -> "Sie sind aktuell auf keiner Warteliste."
   | CustomFieldsSettings ->
     "In der folgenden Liste können Sie bestimmen, in welcher Tabelle zusätzlich zu den \
@@ -642,6 +643,9 @@ Markiert sind die Felder, welche als gleich angesehen werden. Ist ein Admin Wert
      Telefonnummer wird durch ein Häkchen im Kontaktprofil angezeigt. Die \
      Telefonnummernverifizierung ist nur verfügbar, wenn ein GTX-API-Schlüssel \
      konfiguriert ist."
+  | ProfileOnly ->
+    "Wenn diese Option aktiviert ist, können Kontakte nur ihre Profilinformationen \
+     einsehen und bearbeiten, jedoch keine Experimente oder Session sehen."
   | PromoteContact ->
     "Achtung: einmalige Aktion. Der Kontakt wird zu einem Admin befördert, dieser wird \
      anschliessend nicht mehr für Experimente eingeladen und kann sich nicht mehr für \

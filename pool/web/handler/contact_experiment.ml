@@ -21,9 +21,7 @@ let dashboard req =
     Response.bad_request_render_error context
     @@
     let%lwt i18n = I18n.find_all database_label () in
-    let%lwt dashboard_intro =
-      I18n.find_by_key database_label I18n.Key.DashboardIntro language
-    in
+    let dashboard_intro = I18n.extract_by_key_exn i18n I18n.Key.DashboardIntro language in
     let%lwt custom_fields_anwsered =
       Custom_field.all_answered database_label (Contact.id contact)
     in

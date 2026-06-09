@@ -36,27 +36,33 @@ let render_import_confirmation_page req context user_import user =
   let open Pool_context in
   let { Pool_context.database_label; language; _ } = context in
   let { User_import.token; active_after_import; _ } = user_import in
-  let email =
+  let* email, terms_and_conditions =
+    Response.bad_request_render_error context
+    @@
     match user with
-    | Admin admin -> Admin.email_address admin |> Pool_user.EmailAddress.value
-    | Contact contact -> Contact.email_address contact |> Pool_user.EmailAddress.value
-    | Guest -> ""
+    | Guest -> Lwt.return_error (Pool_message.Error.NotFound Field.User)
+    | Admin admin ->
+      Lwt.return_ok (Admin.email_address admin |> Pool_user.EmailAddress.value, None)
+    | Contact contact ->
+      let address = Contact.email_address contact |> Pool_user.EmailAddress.value in
+      Contact.has_terms_accepted database_label contact
+      >|> (function
+       | true -> Lwt.return_ok (address, None)
+       | false ->
+         let%lwt terms =
+           I18n.find_by_key database_label I18n.Key.TermsAndConditions language
+         in
+         Lwt.return_ok (address, Some terms))
   in
-  Response.bad_request_render_error context
-  @@
-  let%lwt password_policy =
-    I18n.find_by_key database_label I18n.Key.PasswordPolicyText language
-  in
-  let%lwt terms = I18n.find_by_key database_label I18n.Key.TermsAndConditions language in
   Page.Public.Import.import_confirmation
-    ~active_after_import:(User_import.ActiveAfterImport.value active_after_import)
+    ?terms_and_conditions
+    ~active_after_import
     ~email
+    ~token
     context
-    token
-    password_policy
-    terms
   |> General.create_tenant_layout req context
   >|+ Sihl.Web.Response.of_html
+  |> Response.bad_request_render_error context
 ;;
 
 let import_confirmation req =
@@ -73,21 +79,13 @@ let bad_request_confirmation (res : ('a, Error.t) Lwt_result.t) =
   Response.bad_request_on_error import_confirmation res
 ;;
 
-let decode_confirm_import_cmd urlencoded user_import user =
-  let open CCResult in
-  let open Cqrs_command.User_import_command.ConfirmImport in
-  urlencoded |> decode >>= handle (user_import, user) |> Lwt_result.lift
-;;
-
-let decode_activate_import_cmd user_import user =
-  Cqrs_command.User_import_command.ActivateImport.handle (user_import, user)
-  |> Lwt_result.lift
-;;
-
-let import_confirmation_events urlencoded user_import user =
+let import_confirmation_events urlencoded user user_import =
+  let open Cqrs_command.User_import_command in
   if User_import.ActiveAfterImport.value user_import.User_import.active_after_import
-  then decode_confirm_import_cmd urlencoded user_import user
-  else decode_activate_import_cmd user_import user
+  then ConfirmImport.handle (user, user_import) |> Lwt_result.lift
+  else
+    let* () = Helpers.terms_and_conditions_accepted urlencoded in
+    ActivateImport.handle (user, user_import) |> Lwt_result.lift
 ;;
 
 let target_user_message_language default_language = function
@@ -138,30 +136,19 @@ let import_confirmation_post req =
       in
       user_and_import_from_token database_label token >|- Response.not_found
     in
-    let* () =
-      Helpers.terms_and_conditions_accepted urlencoded |> bad_request_confirmation
-    in
-    let* events =
-      import_confirmation_events urlencoded user_import target_user
+    let* import_events =
+      import_confirmation_events urlencoded target_user user_import
       |> bad_request_confirmation
     in
-    let* all_events =
-      if User_import.ActiveAfterImport.value user_import.User_import.active_after_import
-      then Lwt_result.return events
-      else
-        let* reset_events =
-          password_reset_events_for_target_user
-            req
-            database_label
-            language
-            tags
-            target_user
-          |> bad_request_confirmation
-        in
-        Lwt_result.return (events @ reset_events)
+    let* reset_events =
+      password_reset_events_for_target_user req database_label language tags target_user
+      |> bad_request_confirmation
     in
     (* Public token flow: command target user may differ from unauthenticated actor user. *)
-    let%lwt () = Pool_event.handle_events ~tags database_label actor_user all_events in
+    let%lwt () =
+      import_events @ reset_events
+      |> Pool_event.handle_events ~tags database_label actor_user
+    in
     let success_message =
       if User_import.ActiveAfterImport.value user_import.User_import.active_after_import
       then Success.ImportCompleted

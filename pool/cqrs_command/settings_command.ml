@@ -527,3 +527,27 @@ end = struct
 
   let effects = Settings.Guard.Access.update
 end
+
+module UpdateProfileOnly : sig
+  type t = Settings.ProfileOnly.t
+
+  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, Pool_message.Error.t) result
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
+  val effects : validation_set
+end = struct
+  type t = Settings.ProfileOnly.t
+
+  let handle ?(tags = Logs.Tag.empty) enabled =
+    Logs.info ~src (fun m -> m "Handle command UpdateProfileOnly" ~tags);
+    Ok [ Settings.ProfileOnlyUpdated enabled |> Pool_event.settings ]
+  ;;
+
+  let schema = Conformist.(make Field.[ Settings.ProfileOnly.schema () ] CCFun.id)
+
+  let decode data =
+    Pool_conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_message.to_conformist_error
+  ;;
+
+  let effects = Settings.Guard.Access.update
+end

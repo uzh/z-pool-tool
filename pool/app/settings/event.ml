@@ -16,6 +16,7 @@ type event =
   | UserImportSecondReminderAfterUpdated of UserImportReminder.SecondReminderAfter.t
   | PageScriptUpdated of (PageScript.t option * PageScript.location)
   | PhoneVerificationEnabledUpdated of PhoneVerification.t
+  | ProfileOnlyUpdated of ProfileOnly.t
 [@@deriving eq, show]
 
 let handle_event ?user_uuid pool : event -> unit Lwt.t = function
@@ -48,4 +49,6 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t = function
   | PageScriptUpdated script -> Repo.PageScripts.update ?user_uuid pool script
   | PhoneVerificationEnabledUpdated enabled ->
     Repo.PhoneVerificationEnabled.update ?user_uuid pool enabled
+  | ProfileOnlyUpdated profile_only ->
+    Repo.ProfileOnly.update ?user_uuid pool profile_only
 ;;

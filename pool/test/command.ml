@@ -512,10 +512,7 @@ let () =
             Organisational_unit_test.create_fails
         ] )
     ; ( "user import"
-      , [ test_case
-            "confirm without matching password"
-            `Quick
-            User_import_test.confirm_without_matching_password
+      , [ test_case "confirm from context" `Quick User_import_test.confirm_from_context
         ; test_case "confirm as admin" `Quick User_import_test.confirm_as_admin
         ; test_case "confirm as contact" `Quick User_import_test.confirm_as_contact
         ; test_case "activate as contact" `Quick User_import_test.activate_as_contact

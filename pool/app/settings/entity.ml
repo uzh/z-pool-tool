@@ -276,6 +276,7 @@ let action_of_param = function
   | "update_inactive_user_warning" -> Ok `UpdateInactiveUserWarning
   | "disable_inactive_user_service" -> Ok `UpdateUnactiveUserServiceDisabled
   | "update_contact_email" -> Ok `UpdateContactEmail
+  | "update_profile_only" -> Ok `UpdateProfileOnly
   | "update_emailsuffix" -> Ok `UpdateEmailSuffixes
   | "update_system_email_templates" -> Ok `UpdateSystemEmailTemplates
   | "update_languages" -> Ok `UpdateLanguages
@@ -295,6 +296,7 @@ let stringify_action = function
   | `UpdateInactiveUserWarning -> "update_inactive_user_warning"
   | `UpdateUnactiveUserServiceDisabled -> "disable_inactive_user_service"
   | `UpdateContactEmail -> "update_contact_email"
+  | `UpdateProfileOnly -> "update_profile_only"
   | `UpdateEmailSuffixes -> "update_emailsuffix"
   | `UpdateSystemEmailTemplates -> "update_system_email_templates"
   | `UpdateLanguages -> "update_languages"

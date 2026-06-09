@@ -37,8 +37,7 @@ type event =
   | CellPhoneTokenResent of t
   | CellPhoneVerified of t * Pool_user.CellPhone.t
   | CellPhoneVerificationReset of t
-  | ImportConfirmed of t * Pool_user.Password.Plain.t
-  | ImportDisabled of t
+  | ImportPendingDisabled of t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t
@@ -77,13 +76,8 @@ let handle_event ?tags pool : event -> unit Lwt.t =
     Lwt.return_unit
   | EmailVerified contact ->
     let%lwt (_ : Pool_user.t) = contact |> user |> Pool_user.confirm pool in
-    Repo.update
-      pool
-      { contact with email_verified = Some (Pool_user.EmailVerified.create_now ()) }
-  | TermsAccepted contact ->
-    Repo.update
-      pool
-      { contact with terms_accepted_at = Some (Pool_user.TermsAccepted.create_now ()) }
+    Repo.set_email_verified_now pool contact
+  | TermsAccepted contact -> Repo.set_terms_accepted_at_now pool contact
   | MarkedAsDeleted contact ->
     let%lwt () = Repo.set_inactive pool contact in
     Repo.update pool { contact with disabled = Pool_user.Disabled.create true }
@@ -105,22 +99,7 @@ let handle_event ?tags pool : event -> unit Lwt.t =
     in
     Repo.delete_unverified_cell_phone pool contact
   | CellPhoneVerificationReset contact -> Repo.delete_unverified_cell_phone pool contact
-  | ImportConfirmed (contact, password) ->
-    let%lwt (_ : (unit, Pool_message.Error.t) result) =
-      Pool_user.Password.define
-        pool
-        (contact |> user |> Pool_user.id)
-        password
-        (Pool_user.Password.to_confirmed password)
-      >|- Pool_common.Utils.with_log_error ~src ?tags
-    in
-    Repo.update
-      pool
-      { contact with
-        import_pending = Pool_user.ImportPending.create false
-      ; terms_accepted_at = Some (Pool_user.TermsAccepted.create_now ())
-      }
-  | ImportDisabled contact ->
+  | ImportPendingDisabled contact ->
     Repo.update
       pool
       { contact with import_pending = Pool_user.ImportPending.create false }

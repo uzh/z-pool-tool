@@ -163,8 +163,7 @@ type event =
   | CellPhoneTokenResent of t
   | CellPhoneVerified of t * Pool_user.CellPhone.t
   | CellPhoneVerificationReset of t
-  | ImportConfirmed of t * Pool_user.Password.Plain.t
-  | ImportDisabled of t
+  | ImportPendingDisabled of t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t

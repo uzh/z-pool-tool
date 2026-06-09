@@ -29,6 +29,11 @@ let user_profile_navigation _ () =
     ; "/user/personal-details", PersonalDetails
     ]
   in
+  (* Activate phone verification: to make sure nav elements fit *)
+  let%lwt () =
+    Settings.(
+      handle_event pool (PhoneVerificationEnabledUpdated PhoneVerification.(create true)))
+  in
   (* Without GTX API key *)
   let%lwt () = [ Removed; CacheCleared ] |> handle_events in
   let%lwt nav = NavElements.Profile.dropdown_items pool ~contact:true () in
