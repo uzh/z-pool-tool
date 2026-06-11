@@ -145,6 +145,7 @@ val action_of_param
        | `UpdateInactiveUserWarning
        | `UpdateUnactiveUserServiceDisabled
        | `UpdateContactEmail
+       | `UpdateProfileOnly
        | `UpdateEmailSuffixes
        | `UpdateSystemEmailTemplates
        | `UpdateLanguages
@@ -165,6 +166,7 @@ val stringify_action
      | `UpdateInactiveUserWarning
      | `UpdateUnactiveUserServiceDisabled
      | `UpdateContactEmail
+     | `UpdateProfileOnly
      | `UpdateEmailSuffixes
      | `UpdateSystemEmailTemplates
      | `UpdateLanguages
@@ -192,6 +194,7 @@ type event =
   | UserImportSecondReminderAfterUpdated of UserImportReminder.SecondReminderAfter.t
   | PageScriptUpdated of (PageScript.t option * PageScript.location)
   | PhoneVerificationEnabledUpdated of PhoneVerification.t
+  | ProfileOnlyUpdated of ProfileOnly.t
 
 val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

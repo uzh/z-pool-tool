@@ -26,6 +26,7 @@ let to_string = function
   | Canceled -> "Canceled"
   | CanceledSessionsTitle -> "Your canceled sessions"
   | Closed -> "Closed"
+  | ConfirmAccountImport email -> Format.asprintf "Complete import for \"%s\"" email
   | ContactWaitingListEmpty -> "You are currently not on any waiting list."
   | CustomFieldsSettings ->
     "In the following list, you can determine in which table the custom data should be \
@@ -98,9 +99,9 @@ let to_string = function
   | HasGlobalRole role -> Format.asprintf "Has global %s role" role
   | Help -> "Help"
   | ImportConfirmationNote ->
-    "Please enter a new password. The rest of your data has been automatically taken \
-     over."
-  | ImportConfirmationTitle -> "New password"
+    "Please follow the process to complete the import. You will then receive an email to \
+     reset your password."
+  | ImportConfirmationTitle -> "Complete Account Import"
   | ImportPendingNote ->
     "The import of your user is not completed yet. Please check your inbox or contact an \
      administrator."
@@ -610,6 +611,10 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
     "When enabled, contacts will be required to verify their phone number. A verified \
      phone number is indicated by a checkmark on the contact's profile. Phone number \
      verification is only available when a GTX API key is configured."
+  | ProfileOnly ->
+    "This setting only applies to contacts UI. Contacts are only allowed to see and edit \
+     their profile information. Other content, such as experiments or sessions, remains \
+     invisible to them."
   | PromoteContact ->
     "Attention: one-time action. The contact is promoted to an admin, who is \
      subsequently no longer invited for experiments and can no longer register for such."

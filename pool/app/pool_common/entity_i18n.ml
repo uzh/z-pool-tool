@@ -26,6 +26,7 @@ type t =
   | Canceled
   | CanceledSessionsTitle
   | Closed
+  | ConfirmAccountImport of string
   | ContactWaitingListEmpty
   | CustomFieldsSettings
   | CustomFieldsSettingsCloseScreen
@@ -317,6 +318,7 @@ type hint =
   | PauseAccountContact
   | PermissionManage
   | PermissionsExplanationLink
+  | ProfileOnly
   | PromoteContact
   | RateDependencyWith
   | RateDependencyWithout

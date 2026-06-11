@@ -81,7 +81,7 @@ services:
       - ../init_tenant:/docker-entrypoint-initdb.d/:ro
 
   mailtrap-ai:
-    image: mailhog/mailhog
+    image: axllent/mailpit:v1.30
     restart: unless-stopped
     container_name: mailtrap-ai-pool
     hostname: mailtrap-pool

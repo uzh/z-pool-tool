@@ -378,6 +378,39 @@ let update_request =
 
 let update pool = Entity.to_write %> Database.exec pool update_request
 
+let set_to_now_request field =
+  let open Caqti_request.Infix in
+  [%string
+    {sql|
+      UPDATE pool_contacts
+      SET %{field} = NOW()
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}]
+  |> Id.t ->. Caqti_type.unit
+;;
+
+let set_terms_accepted_at_now pool =
+  Entity.id %> Database.exec pool (set_to_now_request "terms_accepted_at")
+;;
+
+let set_email_verified_now pool =
+  Entity.id %> Database.exec pool (set_to_now_request "email_verified")
+;;
+
+let disable_import_pending_request =
+  let open Caqti_request.Infix in
+  {sql|
+    UPDATE pool_contacts
+    SET import_pending = 0
+    WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> Id.t ->. Caqti_type.unit
+;;
+
+let disable_import_pending pool =
+  Entity.id %> Database.exec pool disable_import_pending_request
+;;
+
 let delete_unverified_contact_request =
   let open Caqti_request.Infix in
   {sql|

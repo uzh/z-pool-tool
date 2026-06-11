@@ -52,6 +52,7 @@ let settings_page ?open_tab req =
     let%lwt user_import_second_reminder =
       Settings.find_user_import_second_reminder_after database_label
     in
+    let%lwt profile_only = Settings.find_profile_only database_label in
     let%lwt page_scripts = Settings.PageScript.find database_label in
     let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     Page.Admin.Settings.show
@@ -68,6 +69,7 @@ let settings_page ?open_tab req =
       default_text_msg_reminder_lead_time
       user_import_first_reminder
       user_import_second_reminder
+      profile_only
       page_scripts
       context
       text_messages_enabled
@@ -151,6 +153,8 @@ let update_settings req =
           let location = Settings.PageScript.Body in
           UpdatePageScript.(urlencoded |> decode location >>= handle ~tags location)
           |> lift
+        | `UpdateProfileOnly ->
+          UpdateProfileOnly.(urlencoded |> decode >>= handle ~tags) |> lift
       in
       command_handler urlencoded action
     in
@@ -270,6 +274,7 @@ module Access : module type of Helpers.Access = struct
       | `UserImportSecondReminderAfter ->
         Command.UserImportReminder.UpdateSecondReminder.effects
       | `UpdateHeadScripts | `UpdateBodyScripts -> Command.UpdatePageScript.effects
+      | `UpdateProfileOnly -> Command.UpdateProfileOnly.effects
     in
     flip Sihl.Web.Router.param "action"
     %> Settings.action_of_param

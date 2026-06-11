@@ -185,7 +185,8 @@ module Contact = struct
         ]
       in
       let sessions = [ get "" Session.index ] in
-      [ get "/user/personal-details" UserProfile.personal_details
+      [ get "/dashboard" Experiment.dashboard
+      ; get "/user/personal-details" UserProfile.personal_details
       ; get "/user/login-information" UserProfile.login_information
       ; get "/user/contact-information" UserProfile.contact_information
       ; post "/user/update" UserProfile.update

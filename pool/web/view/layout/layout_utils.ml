@@ -40,22 +40,22 @@ let css_link_tag (file : [ `GlobalStylesheet | `TenantStylesheet ]) =
 module App = struct
   let app_name = "Z-Pool-Tool"
 
-  let create_title query_parameters title =
+  let create_title ?(icon_link = "/index") query_parameters title =
     let path =
-      Http_utils.url_with_field_params query_parameters "/index"
+      Http_utils.url_with_field_params query_parameters icon_link
       |> Sihl.Web.externalize_path
     in
     a ~a:[ a_href path; a_class [ "app-title" ] ] [ txt title ]
   ;;
 
-  let navbar ?(children = []) query_parameters title =
+  let navbar ?icon_link ?(children = []) query_parameters title =
     header
       ~a:[ a_class [ "app-header" ] ]
       [ div
           ~a:[ a_class [ "safety-margin"; "trim"; "flexcolumn"; "justify-between" ] ]
           [ div
               ~a:[ a_class [ "app-header-top" ] ]
-              [ create_title query_parameters title; div children ]
+              [ create_title ?icon_link query_parameters title; div children ]
           ]
       ]
   ;;

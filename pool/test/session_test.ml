@@ -1703,6 +1703,14 @@ let send_session_reminders_with_default_leat_time _ () =
     create_session ~email_reminder_sent_at 8
   in
   let%lwt contact = ContactRepo.create () in
+  let%lwt contact =
+    Contact.updated
+      { contact with
+        Contact.cell_phone = Some Pool_user.CellPhone.(of_string "+41791234567")
+      }
+    |> Contact.handle_event database_label
+    >|> fun () -> Contact.find database_label (Contact.id contact) ||> get_exn
+  in
   let%lwt assignment1 = AssignmentRepo.create session1 contact in
   let%lwt assignment2 = AssignmentRepo.create session2 contact in
   let update_session { Session.id; _ } = Session.find database_label id ||> get_exn in

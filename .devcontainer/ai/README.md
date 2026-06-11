@@ -31,10 +31,12 @@ Named volumes for `_build`, `node_modules`, and `~/.opam` mean build artefacts n
 2. When prompted, choose **Reopen in Container → Pool Tool (AI)**.
 3. `postCreateCommand` runs automatically: it waits for the databases to be ready, then installs OCaml dependencies and Yarn packages (`postCreate.sh`).
 4. Run migrations and seed the databases (once, in the container terminal):
+
    ```bash
    make sihl migrate.root && make sihl seed.root.clean
    make sihl migrate.tenant && make sihl seed.tenant.clean
    ```
+
 5. Open a Copilot Chat panel and switch to **Agent** mode.
 
 > Git SSH forwarding is intentionally **disabled** (`SSH_AUTH_SOCK` is cleared) and `git.autofetch` is off to prevent the agent from silently pushing or fetching.
@@ -71,7 +73,7 @@ git push origin ai/my-task # push once satisfied
 | `ai-agent`           | OCaml build + Copilot agent      | —                      |
 | `database-root-ai`   | MariaDB root DB                  | 3316                   |
 | `database-tenant-ai` | MariaDB tenant DB                | 3317                   |
-| `mailtrap-ai`        | MailHog (catch-all SMTP)         | 1026 (SMTP), 8026 (UI) |
+| `mailtrap-ai`        | MailPit (catch-all SMTP)         | 1026 (SMTP), 8026 (UI) |
 
 ## Installed tooling
 

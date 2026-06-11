@@ -33,24 +33,25 @@ let create_user_import
   }
 ;;
 
-let confirm_without_matching_password () =
+let confirm_from_context () =
   let contact =
     Test_utils.Model.create_contact ~with_terms_accepted:false () |> Pool_context.contact
   in
   let user_import = create_user_import contact in
-  let urlencoded =
-    let open Field in
-    [ Token |> show, [ Data.token ]
-    ; Password |> show, [ Data.password ]
-    ; PasswordConfirmation |> show, [ "Password2!" ]
-    ]
-  in
   let result =
-    let open CCResult in
-    let open Cqrs_command.User_import_command.ConfirmImport in
-    urlencoded |> decode >>= handle (user_import, contact)
+    Cqrs_command.User_import_command.ConfirmImport.handle (contact, user_import)
   in
-  let expected = Error Error.PasswordConfirmationDoesNotMatch in
+  let expected =
+    let contact =
+      match contact with
+      | Pool_context.Contact contact -> contact
+      | Pool_context.Admin _ | Pool_context.Guest -> failwith "Invalid user"
+    in
+    Ok
+      [ Contact.ImportPendingDisabled contact |> Pool_event.contact
+      ; User_import.Confirmed user_import |> Pool_event.user_import
+      ]
+  in
   Test_utils.check_result expected result
 ;;
 
@@ -58,22 +59,12 @@ let confirm_as_contact () =
   let contact = Test_utils.Model.create_contact ~with_terms_accepted:false () in
   let user = contact |> Pool_context.contact in
   let user_import = create_user_import user in
-  let urlencoded =
-    let open Field in
-    [ Token |> show, [ Data.token ]
-    ; Password |> show, [ Data.password ]
-    ; PasswordConfirmation |> show, [ Data.password ]
-    ]
-  in
   let result =
-    let open CCResult in
-    let open Cqrs_command.User_import_command.ConfirmImport in
-    urlencoded |> decode >>= handle (user_import, user)
+    Cqrs_command.User_import_command.ConfirmImport.handle (user, user_import)
   in
   let expected =
     Ok
-      [ Contact.ImportConfirmed (contact, Pool_user.Password.Plain.create Data.password)
-        |> Pool_event.contact
+      [ Contact.ImportPendingDisabled contact |> Pool_event.contact
       ; User_import.Confirmed user_import |> Pool_event.user_import
       ]
   in
@@ -89,22 +80,12 @@ let confirm_as_admin () =
     | Guest | Contact _ -> failwith "Invalid user"
   in
   let user_import = create_user_import user in
-  let urlencoded =
-    let open Field in
-    [ Token |> show, [ Data.token ]
-    ; Password |> show, [ Data.password ]
-    ; PasswordConfirmation |> show, [ Data.password ]
-    ]
-  in
   let result =
-    let open CCResult in
-    let open Cqrs_command.User_import_command.ConfirmImport in
-    urlencoded |> decode >>= handle (user_import, user)
+    Cqrs_command.User_import_command.ConfirmImport.handle (user, user_import)
   in
   let expected =
     Ok
-      [ Admin.ImportConfirmed (admin, Pool_user.Password.Plain.create Data.password)
-        |> Pool_event.admin
+      [ Admin.ImportPendingDisabled admin |> Pool_event.admin
       ; User_import.Confirmed user_import |> Pool_event.user_import
       ]
   in
@@ -120,7 +101,7 @@ let disable_as_contact () =
   in
   let expected =
     Ok
-      [ Contact.ImportDisabled contact |> Pool_event.contact
+      [ Contact.ImportPendingDisabled contact |> Pool_event.contact
       ; User_import.Confirmed user_import |> Pool_event.user_import
       ]
   in
@@ -141,7 +122,7 @@ let disable_as_admin () =
   in
   let expected =
     Ok
-      [ Admin.ImportDisabled admin |> Pool_event.admin
+      [ Admin.ImportPendingDisabled admin |> Pool_event.admin
       ; User_import.Confirmed user_import |> Pool_event.user_import
       ]
   in
@@ -168,12 +149,12 @@ let activate_as_contact () =
       user
   in
   let result =
-    Cqrs_command.User_import_command.ActivateImport.handle (user_import, user)
+    Cqrs_command.User_import_command.ActivateImport.handle (user, user_import)
   in
   let expected =
     Ok
       [ Contact.TermsAccepted contact |> Pool_event.contact
-      ; Contact.ImportDisabled contact |> Pool_event.contact
+      ; Contact.ImportPendingDisabled contact |> Pool_event.contact
       ; User_import.Confirmed user_import |> Pool_event.user_import
       ]
   in
@@ -192,13 +173,12 @@ let import_confirmation_events_for_active_import_uses_confirm_command () =
     ]
   in
   let result =
-    Handler.Public.Import.import_confirmation_events urlencoded user_import user
+    Handler.Public.Import.import_confirmation_events urlencoded user user_import
     |> Lwt_main.run
   in
   let expected =
     Ok
-      [ Contact.ImportConfirmed (contact, Pool_user.Password.Plain.create Data.password)
-        |> Pool_event.contact
+      [ Contact.ImportPendingDisabled contact |> Pool_event.contact
       ; User_import.Confirmed user_import |> Pool_event.user_import
       ]
   in
@@ -215,16 +195,17 @@ let import_confirmation_events_for_inactive_import_uses_activate_command () =
   in
   let urlencoded =
     let open Field in
-    [ Token |> show, [ Data.token ] ]
+    [ Token |> show, [ Data.token ]; TermsAccepted |> show, [ "true" ] ]
+    |> Http_utils.format_request_boolean_values Field.[ show TermsAccepted ]
   in
   let result =
-    Handler.Public.Import.import_confirmation_events urlencoded user_import user
+    Handler.Public.Import.import_confirmation_events urlencoded user user_import
     |> Lwt_main.run
   in
   let expected =
     Ok
       [ Contact.TermsAccepted contact |> Pool_event.contact
-      ; Contact.ImportDisabled contact |> Pool_event.contact
+      ; Contact.ImportPendingDisabled contact |> Pool_event.contact
       ; User_import.Confirmed user_import |> Pool_event.user_import
       ]
   in
@@ -235,39 +216,37 @@ let active_import_confirmation_page_renders_password_and_confirmation_fields () 
   let context = Test_request.mock_context () in
   let email = "mymail@test.com" in
   let token = User_import.Token.create Data.token |> get_exn in
-  let terms =
-    I18n.create
-      I18n.Key.TermsAndConditions
-      context.Pool_context.language
-      (I18n.Content.create_opt "<p>Terms</p>" |> get_exn)
-  in
-  let password_policy =
-    I18n.create
-      I18n.Key.PasswordPolicyText
-      context.Pool_context.language
-      (I18n.Content.create_opt "Use a strong password" |> get_exn)
-  in
   let html =
     Page.Public.Import.import_confirmation
-      ~active_after_import:true
+      ~active_after_import:(User_import.ActiveAfterImport.create true)
       ~email
+      ~token
       context
-      token
-      password_policy
-      terms
     |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
   in
+  let reactivate_label = "complete import for" in
   let html_lower = html |> CCString.lowercase_ascii in
   let open Alcotest in
   check
     bool
-    "contains password field"
+    "does not contain terms checkbox"
+    false
+    (CCString.find ~sub:"terms_accepted" html_lower >= 0);
+  check
+    bool
+    "contains reactivate submit"
     true
+    (CCString.find ~sub:reactivate_label html_lower >= 0);
+  check bool "contains import email" true (CCString.find ~sub:email html_lower >= 0);
+  check
+    bool
+    "does not render password input"
+    false
     (CCString.find ~sub:"name=\"password\"" html_lower >= 0);
   check
     bool
-    "contains password confirmation field"
-    true
+    "does not render password confirmation input"
+    false
     (CCString.find ~sub:"name=\"password_confirmation\"" html_lower >= 0)
 ;;
 
@@ -297,20 +276,13 @@ let inactive_import_confirmation_page_renders_activation_form () =
       context.Pool_context.language
       (I18n.Content.create_opt "<p>Terms</p>" |> get_exn)
   in
-  let password_policy =
-    I18n.create
-      I18n.Key.PasswordPolicyText
-      context.Pool_context.language
-      (I18n.Content.create_opt "unused" |> get_exn)
-  in
   let html =
     Page.Public.Import.import_confirmation
-      ~active_after_import:false
+      ~terms_and_conditions:terms
+      ~active_after_import:(User_import.ActiveAfterImport.create false)
       ~email
+      ~token
       context
-      token
-      password_policy
-      terms
     |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
   in
   let reactivate_label = "activate account for" in
@@ -374,22 +346,13 @@ let unsubscribe_page_renders_pause_form () =
 ;;
 
 let confirm_as_contact_integration _ () =
-  let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:false () in
+  let with_terms_accepted, expected_fcn = false, CCOption.is_none in
+  let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted () in
   let user = contact |> Pool_context.contact in
   let user_import = create_user_import user in
-  let urlencoded =
-    let open Field in
-    [ Token |> show, [ Data.token ]
-    ; Password |> show, [ Data.password ]
-    ; PasswordConfirmation |> show, [ Data.password ]
-    ]
-  in
   let%lwt () =
     let open CCResult in
-    let open Cqrs_command.User_import_command.ConfirmImport in
-    urlencoded
-    |> decode
-    >>= handle (user_import, user)
+    Cqrs_command.User_import_command.ConfirmImport.handle (user, user_import)
     |> get_exn
     |> Pool_event.handle_events Test_utils.Data.database_label user
   in
@@ -406,7 +369,7 @@ let confirm_as_contact_integration _ () =
   in
   let () =
     Alcotest.(
-      check bool "succeeds" true (contact.Contact.terms_accepted_at |> CCOption.is_some))
+      check bool "succeeds" true (contact.Contact.terms_accepted_at |> expected_fcn))
   in
   Lwt.return_unit
 ;;

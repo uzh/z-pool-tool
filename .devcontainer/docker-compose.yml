@@ -83,7 +83,7 @@ services:
       - database-tenant
 
   mailtrap:
-    image: mailhog/mailhog
+    image: axllent/mailpit:v1.30
     restart: unless-stopped
     container_name: mailtrap-pool
     hostname: mailtrap-pool

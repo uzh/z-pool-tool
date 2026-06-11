@@ -92,6 +92,7 @@ let show
       default_text_msg_reminder_lead_time
       user_import_first_reminder
       user_import_second_reminder
+      profile_only
       page_scripts
       Pool_context.{ language; csrf; flash_fetcher; _ }
       text_messages_enabled
@@ -505,6 +506,25 @@ let show
     , None
     , [ `UserImportFirstReminderAfter; `UserImportSecondReminderAfter ] )
   in
+  let profile_only =
+    let hint = Utils.hint_to_string language I18n.ProfileOnly in
+    let form =
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ form
+            ~a:(form_attrs `UpdateProfileOnly)
+            [ csrf_element csrf ()
+            ; checkbox_element
+                ~value:(profile_only |> Settings.ProfileOnly.value)
+                language
+                Pool_message.Field.ProfileOnly
+            ; submit ~control:Message.(Control.Update None) ()
+            ]
+        ; open_system_settings_changelog Settings.Key.ProfileOnly
+        ]
+    in
+    "Profile Only for Contacts", [ form ], Some hint, [ `UpdateProfileOnly ]
+  in
   let page_scripts =
     let open Settings.PageScript in
     let title = "Page scripts" in
@@ -543,6 +563,7 @@ let show
     ; trigger_profile_update_after_html
     ; default_lead_time
     ; user_import_reminder
+    ; profile_only
     ; page_scripts
     ]
     |> CCList.map (fun (title, columns, hint, form_actions) ->

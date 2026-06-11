@@ -91,12 +91,17 @@ module Tenant = struct
       Navigation.create_main ?active_navigation context tenant_languages
     in
     let%lwt footer = make_footer context title_text in
+    let icon_link =
+      match user with
+      | Contact _ -> Some "/dashboard"
+      | Admin _ | Guest -> None
+    in
     html
       ~a:[ language_attribute language ]
       (head page_title head_tags)
       (body
          ~a:[ a_class body_tag_classnames ]
-         ([ App.navbar ~children:navbar_content query_parameters title_text
+         ([ App.navbar ?icon_link ~children:navbar_content query_parameters title_text
           ; content
           ; footer
           ]

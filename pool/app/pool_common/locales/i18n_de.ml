@@ -26,6 +26,7 @@ let to_string = function
   | Canceled -> "Abgesagt"
   | CanceledSessionsTitle -> "Ihre abgesagten Sessions"
   | Closed -> "Geschlossen"
+  | ConfirmAccountImport email -> Format.asprintf "Import für \"%s\" abschliessen" email
   | ContactWaitingListEmpty -> "Sie sind aktuell auf keiner Warteliste."
   | CustomFieldsSettings ->
     "In der folgenden Liste können Sie bestimmen, in welcher Tabelle zusätzlich zu den \
@@ -100,9 +101,9 @@ let to_string = function
   | HasGlobalRole role -> Format.asprintf "Hat globale Rolle %s" role
   | Help -> "Hilfe"
   | ImportConfirmationNote ->
-    "Bitte geben Sie ein neues Paswort an. Ihre restlichen Angaben wurden automatisch \
-     übernommen."
-  | ImportConfirmationTitle -> "Neues Passwort"
+    "Bitte folgen Sie dem Prozess um den Import abzuschliessen. Anschliessend erhalten \
+     sie eine weiter E-Mail um Ihr Passwort zurückzusetzen."
+  | ImportConfirmationTitle -> "Account Import abschliessen"
   | ImportPendingNote ->
     "Der Import Ihres Users ist noch nicht abgeschlossen. Bitte kontrollieren Sie Ihren \
      Posteingang oder kontaktieren Sie einen Administrator."
@@ -642,6 +643,10 @@ Markiert sind die Felder, welche als gleich angesehen werden. Ist ein Admin Wert
      Telefonnummer wird durch ein Häkchen im Kontaktprofil angezeigt. Die \
      Telefonnummernverifizierung ist nur verfügbar, wenn ein GTX-API-Schlüssel \
      konfiguriert ist."
+  | ProfileOnly ->
+    "Wenn diese Option aktiviert ist, können Kontakte ausschliesslich ihre eigenen \
+     Profilinformationen ansehen und bearbeiten. Andere Inhalte, wie Experimente oder \
+     Sessions bleiben für Kontakte unsichtbar."
   | PromoteContact ->
     "Achtung: einmalige Aktion. Der Kontakt wird zu einem Admin befördert, dieser wird \
      anschliessend nicht mehr für Experimente eingeladen und kann sich nicht mehr für \
