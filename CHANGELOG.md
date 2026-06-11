@@ -4,6 +4,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.13.4](https://github.com/uzh/z-pool-tool/tree/0.13.4) - 2026-06-11
+
+### Added
+
+- token based links for unsubscribe
+- system setting for profile only tenant (hide entities like experiments/sessions)
+- dashboard introduction text (see Settings -> Texts)
+- ability to enroll participants from main session on follow up creation
+
+### Fixed
+
+- explicit checks for session enrollment
+- some translations
+
 ## [0.13.3](https://github.com/uzh/z-pool-tool/tree/0.13.3) - 2026-05-28
 
 ### Changed
