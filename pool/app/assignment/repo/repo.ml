@@ -17,10 +17,14 @@ let sql_select_columns =
     ]
 ;;
 
-let joins_contact =
-  {sql|
-    INNER JOIN pool_contacts ON pool_contacts.user_uuid = pool_assignments.contact_uuid
-  |sql}
+let joins =
+  Format.asprintf
+    {sql|
+      INNER JOIN pool_contacts
+        ON pool_contacts.user_uuid = pool_assignments.contact_uuid
+      %s
+    |sql}
+    Contact.Repo.joins
 ;;
 
 let joins_session =
@@ -36,7 +40,7 @@ module Sql = struct
     Format.asprintf
       {sql|SELECT %s FROM pool_assignments %s %s|sql}
       columns
-      (additional_joins @ [ Contact.Repo.joins ] |> CCString.concat "\n")
+      (joins :: additional_joins |> CCString.concat "\n")
       where_fragment
   ;;
 
@@ -70,7 +74,7 @@ module Sql = struct
     {sql|
         WHERE pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> find_request_sql ~additional_joins:[ joins_contact ]
+    |> find_request_sql
     |> Pool_common.Repo.Id.t ->! t
   ;;
 
@@ -81,7 +85,7 @@ module Sql = struct
   ;;
 
   let find_closed_request =
-    let additional_joins = [ joins_contact; joins_session ] in
+    let additional_joins = [ joins_session ] in
     let open Caqti_request.Infix in
     {sql|
      WHERE
@@ -109,7 +113,7 @@ module Sql = struct
     id_fragment :: where_conditions
     |> CCString.concat " AND "
     |> Format.asprintf "WHERE %s"
-    |> find_request_sql ~additional_joins:[ joins_contact ]
+    |> find_request_sql
     |> Format.asprintf "%s\n ORDER BY user_users.name, user_users.given_name"
     |> Session.Repo.Id.t ->* t
   ;;
@@ -212,7 +216,7 @@ module Sql = struct
       AND
         pool_assignments.marked_as_deleted = 0
     |sql}
-    |> find_request_sql ~additional_joins:[ joins_contact ]
+    |> find_request_sql
     |> Contact.Repo.Id.t ->* t
   ;;
 
@@ -247,6 +251,7 @@ module Sql = struct
           %s
         FROM pool_assignments
           %s
+          %s
         WHERE
           pool_sessions.closed_at IS NULL
           AND pool_sessions.canceled_at IS NULL
@@ -257,7 +262,8 @@ module Sql = struct
 		      pool_assignments.contact_uuid
       |sql}
       (Contact.Repo.sql_select_columns |> CCString.concat ",")
-      ([ Contact.Repo.joins; joins_contact; joins_session ] |> CCString.concat "\n")
+      joins
+      joins_session
     |> Experiment.Repo.Entity.Id.t ->* Contact.Repo.t
   ;;
 
@@ -299,9 +305,7 @@ module Sql = struct
     let columns =
       Session.Repo.sql_select_columns @ sql_select_columns |> CCString.concat ", "
     in
-    let joins =
-      [ Session.Repo.joins; joins_contact; Contact.Repo.joins ] |> CCString.concat "\n"
-    in
+    let joins = Format.asprintf "%s\n%s" Session.Repo.joins joins in
     let where =
       {sql|
         pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
@@ -327,7 +331,7 @@ module Sql = struct
 
   let find_with_follow_ups_request =
     let open Caqti_request.Infix in
-    let additional_joins = [ joins_contact; joins_session ] in
+    let additional_joins = [ joins_session ] in
     {sql|
       WHERE
         pool_assignments.marked_as_deleted = 0
@@ -405,7 +409,7 @@ module Sql = struct
         WHERE pool_assignments.session_uuid = merge.session_uuid
           AND merge.contact_uuid = UNHEX(REPLACE($2, '-', '')))
     |sql}
-    |> find_request_sql ~additional_joins:[ joins_contact ]
+    |> find_request_sql
     |> Caqti_type.(t2 Contact.Repo.Id.t Contact.Repo.Id.t) ->* t
   ;;
 

@@ -4,6 +4,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.13.5](https://github.com/uzh/z-pool-tool/tree/0.13.5) - 2026-06-11
+
+### Fixed
+
+- session detail view
+
 ## [0.13.4](https://github.com/uzh/z-pool-tool/tree/0.13.4) - 2026-06-11
 
 ### Added
