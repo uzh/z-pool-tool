@@ -613,7 +613,8 @@ Scheduled: No mailing is running, but future mailings are scheduled.|}
      verification is only available when a GTX API key is configured."
   | ProfileOnly ->
     "This setting only applies to contacts UI. Contacts are only allowed to see and edit \
-     their profile information, but they cannot see any experiments or sessions."
+     their profile information. Other content, such as experiments or sessions, remains \
+     invisible to them."
   | PromoteContact ->
     "Attention: one-time action. The contact is promoted to an admin, who is \
      subsequently no longer invited for experiments and can no longer register for such."
