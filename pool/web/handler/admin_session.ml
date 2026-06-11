@@ -715,11 +715,66 @@ let delete req =
   Response.handle ~src req result
 ;;
 
-(* TODO [aerben] make possible to create multiple follow ups? *)
+let enroll_from_main
+      ?tags
+      { Pool_context.database_label; user; _ }
+      experiment
+      session
+      follow_up_session_id
+      tenant
+      urlencoded
+  : (unit, Pool_message.Error.t) Lwt_result.t
+  =
+  let urlencoded =
+    HttpUtils.format_request_boolean_values Field.[ EnrollFromMain |> show ] urlencoded
+  in
+  let* enroll_participants_from_main_session =
+    HttpUtils.find_in_urlencoded_opt Field.EnrollFromMain urlencoded
+    |> CCOption.map Utils.Bool.of_string
+    |> function
+    | None | Some false -> Lwt.return_ok false
+    | Some true ->
+      Helpers.Guard.has_permission
+        database_label
+        user
+        (Cqrs_command.Assignment_command.Create.effects experiment.Experiment.id)
+      ||> (function
+       | true -> Ok true
+       | false -> Error Error.AccessDenied)
+  in
+  match enroll_participants_from_main_session with
+  | false -> Lwt.return_ok ()
+  | true ->
+    let* follow_up_session = Session.find database_label follow_up_session_id in
+    let%lwt assignments =
+      Assignment.find_uncanceled_by_session database_label session.Session.id
+    in
+    assignments
+    |> Lwt_list.map_s (fun ({ Assignment.contact; _ } as _assignment) ->
+      let%lwt confirmation_email =
+        Message_template.AssignmentConfirmation.prepare
+          tenant
+          contact
+          experiment
+          follow_up_session
+      in
+      let open Cqrs_command.Assignment_command.Create in
+      handle
+        ?tags
+        ~direct_enrollment_by_admin:true
+        { contact; session = follow_up_session; follow_up_sessions = []; experiment }
+        confirmation_email
+        false
+      |> Lwt.return)
+    ||> CCResult.flatten_l
+    >|+ CCList.flatten
+    |>> Pool_event.handle_events ?tags database_label user
+;;
+
 let create_follow_up req =
   let experiment_id = experiment_id req in
   let session_id = session_id req in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.database_label; user; _ } as context) =
     let* session = Session.find database_label session_id >|- Response.not_found in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
@@ -729,18 +784,41 @@ let create_follow_up req =
     let tags = Pool_context.Logger.Tags.req req in
     let* location = location urlencoded database_label in
     let* experiment = Experiment.find database_label experiment_id in
-    let* events =
+    let follow_up_session_id = Session.Id.create () in
+    let* create_session_events =
       let open CCResult.Infix in
       let open Cqrs_command.Session_command.Create in
       urlencoded
       |> decode
-      >>= handle ~tags ~parent_session:session experiment location
+      >>= handle
+            ~tags
+            ~parent_session:session
+            ~session_id:follow_up_session_id
+            experiment
+            location
       |> Lwt_result.lift
     in
-    let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let%lwt () =
+      Pool_event.handle_events ~tags database_label user create_session_events
+    in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
+    let%lwt error =
+      match%lwt
+        enroll_from_main
+          ~tags
+          context
+          experiment
+          session
+          follow_up_session_id
+          tenant
+          urlencoded
+      with
+      | Ok () -> Lwt.return []
+      | Error err -> Lwt.return [ err ]
+    in
     Http_utils.redirect_to_with_actions
       (session_path experiment_id)
-      [ Message.set ~success:[ Success.Created Field.Session ] ]
+      [ Message.set ~success:[ Success.Created Field.Session ] ~error ]
     |> Lwt_result.ok
   in
   Response.handle ~src req result

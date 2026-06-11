@@ -301,6 +301,14 @@ let suite =
               `Slow
               close_session_check_contact_figures
           ; test_case
+              "follow-up enrolls uncanceled main participants"
+              `Slow
+              enroll_from_main_creates_assignments_for_uncanceled_participants
+          ; test_case
+              "follow-up enrollment denied but session remains"
+              `Slow
+              enroll_from_main_without_permission_preserves_follow_up_session
+          ; test_case
               "send session reminders with default lead times"
               `Slow
               send_session_reminders_with_default_leat_time

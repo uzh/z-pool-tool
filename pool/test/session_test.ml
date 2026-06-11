@@ -11,6 +11,10 @@ let check_result expected generated =
   Alcotest.(check (result (list event) error) "succeeds" expected generated)
 ;;
 
+let enroll_from_main_urlencoded =
+  Pool_message.Field.[ EnrollFromMain |> show, [ "true" ] ]
+;;
+
 module Data = struct
   module Raw = struct
     let start1 =
@@ -1407,6 +1411,156 @@ let resend_reminders_valid () =
   in
   let () = check_result expected2 res2 in
   ()
+;;
+
+let follow_up_enrollment_setup grant_permission =
+  let open Utils.Lwt_result.Infix in
+  let%lwt admin = Integration_utils.AdminRepo.create () in
+  let user = Pool_context.admin admin in
+  let%lwt experiment = Integration_utils.ExperimentRepo.create ~current_user:user () in
+  let%lwt session =
+    Integration_utils.SessionRepo.create ~current_user:user experiment ()
+  in
+  let%lwt follow_up_session =
+    Integration_utils.SessionRepo.create
+      ~current_user:user
+      ~follow_up_to:session.Session.id
+      experiment
+      ()
+  in
+  let%lwt tenant =
+    Pool_tenant.find_by_label Test_utils.Data.database_label ||> get_or_failwith
+  in
+  let context = Test_request.mock_context ~user () in
+  let%lwt () =
+    match grant_permission with
+    | false -> Lwt.return_unit
+    | true ->
+      let%lwt actor =
+        Pool_context.Utils.find_authorizable Test_utils.Data.database_label user
+        ||> get_or_failwith
+      in
+      let%lwt () =
+        Authorization_test_utils.create_actor_model_permission
+          actor
+          Guard.Permission.Create
+          `Assignment
+      in
+      Authorization_test_utils.create_actor_permission
+        actor
+        Guard.Permission.Read
+        (Authorization_test_utils.experiment_target experiment)
+  in
+  Lwt.return (context, tenant, experiment, session, follow_up_session, user)
+;;
+
+let assignment_contact_ids assignments =
+  assignments
+  |> CCList.map (fun (assignment : Assignment.t) ->
+    assignment.Assignment.contact |> Contact.id |> Contact.Id.value)
+  |> CCList.sort CCString.compare
+;;
+
+let contact_ids contacts =
+  contacts
+  |> CCList.map (fun contact -> contact |> Contact.id |> Contact.Id.value)
+  |> CCList.sort CCString.compare
+;;
+
+let enroll_from_main_creates_assignments_for_uncanceled_participants _ () =
+  let%lwt context, tenant, experiment, session, follow_up_session, user =
+    follow_up_enrollment_setup true
+  in
+  let%lwt contacts =
+    [ (); (); () ]
+    |> Lwt_list.map_s (fun () ->
+      Integration_utils.ContactRepo.create ~current_user:user ())
+  in
+  let%lwt assignments =
+    contacts
+    |> Lwt_list.map_s (Integration_utils.AssignmentRepo.create ~current_user:user session)
+  in
+  let canceled =
+    match assignments with
+    | _ :: _ :: canceled :: _ -> canceled
+    | _ -> failwith "missing assignment"
+  in
+  let%lwt () =
+    Assignment.Canceled canceled
+    |> Pool_event.assignment
+    |> Pool_event.handle_event Test_utils.Data.database_label user
+  in
+  let%lwt result =
+    Handler.Admin.Session.enroll_from_main
+      context
+      experiment
+      session
+      follow_up_session.Session.id
+      tenant
+      enroll_from_main_urlencoded
+  in
+  let () = Alcotest.(check (result unit error)) "enrollment succeeds" (Ok ()) result in
+  let%lwt follow_up_assignments =
+    Assignment.find_uncanceled_by_session
+      Test_utils.Data.database_label
+      follow_up_session.Session.id
+  in
+  let expected_contacts = contacts |> CCList.take 2 |> contact_ids in
+  let actual_contacts = assignment_contact_ids follow_up_assignments in
+  let () =
+    Alcotest.(check (list string))
+      "creates assignments for uncanceled main-session participants"
+      expected_contacts
+      actual_contacts
+  in
+  Lwt.return_unit
+;;
+
+let enroll_from_main_without_permission_preserves_follow_up_session _ () =
+  let%lwt context, tenant, experiment, session, follow_up_session, user =
+    follow_up_enrollment_setup false
+  in
+  let%lwt contact = Integration_utils.ContactRepo.create ~current_user:user () in
+  let%lwt (_ : Assignment.t) =
+    Integration_utils.AssignmentRepo.create ~current_user:user session contact
+  in
+  let%lwt result =
+    Handler.Admin.Session.enroll_from_main
+      context
+      experiment
+      session
+      follow_up_session.Session.id
+      tenant
+      enroll_from_main_urlencoded
+  in
+  let () =
+    Alcotest.(check (result unit error))
+      "enrollment is denied"
+      (Error Pool_message.Error.AccessDenied)
+      result
+  in
+  let%lwt follow_up_assignments =
+    Assignment.find_uncanceled_by_session
+      Test_utils.Data.database_label
+      follow_up_session.Session.id
+  in
+  let () =
+    Alcotest.(check int)
+      "does not enroll participants without assignment-create permission"
+      0
+      (CCList.length follow_up_assignments)
+  in
+  let%lwt persisted_follow_up =
+    Session.find Test_utils.Data.database_label follow_up_session.Session.id
+    |> Lwt.map get_or_failwith
+  in
+  let () =
+    Alcotest.(check bool)
+      "follow-up session remains created after enrollment failure"
+      true
+      (Session.Id.equal persisted_follow_up.Session.id follow_up_session.Session.id)
+  in
+  Lwt.return_unit
 ;;
 
 let close_session_check_contact_figures _ () =

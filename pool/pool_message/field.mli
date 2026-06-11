@@ -86,6 +86,7 @@ type t =
   | EmailSuffix
   | EmailText
   | End
+  | EnrollFromMain
   | ExampleValue
   | Exclude
   | ExcludeRolesOf

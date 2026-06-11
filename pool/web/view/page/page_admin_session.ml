@@ -317,6 +317,12 @@ let session_form
           ?flash_fetcher
       ]
   in
+  let enroll_from_main_checkbox () =
+    match follow_up_to, session with
+    | Some _, None ->
+      [ checkbox_element ?flash_fetcher ~value:true language Field.EnrollFromMain ]
+    | _ -> []
+  in
   form
     ~a:
       [ a_class [ "stack" ]
@@ -402,27 +408,28 @@ let session_form
         ]
     ; div
         ~a:[ a_class [ "gap-lg" ] ]
-        [ h3
+        ((h3
             ~a:[ a_class [ "heading-3" ] ]
             [ txt (Utils.text_to_string language I18n.Reminder) ]
-        ; div
-            ~a:[ a_class [ "grid-col-2" ] ]
-            [ lead_time_group
-                Field.EmailLeadTime
-                (fun (s : t) -> s.email_reminder_lead_time)
-                Reminder.EmailLeadTime.value
-                (experiment.Experiment.email_session_reminder_lead_time
-                 |> CCOption.value ~default:default_email_reminder_lead_time)
-                None
-            ; lead_time_group
-                Field.TextMessageLeadTime
-                (fun (s : t) -> s.text_message_reminder_lead_time)
-                Reminder.TextMessageLeadTime.value
-                (experiment.Experiment.text_message_session_reminder_lead_time
-                 |> CCOption.value ~default:default_text_msg_reminder_lead_time)
-                (if text_messages_enabled then None else Some I18n.GtxKeyMissing)
-            ]
-        ]
+          :: enroll_from_main_checkbox ())
+         @ [ div
+               ~a:[ a_class [ "grid-col-2" ] ]
+               [ lead_time_group
+                   Field.EmailLeadTime
+                   (fun (s : t) -> s.email_reminder_lead_time)
+                   Reminder.EmailLeadTime.value
+                   (experiment.Experiment.email_session_reminder_lead_time
+                    |> CCOption.value ~default:default_email_reminder_lead_time)
+                   None
+               ; lead_time_group
+                   Field.TextMessageLeadTime
+                   (fun (s : t) -> s.text_message_reminder_lead_time)
+                   Reminder.TextMessageLeadTime.value
+                   (experiment.Experiment.text_message_session_reminder_lead_time
+                    |> CCOption.value ~default:default_text_msg_reminder_lead_time)
+                   (if text_messages_enabled then None else Some I18n.GtxKeyMissing)
+               ]
+           ])
     ; div
         ~a:[ a_class [ "flexrow" ] ]
         [ submit_element ~classnames:[ "push" ] language submit () ]
