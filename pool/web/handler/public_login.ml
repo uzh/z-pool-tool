@@ -170,6 +170,40 @@ let login_cofirmation req =
   Response.handle ~src req result
 ;;
 
+let resend_login_confirmation_token req =
+  let tags = Pool_context.Logger.Tags.req req in
+  let open Response in
+  let result ({ Pool_context.database_label; user; _ } as context) =
+    let* auth_id =
+      (let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+       CCList.assoc_opt ~eq:CCString.equal Pool_message.Field.(show Id) urlencoded
+       |> CCFun.flip CCOption.bind CCList.head_opt
+       |> CCOption.map Authentication.Id.of_string
+       |> CCOption.to_result Pool_message.(Error.Invalid Field.Id)
+       |> Lwt.return)
+      |> bad_request_on_error login_get
+    in
+    let* (_ : Authentication.t), login_user =
+      Authentication.find_valid_by_id database_label auth_id
+      |> bad_request_on_error login_get
+    in
+    Response.bad_request_render_error context
+    @@
+    let* login_user, (_ : Authentication.t), events =
+      Helpers_login.create_2fa_auth ~id:auth_id ~tags req context login_user
+    in
+    let%lwt () = Pool_event.handle_events database_label user events in
+    Page.Public.login_token_confirmation
+      ~authentication_id:auth_id
+      ?intended:(HttpUtils.find_intended_opt req)
+      ~email:(Pool_user.email login_user)
+      context
+    |> create_layout req ~active_navigation:"/login" context
+    >|+ Sihl.Web.Response.of_html
+  in
+  Response.handle ~src req result
+;;
+
 let request_reset_password_get req =
   let result context =
     Response.bad_request_render_error context
