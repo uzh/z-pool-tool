@@ -27,6 +27,63 @@ let login_token_confirmation
     | Some id -> input_element language `Hidden Pool_message.Field.Id ~value:(Id.value id)
     | None -> txt ""
   in
+  let resend_token =
+    let cooldown_seconds = 60 in
+    let resend_action =
+      HttpUtils.externalize_path_with_params
+        query_parameters
+        "/resend-login-confirmation-token"
+    in
+    let button_id = "resend-token-button" in
+    let countdown_id = "resend-token-countdown" in
+    let js_script =
+      Format.asprintf
+        {js|
+(() => {
+  const button = document.getElementById("%s");
+  const countdown = document.getElementById("%s");
+  if (!button || !countdown) { return; }
+  button.disabled = true;
+  const deadline = Date.now() + (parseInt(countdown.dataset.seconds, 10) * 1000);
+  const update = () => {
+    const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    if (remaining > 0) {
+      countdown.textContent = " (" + remaining + ")";
+    } else {
+      countdown.remove();
+      button.disabled = false;
+      clearInterval(interval);
+    }
+  };
+  const interval = setInterval(update, 1000);
+  update();
+})();
+        |js}
+        button_id
+        countdown_id
+    in
+    form
+      ~a:[ a_action resend_action; a_method `Post; a_class [ "stack" ] ]
+      [ csrf_element csrf ()
+      ; hidden_input
+      ; div
+          ~a:[ a_class [ "flexrow"; "align-center"; "flex-gap" ] ]
+          [ submit_element
+              ~is_text:true
+              ~attributes:[ a_id button_id ]
+              language
+              (Pool_message.Control.Resend (Some Pool_message.Field.OTP))
+              ()
+          ; span
+              ~a:
+                [ a_id countdown_id
+                ; a_user_data "seconds" (Int.to_string cooldown_seconds)
+                ]
+              [ txt (Format.asprintf " (%d)" cooldown_seconds) ]
+          ]
+      ; script (Unsafe.data js_script)
+      ]
+  in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
@@ -61,6 +118,7 @@ let login_token_confirmation
                     ()
                 ]
             ]
+        ; resend_token
         ]
     ]
 ;;
