@@ -46,7 +46,7 @@ let login_token_confirmation req =
           ?intended:(HttpUtils.find_intended_opt req)
           ~email:(Pool_user.email user)
           context
-        |> create_layout req ~active_navigation:"/login" context
+        >|> create_layout req ~active_navigation:"/login" context
         >|+ Sihl.Web.Response.of_html)
   in
   Response.handle ~src req result
@@ -68,7 +68,7 @@ let login_post req =
           ?intended:(HttpUtils.find_intended_opt req)
           ~email:(Pool_user.email login_user)
           context
-        |> create_layout req ~active_navigation:"/login" context
+        >|> create_layout req ~active_navigation:"/login" context
         >|+ Sihl.Web.Response.of_html
       in
       events |> handle_events >|> success
@@ -173,6 +173,7 @@ let login_cofirmation req =
 let resend_login_confirmation_token req =
   let tags = Pool_context.Logger.Tags.req req in
   let open Response in
+  let cooldown_seconds = 60 in
   let result ({ Pool_context.database_label; user; _ } as context) =
     let* auth_id =
       (let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
@@ -187,8 +188,27 @@ let resend_login_confirmation_token req =
       Authentication.find_valid_by_id database_label auth_id
       |> bad_request_on_error login_get
     in
-    Response.bad_request_render_error context
+    bad_request_on_error login_token_confirmation
     @@
+    let* () =
+      let%lwt last_sent_at =
+        Pool_queue.find_last_login_token_sent_at
+          database_label
+          (Pool_common.Id.of_string (Authentication.Id.value auth_id))
+      in
+      (match last_sent_at with
+       | None -> Ok ()
+       | Some sent_at ->
+         let elapsed =
+           Ptime.diff (Ptime_clock.now ()) sent_at
+           |> Ptime.Span.to_float_s
+           |> int_of_float
+         in
+         if elapsed < cooldown_seconds
+         then Error Pool_message.Error.TokenAlreadySentRecently
+         else Ok ())
+      |> Lwt_result.lift
+    in
     let* login_user, (_ : Authentication.t), events =
       Helpers_login.create_2fa_auth ~id:auth_id ~tags req context login_user
     in
@@ -198,7 +218,7 @@ let resend_login_confirmation_token req =
       ?intended:(HttpUtils.find_intended_opt req)
       ~email:(Pool_user.email login_user)
       context
-    |> create_layout req ~active_navigation:"/login" context
+    >|> create_layout req ~active_navigation:"/login" context
     >|+ Sihl.Web.Response.of_html
   in
   Response.handle ~src req result

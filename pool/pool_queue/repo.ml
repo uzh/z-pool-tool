@@ -361,6 +361,25 @@ let cancel_undeliverable_email_jobs label =
   Database.exec label cancel_undeliverable_email_jobs_request ()
 ;;
 
+let find_last_login_token_sent_at_request =
+  let open Caqti_request.Infix in
+  let auth_uuid_fragment = Pool_common.Id.sql_value_fragment "?" in
+  [%string
+    {sql|
+      SELECT persisted_at
+      FROM pool_queue_jobs_history
+      JOIN pool_queue_job_authentication ON queue_uuid = uuid
+      WHERE authentication_uuid = %{auth_uuid_fragment}
+      ORDER BY persisted_at DESC
+      LIMIT 1
+    |sql}]
+  |> Pool_common.Repo.Id.t ->? Caqti_type.ptime
+;;
+
+let find_last_login_token_sent_at pool auth_id =
+  Database.find_opt pool find_last_login_token_sent_at_request auth_id
+;;
+
 let find_archivable_request =
   [%string
     {sql|

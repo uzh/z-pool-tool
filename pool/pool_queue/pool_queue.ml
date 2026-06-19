@@ -30,6 +30,7 @@ let count_all_workable = Repo.count_all_workable
 let count_recently_failed = Repo.count_recently_failed
 let find_instances_by_entity = Repo_mapping.find_instances_by_entity
 let find_related = Repo_mapping.find_related
+let find_last_login_token_sent_at = Repo.find_last_login_token_sent_at
 
 let update_and_return ?history database_label job =
   let%lwt () = Repo.update ?history database_label job in

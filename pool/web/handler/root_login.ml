@@ -39,7 +39,7 @@ let login_token_confirmation req =
       ?intended:(HttpUtils.find_intended_opt req)
       ~email:(Pool_user.email user)
       context
-    |> General.create_root_layout ~active_navigation:"/root/login" context
+    >|> General.create_root_layout ~active_navigation:"/root/login" context
     ||> Sihl.Web.Response.of_html
     |> Lwt_result.ok
   in
@@ -62,7 +62,7 @@ let login_post req =
         ?intended:(HttpUtils.find_intended_opt req)
         ~email:(Pool_user.email user)
         context
-      |> General.create_root_layout ~active_navigation:"/root/login" context
+      >|> General.create_root_layout ~active_navigation:"/root/login" context
       ||> Sihl.Web.Response.of_html
     in
     events |> handle_events >|> success |> Lwt_result.ok

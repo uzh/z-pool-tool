@@ -9,12 +9,13 @@ let query_params_with_intended query_parameters intended =
 ;;
 
 let login_token_confirmation
-      Pool_context.{ language; query_parameters; csrf; _ }
+      Pool_context.{ language; query_parameters; csrf; database_label; _ }
       ?authentication_id
       ~email
       ?intended
       url
   =
+  let open Utils.Lwt_result.Infix in
   let query_parameters = query_params_with_intended query_parameters intended in
   let action = HttpUtils.externalize_path_with_params query_parameters url in
   let hint =
@@ -27,8 +28,17 @@ let login_token_confirmation
     | Some id -> input_element language `Hidden Pool_message.Field.Id ~value:(Id.value id)
     | None -> txt ""
   in
-  let resend_token =
+  let resend_token sent_at =
     let cooldown_seconds = 60 in
+    let remaining_seconds =
+      match sent_at with
+      | None -> 0
+      | Some t ->
+        let elapsed =
+          Ptime.diff (Ptime_clock.now ()) t |> Ptime.Span.to_float_s |> int_of_float
+        in
+        max 0 (cooldown_seconds - elapsed)
+    in
     let resend_action =
       HttpUtils.externalize_path_with_params
         query_parameters
@@ -42,9 +52,7 @@ let login_token_confirmation
 (() => {
   const button = document.getElementById("%s");
   const countdown = document.getElementById("%s");
-  console.log(button);
-  console.log(countdown);
-  if (!button || !countdown) { 
+  if (!button || !countdown) {
     return;
   }
 
@@ -59,7 +67,7 @@ let login_token_confirmation
     } else {
       button.disabled = false;
       countdown.remove();
-      
+
       clearInterval(interval);
     }
   }, 1000);
@@ -70,26 +78,39 @@ let login_token_confirmation
     in
     div
       ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
-      [ button
-          ~a:
-            [ a_id button_id
-            ; a_class [ "btn"; "primary"; "is-text" ]
-            ; a_style "padding:0"
-            ; Htmx.hx_post resend_action
-            ; Htmx.hx_swap "none"
-            ]
-          [ txt "Resend verification token" ]
-      ; span
-          ~a:
-            [ a_id countdown_id
-            ; a_class [ "tag"; "inline" ]
-            ; a_style "align-content:center"
-            ; a_user_data "seconds" (Int.to_string cooldown_seconds)
-            ]
-          [ txt (Format.asprintf "%d" cooldown_seconds) ]
-      ; script (Unsafe.data js_script)
-      ]
+      ([ button
+           ~a:
+             [ a_id button_id
+             ; a_class [ "btn"; "primary"; "is-text" ]
+             ; a_style "padding:0"
+             ; Htmx.hx_post resend_action
+             ; Htmx.hx_swap "none"
+             ]
+           [ txt "Resend verification token" ]
+       ]
+       @
+       if remaining_seconds > 0
+       then
+         [ span
+             ~a:
+               [ a_id countdown_id
+               ; a_class [ "tag"; "inline" ]
+               ; a_style "align-content:center"
+               ; a_user_data "seconds" (Int.to_string remaining_seconds)
+               ]
+             [ txt (Int.to_string remaining_seconds) ]
+         ; script (Unsafe.data js_script)
+         ]
+       else [])
   in
+  (match authentication_id with
+   | None -> Lwt.return (txt "")
+   | Some id ->
+     Pool_queue.find_last_login_token_sent_at
+       database_label
+       (Pool_common.Id.of_string (Authentication.Id.value id))
+     ||> resend_token)
+  ||> fun resend_token ->
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
