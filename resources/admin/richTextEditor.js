@@ -7,7 +7,7 @@ import {
     CKFinderUploadAdapter,
     ClassicEditor,
     CloudServices,
-    DomConverter,
+    ViewDomConverter,
     EasyImage,
     Essentials,
     GeneralHtmlSupport,
@@ -34,7 +34,7 @@ import {
     TextTransformation,
     viewToPlainText
 } from 'ckeditor5';
-import 'ckeditor5/dist/ckeditor5.css';
+import 'ckeditor5/ckeditor5.css';
 
 export class Editor extends ClassicEditor {
     static builtinPlugins = [
@@ -145,7 +145,7 @@ export function initRichTextEditor(container = document) {
                 const plainText = document.querySelector(`[data-plain-text-for="${id}"]`)
                 if (toggle && plainText) {
                     toggle.addEventListener("click", () => {
-                        plainText.value = viewToPlainText(DomConverter, editor.editing.view.document.getRoot());
+                        plainText.value = viewToPlainText(ViewDomConverter, editor.editing.view.document.getRoot());
                     })
                 }
             })
