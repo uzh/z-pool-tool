@@ -1,6 +1,7 @@
 # ocamlbuild working directory
 _esy/
 _build/
+.yarn/
 public/
 guardian/
 canary/

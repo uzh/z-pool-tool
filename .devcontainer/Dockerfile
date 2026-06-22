@@ -9,15 +9,12 @@ USER root
 RUN mkdir -p /workspace/_build /workspace/node_modules \
   && chown -R opam:opam /workspace/_build /workspace/node_modules
 
-# copy node from node container and link commands
-COPY --from=node:lts /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=node:lts /usr/local/bin/node /usr/local/bin/node
-COPY --from=node:lts /opt /opt
-RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
-  && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
-  && ln -s /usr/local/bin/node /usr/local/bin/nodejs \
-  && ln -s /opt/yarn-v*/bin/yarn /usr/local/bin/yarn \
-  && ln -s /opt/yarn-v*/bin/yarnpkg /usr/local/bin/yarnpkg
+# Install Node.js LTS
+RUN wget -qO- https://rpm.nodesource.com/setup_lts.x | bash - \
+  && dnf install -y nodejs \
+  && dnf clean all \
+  && npm install -g corepack \
+  && corepack prepare yarn@3.8.7 --activate
 
 # copy hadolint
 COPY --from=hadolint/hadolint:latest-alpine /bin/hadolint /bin/hadolint
