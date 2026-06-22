@@ -9,7 +9,7 @@ let create_pool_queue_job_authentication_table =
         updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY `unique_queue_uuid` (`queue_uuid`),
         UNIQUE KEY `unique_queue_entity_combination` (queue_uuid, authentication_uuid),
-        CONSTRAINT fk_pool_queue_job_authentication FOREIGN KEY (authentication_uuid) REFERENCES pool_authentication(uuid)
+        CONSTRAINT fk_pool_queue_job_authentication FOREIGN KEY (authentication_uuid) REFERENCES pool_authentication(uuid) ON DELETE CASCADE
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     |sql}
 ;;
