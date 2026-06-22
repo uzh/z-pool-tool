@@ -23,9 +23,11 @@ module History = struct
   let user_uuid user = user.Pool_user.id |> Pool_user.Id.to_common
   let admin_item { Admin.user; _ } = User, user_uuid user
   let assignment_item { Assignment.id; _ } = Assignment, Assignment.(id |> Id.to_common)
+
   let authentication_item { Authentication.id; _ } =
     Authentication, Pool_common.Id.of_string (Authentication.Id.value id)
   ;;
+
   let contact_item { Contact.user; _ } = User, user_uuid user
 
   let experiment_item experiment =
