@@ -41,7 +41,6 @@ let insert_request =
       $4,
       NOW() + INTERVAL 5 MINUTE
     ) ON DUPLICATE KEY UPDATE
-      uuid = UNHEX(REPLACE($1, '-', '')),
       channel = $3,
       token = $4,
       valid_until = NOW() + INTERVAL 5 MINUTE
