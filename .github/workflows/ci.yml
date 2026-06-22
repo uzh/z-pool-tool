@@ -176,8 +176,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "lts/*"
+
+      - name: Install latest Yarn
+        run: corepack prepare yarn@stable --activate
+
       - name: install yarn packages
-        run: yarn install
+        run: yarn
 
       - name: build yarn package
         run: yarn build
