@@ -39,7 +39,7 @@ For installation instructions for opam see the [opam website][opam].
 Once installed you may consider creating a local opam switch:
 
 ```shell
-$ opam switch create . --locked --deps-only --with-test
+opam switch create . --locked --deps-only --with-test
 ```
 
 With an existing switch you can run the following command. Note that
@@ -47,7 +47,7 @@ With an existing switch you can run the following command. Note that
 version of the OCaml compiler:
 
 ```shell
-$ opam install --deps-only --with-test ./pool.opam.locked
+opam install --deps-only --with-test ./pool.opam.locked
 ```
 
 #### Environment variables for running locally
@@ -55,7 +55,7 @@ $ opam install --deps-only --with-test ./pool.opam.locked
 The .env.sample is written for running with devcontainers where ports are
 remapped. Thus `PUBLIC_HOST_TENANT_ONE` needs to be modified as the application
 will only be listening on port 3000. As the root `PUBLIC_URL` is using
-http://localhost:3000 we need a different name. You can either use e.g.
+<http://localhost:3000> we need a different name. You can either use e.g.
 `test.localhost:3000` or edit `/etc/hosts` with a name of your choice.
 
 You will also need to edit the database URLs `DATABASE_URL`,
@@ -154,5 +154,5 @@ Update/upgrade all package versions for ocaml and yarn packages.
 1. Check [Maintenance Cycle](#🧑‍💻-maintenance)
 1. Update `CHANGELOG.md` and document changes made. Ensure the version to be releases has a header matching the version, follow previous releases.
 1. Commit your changes.
-1. Release version using `yarn version`
+1. Release version using `make version-[patch|minor|major]`
 1. Push changes and Git tag.
