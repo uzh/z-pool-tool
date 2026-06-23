@@ -4,7 +4,7 @@
   "license": "GPL-2.0-or-later",
   "packageManager": "yarn@3.8.7",
   "scripts": {
-    "build": "NODE_OPTIONS=--trace-warnings parcel build resources/index.js resources/images/** --dist-dir public --public-url \"$PREFIX_PATH/assets/\" && parcel build resources/admin.js --dist-dir public --public-url \"$PREFIX_PATH/assets/\"",
+    "build": "NODE_OPTIONS=--trace-warnings parcel build resources/index.js resources/images/** --dist-dir public --public-url \"${PREFIX_PATH:-}/assets/\" && parcel build resources/admin.js --dist-dir public --public-url \"${PREFIX_PATH:-}/assets/\"",
     "watch": "NODE_OPTIONS=--trace-warnings parcel watch resources/index.js resources/admin.js --dist-dir public",
     "version-patch": "./scripts/bump-version.sh --patch",
     "version-minor": "./scripts/bump-version.sh --minor",
