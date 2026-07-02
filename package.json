@@ -2,14 +2,13 @@
   "name": "pool",
   "version": "0.13.5",
   "license": "GPL-2.0-or-later",
+  "packageManager": "yarn@3.8.7",
   "scripts": {
-    "build": "export NODE_OPTIONS=--trace-warnings PUBLIC_URL=$PREFIX_PATH/assets/; parcel build resources/index.js resources/images/** --dist-dir public --public-url $PUBLIC_URL && parcel build resources/admin.js --dist-dir public --public-url $PUBLIC_URL",
-    "watch": "export NODE_OPTIONS=--trace-warnings; parcel watch resources/index.js resources/admin.js --dist-dir public",
-    "version": "yarn version-dune && yarn version-opam && yarn version-opam-lock && yarn version-pool",
-    "version-dune": "sed \"s/^(version .*\\..*\\..*)/(version ${npm_package_version})/g\" ./dune-project > /tmp/dune-project && cat /tmp/dune-project > ./dune-project && git add ./dune-project",
-    "version-opam": "sed \"s/^version: \".*\"/version: \\\"${npm_package_version}\\\"/g\" ./pool.opam > /tmp/pool.opam && cat /tmp/pool.opam > ./pool.opam && git add ./pool.opam",
-    "version-opam-lock": "sed \"s/^version: \".*\"/version: \\\"${npm_package_version}\\\"/g\" ./pool.opam.locked > /tmp/pool.opam.locked && cat /tmp/pool.opam.locked > ./pool.opam.locked && git add ./pool.opam.locked",
-    "version-pool": "sed \"s/^let to_string = \".*\"/let to_string = \\\"${npm_package_version}\\\"/g\" ./pool/version/version.ml > /tmp/version.ml && cat /tmp/version.ml > ./pool/version/version.ml && git add ./pool/version/version.ml"
+    "build": "NODE_OPTIONS=--trace-warnings parcel build resources/index.js resources/images/** --dist-dir public --public-url \"${PREFIX_PATH:-}/assets/\" && parcel build resources/admin.js --dist-dir public --public-url \"${PREFIX_PATH:-}/assets/\"",
+    "watch": "NODE_OPTIONS=--trace-warnings parcel watch resources/index.js resources/admin.js --dist-dir public",
+    "version-patch": "./scripts/bump-version.sh --patch",
+    "version-minor": "./scripts/bump-version.sh --minor",
+    "version-major": "./scripts/bump-version.sh --major"
   },
   "devDependencies": {
     "@parcel/transformer-sass": "^2.7.0",
@@ -21,18 +20,24 @@
     "process": "^0.11.10",
     "stream-browserify": "^3.0.0",
     "string_decoder": "^1.3.0",
-    "svgo": "^3",
+    "svgo": "^4.0.1",
     "vm-browserify": "^1.1.2"
   },
   "dependencies": {
-    "@econ/frontend-framework": "^4.0.0",
+    "@econ/frontend-framework": "^5.0.4",
     "@fullcalendar/core": "^6.1.8",
     "@fullcalendar/daygrid": "^6.1.8",
     "@fullcalendar/list": "^6.1.8",
     "@fullcalendar/timegrid": "^6.1.8",
-    "ckeditor5": "^44.3.0",
+    "ckeditor5": "^48.0.0",
     "flatpickr": "^4.6.13",
-    "htmx.org": "^1.6.0",
+    "htmx.org": "^2.0.10",
     "tippy.js": "^6.3.7"
+  },
+  "@parcel/resolver-default": {
+    "packageExports": true
+  },
+  "exports": {
+    "./dist/ckeditor5.css": "./dist/ckeditor5.css"
   }
 }

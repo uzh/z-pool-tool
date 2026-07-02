@@ -624,7 +624,9 @@ let edit
       available_tags
   =
   let open Page_contact_partials in
-  let base_action = Htmx.admin_profile_hx_post (Contact.id contact) in
+  let base_action =
+    Htmx.admin_profile_hx_post (Contact.id contact) |> Sihl.Web.externalize_path
+  in
   let assign_tags =
     if allowed_to_assign
     then (

@@ -19,7 +19,13 @@ let find_default_reminder_lead_time = Repo.DefaultReminderLeadTime.find
 let find_default_text_msg_reminder_lead_time = Repo.DefaultTextMsgReminderLeadTime.find
 let find_user_import_first_reminder_after = Repo.UserImportFirstReminder.find
 let find_user_import_second_reminder_after = Repo.UserImportSecondReminder.find
-let find_phone_verification_enabled = Repo.PhoneVerificationEnabled.find
+
+let find_phone_verification_enabled database_label =
+  (* default: disabled -- e.g. for root *)
+  try%lwt Repo.PhoneVerificationEnabled.find database_label with
+  | _ -> Lwt.return PhoneVerification.(create false)
+;;
+
 let find_profile_only = Repo.ProfileOnly.find
 let id_by_key = Repo.id_by_key
 

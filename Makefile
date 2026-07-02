@@ -102,3 +102,16 @@ db: ## Starts the database using docker-compose
 .PHONY: db_down
 db_down: ## Removes the database using docker-compose
 	docker-compose -f docker/docker-compose.dev.yml down
+
+.PHONY: version version-patch version-minor version-major
+version:
+	@echo "Usage: make version-{patch|minor|major}"
+
+version-patch:
+	./scripts/bump-version.sh --patch
+
+version-minor:
+	./scripts/bump-version.sh --minor
+
+version-major:
+	./scripts/bump-version.sh --major
