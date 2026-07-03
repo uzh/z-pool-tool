@@ -14,6 +14,7 @@ services:
       # Add database folders to dev container
       - db-root:/databases/db-root/:ro
       - db-tenant:/databases/db-tenant/:ro
+      - ${HOME}/.claude:/home/opam/.claude
     environment:
       # Configure ssh and git for self contained development environment
       SSH_AUTH_SOCK: ""
