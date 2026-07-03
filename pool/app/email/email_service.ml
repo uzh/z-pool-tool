@@ -391,8 +391,20 @@ module Job = struct
 
   let send =
     let open Utils.Lwt_result.Infix in
-    let increment_smtp_bounce = Repo_sql.Contact.increment_smtp_bounce in
-    let reset_smtp_bounce = Repo_sql.Contact.reset_smtp_bounce in
+    let is_admin label email =
+      Pool_user.find_by_email_opt label email
+      ||> CCOption.map_or ~default:false Pool_user.is_admin
+    in
+    let increment_smtp_bounce label email =
+      match%lwt is_admin label email with
+      | true -> Repo_sql.Admin.increment_smtp_bounce label email
+      | false -> Repo_sql.Contact.increment_smtp_bounce label email
+    in
+    let reset_smtp_bounce label email =
+      match%lwt is_admin label email with
+      | true -> Repo_sql.Admin.reset_smtp_bounce label email
+      | false -> Repo_sql.Contact.reset_smtp_bounce label email
+    in
     let is_recipient_not_found msg =
       (*
          Error Documentation:

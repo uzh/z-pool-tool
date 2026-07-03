@@ -507,3 +507,39 @@ module Contact = struct
 
   let reset_smtp_bounce pool email = Database.exec pool reset_smtp_bounce_request email
 end
+
+module Admin = struct
+  let increment_smtp_bounce_request =
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE pool_admins
+      INNER JOIN user_users
+        ON pool_admins.user_uuid = user_users.uuid
+      SET
+        pool_admins.smtp_bounces_count =
+          LEAST(pool_admins.smtp_bounces_count + 1, 32767)
+      WHERE user_users.email = ?
+        AND user_users.admin = 1
+    |sql}
+    |> Pool_user.Repo.EmailAddress.t ->. Caqti_type.unit
+  ;;
+
+  let increment_smtp_bounce pool email =
+    Database.exec pool increment_smtp_bounce_request email
+  ;;
+
+  let reset_smtp_bounce_request =
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE pool_admins
+      INNER JOIN user_users
+        ON pool_admins.user_uuid = user_users.uuid
+      SET pool_admins.smtp_bounces_count = 0
+      WHERE user_users.email = ?
+        AND user_users.admin = 1
+    |sql}
+    |> Pool_user.Repo.EmailAddress.t ->. Caqti_type.unit
+  ;;
+
+  let reset_smtp_bounce pool email = Database.exec pool reset_smtp_bounce_request email
+end
