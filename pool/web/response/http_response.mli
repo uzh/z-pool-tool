@@ -91,6 +91,11 @@ module Htmx : sig
     -> Pool_message.Error.t
     -> [> Html_types.div ] Tyxml_html.elt
 
+  val error_notification
+    :  Pool_common.Language.t
+    -> Pool_message.Error.t
+    -> [> Html_types.div ] Tyxml_html.elt
+
   val of_html : ?status:Opium.Status.t -> 'a Tyxml_html.elt -> Rock.Response.t
   val of_html_list : ?status:Opium.Status.t -> 'a Tyxml_html.elt list -> Rock.Response.t
 

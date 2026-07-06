@@ -68,6 +68,59 @@ end = struct
   let effects = Admin.Guard.Access.create
 end
 
+module CreateOperator : sig
+  include Common.CommandSig
+
+  type t =
+    { email : Pool_user.EmailAddress.t
+    ; firstname : Pool_user.Firstname.t
+    ; lastname : Pool_user.Lastname.t
+    }
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> ?id:Admin.Id.t
+    -> password:Pool_user.Password.Plain.t
+    -> t
+    -> (Pool_event.t list, Pool_message.Error.t) result
+
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
+end = struct
+  type t =
+    { email : Pool_user.EmailAddress.t
+    ; firstname : Pool_user.Firstname.t
+    ; lastname : Pool_user.Lastname.t
+    }
+
+  let command email firstname lastname = { email; firstname; lastname }
+
+  let schema =
+    Pool_conformist.(
+      make
+        Field.
+          [ Pool_user.EmailAddress.schema ()
+          ; Pool_user.Firstname.schema ()
+          ; Pool_user.Lastname.schema ()
+          ]
+        command)
+  ;;
+
+  let handle ?(tags = Logs.Tag.empty) ?id ~password { email; firstname; lastname } =
+    Logs.info ~src (fun m -> m "Handle command CreateOperator" ~tags);
+    let admin : Admin.create =
+      { id; Admin.email; password; firstname; lastname; roles = [ `Operator, None ] }
+    in
+    Ok [ Admin.Created admin |> Pool_event.admin ]
+  ;;
+
+  let decode data =
+    Pool_conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_message.to_conformist_error
+  ;;
+
+  let effects = Admin.Guard.Access.create
+end
+
 module Update : sig
   include Common.CommandSig
 

@@ -88,54 +88,115 @@ let create_operator req =
   let tenant_id =
     HttpUtils.get_field_router_param req Field.Tenant |> Pool_tenant.Id.of_string
   in
-  let redirect_path = pool_path ~id:tenant_id () in
+  let redirect_path = pool_path ~id:tenant_id ~suffix:"operator" () in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result { Pool_context.language; user; _ } =
+  let result ({ Pool_context.language; user; _ } as context) =
+    let tags = Pool_context.Logger.Tags.req req in
+    let* tenant = Pool_tenant.find tenant_id in
+    let tenant_db = tenant.Pool_tenant.database_label in
+    let* email =
+      HttpUtils.find_in_urlencoded
+        ~error:Error.EmailAddressMissingAdmin
+        Field.Email
+        urlencoded
+      |> Lwt_result.lift
+      >== Pool_user.EmailAddress.create
+    in
+    let%lwt existing_user = Pool_user.find_by_email_opt tenant_db email in
+    match existing_user with
+    | Some existing when Pool_user.is_admin existing ->
+      let* admin = Admin.find tenant_db (Admin.Id.of_user existing.Pool_user.id) in
+      Page.Root.Tenant.operator_existing_admin_modal context tenant_id admin
+      |> Response.Htmx.of_html
+      |> Lwt_result.return
+    | Some existing ->
+      let* contact = Contact.find tenant_db (Contact.Id.of_user existing.Pool_user.id) in
+      Page.Root.Tenant.operator_existing_contact_modal context tenant contact
+      |> Response.Htmx.of_html
+      |> Lwt_result.return
+    | None ->
+      let id = Admin.Id.create () in
+      let* admin_events =
+        let open Cqrs_command.Admin_command.CreateOperator in
+        let* cmd = decode urlencoded |> Lwt_result.lift in
+        let password =
+          (* Random dummy password; the operator sets their own via the password
+             reset link sent below. *)
+          Format.asprintf "%s-N1!" (Sihl.Random.base64 32)
+          |> Pool_user.Password.Plain.create
+        in
+        handle ~id ~tags ~password cmd |> Lwt_result.lift
+      in
+      let%lwt () = Pool_event.handle_events ~tags tenant_db user admin_events in
+      let* reset_email =
+        let* admin_user =
+          Pool_user.find_by_email_opt tenant_db email
+          ||> CCOption.to_result (Error.NotFound Field.Admin)
+        in
+        Message_template.PasswordReset.create
+          tenant_db
+          language
+          (Message_template.Tenant tenant)
+          admin_user
+      in
+      (* Dispatch the email on the root queue so it is delivered through the
+         root SMTP configuration; the tenant SMTP may not be set up yet. *)
+      let%lwt () =
+        Pool_event.handle_event
+          ~tags
+          Database.Pool.Root.label
+          user
+          (Email.sent reset_email |> Pool_event.email)
+      in
+      Response.Htmx.redirect
+        redirect_path
+        ~actions:[ Message.set ~success:[ Success.Created Field.Operator ] ]
+      |> Lwt_result.ok
+  in
+  (* On error, keep the modal placeholder alive (the form targets it) and show
+     the error as a notification. *)
+  let result ({ Pool_context.language; _ } as context) =
+    let tags = Pool_context.Logger.Tags.req req in
+    result context
+    ||> CCResult.get_lazy (fun err ->
+      let err = Pool_common.Utils.with_log_error ~src ~tags err in
+      Response.Htmx.of_html_list
+        [ Response.Htmx.error_notification language err
+        ; Component.Modal.create_placeholder Page.Root.Tenant.operator_modal_id
+        ])
+    ||> CCResult.return
+  in
+  Response.Htmx.handle ~src req result
+;;
+
+let promote_operator req =
+  let tenant_id =
+    HttpUtils.get_field_router_param req Field.Tenant |> Pool_tenant.Id.of_string
+  in
+  let redirect_path = pool_path ~id:tenant_id ~suffix:"operator" () in
+  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let result { Pool_context.user; _ } =
     Response.bad_request_on_error ~urlencoded manage_operators
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let id = Admin.Id.create () in
     let* tenant = Pool_tenant.find tenant_id in
     let tenant_db = tenant.Pool_tenant.database_label in
-    let validate_user () =
-      Sihl.Web.Request.urlencoded Field.(Email |> show) req
-      ||> CCOption.to_result Error.EmailAddressMissingAdmin
-      >== Pool_user.EmailAddress.create
-      >>= HttpUtils.validate_email_existance tenant_db
+    let* admin =
+      HttpUtils.find_in_urlencoded Field.Admin urlencoded
+      |> Lwt_result.lift
+      >>= fun id -> Admin.find tenant_db (Admin.Id.of_string id)
     in
-    let events =
-      let open Utils.Lwt_result.Infix in
-      let open Cqrs_command.Admin_command.CreateAdmin in
-      let* cmd = decode urlencoded |> Lwt_result.lift in
-      let user : Pool_user.t =
-        { Pool_user.id = Admin.Id.to_user id
-        ; email = cmd.Cqrs_command.User_command.email
-        ; firstname = cmd.Cqrs_command.User_command.firstname
-        ; lastname = cmd.Cqrs_command.User_command.lastname
-        ; status = Pool_user.Status.Active
-        ; admin = Pool_user.IsAdmin.create true
-        ; confirmed = Pool_user.Confirmed.create false
-        }
-      in
-      let%lwt token = Email.create_token tenant_db user.Pool_user.email in
-      let%lwt dispatch =
-        Message_template.AdminAccountCreated.create tenant_db language tenant user token
-      in
-      let* admin_events =
-        handle ~id ~roles:[ `Operator, None ] ~tags cmd |> Lwt_result.lift
-      in
-      Lwt_result.return (admin_events @ email_verification_events id token dispatch cmd)
+    let* events =
+      let open Cqrs_command.Guardian_command in
+      let target_id = Admin.id admin |> Guard.Uuid.actor_of Admin.Id.value in
+      GrantRoles.handle ~tags { target_id; roles = [ `Operator, None ] }
+      |> Lwt_result.lift
     in
-    let handle events =
-      events |> Pool_event.handle_events ~tags tenant_db user |> Lwt_result.ok
-    in
-    let return_to_overview () =
-      Http_utils.redirect_to_with_actions
-        redirect_path
-        [ Message.set ~success:[ Success.Created Field.Operator ] ]
-    in
-    let open Utils.Lwt_result.ParallelInfix in
-    validate_user () >> events >>= handle |>> return_to_overview
+    let%lwt () = Pool_event.handle_events ~tags tenant_db user events in
+    Http_utils.redirect_to_with_actions
+      redirect_path
+      [ Message.set ~success:[ Success.RoleAssigned ] ]
+    |> Lwt_result.ok
   in
   Response.handle ~src req result
 ;;
