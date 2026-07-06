@@ -27,6 +27,7 @@ let find = Repo.find
 let find_by = Repo.find_by
 let count_workable = Repo.count_workable
 let count_all_workable = Repo.count_all_workable
+let count_recently_failed = Repo.count_recently_failed
 let find_instances_by_entity = Repo_mapping.find_instances_by_entity
 let find_related = Repo_mapping.find_related
 

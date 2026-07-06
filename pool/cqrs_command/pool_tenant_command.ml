@@ -134,7 +134,7 @@ type edit_details =
   { title : Pool_tenant.Title.t
   ; description : Pool_tenant.Description.t option
   ; url : Pool_tenant.Url.t
-  ; status : Database.Status.t option
+  ; maintenance : bool
   ; default_language : Pool_common.Language.t
   ; styles : Pool_tenant.Styles.Write.t option
   ; icon : Pool_tenant.Icon.Write.t option
@@ -149,6 +149,7 @@ module EditDetails : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?system_event_id:System_event.Id.t
+    -> current_status:Database.Status.t
     -> Pool_tenant.Write.t
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -162,7 +163,7 @@ end = struct
         title
         description
         url
-        status
+        maintenance
         default_language
         styles
         icon
@@ -173,7 +174,7 @@ end = struct
     { title
     ; description
     ; url
-    ; status
+    ; maintenance
     ; default_language
     ; styles
     ; icon
@@ -190,7 +191,10 @@ end = struct
           [ Pool_tenant.Title.schema ()
           ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
-          ; Conformist.optional @@ Database.Status.schema ()
+          ; Pool_model.Base.Boolean.schema
+              ~default:false
+              Pool_message.Field.TenantMaintenanceFlag
+              ()
           ; Pool_common.Language.schema ()
           ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
           ; Conformist.optional @@ Pool_tenant.Icon.Write.schema ()
@@ -204,16 +208,28 @@ end = struct
   let handle
         ?(tags = Logs.Tag.empty)
         ?system_event_id
+        ~current_status
         (tenant : Pool_tenant.Write.t)
         (command : t)
     =
     Logs.info ~src (fun m -> m "Handle command EditDetails" ~tags);
+    (* The checkbox only toggles between [Maintenance] and [Active]; statuses
+       managed by the system (migrations, connection issues, ...) are left
+       untouched. *)
+    let status =
+      let open Database.Status in
+      match[@warning "-4"] command.maintenance, current_status with
+      | true, Maintenance -> None
+      | true, _ -> Some Maintenance
+      | false, Maintenance -> Some Active
+      | false, _ -> None
+    in
     let update =
       Pool_tenant.
         { title = command.title
         ; description = command.description
         ; url = command.url
-        ; status = command.status
+        ; status
         ; styles = command.styles
         ; icon = command.icon
         ; email_logo = command.email_logo

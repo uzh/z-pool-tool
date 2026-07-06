@@ -57,7 +57,13 @@ let update req command success_message =
         match command with
         | `EditDetail ->
           let open CCResult.Infix in
-          EditDetails.(decode urlencoded >>= handle ~tags tenant_model) |> lift
+          let current_status =
+            Pool_tenant.Write.database_label tenant_model
+            |> Database.Pool.Tenant.find_status_by_label
+            |> CCOption.get_or ~default:Database.Status.Active
+          in
+          EditDetails.(decode urlencoded >>= handle ~tags ~current_status tenant_model)
+          |> lift
         | `EditDatabase ->
           let open UpdateDatabase in
           let* { database_url; database_label } = decode urlencoded |> lift in
@@ -66,7 +72,7 @@ let update req command success_message =
       in
       let files = logo_files @ uploaded_files in
       (files |> File.multipart_form_data_to_urlencoded) @ urlencoded
-      |> HttpUtils.format_request_boolean_values [ TenantDisabledFlag |> show ]
+      |> HttpUtils.format_request_boolean_values [ TenantMaintenanceFlag |> show ]
       |> events_list
       >|> HttpUtils.File.cleanup_upload Database.Pool.Root.label files
     in

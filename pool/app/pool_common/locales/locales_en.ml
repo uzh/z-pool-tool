@@ -318,7 +318,7 @@ let rec field_to_string =
   | TenantDisabledFlag -> "disabled"
   | TenantId -> "tenant identifier"
   | TenantLogos -> "tenant logos"
-  | TenantMaintenanceFlag -> "maintenance flag"
+  | TenantMaintenanceFlag -> "maintenance mode"
   | TenantPool -> "tenant pool"
   | TermsAccepted -> "accept"
   | TermsAcceptedCount -> "terms and conditions accepted"

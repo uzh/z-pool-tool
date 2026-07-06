@@ -401,6 +401,12 @@ When inviting contacts, the filter will prefer the overriding value if both are 
     {|Using plain text email as a fallback ensures universal readability and accessibility. You can copy the rich text from above by using the button on the top right corner of this textarea.
 Make sure to show links and URLs as plain text.
   |}
+  | EmailServiceFailingNotification count ->
+    Format.asprintf
+      "The email service reported %d failed email %s within the last 24 hours. Some \
+       emails may not have been delivered."
+      count
+      (if count = 1 then "" else "s")
   | ExperimentAssignment ->
     "All assignments of contacts to sessions of this experiment, sorted by session."
   | ExperimentCallbackUrl ->
@@ -769,6 +775,9 @@ Only sessions with open spots can be selected.|}
   | TenantDatabaseUrl ->
     {|The database URL, according to the following scheme:
      mariadb://<user>:<pw>@<host>:<port>/<database>|}
+  | TenantMaintenanceFlag ->
+    "If enabled, the tenant cannot be accessed and a maintenance page is displayed to \
+     all users."
   | TenantUrl -> "The URL of the tenant without protocol, e.g.: pool.uzh.ch"
   | TestPhoneNumber ->
     "Please provide a phone number where we can send a single test message to verify the \

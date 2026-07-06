@@ -445,9 +445,9 @@ let[@warning "-4"] update_tenant_details () =
       let open CCResult.Infix in
       let open Pool_tenant_command.EditDetails in
       Data.urlencoded
-      |> HttpUtils.format_request_boolean_values Field.[ TenantDisabledFlag |> show ]
+      |> HttpUtils.format_request_boolean_values Field.[ TenantMaintenanceFlag |> show ]
       |> decode
-      >>= handle ~system_event_id tenant
+      >>= handle ~system_event_id ~current_status:Database.Status.Active tenant
     in
     let expected =
       let open Pool_tenant in

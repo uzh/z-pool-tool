@@ -320,7 +320,7 @@ let rec field_to_string =
   | TenantDisabledFlag -> "Deaktiviert"
   | TenantId -> "Tenant Identifier"
   | TenantLogos -> "Tenant Logos"
-  | TenantMaintenanceFlag -> "Wartungsflag"
+  | TenantMaintenanceFlag -> "Wartungsmodus"
   | TenantPool -> "Tenant Pool"
   | TermsAccepted -> "Akzeptieren"
   | TermsAcceptedCount -> "Teilnahmebedingungen akzeptiert"
