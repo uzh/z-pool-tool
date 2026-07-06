@@ -174,15 +174,18 @@ let run ({ database_label; label; scheduled_time; status; _ } as schedule : t) =
       match scheduled_time, status with
       | Every _, Active -> process schedule
       | At time, Active when Ptime.is_later ~than:(Utils.Ptime.now ()) time ->
+        Lwt.return `Rerun
+      | At _, Active ->
         let%lwt () =
           safely "store running status" (fun () ->
             Registered.update_status Status.Running schedule)
         in
-        process schedule
+        let%lwt () = run schedule in
+        Lwt.return `Stop
       | (Every _ | At _), ((Paused | Failed) as status) ->
         let%lwt () = notify status in
         Lwt.return `Stop
-      | (Every _ | At _), (Active | Finished | Running | Stopped) -> Lwt.return `Stop
+      | (Every _ | At _), (Finished | Running | Stopped) -> Lwt.return `Stop
     in
     (* Catch per iteration (not around the recursion) so that an unexpected
        exception - e.g. an unreachable database - never terminates the loop. *)
@@ -198,7 +201,7 @@ let run ({ database_label; label; scheduled_time; status; _ } as schedule : t) =
            Lwt.return `Rerun)
     in
     match next with
-    | `Rerun -> Lwt_unix.sleep delay >|> loop
+    | `Rerun -> Lwt_unix.sleep (run_in scheduled_time) >|> loop
     | `Stop -> Lwt.return_unit
   in
   loop ()
