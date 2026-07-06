@@ -310,6 +310,27 @@ let reset_pending_request =
 
 let reset_pending_jobs label = Database.exec label reset_pending_request ()
 
+(* Jobs stay invisible to [workable_where] once polled. If the worker lost the
+   database connection while processing them, they would be stuck until the
+   next restart. Periodically release jobs that were polled a while ago but
+   never completed. The interval must stay well above the longest expected
+   job duration to avoid handling a job twice. *)
+let reset_stale_pending_request =
+  [%string
+    {sql|
+      UPDATE %{sql_table `Current}
+      SET
+        polled_at = NULL,
+        handled_at = NULL
+      WHERE status = 'pending'
+        AND polled_at IS NOT NULL
+        AND polled_at < NOW() - INTERVAL 15 MINUTE
+    |sql}]
+  |> Caqti_type.(unit ->. unit)
+;;
+
+let reset_stale_pending_jobs label = Database.exec label reset_stale_pending_request ()
+
 let delete_request =
   [%string
     {sql|
