@@ -333,11 +333,6 @@ module Guard : sig
   end
 end
 
-module Contact : sig
-  val increment_smtp_bounce : Database.Label.t -> Pool_user.EmailAddress.t -> unit Lwt.t
-  val reset_smtp_bounce : Database.Label.t -> Pool_user.EmailAddress.t -> unit Lwt.t
-end
-
 type verification_event =
   | Created of Pool_user.EmailAddress.t * Pool_token.t * Pool_user.Id.t
   | EmailVerified of unverified t

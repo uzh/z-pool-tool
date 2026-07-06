@@ -130,6 +130,58 @@ let update_request =
 
 let update label = Database.exec label update_request
 
+let increment_smtp_bounce_request =
+  (* the [user_users.admin] predicate in each join updates either the contact
+     or the admin record; a contact whose new count reaches 5 is also paused
+     and its paused_version incremented. *)
+  {sql|
+    UPDATE user_users
+    LEFT JOIN pool_contacts
+      ON pool_contacts.user_uuid = user_users.uuid
+      AND user_users.admin = 0
+    LEFT JOIN pool_admins
+      ON pool_admins.user_uuid = user_users.uuid
+      AND user_users.admin = 1
+    SET
+      pool_contacts.smtp_bounces_count =
+        LEAST(pool_contacts.smtp_bounces_count + 1, 32767),
+      pool_contacts.paused =
+        CASE WHEN pool_contacts.smtp_bounces_count + 1 >= 5 THEN 1
+             ELSE pool_contacts.paused
+        END,
+      pool_contacts.paused_version =
+        CASE WHEN pool_contacts.smtp_bounces_count + 1 >= 5
+             THEN pool_contacts.paused_version + 1
+             ELSE pool_contacts.paused_version
+        END,
+      pool_admins.smtp_bounces_count =
+        LEAST(pool_admins.smtp_bounces_count + 1, 32767)
+    WHERE user_users.email = ?
+  |sql}
+  |> EmailAddress.t ->. Caqti_type.unit
+;;
+
+let increment_smtp_bounce label = Database.exec label increment_smtp_bounce_request
+
+let reset_smtp_bounce_request =
+  {sql|
+    UPDATE user_users
+    LEFT JOIN pool_contacts
+      ON pool_contacts.user_uuid = user_users.uuid
+      AND user_users.admin = 0
+    LEFT JOIN pool_admins
+      ON pool_admins.user_uuid = user_users.uuid
+      AND user_users.admin = 1
+    SET
+      pool_contacts.smtp_bounces_count = 0,
+      pool_admins.smtp_bounces_count = 0
+    WHERE user_users.email = ?
+  |sql}
+  |> EmailAddress.t ->. Caqti_type.unit
+;;
+
+let reset_smtp_bounce label = Database.exec label reset_smtp_bounce_request
+
 let register_migration () =
   Database.Migration.register_migration (Repo_migration.migration ())
 ;;
