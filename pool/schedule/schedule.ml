@@ -18,7 +18,8 @@ module Registered = struct
     |> Lwt_list.iter_s (fun (_, schedule) -> fcn schedule)
   ;;
 
-  let store label = ScheduleMap.find label !registered |> Repo.upsert
+  let find_opt label = ScheduleMap.find_opt label !registered
+  let store label = find_opt label |> CCOption.map_or ~default:Lwt.return_unit Repo.upsert
 
   let store_all () =
     !registered |> ScheduleMap.to_list |> Lwt_list.iter_s (snd %> Repo.upsert)
@@ -94,21 +95,44 @@ let run ({ database_label; label; scheduled_time; status; _ } as schedule : t) =
     Logs.debug ~src (fun m -> m ~tags "%s: Run is %s" label (Status.show status));
     Lwt.return_unit
   in
+  (* Bookkeeping writes go to the root database. When it is unreachable they must
+     not kill the schedule loop: log the exception and continue. *)
+  let safely action fcn =
+    Lwt.catch fcn (fun exn ->
+      let prefix = Format.asprintf "Schedule %s: %s" label action in
+      Logger.log_exception ~prefix ~tags ~src exn;
+      Lwt.return_unit)
+  in
   let run ({ label; scheduled_time; fcn; _ } as schedule) =
     Logs.debug ~src (fun m -> m ~tags "%s: Run in %f seconds" label delay);
-    let%lwt () =
+    let%lwt succeeded =
       Lwt.catch
-        (fun () -> fcn ())
+        (fun () -> fcn () ||> CCFun.const true)
         (fun exn ->
            let prefix = Format.asprintf "Running schedule %s" label in
-           let%lwt () = Registered.update_status Status.Failed schedule in
            Logger.log_exception ~prefix ~tags ~src exn;
-           Lwt.return_unit)
+           let%lwt () =
+             safely "store failed status" (fun () ->
+               Registered.update_status Status.Failed schedule)
+           in
+           Lwt.return_false)
     in
-    Registered.update_run_status schedule scheduled_time
+    let%lwt () =
+      let has_failed =
+        Registered.find_opt label
+        |> CCOption.map_or ~default:false (fun ({ status; _ } : t) ->
+          Status.(equal Failed status))
+      in
+      if succeeded && has_failed
+      then
+        safely "restore active status" (fun () ->
+          Registered.update_status Status.Active schedule)
+      else Lwt.return_unit
+    in
+    safely "store run status" (fun () ->
+      Registered.update_run_status schedule scheduled_time)
   in
   let rec loop () : unit Lwt.t =
-    let rerun () = Lwt_unix.sleep delay >|> loop in
     let database_ok () =
       let open Database in
       let open Status in
@@ -144,20 +168,38 @@ let run ({ database_label; label; scheduled_time; status; _ } as schedule : t) =
     let run_schedule () =
       let process schedule =
         let%lwt () = run schedule in
-        rerun ()
+        Lwt.return `Rerun
       in
       let open Status in
       match scheduled_time, status with
       | Every _, Active -> process schedule
       | At time, Active when Ptime.is_later ~than:(Utils.Ptime.now ()) time ->
-        let%lwt () = Registered.update_status Status.Running schedule in
+        let%lwt () =
+          safely "store running status" (fun () ->
+            Registered.update_status Status.Running schedule)
+        in
         process schedule
-      | (Every _ | At _), ((Paused | Failed) as status) -> notify status
-      | (Every _ | At _), (Active | Finished | Running | Stopped) -> Lwt.return_unit
+      | (Every _ | At _), ((Paused | Failed) as status) ->
+        let%lwt () = notify status in
+        Lwt.return `Stop
+      | (Every _ | At _), (Active | Finished | Running | Stopped) -> Lwt.return `Stop
     in
-    match%lwt database_ok () with
-    | true -> run_schedule ()
-    | false -> rerun ()
+    (* Catch per iteration (not around the recursion) so that an unexpected
+       exception - e.g. an unreachable database - never terminates the loop. *)
+    let%lwt next =
+      Lwt.catch
+        (fun () ->
+           match%lwt database_ok () with
+           | true -> run_schedule ()
+           | false -> Lwt.return `Rerun)
+        (fun exn ->
+           let prefix = Format.asprintf "Schedule %s: loop iteration" label in
+           Logger.log_exception ~prefix ~tags ~src exn;
+           Lwt.return `Rerun)
+    in
+    match next with
+    | `Rerun -> Lwt_unix.sleep delay >|> loop
+    | `Stop -> Lwt.return_unit
   in
   loop ()
 ;;
