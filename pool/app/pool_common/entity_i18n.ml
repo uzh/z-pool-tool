@@ -132,6 +132,10 @@ type t =
   | TermsAndConditionsUpdated
   | TenantMaintenanceText
   | TenantMaintenanceTitle
+  | TenantOperatorExistingAdminText
+  | TenantOperatorExistingAdminTitle
+  | TenantOperatorExistingContactText
+  | TenantOperatorExistingContactTitle
   | TextTemplates
   | TimeWindowDetailTitle of string
   | TotalSentInvitations

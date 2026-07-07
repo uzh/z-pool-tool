@@ -201,6 +201,15 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
      und akzeptieren Sie diese, um fortzufahren."
   | TenantMaintenanceText -> "Bitte versuchen Sie es in Kürze erneut."
   | TenantMaintenanceTitle -> "Wartungsarbeiten"
+  | TenantOperatorExistingAdminText ->
+    "Ein Administrator mit dieser E-Mail-Adresse existiert bereits in diesem Pool. \
+     Möchten Sie ihm Operator-Rechte erteilen?"
+  | TenantOperatorExistingAdminTitle -> "Benutzer existiert bereits"
+  | TenantOperatorExistingContactText ->
+    "Ein Kontakt mit dieser E-Mail-Adresse existiert bereits in diesem Pool. Befördern \
+     Sie den Kontakt zuerst auf dessen Detailseite zu einem Administrator. Anschliessend \
+     können ihm hier Operator-Rechte erteilt werden."
+  | TenantOperatorExistingContactTitle -> "Kontakt existiert bereits"
   | TextTemplates -> "Textelemente"
   | TimeWindowDetailTitle string -> string
   | TotalSentInvitations -> "Total eingeladene Kontakte"

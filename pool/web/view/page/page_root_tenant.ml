@@ -220,6 +220,84 @@ let list tenant_list (Pool_context.{ language; _ } as context) =
     ]
 ;;
 
+let operator_modal_id = "operator-modal"
+
+let operator_existing_admin_modal
+      Pool_context.{ language; csrf; _ }
+      tenant_id
+      (admin : Admin.t)
+  =
+  let open Pool_common in
+  let title lang = Utils.text_to_string lang I18n.TenantOperatorExistingAdminTitle in
+  let html =
+    div
+      ~a:[ a_class [ "stack" ] ]
+      [ p [ txt (Utils.text_to_string language I18n.TenantOperatorExistingAdminText) ]
+      ; p
+          [ strong
+              [ txt
+                  (Format.asprintf
+                     "%s (%s)"
+                     (Admin.fullname admin)
+                     (Admin.email_address admin |> Pool_user.EmailAddress.value))
+              ]
+          ]
+      ; form
+          ~a:
+            [ a_method `Post
+            ; a_action
+                (pool_path ~id:tenant_id ~suffix:"promote-operator" ()
+                 |> Sihl.Web.externalize_path)
+            ]
+          [ csrf_element csrf ()
+          ; input_element
+              ~value:(Admin.id admin |> Admin.Id.value)
+              language
+              `Hidden
+              Field.Admin
+          ; div
+              ~a:[ a_class [ "flexrow"; "justify-end" ] ]
+              [ submit_element language Control.(Assign (Some Field.Operator)) () ]
+          ]
+      ]
+  in
+  Component.Modal.create ~active:true language title operator_modal_id html
+;;
+
+let operator_existing_contact_modal
+      Pool_context.{ language; _ }
+      (tenant : Pool_tenant.t)
+      contact
+  =
+  let open Pool_common in
+  let title lang = Utils.text_to_string lang I18n.TenantOperatorExistingContactTitle in
+  let contact_url =
+    Http_utils.Url.Admin.contact_path ~id:(Contact.id contact) ()
+    |> Pool_tenant.create_public_url tenant.Pool_tenant.url
+  in
+  let html =
+    div
+      ~a:[ a_class [ "stack" ] ]
+      [ p [ txt (Utils.text_to_string language I18n.TenantOperatorExistingContactText) ]
+      ; p
+          [ a
+              ~a:
+                [ a_href contact_url
+                ; a_target "_blank"
+                ; a_rel [ `Noopener; `Noreferrer ]
+                ]
+              [ txt (Contact.fullname contact)
+              ; txt
+                  (Format.asprintf
+                     " (%s)"
+                     (Contact.email_address contact |> Pool_user.EmailAddress.value))
+              ]
+          ]
+      ]
+  in
+  Component.Modal.create ~active:true language title operator_modal_id html
+;;
+
 let manage_operators { Pool_tenant.id; _ } operators Pool_context.{ language; csrf; _ } =
   let operator_list =
     Page_admin_admins.static_overview ~disable_edit:true language operators
@@ -234,21 +312,23 @@ let manage_operators { Pool_tenant.id; _ } operators Pool_context.{ language; cs
           ]
       ; form
           ~a:
-            [ a_action
-                (HttpUtils.Url.Root.pool_path ~id ~suffix:"create-operator" ()
-                 |> Sihl.Web.externalize_path)
-            ; a_method `Post
-            ; a_class [ "stack" ]
-            ]
+            (let action =
+               HttpUtils.Url.Root.pool_path ~id ~suffix:"create-operator" ()
+               |> Sihl.Web.externalize_path
+             in
+             a_action action
+             :: a_method `Post
+             :: Htmx.
+                  [ hx_trigger "submit"
+                  ; hx_post action
+                  ; hx_swap "outerHTML"
+                  ; hx_target (Format.asprintf "#%s" operator_modal_id)
+                  ; a_class [ "stack" ]
+                  ])
           ((csrf_element csrf ()
             :: CCList.map
                  (fun (field, input) -> input_element ~required:true language input field)
-                 Field.
-                   [ Email, `Email
-                   ; Password, `Password
-                   ; Firstname, `Text
-                   ; Lastname, `Text
-                   ])
+                 Field.[ Email, `Email; Firstname, `Text; Lastname, `Text ])
            @ [ div
                  ~a:[ a_class [ "flexrow"; "align-center"; "flex-gap" ] ]
                  [ div
@@ -276,6 +356,7 @@ let manage_operators { Pool_tenant.id; _ } operators Pool_context.{ language; cs
           |> txt
         ]
     ; div ~a:[ a_class [ "stack-lg" ] ] [ operator_list; create_operator_form ]
+    ; Component.Modal.create_placeholder operator_modal_id
     ]
 ;;
 

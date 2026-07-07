@@ -121,6 +121,7 @@ module Root = struct
     let title_text = App.app_name in
     let page_title = title (txt title_text) in
     let message = Message.create message language () in
+    let htmx_notification = div ~a:[ a_id Http_utils.Htmx.notification_id ] [] in
     let%lwt navbar_content =
       Navigation.create_root ?active_navigation Pool_context.{ context with language } []
     in
@@ -136,7 +137,7 @@ module Root = struct
       (body
          ~a:[ a_class body_tag_classnames ]
          [ App.navbar ~children:navbar_content query_parameters title_text
-         ; main_tag [ message; content ]
+         ; main_tag [ message; htmx_notification; content ]
          ; App.create_footer ()
          ; js_script_tag `IndexJs
          ; js_script_tag `AdminJs

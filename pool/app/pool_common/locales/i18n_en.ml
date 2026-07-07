@@ -199,6 +199,15 @@ let to_string = function
      continue."
   | TenantMaintenanceText -> "Please try again shortly."
   | TenantMaintenanceTitle -> "Maintenance"
+  | TenantOperatorExistingAdminText ->
+    "An administrator with this email address already exists in this pool. Do you want \
+     to grant them operator permissions?"
+  | TenantOperatorExistingAdminTitle -> "User already exists"
+  | TenantOperatorExistingContactText ->
+    "A contact with this email address already exists in this pool. Promote the contact \
+     to an administrator on its detail page first. Afterwards, operator permissions can \
+     be granted here."
+  | TenantOperatorExistingContactTitle -> "Contact already exists"
   | TextTemplates -> "text templates"
   | TimeWindowDetailTitle string -> string
   | TotalSentInvitations -> "Total invited contacts"

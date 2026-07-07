@@ -110,6 +110,10 @@ let () =
         ; test_case "update tenant database" `Quick Tenant_test.update_tenant_database
         ; test_case "create operator" `Quick Tenant_test.create_operator
         ; test_case
+            "create operator without password"
+            `Quick
+            Tenant_test.create_operator_without_password
+        ; test_case
             "create operator with verification email"
             `Quick
             Tenant_test.create_operator_with_verification_email

@@ -1012,6 +1012,10 @@ module Root = struct
         [ get "" ~middlewares:[ Access.read ] tenant_detail
         ; get ~middlewares:[ Access.read_operator ] "operator" manage_operators
         ; post "/create-operator" ~middlewares:[ Access.create_operator ] create_operator
+        ; post
+            "/promote-operator"
+            ~middlewares:[ Access.create_operator ]
+            promote_operator
         ; post "/update-detail" ~middlewares:[ Access.update ] Tenant_update.update_detail
         ; post
             "/update-database"
