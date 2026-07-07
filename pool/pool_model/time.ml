@@ -37,11 +37,16 @@ let parse_date str =
 let parse_date_from_calendar str =
   let open CCFun.Infix in
   let open CCResult.Infix in
-  str
-  |> CCString.split ~by:"T"
-  |> CCList.hd
-  |> parse_date
-  >>= Ptime.of_date %> CCOption.to_result Pool_message.(Error.Invalid Field.Date)
+  (* FullCalendar sends range bounds as ISO 8601 with the browser's UTC offset;
+     use the exact instant. Date-only strings fall back to midnight UTC. *)
+  match Ptime.of_rfc3339 str with
+  | Ok (time, _, _) -> Ok time
+  | Error _ ->
+    str
+    |> CCString.split ~by:"T"
+    |> CCList.hd
+    |> parse_date
+    >>= Ptime.of_date %> CCOption.to_result Pool_message.(Error.Invalid Field.Date)
 ;;
 
 let start_is_before_end ~start ~end_at =

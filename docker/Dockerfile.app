@@ -7,6 +7,7 @@ RUN microdnf install -y \
     mariadb-connector-c \
     openssl-libs \
     shadow-utils \
+    tzdata \
     && microdnf clean all
 
 RUN useradd -m -u 1000 -s /bin/bash app
@@ -29,6 +30,7 @@ USER app
 
 ENV SIHL_ENV=production
 ENV LOG_LEVEL=info
+ENV TZ=Europe/Zurich
 ENV ROOT_PATH=/app
 ENV PUBLIC_DIR=/app/public
 
