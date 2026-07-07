@@ -34,7 +34,7 @@ let make id ?(expires_in = Sihl.Time.OneDay) ?now ?(length = 80) data =
     | None -> failwith ("Could not parse expiry date for token with id " ^ id)
   in
   let status = Status.Active in
-  let created_at = Utils.Ptime.now () in
+  let created_at = now in
   { id; value; data; status; expires_at; created_at }
 ;;
 

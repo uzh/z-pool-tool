@@ -595,7 +595,10 @@ let () =
           [ test_case "zurich tz offsets across DST transitions" `Quick zurich_offsets
           ; test_case "zurich display formatting" `Quick zurich_formatting
           ; test_case "parse calendar range bounds" `Quick parse_date_from_calendar
-          ; test_case "rfc3339 output carries explicit UTC offset" `Quick rfc3339_stamps_utc
+          ; test_case
+              "rfc3339 output carries explicit UTC offset"
+              `Quick
+              rfc3339_stamps_utc
           ] )
     ]
 ;;

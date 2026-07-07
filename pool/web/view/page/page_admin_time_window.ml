@@ -18,7 +18,8 @@ module Partials = struct
   let row_classnames time_window =
     let check opt classname = if opt then Some classname else None in
     [ check
-        (Time_window.ends_at time_window |> Ptime.is_earlier ~than:(Pool_model.Time.now ()))
+        (Time_window.ends_at time_window
+         |> Ptime.is_earlier ~than:(Pool_model.Time.now ()))
         "bg-green-lighter"
     ]
     |> CCList.filter_map CCFun.id
