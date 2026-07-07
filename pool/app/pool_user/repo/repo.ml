@@ -161,7 +161,24 @@ let increment_smtp_bounce_request =
   |> EmailAddress.t ->. Caqti_type.unit
 ;;
 
-let increment_smtp_bounce label = Database.exec label increment_smtp_bounce_request
+let increment_smtp_bounce_root_request =
+  {sql|
+    UPDATE user_users
+    JOIN pool_admins ON pool_admins.user_uuid = user_users.uuid
+    SET pool_admins.smtp_bounces_count = LEAST(pool_admins.smtp_bounces_count + 1, 32767)
+    WHERE user_users.email = ?
+  |sql}
+  |> EmailAddress.t ->. Caqti_type.unit
+;;
+
+let increment_smtp_bounce label email =
+  Database.exec
+    label
+    (if Database.Pool.is_root label
+     then increment_smtp_bounce_root_request
+     else increment_smtp_bounce_request)
+    email
+;;
 
 let reset_smtp_bounce_request =
   {sql|
@@ -180,7 +197,24 @@ let reset_smtp_bounce_request =
   |> EmailAddress.t ->. Caqti_type.unit
 ;;
 
-let reset_smtp_bounce label = Database.exec label reset_smtp_bounce_request
+let reset_smtp_bounce_root_request =
+  {sql|
+    UPDATE user_users
+    JOIN pool_admins ON pool_admins.user_uuid = user_users.uuid
+    SET pool_admins.smtp_bounces_count = 0
+    WHERE user_users.email = ?
+  |sql}
+  |> EmailAddress.t ->. Caqti_type.unit
+;;
+
+let reset_smtp_bounce label email =
+  Database.exec
+    label
+    (if Database.Pool.is_root label
+     then reset_smtp_bounce_root_request
+     else reset_smtp_bounce_request)
+    email
+;;
 
 let register_migration () =
   Database.Migration.register_migration (Repo_migration.migration ())
