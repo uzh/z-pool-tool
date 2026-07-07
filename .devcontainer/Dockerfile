@@ -6,8 +6,8 @@ ENV SIHL_ENV=development
 USER root
 
 # NOTE: Pre-create volume folders for the correct ownership.
-RUN mkdir -p /workspace/_build /workspace/node_modules \
-  && chown -R opam:opam /workspace/_build /workspace/node_modules
+RUN mkdir -p /workspace/_build /workspace/node_modules /home/opam/.cache \
+  && chown -R opam:opam /workspace/_build /workspace/node_modules /home/opam/.cache
 
 # Install Node.js LTS
 RUN wget -qO- https://rpm.nodesource.com/setup_lts.x | bash - \

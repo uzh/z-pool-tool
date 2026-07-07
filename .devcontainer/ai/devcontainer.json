@@ -50,7 +50,8 @@
       },
       "extensions": [
         "GitHub.copilot",
-        "GitHub.copilot-chat"
+        "GitHub.copilot-chat",
+        "Anthropic.claude-code"
       ],
       "mcp": {
         "servers": {
