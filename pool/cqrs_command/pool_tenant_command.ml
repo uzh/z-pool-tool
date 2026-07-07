@@ -218,11 +218,10 @@ end = struct
        untouched. *)
     let status =
       let open Database.Status in
-      match[@warning "-4"] command.maintenance, current_status with
-      | true, Maintenance -> None
-      | true, _ -> Some Maintenance
-      | false, Maintenance -> Some Active
-      | false, _ -> None
+      match[@warning "-4"] current_status, command.maintenance with
+      | Active, true -> Some Maintenance
+      | Maintenance, false -> Some Active
+      | _, _ -> None
     in
     let update =
       Pool_tenant.

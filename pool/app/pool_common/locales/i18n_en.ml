@@ -403,7 +403,7 @@ Make sure to show links and URLs as plain text.
   |}
   | EmailServiceFailingNotification count ->
     Format.asprintf
-      "The email service reported %d failed email %s within the last 24 hours. Some \
+      "The email service reported %d failed email%s within the last 24 hours. Some \
        emails may not have been delivered."
       count
       (if count = 1 then "" else "s")

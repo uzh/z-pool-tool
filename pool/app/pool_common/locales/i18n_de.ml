@@ -413,7 +413,7 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   Achten Sie darauf, Links und URLs als reinen Text anzuzeigen.|}
   | EmailServiceFailingNotification count ->
     Format.asprintf
-      "Der E-Mail-Service hat in den letzten 24 Stunden %d fehlgeschlagene E-Mail %s \
+      "Der E-Mail-Service hat in den letzten 24 Stunden %d fehlgeschlagene E-Mail%s \
        gemeldet. Einige E-Mails wurden möglicherweise nicht zugestellt."
       count
       (if count = 1 then "" else "s")
