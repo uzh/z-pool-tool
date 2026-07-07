@@ -44,13 +44,12 @@ let login_post req =
       let handle_events = Pool_event.handle_events database_label user in
       let success () =
         HttpUtils.redirect_to_with_actions
-          "/login/verify"
+          (HttpUtils.retain_url_params req "/login/verify" |> Uri.to_string)
           [ Sihl.Web.Session.set
               [ "auth_id", auth.Authentication.id |> Authentication.Id.value ]
           ]
-        |> Lwt_result.ok
       in
-      events |> handle_events >|> success
+      events |> handle_events >|> success |> Lwt_result.ok
     | Helpers_login.DirectLogin login_user ->
       let success_and_redirect context_user =
         let redirect =
