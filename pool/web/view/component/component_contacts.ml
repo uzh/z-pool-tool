@@ -49,7 +49,10 @@ let external_data_ids language external_data_ids =
 
 let contact_lastname_firstname access_contact_profiles contact =
   let text = contact |> Contact.lastname_firstname |> txt in
-  match access_contact_profiles with
+  (* A contact promoted to admin has no profile page anymore (their
+     [pool_contacts] row was moved to [pool_contacts_promoted]) *)
+  let is_promoted = contact |> Contact.user |> Pool_user.is_admin in
+  match access_contact_profiles && not is_promoted with
   | true ->
     a
       ~a:
