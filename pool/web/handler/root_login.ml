@@ -6,6 +6,7 @@ module Response = Http_response
 
 let src = Logs.Src.create "handler.root.login"
 let root_login_path = "/root/login"
+let root_login_verify_path = "/root/login/verify"
 let root_entrypoint_path = Http_utils.Url.Root.pool_path ()
 let redirect_to_entrypoint = HttpUtils.redirect_to root_entrypoint_path
 
@@ -26,26 +27,6 @@ let login_get req =
   Response.handle ~src req result
 ;;
 
-let login_token_confirmation req =
-  let tags = Pool_context.Logger.Tags.req req in
-  let open Response in
-  let result ({ Pool_context.database_label; _ } as context) =
-    let* user, auth, (_ : Authentication.Token.t) =
-      Helpers_login.decode_2fa_confirmation database_label req ~tags
-      |> bad_request_on_error login_get
-    in
-    Page.Root.Login.token_confirmation
-      ~authentication_id:auth.Authentication.id
-      ?intended:(HttpUtils.find_intended_opt req)
-      ~email:(Pool_user.email user)
-      context
-    >|> General.create_root_layout ~active_navigation:"/root/login" context
-    ||> Sihl.Web.Response.of_html
-    |> Lwt_result.ok
-  in
-  Response.handle ~src req result
-;;
-
 let login_post req =
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
@@ -53,44 +34,76 @@ let login_post req =
     Response.bad_request_on_error ~urlencoded login_get
     @@
     let handle_events = Pool_event.handle_events database_label user in
-    let* user, auth, events =
+    let* (_ : Pool_user.t), auth, events =
       Helpers_login.create_2fa_login ~tags req context urlencoded
     in
     let success () =
-      Page.Root.Login.token_confirmation
-        ~authentication_id:auth.Authentication.id
-        ?intended:(HttpUtils.find_intended_opt req)
-        ~email:(Pool_user.email user)
-        context
-      >|> General.create_root_layout ~active_navigation:"/root/login" context
-      ||> Sihl.Web.Response.of_html
+      HttpUtils.redirect_to_with_actions
+        (HttpUtils.retain_url_params req root_login_verify_path |> Uri.to_string)
+        [ Sihl.Web.Session.set
+            [ "auth_id", auth.Authentication.id |> Authentication.Id.value ]
+        ]
     in
     events |> handle_events >|> success |> Lwt_result.ok
   in
   Response.handle ~src req result
 ;;
 
-let confirmation_post req =
+let login_verify_get req =
+  let result (Pool_context.{ database_label; _ } as context) =
+    let handle_auth auth_id user =
+      Page.Root.Login.token_confirmation
+        ~authentication_id:auth_id
+        ?intended:(HttpUtils.find_intended_opt req)
+        ~email:(Pool_user.email user)
+        context
+      >|> General.create_root_layout ~active_navigation:"/root/login" context
+      ||> Sihl.Web.Response.of_html
+      |> Lwt_result.ok
+    in
+    (match Sihl.Web.Session.find "auth_id" req with
+     | None -> Lwt_result.fail ()
+     | Some auth_id ->
+       Authentication.Id.of_string auth_id
+       |> Authentication.find_valid_by_id database_label
+       >|+ (fun (_, user) -> Authentication.Id.of_string auth_id, user)
+       >>= (fun (auth_id, user) -> handle_auth auth_id user)
+       >|- fun _ -> ())
+    >|> function
+    | Ok ok -> Lwt_result.return ok
+    | Error () ->
+      HttpUtils.redirect_to_with_actions
+        root_login_path
+        [ Message.set
+            ~warning:[ Warning.Warning "Your session has expired, please sign in again" ]
+        ]
+      |> Lwt_result.ok
+  in
+  Response.handle ~src req result
+;;
+
+let login_verify_post req =
   let open Response in
   let tags = Pool_context.Logger.Tags.req req in
-  let result { Pool_context.database_label; user; _ } =
-    let handle_events = Pool_event.handle_events database_label user in
-    let* user, auth, token =
-      Helpers_login.decode_2fa_confirmation database_label req ~tags
-      |> bad_request_on_error login_get
-    in
-    let* user, events =
-      Helpers_login.confirm_2fa_login ~tags user auth token req
-      |> bad_request_on_error login_token_confirmation
-    in
-    let success () =
+  let result context =
+    Helpers_login.verify_2fa_login ~tags context req
+    >|> function
+    | Helpers_login.Verified user ->
       HttpUtils.redirect_to_with_actions
         root_entrypoint_path
         [ Sihl.Web.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ] ]
-    in
-    events |> handle_events >|> success |> Lwt_result.ok
+      |> Lwt_result.ok
+    | Helpers_login.SessionExpired ->
+      HttpUtils.redirect_to_with_actions
+        root_login_path
+        [ Message.set
+            ~warning:[ Warning.Warning "Your session has expired, please sign in again" ]
+        ]
+      |> Lwt_result.ok
+    | Helpers_login.InvalidToken err ->
+      Lwt_result.fail err |> bad_request_on_error login_verify_get
   in
-  handle ~src req result
+  Response.handle ~src req result
 ;;
 
 let request_reset_password_get req =

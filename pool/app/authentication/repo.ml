@@ -7,14 +7,17 @@ module Repo_entity = struct
   module Channel = Model.SelectorType (Channel)
 
   let t =
-    let decode (id, (user_uuid, (channel, (token, ())))) =
-      Ok { id; user_uuid; channel; token }
+    let decode (id, (user_uuid, (channel, (token, (usage_count, ()))))) =
+      Ok { id; user_uuid; channel; token; usage_count = UsageCount.of_int usage_count }
     in
     let encode m : ('a Data.t, string) result =
-      Ok Data.[ m.id; m.user_uuid; m.channel; m.token ]
+      Ok Data.[ m.id; m.user_uuid; m.channel; m.token; UsageCount.value m.usage_count ]
     in
     let open Schema in
-    custom ~encode ~decode Caqti_type.[ Id.t; Pool_user.Repo.Id.t; Channel.t; string ]
+    custom
+      ~encode
+      ~decode
+      Caqti_type.[ Id.t; Pool_user.Repo.Id.t; Channel.t; string; int ]
   ;;
 end
 
@@ -23,6 +26,7 @@ let sql_select_columns =
   ; Entity.Id.sql_select_fragment ~field:"pool_authentication.user_uuid"
   ; "pool_authentication.channel"
   ; "pool_authentication.token"
+  ; "pool_authentication.usage_count"
   ]
 ;;
 
@@ -33,12 +37,14 @@ let insert_request =
       user_uuid,
       channel,
       token,
+      usage_count,
       valid_until
     ) VALUES (
       UNHEX(REPLACE($1, '-', '')),
       UNHEX(REPLACE($2, '-', '')),
       $3,
       $4,
+      $5,
       NOW() + INTERVAL 5 MINUTE
     ) ON DUPLICATE KEY UPDATE
       channel = $3,
@@ -58,8 +64,10 @@ let find_valid_by_id_request =
       FROM pool_authentication
       WHERE uuid = UNHEX(REPLACE($1, '-', ''))
       AND valid_until > NOW()
+      AND usage_count < %d
     |sql}
     (CCString.concat ", " sql_select_columns)
+    UsageCount.(value limit)
   |> Pool_common.Repo.Id.t ->? Repo_entity.t
 ;;
 
@@ -82,6 +90,19 @@ let delete_request =
 ;;
 
 let delete pool { id; _ } = Database.exec pool delete_request id
+
+let increase_usage_count_request =
+  {sql|
+    UPDATE pool_authentication
+    SET usage_count = usage_count + 1
+    WHERE uuid = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> Pool_common.Repo.Id.t ->. Caqti_type.unit
+;;
+
+let increase_usage_count pool { id; _ } =
+  Database.exec pool increase_usage_count_request id
+;;
 
 let reset_expired_request =
   {sql|

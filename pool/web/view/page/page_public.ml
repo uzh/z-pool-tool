@@ -55,11 +55,7 @@ let login_form
 ;;
 
 let login_token_confirmation ?intended ?authentication_id context =
-  Page_login.login_token_confirmation
-    ?authentication_id
-    ?intended
-    context
-    "/login-confirmation"
+  Page_login.login_token_confirmation ?authentication_id ?intended context "/login/verify"
 ;;
 
 let index

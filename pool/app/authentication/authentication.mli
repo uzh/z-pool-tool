@@ -21,11 +21,23 @@ module Token : sig
   val schema : unit -> (Pool_conformist.error_msg, t) Pool_conformist.Field.t
 end
 
+module UsageCount : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val value : t -> int
+  val of_int : int -> t
+  val limit : t
+end
+
 type t =
   { id : Id.t
   ; user_uuid : Pool_user.Id.t
   ; channel : Channel.t
   ; token : Token.t
+  ; usage_count : UsageCount.t
   }
 
 val equal : t -> t -> bool
@@ -43,6 +55,7 @@ val create
 type event =
   | Created of t
   | Deleted of t
+  | IncreaseUsageCount of t
   | ResetExpired
 
 val equal_event : event -> event -> bool

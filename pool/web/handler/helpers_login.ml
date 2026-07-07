@@ -261,3 +261,72 @@ let confirm_2fa_login ~tags user authentication token req =
   in
   Lwt_result.return (user, events)
 ;;
+
+(* Register a failed login attempt for [email], increasing the block duration and
+   notifying the user if the account gets (temporarily) suspended. Mirrors the
+   counter handling in [validate_login]. *)
+let increment_failed_login_attempt ~tags database_label email =
+  let open Pool_user.FailedLoginAttempt in
+  let%lwt login_attempts = Repo.find_opt database_label email in
+  let counter =
+    match login_attempts with
+    | Some { counter; _ } -> counter
+    | None -> Counter.init
+  in
+  let counter = Counter.increment counter in
+  let blocked_until = block_until counter in
+  let m =
+    match login_attempts with
+    | None -> create email counter blocked_until
+    | Some login_attempts -> { login_attempts with counter; blocked_until }
+  in
+  let%lwt () = Repo.insert database_label m in
+  notify_user database_label tags email blocked_until
+;;
+
+type verify_outcome =
+  | Verified of Pool_user.t
+  | InvalidToken of Pool_message.Error.t
+  | SessionExpired
+
+let verify_2fa_login ~tags { Pool_context.database_label; user = context_user; _ } req =
+  match Sihl.Web.Session.find "auth_id" req with
+  | None -> Lwt.return SessionExpired
+  | Some auth_id ->
+    Authentication.Id.of_string auth_id
+    |> Authentication.find_valid_by_id database_label
+    >|> (function
+     | Error _ -> Lwt.return SessionExpired
+     | Ok (auth, user) ->
+       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+       (match Cqrs_command.Login_command.Confirm2FaLogin.decode urlencoded with
+        | Error err -> Lwt.return (InvalidToken err)
+        | Ok (_, token) ->
+          confirm_2fa_login ~tags user auth token req
+          >|> (function
+           | Ok (user, events) ->
+             let%lwt () = Pool_event.handle_events database_label context_user events in
+             Lwt.return (Verified user)
+           | Error err ->
+             let%lwt () =
+               Pool_event.handle_events
+                 database_label
+                 context_user
+                 [ Authentication.IncreaseUsageCount auth |> Pool_event.authentication ]
+             in
+             let remaining =
+               Authentication.UsageCount.(value limit)
+               - Authentication.UsageCount.value auth.Authentication.usage_count
+               - 1
+             in
+             if remaining <= 0
+             then (
+               let%lwt () =
+                 increment_failed_login_attempt
+                   ~tags
+                   database_label
+                   (Pool_user.email user)
+               in
+               Lwt.return SessionExpired)
+             else Lwt.return (InvalidToken err))))
+;;
