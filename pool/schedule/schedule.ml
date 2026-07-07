@@ -118,12 +118,12 @@ let run ({ database_label; label; scheduled_time; status; _ } as schedule : t) =
            Lwt.return_false)
     in
     let%lwt () =
-      let has_failed =
+      let previously_marked_failed =
         Registered.find_opt label
         |> CCOption.map_or ~default:false (fun ({ status; _ } : t) ->
           Status.(equal Failed status))
       in
-      if succeeded && has_failed
+      if succeeded && previously_marked_failed
       then
         safely "restore active status" (fun () ->
           Registered.update_status Status.Active schedule)
