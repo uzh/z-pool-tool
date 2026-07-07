@@ -391,8 +391,6 @@ module Job = struct
 
   let send =
     let open Utils.Lwt_result.Infix in
-    let increment_smtp_bounce = Repo_sql.Contact.increment_smtp_bounce in
-    let reset_smtp_bounce = Repo_sql.Contact.reset_smtp_bounce in
     let is_recipient_not_found msg =
       (*
          Error Documentation:
@@ -410,7 +408,7 @@ module Job = struct
              Smtp.send ?smtp_auth_id label email_data ||> CCResult.return
            in
            let%lwt () =
-             reset_smtp_bounce
+             Pool_user.reset_smtp_bounce
                label
                (Pool_user.EmailAddress.of_string email_data.Sihl_email.recipient)
            in
@@ -425,7 +423,9 @@ module Job = struct
                  "SMTP 550 bounce for %s — incrementing smtp_bounces_count"
                  recipient);
              let%lwt () =
-               increment_smtp_bounce label (Pool_user.EmailAddress.of_string recipient)
+               Pool_user.increment_smtp_bounce
+                 label
+                 (Pool_user.EmailAddress.of_string recipient)
              in
              Lwt.return_error (Pool_message.Error.SmtpRecipientNotFound recipient)
            | msg -> Lwt.return_error (Pool_message.Error.nothandled msg))

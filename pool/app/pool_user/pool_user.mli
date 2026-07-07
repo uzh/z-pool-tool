@@ -230,6 +230,15 @@ val is_admin : t -> bool
 val is_confirmed : t -> bool
 val find_active_by_email_opt : Database.Label.t -> EmailAddress.t -> t option Lwt.t
 
+(** [increment_smtp_bounce label email] increments the smtp bounce count of the
+    contact or admin behind [email], depending on [user_users.admin]. A contact
+    reaching 5 bounces is also paused. *)
+val increment_smtp_bounce : Database.Label.t -> EmailAddress.t -> unit Lwt.t
+
+(** [reset_smtp_bounce label email] resets the smtp bounce count of the contact
+    or admin behind [email], depending on [user_users.admin]. *)
+val reset_smtp_bounce : Database.Label.t -> EmailAddress.t -> unit Lwt.t
+
 module Repo : sig
   module Id : Pool_model.Base.CaqtiSig with type t = Id.t
   module CellPhone : Pool_model.Base.CaqtiSig with type t = CellPhone.t
