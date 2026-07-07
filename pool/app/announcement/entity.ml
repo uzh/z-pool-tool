@@ -2,7 +2,7 @@ open Ppx_yojson_conv_lib.Yojson_conv
 module Language = Pool_common.Language
 
 let ptime_schema field =
-  Pool_conformist.schema_decoder Pool_model.Time.parse_time Ptime.to_rfc3339 field
+  Pool_conformist.schema_decoder Pool_model.Time.parse_time Utils.Ptime.to_rfc3339 field
 ;;
 
 let equal_ptime a b = Sihl.Configuration.is_test () || Ptime.equal a b

@@ -178,7 +178,7 @@ let message_template_help
   | InactiveContactWarning ->
     let open Ptime in
     let half_year = Span.of_int_s (60 * 60 * 24 * 365 / 2) in
-    let now = Ptime_clock.now () in
+    let now = Pool_model.Time.now () in
     let last_login = sub_span now half_year |> CCOption.get_exn_or "Invalid ptime span" in
     InactiveContactWarning.email_params layout (create_contact ()) ~last_login
   | Login2FAToken ->
@@ -250,7 +250,7 @@ let message_template_help
   | SessionReschedule ->
     let open Session in
     let start =
-      Ptime.add_span (Ptime_clock.now ()) hour
+      Ptime.add_span (Pool_model.Time.now ()) hour
       |> CCOption.get_exn_or "Invalid start"
       |> Start.create
     in

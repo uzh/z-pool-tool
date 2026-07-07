@@ -73,7 +73,7 @@ module Start = struct
 
   let schema () =
     let decode str = CCResult.(Pool_model.Time.parse_time str >|= create) in
-    Pool_conformist.schema_decoder decode Ptime.to_rfc3339 Pool_message.Field.Start
+    Pool_conformist.schema_decoder decode Utils.Ptime.to_rfc3339 Pool_message.Field.Start
   ;;
 end
 
@@ -316,7 +316,7 @@ module Public = struct
     if
       Ptime.is_later
         (session |> get_session_end |> Start.value)
-        ~than:Ptime_clock.(now ())
+        ~than:(Utils.Ptime.now ())
     then Ok ()
     else Error Pool_message.Error.SessionInPast
   ;;
@@ -569,7 +569,7 @@ let not_closed session =
 ;;
 
 let not_past session =
-  if Ptime.is_later (session |> get_session_end |> Start.value) ~than:Ptime_clock.(now ())
+  if Ptime.is_later (session |> get_session_end |> Start.value) ~than:(Utils.Ptime.now ())
   then Ok ()
   else Error Pool_message.Error.SessionInPast
 ;;

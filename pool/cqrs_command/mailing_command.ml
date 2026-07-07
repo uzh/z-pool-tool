@@ -108,7 +108,7 @@ end = struct
       Start.create start_at start_now >>= CCFun.flip Mailing.Start.validate end_at
     in
     let update = { start_at; end_at; limit; distribution } in
-    match Ptime_clock.now () < Mailing.StartAt.value start_at with
+    match Pool_model.Time.now () < Mailing.StartAt.value start_at with
     | true -> Ok [ Mailing.Updated (update, mailing) |> Pool_event.mailing ]
     | false -> Error Pool_message.Error.AlreadyStarted
   ;;
@@ -125,7 +125,7 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) (mailing : t) =
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
-    if StartAt.value mailing.start_at < Ptime_clock.now ()
+    if StartAt.value mailing.start_at < Pool_model.Time.now ()
     then Error Pool_message.Error.AlreadyInPast
     else Ok [ Deleted mailing |> Pool_event.mailing ]
   ;;
@@ -142,7 +142,7 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) (mailing : t) =
     Logs.info ~src (fun m -> m "Handle command Stop" ~tags);
-    let now = Ptime_clock.now () in
+    let now = Pool_model.Time.now () in
     if StartAt.value mailing.start_at < now && now < EndAt.value mailing.end_at
     then Ok [ Mailing.Stopped mailing |> Pool_event.mailing ]
     else Error Pool_message.Error.NotInTimeRange

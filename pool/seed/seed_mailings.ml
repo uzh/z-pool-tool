@@ -19,7 +19,7 @@ let generate_events (experiments : Experiment.Id.t list) =
     CCList.range_by ~step:5 0 80
     |> CCList.map (fun delta ->
       let start =
-        Ptime_clock.now ()
+        Utils.Ptime.now ()
         |> CCFun.flip Ptime.add_span (Ptime.Span.of_int_s ((delta * 24 * 3600) + 1))
         |> CCOption.get_exn_or "Mailing series seed: could not generate mailings."
         |> Mailing.StartAt.create

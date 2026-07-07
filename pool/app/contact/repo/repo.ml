@@ -509,7 +509,7 @@ let update_profile_updated_triggered pool ids =
   let dyn =
     CCList.fold_left
       (fun dyn id -> dyn |> Dynparam.add Id.t id)
-      (Dynparam.empty |> Dynparam.add Caqti_type.ptime (Ptime_clock.now ()))
+      (Dynparam.empty |> Dynparam.add Caqti_type.ptime (Utils.Ptime.now ()))
       ids
   in
   let (Dynparam.Pack (pt, pv)) = dyn in

@@ -1,7 +1,7 @@
 module ResentAt = struct
   include Pool_model.Base.Ptime
 
-  let create = Ptime_clock.now
+  let create = Utils.Ptime.now
 end
 
 module SendCount = struct

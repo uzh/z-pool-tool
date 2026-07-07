@@ -3,7 +3,7 @@ module Reminder = Pool_common.Reminder
 let halfhour, hour = CCPair.map_same Ptime.Span.of_int_s (30 * 60, 60 * 60)
 
 let session_data =
-  [ ( Ptime.add_span (Ptime_clock.now ()) hour |> CCOption.get_exn_or "Invalid time"
+  [ ( Ptime.add_span (Utils.Ptime.now ()) hour |> CCOption.get_exn_or "Invalid time"
     , hour
     , None
     , Some "Must be healthy"
@@ -12,7 +12,7 @@ let session_data =
     , 4
     , Some 3600
     , Some 1800 )
-  ; ( Ptime.add_span (Ptime_clock.now ()) halfhour |> CCOption.get_exn_or "Invalid time"
+  ; ( Ptime.add_span (Utils.Ptime.now ()) halfhour |> CCOption.get_exn_or "Invalid time"
     , halfhour
     , Some "No metal allowed!"
     , None
@@ -21,7 +21,7 @@ let session_data =
     , 0
     , None
     , None )
-  ; ( Ptime.add_span (Ptime_clock.now ()) hour |> CCOption.get_exn_or "Invalid time"
+  ; ( Ptime.add_span (Utils.Ptime.now ()) hour |> CCOption.get_exn_or "Invalid time"
     , halfhour
     , Some "No metal allowed!"
     , None

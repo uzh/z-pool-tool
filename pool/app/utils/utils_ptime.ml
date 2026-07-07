@@ -174,7 +174,7 @@ let ptime_of_yojson m =
   |> CCResult.get_exn
 ;;
 
-let yojson_of_ptime m = m |> Ptime.to_rfc3339 |> Rfc3339.wrap |> Yojson.Safe.from_string
+let yojson_of_ptime m = m |> to_rfc3339 |> Rfc3339.wrap |> Yojson.Safe.from_string
 
 let print_time_span span =
   Ptime.Span.to_int_s span

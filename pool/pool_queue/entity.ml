@@ -61,7 +61,7 @@ module RunAt = struct
   include Pool_model.Base.Ptime
 
   let of_run_at =
-    let now = Ptime_clock.now () in
+    let now = Utils.Ptime.now () in
     function
     | Delay delay ->
       Ptime.add_span now delay |> CCOption.get_exn_or "Could not add delay for job."
@@ -105,7 +105,7 @@ module Instance = struct
 
   let should_run ?(is_polled = false) ({ tries; max_tries; run_at; polled_at; _ } as job) =
     let has_tries_left = tries < max_tries in
-    let is_after_delay = Ptime_clock.now () |> Ptime.is_later ~than:run_at in
+    let is_after_delay = Utils.Ptime.now () |> Ptime.is_later ~than:run_at in
     let is_pending = is_pending job in
     is_pending
     && has_tries_left

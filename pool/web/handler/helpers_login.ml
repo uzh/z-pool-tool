@@ -57,7 +57,7 @@ let block_until counter =
     let open Ptime in
     minutes * 60
     |> Span.of_int_s
-    |> add_span (Ptime_clock.now ())
+    |> add_span (Pool_model.Time.now ())
     |> CCOption.get_exn_or "Invalid time span provided"
     |> BlockedUntil.create
     |> get_or_failwith_pool_error)
@@ -110,7 +110,7 @@ let validate_login req ~tags database_label ~email ~password =
       blocked_until
       |> CCOption.map BlockedUntil.value
       |> function
-      | Some blocked when Ptime.(is_earlier (Ptime_clock.now ()) ~than:blocked) ->
+      | Some blocked when Ptime.(is_earlier (Pool_model.Time.now ()) ~than:blocked) ->
         Lwt_result.fail (Error.AccountTemporarilySuspended blocked)
       | None | _ -> handler ()
     in

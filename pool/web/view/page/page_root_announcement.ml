@@ -97,7 +97,7 @@ let form
   in
   let date_input field value =
     Input.date_time_picker_element
-      ~min_value:(Ptime_clock.now ())
+      ~min_value:(Pool_model.Time.now ())
       ?flash_fetcher
       ?value
       language

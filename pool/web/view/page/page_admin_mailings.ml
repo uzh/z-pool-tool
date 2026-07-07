@@ -91,7 +91,7 @@ let distribution_form_field language (field, current_order) =
 module List = struct
   let buttons experiment_id mailing language csrf =
     let open Mailing in
-    let now = Ptime_clock.now () in
+    let now = Pool_model.Time.now () in
     let button_form target name submit_type confirm_text =
       form
         ~a:
@@ -233,7 +233,7 @@ let detail
       ]
   in
   let edit_button =
-    if StartAt.value mailing.start_at > Ptime_clock.now ()
+    if StartAt.value mailing.start_at > Pool_model.Time.now ()
     then
       link_as_button
         ~icon:Icon.Create

@@ -248,11 +248,11 @@ module Ptime = struct
   let yojson_of_date = Utils.Ptime.yojson_of_ptime_date
   let value m = m
   let create m = m
-  let create_now = Ptime_clock.now
+  let create_now = Utils.Ptime.now
   let to_human = Utils.Ptime.formatted_date_time
-  let date_time_to_flatpickr = Ptime.to_rfc3339
+  let date_time_to_flatpickr = Utils.Ptime.to_rfc3339
   let compare = Ptime.compare
-  let to_rfc3339 = Ptime.to_rfc3339
+  let to_rfc3339 = Utils.Ptime.to_rfc3339
   let add_span = Ptime.add_span
   let is_later = Ptime.is_later
 
@@ -279,7 +279,7 @@ module Ptime = struct
 
   let schema field create () : (Pool_message.Error.t, t) Pool_conformist.Field.t =
     let decode str = CCResult.(Time.parse_time str >>= create) in
-    Pool_conformist.schema_decoder decode Ptime.to_rfc3339 field
+    Pool_conformist.schema_decoder decode Utils.Ptime.to_rfc3339 field
   ;;
 end
 

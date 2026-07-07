@@ -37,7 +37,7 @@ let list { Pool_context.language; csrf; _ } (api_keys, query) =
   let row ({ id; name; expires_at; created_at; _ } : t) =
     let detai_btn = api_key_path ~id () |> make_btn ~icon:Icon.Eye in
     let is_expired =
-      Ptime.is_earlier (ExpiresAt.value expires_at) ~than:(Ptime_clock.now ())
+      Ptime.is_earlier (ExpiresAt.value expires_at) ~than:(Pool_model.Time.now ())
     in
     let classname = if is_expired then [ "bg-red-lighter" ] else [] in
     let edit_btn =
