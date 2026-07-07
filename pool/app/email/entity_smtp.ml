@@ -91,7 +91,7 @@ module SystemAccount = struct
   include Pool_model.Base.Boolean
 
   let init = false
-  let schema = schema Pool_message.Field.SmtpSystemAccount
+  let schema = schema ~default:false Pool_message.Field.SmtpSystemAccount
 end
 
 module RateLimit = struct

@@ -177,6 +177,7 @@ let smtp_form_inputs ?flash_fetcher language (smtp_auth : SmtpAuth.t option) =
         ]
     ; checkbox_element
         ?value:(smtp_auth |> CCOption.map (system_account %> SystemAccount.value))
+        ~required:false
         ~hints:[ Pool_common.I18n.SmtpSettingsSystemAccountFlag ]
         language
         Field.SmtpSystemAccount
