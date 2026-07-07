@@ -172,6 +172,37 @@ let count_workable job_name label =
   ||> CCOption.to_result Pool_message.Error.NoValue
 ;;
 
+(* Jobs that are still being retried stay in the current table with
+   [last_error_at] set, terminally failed ones are archived to the history
+   table right away, so both tables have to be considered. Email bounces
+   (SMTP 550) are excluded, as those are already reported by the mail server directly. *)
+let count_recently_failed_request =
+  [%string
+    {sql|
+      SELECT
+        (SELECT COUNT(*) FROM %{sql_table `Current}
+          WHERE name = $1
+          AND last_error_at >= NOW() - INTERVAL 24 HOUR
+          AND last_error NOT LIKE '%failed, Unexpected response 550%')
+        +
+        (SELECT COUNT(*) FROM %{sql_table `History}
+          WHERE name = $1
+          AND status = 'failed'
+          AND last_error_at >= NOW() - INTERVAL 24 HOUR
+          AND last_error NOT LIKE '%failed, Unexpected response 550%')
+    |sql}]
+  |> Repo_entity.JobName.t ->! Caqti_type.int
+;;
+
+let count_recently_failed job_name label =
+  Lwt.catch
+    (fun () -> Database.find_opt label count_recently_failed_request job_name)
+    (function
+      | Caqti_error.(Exn #load_or_connect) -> Lwt.return_none
+      | exn -> Lwt.reraise exn)
+  ||> CCOption.get_or ~default:0
+;;
+
 let poll_n_workable database_label n_instances job_name =
   let find_workable_request =
     find_workable_query ~limit:n_instances () |> Repo_entity.(JobName.t ->* Instance.t)

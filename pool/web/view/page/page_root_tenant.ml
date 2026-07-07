@@ -109,6 +109,17 @@ let tenant_form
         ?flash_fetcher
         ~hints:[ Pool_common.I18n.SettingsContactEmail ]
   in
+  let maintenance_checkbox =
+    match tenant with
+    | None -> txt ""
+    | Some tenant ->
+      checkbox_element
+        language
+        Field.TenantMaintenanceFlag
+        ~value:(Database.Status.equal Database.Status.Maintenance tenant.status)
+        ?flash_fetcher
+        ~hints:[ Pool_common.I18n.TenantMaintenanceFlag ]
+  in
   let database_fields =
     if CCOption.is_some tenant
     then txt ""
@@ -145,6 +156,7 @@ let tenant_form
         ?flash_fetcher
         ~required:true
     ; language_select
+    ; maintenance_checkbox
     ; contact_email
     ; database_fields
     ; file_uploads

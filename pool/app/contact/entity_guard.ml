@@ -46,6 +46,13 @@ module Access = struct
   let read = contact Read
   let update = contact Update
 
+  let can_update_target uuid =
+    PermissionOnTarget.create
+      ~target_uuid:(uuid |> Uuid.target_of Entity.Id.value)
+      Update
+      `Contact
+  ;;
+
   let read_additionals model ?(verify_on_ids = []) () =
     let open PermissionOnTarget in
     let create ?target_uuid = create ?target_uuid Permission.Read in

@@ -246,6 +246,7 @@ type hint =
   | DuplicateSession
   | DuplicateSessionList
   | EmailPlainText
+  | EmailServiceFailingNotification of int
   | ExperimentAssignment
   | ExperimentCallbackUrl
   | ExperimentContactPerson of string
@@ -371,6 +372,7 @@ type hint =
   | TemplateTextElementsHint
   | TenantDatabaseLabel
   | TenantDatabaseUrl
+  | TenantMaintenanceFlag
   | TenantUrl
   | TestPhoneNumber
   | TextLengthMax of int

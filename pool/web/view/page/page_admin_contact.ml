@@ -500,7 +500,7 @@ let detail
       ?admin_comment
       ~can_manage_duplicates
       ~phone_verification_enabled
-      (Pool_context.{ language; user; _ } as context)
+      (Pool_context.{ language; user; guardian; _ } as context)
       contact
       tags
       external_data_ids
@@ -514,11 +514,23 @@ let detail
       Pool_common.[ Utils.nav_link_to_string language nav |> txt ]
   in
   let failed_login_attempt =
+    let can_unblock =
+      Guard.PermissionOnTarget.validate
+        Contact.(Guard.Access.can_update_target (id contact))
+        guardian
+    in
     let unblock_url =
-      Http_utils.Url.Admin.contact_path ~suffix:"unblock" ~id:(Contact.id contact) ()
+      if can_unblock
+      then
+        Some
+          (Http_utils.Url.Admin.contact_path
+             ~suffix:"unblock"
+             ~id:(Contact.id contact)
+             ())
+      else None
     in
     Component.User.account_suspension_notification
-      ~unblock_url
+      ?unblock_url
       context
       failed_login_attempt
   in

@@ -188,6 +188,10 @@ val count_workable
 
 val count_all_workable : Database.Label.t -> (int, Pool_message.Error.t) result Lwt.t
 
+(** Count jobs of the given name that reported an error within the last 24
+    hours, including terminally failed ones from the history table. *)
+val count_recently_failed : JobName.t -> Database.Label.t -> int Lwt.t
+
 include Repo.ColumnsSig
 
 type job_ctx =

@@ -411,6 +411,12 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | EmailPlainText ->
     {|Die Verwendung von E-Mails im Klartext als Ausweichlösung gewährleistet eine universelle Lesbarkeit und Barrierefreiheit. Sie können den Rich-Text von oben kopieren, indem Sie die Schaltfläche in der oberen rechten Ecke dieses Textfeldes verwenden.
   Achten Sie darauf, Links und URLs als reinen Text anzuzeigen.|}
+  | EmailServiceFailingNotification count ->
+    Format.asprintf
+      "Der E-Mail-Service hat in den letzten 24 Stunden %d fehlgeschlagene E-Mail%s \
+       gemeldet. Einige E-Mails wurden möglicherweise nicht zugestellt."
+      count
+      (if count = 1 then "" else "s")
   | ExperimentAssignment ->
     "Alle Anmeldungen von Kontakten an Sessions dieses Experiments, sortiert nach \
      Session."
@@ -803,6 +809,9 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
   | TenantDatabaseUrl ->
     {|Die Datenbank URL, nach folgendem Schema:
     mariadb://<user>:<pw>@<host>:<port>/<database>|}
+  | TenantMaintenanceFlag ->
+    "Wenn aktiviert, kann nicht auf den Tenant zugegriffen werden und allen Benutzern \
+     wird eine Wartungsseite angezeigt."
   | TenantUrl -> "Die URL des Tenants ohne Protokoll, z.B.: pool.uzh.ch"
   | TestPhoneNumber ->
     "Bitte geben Sie eine Telefonnummer an, an die wir eine einzige Testnachricht \

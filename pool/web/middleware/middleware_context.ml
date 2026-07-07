@@ -44,6 +44,21 @@ let context_notification database_label user is_root =
       | true -> Lwt.return_none
       | false -> Lwt.return_some (Tenant hint)
     in
+    let email_service_failing () =
+      Pool_queue.(count_recently_failed JobName.SendEmail) database_label
+      ||> function
+      | 0 -> None
+      | count ->
+        let hint =
+          { hint = I18n.EmailServiceFailingNotification count
+          ; style = `Warning
+          ; link =
+              Some
+                (Http_utils.Url.Admin.Settings.queue_list_path `History, I18n.QueueHistory)
+          }
+        in
+        Some (Tenant hint)
+    in
     let contact_paused () =
       Lwt.return
       @@
@@ -64,7 +79,7 @@ let context_notification database_label user is_root =
     Lwt_list.map_s (fun f -> f ())
     @@
     match user with
-    | Admin _ -> [ smtp ]
+    | Admin _ -> [ smtp; email_service_failing ]
     | Contact _ -> [ contact_paused ]
     | Guest -> []
   in
