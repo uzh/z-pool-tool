@@ -269,7 +269,11 @@ let operator_existing_contact_modal
       [ p [ txt (Utils.text_to_string language I18n.TenantOperatorExistingContactText) ]
       ; p
           [ a
-              ~a:[ a_href contact_url; a_target "_blank" ]
+              ~a:
+                [ a_href contact_url
+                ; a_target "_blank"
+                ; a_rel [ `Noopener; `Noreferrer ]
+                ]
               [ txt (Contact.fullname contact)
               ; txt
                   (Format.asprintf
@@ -296,15 +300,19 @@ let manage_operators { Pool_tenant.id; _ } operators Pool_context.{ language; cs
           ]
       ; form
           ~a:
-            Htmx.
-              [ hx_trigger "submit"
-              ; hx_post
-                  (HttpUtils.Url.Root.pool_path ~id ~suffix:"create-operator" ()
-                   |> Sihl.Web.externalize_path)
-              ; hx_swap "outerHTML"
-              ; hx_target (Format.asprintf "#%s" operator_modal_id)
-              ; a_class [ "stack" ]
-              ]
+            (let action =
+               HttpUtils.Url.Root.pool_path ~id ~suffix:"create-operator" ()
+               |> Sihl.Web.externalize_path
+             in
+             a_action action
+             :: a_method `Post
+             :: Htmx.
+                  [ hx_trigger "submit"
+                  ; hx_post action
+                  ; hx_swap "outerHTML"
+                  ; hx_target (Format.asprintf "#%s" operator_modal_id)
+                  ; a_class [ "stack" ]
+                  ])
           ((csrf_element csrf ()
             :: CCList.map
                  (fun (field, input) -> input_element ~required:true language input field)

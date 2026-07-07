@@ -155,7 +155,7 @@ let create_operator req =
   in
   (* On error, keep the modal placeholder alive (the form targets it) and show
      the error as a notification. *)
-  let result ({ Pool_context.language; _ } as context) =
+  let response ({ Pool_context.language; _ } as context) =
     let tags = Pool_context.Logger.Tags.req req in
     result context
     ||> CCResult.get_lazy (fun err ->
@@ -166,7 +166,7 @@ let create_operator req =
         ])
     ||> CCResult.return
   in
-  Response.Htmx.handle ~src req result
+  Response.Htmx.handle ~src req response
 ;;
 
 let promote_operator req =
