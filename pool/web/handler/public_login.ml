@@ -210,12 +210,9 @@ let resend_login_confirmation_token req =
   let handle_request ({ Pool_context.database_label; user; _ } as context) =
     let%lwt result =
       let* auth_id =
-        let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-        CCList.assoc_opt ~eq:CCString.equal Pool_message.Field.(show Id) urlencoded
-        |> CCFun.flip CCOption.bind CCList.head_opt
-        |> CCOption.map Authentication.Id.of_string
-        |> CCOption.to_result Pool_message.(Error.Invalid Field.Id)
-        |> Lwt.return
+        match Sihl.Web.Session.find "auth_id" req with
+        | None -> Lwt.return_error Pool_message.(Error.Invalid Field.Id)
+        | Some auth_id -> Authentication.Id.of_string auth_id |> Lwt.return_ok
       in
       let* (_ : Authentication.t), login_user =
         Authentication.find_valid_by_id database_label auth_id
