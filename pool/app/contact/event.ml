@@ -86,8 +86,11 @@ let handle_event ?tags pool : event -> unit Lwt.t =
     Repo.add_cell_phone pool contact cell_phone token
   | CellPhoneSaved (contact, cell_phone) ->
     let%lwt () = Repo.delete_unverified_cell_phone pool contact in
-    { contact with cell_phone = Some cell_phone; cell_phone_verified_at = None }
-    |> Repo.update pool
+    let%lwt () =
+      { contact with cell_phone = Some cell_phone; cell_phone_verified_at = None }
+      |> Repo.update pool
+    in
+    Repo.mark_duplicates_check_due pool (Entity.id contact)
   | CellPhoneTokenResent contact -> Repo.touch_cell_phone_verification pool contact
   | CellPhoneVerified (contact, cell_phone) ->
     let%lwt () =
@@ -97,7 +100,8 @@ let handle_event ?tags pool : event -> unit Lwt.t =
       }
       |> Repo.update pool
     in
-    Repo.delete_unverified_cell_phone pool contact
+    let%lwt () = Repo.delete_unverified_cell_phone pool contact in
+    Repo.mark_duplicates_check_due pool (Entity.id contact)
   | CellPhoneVerificationReset contact -> Repo.delete_unverified_cell_phone pool contact
   | ImportPendingDisabled contact -> Repo.disable_import_pending pool contact
   | ProfileUpdateTriggeredAtUpdated contacts ->
@@ -110,7 +114,7 @@ let handle_event ?tags pool : event -> unit Lwt.t =
     let%lwt (_ : Pool_user.t) =
       Pool_user.update pool ~email ~lastname ~firstname contact.user
     in
-    Lwt.return_unit
+    Repo.mark_duplicates_check_due pool (Entity.id contact)
   | SignInCounterUpdated contact ->
     let%lwt () = Repo.update_sign_in_count pool contact in
     let%lwt () = Repo.remove_deactivation_notifications pool contact in

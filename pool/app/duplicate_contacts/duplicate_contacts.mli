@@ -71,7 +71,12 @@ val filterable_by : Query.Filter.Condition.Human.t list option
 val default_query : Query.t
 
 module Service : sig
-  val run : Database.Label.t -> Pool_common.Id.t -> unit Lwt.t
+  val run
+    :  ?fields:Custom_field.t list
+    -> Database.Label.t
+    -> Pool_common.Id.t
+    -> unit Lwt.t
+
   val register : unit -> Sihl.Container.Service.t
 end
 

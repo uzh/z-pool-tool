@@ -32,18 +32,34 @@ let find_request_sql ?(count = false) where =
     {sql| SELECT %{columns} FROM pool_contacts_possible_duplicates %{joins} %{where} |sql}]
 ;;
 
-let similarity_request user_columns custom_field_columns similarities average =
+(* The target contact is selected directly by uuid. Candidates are restricted
+   ("blocking") to contacts sharing at least one compared value with the
+   target: with only exact (or soundex) field matches contributing to the
+   score, any contact matching on no field scores 0 and can never reach the
+   threshold, so this prefilter is lossless while avoiding a scan over the
+   whole contact base. Deactivated and unverified contacts are intentionally
+   included as candidates. *)
+let similarity_request
+      ~answers_join
+      user_columns
+      custom_field_columns
+      blocking_conditions
+      similarities
+      average
+  =
   let columns = user_columns @ custom_field_columns |> CCString.concat "," in
   let similarities = similarities |> CCString.concat "," in
+  let blocking = blocking_conditions |> CCString.concat " UNION " in
   let contact_joins =
-    {sql|
-      INNER JOIN user_users ON pool_contacts.user_uuid = user_users.uuid
-      LEFT JOIN pool_custom_field_answers ON pool_contacts.user_uuid = pool_custom_field_answers.entity_uuid
-    |sql}
+    [%string
+      {sql|
+        INNER JOIN user_users ON pool_contacts.user_uuid = user_users.uuid
+        %{answers_join}
+      |sql}]
   in
   [%string
     {sql|
-      WITH filtered_contacts AS (
+      WITH target_contact AS (
         SELECT
           user_users.uuid,
           %{columns}
@@ -51,8 +67,22 @@ let similarity_request user_columns custom_field_columns similarities average =
           pool_contacts
         %{contact_joins}
         WHERE
-          pool_contacts.email_verified IS NOT NULL
-          AND pool_contacts.disabled = 0
+          user_users.uuid = UNHEX(REPLACE($1, '-', ''))
+        GROUP BY user_users.uuid
+      ),
+      candidate_ids AS (
+        %{blocking}
+      ),
+      candidates AS (
+        SELECT
+          user_users.uuid,
+          %{columns}
+        FROM
+          pool_contacts
+        %{contact_joins}
+        WHERE
+          pool_contacts.user_uuid IN (SELECT uuid FROM candidate_ids)
+          AND pool_contacts.user_uuid <> UNHEX(REPLACE($1, '-', ''))
         GROUP BY user_users.uuid
       ),
       similarity_scores AS (
@@ -61,11 +91,8 @@ let similarity_request user_columns custom_field_columns similarities average =
           contacts.uuid,
           %{similarities}
         FROM
-        filtered_contacts AS t
-        CROSS JOIN filtered_contacts AS contacts
-        WHERE
-          t.uuid = UNHEX(REPLACE($1, '-', ''))
-          AND contacts.uuid <> t.uuid
+        target_contact AS t
+        CROSS JOIN candidates AS contacts
       ),
       average_similarity AS (
         SELECT
@@ -129,9 +156,26 @@ let find_similars database_label ~user_uuid custom_fields =
       |> add Pool_common.Repo.Id.t user_uuid
       |> add Caqti_type.float Entity.alert_threshold)
   in
+  (* Using placeholders like $2 or ? is not supported in colum names *)
+  let custom_field_ids =
+    custom_fields
+    >|= (fun field ->
+    Custom_field.(id field |> Id.value) |> asprintf "\"%s\"" |> id_value_fragment)
+    |> CCString.concat ","
+  in
+  let answers_join =
+    match custom_fields with
+    | [] -> ""
+    | _ ->
+      [%string
+        {sql|
+          LEFT JOIN pool_custom_field_answers
+            ON pool_contacts.user_uuid = pool_custom_field_answers.entity_uuid
+            AND pool_custom_field_answers.custom_field_uuid IN (%{custom_field_ids})
+        |sql}]
+  in
   let custom_field_columns =
     let open Custom_field in
-    (* Using placeholders like $2 or ? is not supported in colum names *)
     custom_fields
     >|= fun field ->
     let id = id field |> Id.value in
@@ -143,6 +187,39 @@ let find_similars database_label ~user_uuid custom_fields =
       |sql}
       (id |> asprintf "\"%s\"" |> id_value_fragment)
       (asprintf "`%s`" id)
+  in
+  let blocking_conditions =
+    let user_blocks =
+      columns
+      >|= fun ({ Column.sql_column; criteria; _ } as col) ->
+      let target_value = asprintf "(SELECT %s FROM target_contact)" sql_column in
+      let comparison = make_comparison (concat_sql col, target_value) criteria in
+      [%string
+        {sql|
+          SELECT pool_contacts.user_uuid AS uuid
+          FROM pool_contacts
+          INNER JOIN user_users ON pool_contacts.user_uuid = user_users.uuid
+          WHERE %{comparison}
+        |sql}]
+    in
+    let custom_field_blocks =
+      match custom_fields with
+      | [] -> []
+      | _ ->
+        [ "answers.value"; "answers.admin_value" ]
+        >|= fun answer_column ->
+        [%string
+          {sql|
+            SELECT answers.entity_uuid AS uuid
+            FROM pool_custom_field_answers AS answers
+            INNER JOIN pool_custom_field_answers AS target_answers
+              ON target_answers.custom_field_uuid = answers.custom_field_uuid
+              AND %{answer_column} = COALESCE(target_answers.admin_value, target_answers.value)
+            WHERE target_answers.entity_uuid = UNHEX(REPLACE($1, '-', ''))
+              AND answers.custom_field_uuid IN (%{custom_field_ids})
+          |sql}]
+    in
+    user_blocks @ custom_field_blocks
   in
   let similarities =
     map user_similarities columns @ map field_similarities custom_fields
@@ -175,7 +252,13 @@ let find_similars database_label ~user_uuid custom_fields =
   in
   let (Dynparam.Pack (pt, pv)) = dyn in
   let request =
-    similarity_request user_columns custom_field_columns similarities average_similarity
+    similarity_request
+      ~answers_join
+      user_columns
+      custom_field_columns
+      blocking_conditions
+      similarities
+      average_similarity
     |> pt ->* raw
   in
   Database.collect database_label request pv
@@ -275,7 +358,7 @@ let ingore_request =
 
 let ignore pool { Entity.id; _ } = Database.exec pool ingore_request id
 
-let find_to_check pool =
+let find_to_check ?(limit = 10) pool =
   let open Caqti_request.Infix in
   let open Contact.Repo in
   let request =
@@ -286,18 +369,22 @@ let find_to_check pool =
         FROM pool_contacts
           %s
         WHERE
-          (duplicates_last_checked IS NULL
-            OR
-          duplicates_last_checked < NOW() - INTERVAL 1 WEEK)
+          ((duplicates_check_due_at IS NOT NULL AND duplicates_check_due_at <= NOW())
+            OR duplicates_last_checked IS NULL
+            OR duplicates_last_checked < NOW() - INTERVAL 1 WEEK)
           AND disabled = 0
-        ORDER BY duplicates_last_checked IS NULL DESC, duplicates_last_checked ASC
-        LIMIT 1
+        ORDER BY
+          (duplicates_check_due_at IS NOT NULL AND duplicates_check_due_at <= NOW()) DESC,
+          duplicates_last_checked IS NULL DESC,
+          duplicates_last_checked ASC
+        LIMIT %i
       |sql}
       (CCString.concat ", " sql_select_columns)
       joins
-    |> Caqti_type.unit ->! t
+      limit
+    |> Caqti_type.unit ->* t
   in
-  Database.find_opt pool request ()
+  Database.collect pool request ()
 ;;
 
 let mark_as_checked pool contact =
@@ -306,7 +393,9 @@ let mark_as_checked pool contact =
     Format.asprintf
       {sql|
         UPDATE pool_contacts
-        SET duplicates_last_checked = NOW()
+        SET
+          duplicates_last_checked = NOW(),
+          duplicates_check_due_at = NULL
         WHERE user_uuid = UNHEX(REPLACE($1, '-', ''));
       |sql}
     |> Contact.Repo.Id.t ->. Caqti_type.unit

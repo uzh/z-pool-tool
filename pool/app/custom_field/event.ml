@@ -67,17 +67,24 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
   in
   function
   | AdminAnswerCleared (m, entity_uuid) ->
-    Repo_partial_update.clear_answer
-      pool
-      ~is_admin:true
-      ~field_id:(Public.id m)
-      ~entity_uuid
-      ()
+    let%lwt () =
+      Repo_partial_update.clear_answer
+        pool
+        ~is_admin:true
+        ~field_id:(Public.id m)
+        ~entity_uuid
+        ()
+    in
+    Contact.mark_duplicates_check_due pool (Contact.Id.of_common entity_uuid)
   | AnswerUpserted (m, entity_uuid, user) ->
     let is_admin = Pool_context.user_is_admin user in
-    Repo_partial_update.upsert_answer pool is_admin (Contact.Id.to_common entity_uuid) m
+    let%lwt () =
+      Repo_partial_update.upsert_answer pool is_admin (Contact.Id.to_common entity_uuid) m
+    in
+    Contact.mark_duplicates_check_due pool entity_uuid
   | AnsweredOnSignup (m, entity_uuid) ->
-    Repo_partial_update.upsert_answer pool false entity_uuid m
+    let%lwt () = Repo_partial_update.upsert_answer pool false entity_uuid m in
+    Contact.mark_duplicates_check_due pool (Contact.Id.of_common entity_uuid)
   | Created m ->
     let%lwt () = Repo.insert pool m in
     Entity_guard.Target.to_authorizable ~ctx:(Database.to_ctx pool) m

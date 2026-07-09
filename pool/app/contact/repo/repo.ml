@@ -378,6 +378,26 @@ let update_request =
 
 let update pool = Entity.to_write %> Database.exec pool update_request
 
+(* Grace period between a profile change and the resulting duplicates check.
+   The due date is overwritten on every change, so consecutive edits within
+   the grace period coalesce into a single check. *)
+let duplicates_check_grace_period = 15 (* minutes *)
+
+let mark_duplicates_check_due_request =
+  let open Caqti_request.Infix in
+  [%string
+    {sql|
+      UPDATE pool_contacts
+      SET duplicates_check_due_at = DATE_ADD(NOW(), INTERVAL %{CCInt.to_string duplicates_check_grace_period} MINUTE)
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}]
+  |> Id.t ->. Caqti_type.unit
+;;
+
+let mark_duplicates_check_due pool id =
+  Database.exec pool mark_duplicates_check_due_request id
+;;
+
 let set_to_now_request field =
   let open Caqti_request.Infix in
   [%string
