@@ -32,9 +32,9 @@ let contact_columns =
 ;;
 
 let make_sql_select_columns ~user_table ~contact_table =
-  let with_tablemame = Format.asprintf "%s.%s" contact_table in
+  let with_tablename = Format.asprintf "%s.%s" contact_table in
   Pool_user.Repo.make_sql_select_columns ~tablename:user_table
-  @ (contact_columns |> CCList.map with_tablemame)
+  @ (contact_columns |> CCList.map with_tablename)
 ;;
 
 let sql_select_columns =
