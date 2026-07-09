@@ -90,7 +90,7 @@ let missing_template_languages database_label entity_id label ?exclude languages
 ;;
 
 let prepare_email ?optout_link language template sender email layout params =
-  let open Sihl_email in
+  let open Email.Message in
   let { Entity.email_subject; email_text; plain_text; _ } = template in
   let mail =
     { sender = Pool_user.EmailAddress.value sender
@@ -112,7 +112,7 @@ let prepare_manual_email
       params
       sender
   =
-  let open Sihl_email in
+  let open Email.Message in
   let mail =
     { sender = Pool_user.EmailAddress.value sender
     ; recipient = Pool_user.EmailAddress.value recipient
@@ -593,10 +593,10 @@ module ExperimentInvitation = struct
     let data = [ "user_id", user_id; "type", "unsubscribe" ] in
     match%lwt Pool_token.find_active_by_data pool data with
     | Some token ->
-      let%lwt () = Pool_token.extend_expiry pool token Sihl.Time.OneYear in
+      let%lwt () = Pool_token.extend_expiry pool token Pool_core.Time.OneYear in
       Lwt.return token
     | None ->
-      let%lwt token = Pool_token.create ~expires_in:Sihl.Time.OneYear pool data in
+      let%lwt token = Pool_token.create ~expires_in:Pool_core.Time.OneYear pool data in
       Lwt.return token
   ;;
 

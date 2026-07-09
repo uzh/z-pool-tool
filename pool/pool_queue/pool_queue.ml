@@ -73,7 +73,7 @@ let dispatch
       job
   =
   let tags = Database.Logger.Tags.create label in
-  let config = Sihl.Configuration.read schema in
+  let config = Pool_core.Configuration.read schema in
   let clone_of =
     CCOption.map_or
       ~default:None
@@ -85,7 +85,7 @@ let dispatch
   let instance =
     Job.to_instance ~id ?message_template ?run_at ?clone_of label input job
   in
-  if Sihl.Configuration.is_production () || config.force_async
+  if Pool_core.Configuration.is_production () || config.force_async
   then (
     Logs.debug (fun m -> m ~tags "Dispatching job %a" JobName.pp (Job.name job));
     let%lwt () = Repo.enqueue label instance in
@@ -106,7 +106,7 @@ let dispatch
 
 let dispatch_all ?(callback = fun (_ : 'a) -> Lwt.return_unit) ?run_at label inputs job =
   let tags = Database.Logger.Tags.create label in
-  let config = Sihl.Configuration.read schema in
+  let config = Pool_core.Configuration.read schema in
   let instances, create, clone =
     CCList.fold_left
       (fun (init_instances, init_create, init_clone)
@@ -131,7 +131,7 @@ let dispatch_all ?(callback = fun (_ : 'a) -> Lwt.return_unit) ?run_at label inp
       ([], [], [])
       inputs
   in
-  if Sihl.Configuration.is_production () || config.force_async
+  if Pool_core.Configuration.is_production () || config.force_async
   then (
     let%lwt () = Repo.enqueue_all label instances in
     let%lwt () = Repo_mapping.insert_all label create in
@@ -205,7 +205,7 @@ let work_job job instance =
 let work_queue (job : AnyJob.t) (database_label : Database.Label.t) =
   let tags = Database.Logger.Tags.create database_label in
   let msg_prefix = [%string "Queue %{JobName.show job.AnyJob.name}"] in
-  let config = Sihl.Configuration.read schema in
+  let config = Pool_core.Configuration.read schema in
   match%lwt Repo.count_workable job.AnyJob.name database_label with
   | Error msg ->
     let msg = Pool_message.Error.show msg in
@@ -303,7 +303,7 @@ type kind =
   | Worker
 
 let lifecycle_service =
-  Sihl.Container.create_lifecycle
+  Pool_core.Container.create_lifecycle
     "Multitenant Queue"
     ~implementation_name:"service"
     ~dependencies:(fun () ->
@@ -312,7 +312,7 @@ let lifecycle_service =
 ;;
 
 let lifecycle_worker =
-  Sihl.Container.create_lifecycle
+  Pool_core.Container.create_lifecycle
     "Multitenant Queue"
     ~implementation_name:"worker"
     ~dependencies:(fun () ->
@@ -323,8 +323,8 @@ let lifecycle_worker =
 
 let register ?(kind = Service) ?(jobs = []) () =
   registered_jobs := !registered_jobs @ jobs;
-  let configuration = Sihl.Configuration.make () in
-  Sihl.Container.Service.create
+  let configuration = Pool_core.Configuration.make () in
+  Pool_core.Container.Service.create
     ~configuration
     (match kind with
      | Service -> lifecycle_service

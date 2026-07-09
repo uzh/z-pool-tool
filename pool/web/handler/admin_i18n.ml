@@ -35,7 +35,7 @@ let index req =
     let%lwt translation_list = I18n.find_all database_label () >|> sort in
     Page.Admin.I18n.list translation_list context
     |> create_layout req ~active_navigation:(i18n_path ()) context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -51,7 +51,7 @@ let update req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let property () = I18n.find_with_default_content database_label id in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     let events property =
       let open CCResult.Infix in
       let open Cqrs_command.I18n_command.Update in

@@ -9,7 +9,7 @@ let make_root language csrf announcement =
   let close =
     let url =
       Http_utils.Url.announcement_path ~id:announcement.id ~suffix:"hide" ()
-      |> Sihl.Web.externalize_path
+      |> Webserver.externalize_path
     in
     let control =
       Control.Hide (Some Field.Announcement) |> Utils.control_to_string language

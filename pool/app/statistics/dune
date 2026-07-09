@@ -10,7 +10,6 @@
   pool_database
   ptime
   settings
-  sihl
   utils)
  (preprocess
   (pps

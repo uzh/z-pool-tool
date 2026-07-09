@@ -1,6 +1,6 @@
 (library
  (name logger)
- (libraries containers database)
+ (libraries containers database pool_core)
  (preprocess
   (pps
    lwt_ppx

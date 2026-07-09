@@ -33,7 +33,7 @@ let delete req =
     Response.bad_request_on_error show
     @@
     let permission =
-      Sihl.Web.Request.to_urlencoded req
+      Webserver.Request.to_urlencoded req
       ||> HttpUtils.find_in_urlencoded Field.Permission
       >== fun permission ->
       let read = Yojson.Safe.from_string %> Guard.ActorPermission.of_yojson in
@@ -73,7 +73,7 @@ let new_form req =
       context
       (Component.Role.ActorPermissionSearch.input_form ?flash_fetcher csrf language ())
     |> General.create_tenant_layout req ~active_navigation context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -83,7 +83,7 @@ let handle_toggle_target req =
   let result (_ : Pool_context.t) =
     let open Pool_common in
     let open Guard.Permission in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     let find = flip HttpUtils.find_in_urlencoded urlencoded in
     CCResult.both (find Field.Permission) (find Field.Model)
     |> Lwt_result.lift
@@ -105,7 +105,7 @@ let create req =
   let open Utils.Lwt_result.Infix in
   let lift = Lwt_result.lift in
   let result { Pool_context.database_label; user; _ } =
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     Response.bad_request_on_error ~urlencoded new_form
     @@
     let tags = Pool_context.Logger.Tags.req req in

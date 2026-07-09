@@ -21,7 +21,7 @@ let table Pool_context.{ language; _ } (admins, query) =
       form
         ~a:
           [ a_action
-              (Sihl.Web.externalize_path
+              (Webserver.externalize_path
                  (Format.asprintf
                     "/root/users/%s/toggle-status"
                     (admin |> id |> Admin.Id.value)))
@@ -54,7 +54,7 @@ let list root_list (Pool_context.{ language; csrf; flash_fetcher; _ } as context
         [ Utils.control_to_string language Control.(Create (Some Field.Root)) |> txt ]
     ; form
         ~a:
-          [ a_action (Sihl.Web.externalize_path "/root/users/create")
+          [ a_action (Webserver.externalize_path "/root/users/create")
           ; a_method `Post
           ; a_class [ "stack" ]
           ]

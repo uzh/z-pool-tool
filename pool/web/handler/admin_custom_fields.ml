@@ -52,7 +52,7 @@ let index req =
        let%lwt field_list = find_by_model database_label model in
        Page.Admin.CustomFields.index field_list group_list model context
        >|> create_layout ~active_navigation:Url.fallback_path req context
-       >|+ Sihl.Web.Response.of_html
+       >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -80,7 +80,7 @@ let form ?id req model =
     let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     Page.Admin.CustomFields.detail ?custom_field model context groups sys_languages
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -97,7 +97,7 @@ let edit req =
 let write ?id req model =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req
+    Webserver.Request.to_urlencoded req
     ||> HttpUtils.format_request_boolean_values boolean_fields
     ||> HttpUtils.remove_empty_values
   in
@@ -224,7 +224,7 @@ let sort_options req =
       @@
       let tags = Pool_context.Logger.Tags.req req in
       let%lwt ids =
-        Sihl.Web.Request.urlencoded_list Field.(CustomFieldOption |> array_key) req
+        Webserver.Request.urlencoded_list Field.(CustomFieldOption |> array_key) req
       in
       let%lwt options =
         let open Utils.Lwt_result.Infix in
@@ -269,7 +269,7 @@ let sort_fields req ?group () =
       let open Custom_field in
       let tags = Pool_context.Logger.Tags.req req in
       let%lwt ids =
-        Sihl.Web.Request.urlencoded_list Field.(CustomField |> array_key) req
+        Webserver.Request.urlencoded_list Field.(CustomField |> array_key) req
       in
       let%lwt fields =
         match group with

@@ -21,7 +21,7 @@ module Tenant = struct
     let of_nav = Utils.nav_link_to_string language in
     let of_field = Utils.field_to_string_capitalized language in
     let externalize =
-      Http_utils.url_with_field_params query_parameters %> Sihl.Web.externalize_path
+      Http_utils.url_with_field_params query_parameters %> Webserver.externalize_path
     in
     let fragments =
       let links =

@@ -95,7 +95,7 @@ module List = struct
         ~a:
           [ a_method `Post
           ; a_action
-              (roles_path ~suffix:target path target_id |> Sihl.Web.externalize_path)
+              (roles_path ~suffix:target path target_id |> Webserver.externalize_path)
           ; a_user_data
               "confirmable"
               (Pool_common.Utils.confirmable_to_string language confirm_text)
@@ -233,7 +233,7 @@ module Search = struct
     in
     form
       ~a:
-        [ a_action (action_path path target_id "grant-role" |> Sihl.Web.externalize_path)
+        [ a_action (action_path path target_id "grant-role" |> Webserver.externalize_path)
         ; a_method `Post
         ]
       [ Component_input.csrf_element csrf ()
@@ -327,7 +327,7 @@ module ActorPermissionSearch = struct
     in
     form
       ~a:
-        [ a_action (action_path "" |> Sihl.Web.externalize_path)
+        [ a_action (action_path "" |> Webserver.externalize_path)
         ; a_method `Post
         ; a_class [ "stack" ]
         ]

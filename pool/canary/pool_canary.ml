@@ -1,6 +1,6 @@
 let has_to_notify () =
   (* canary will run for all other then dev and testing environments *)
-  not Sihl.Configuration.(is_development () || is_test ())
+  not Pool_core.Configuration.(is_development () || is_test ())
 ;;
 
 type t =
@@ -35,7 +35,7 @@ let schema =
       t)
 ;;
 
-let read_config () = Sihl.Configuration.(read schema)
+let read_config () = Pool_core.Configuration.(read schema)
 
 let notify' ?src ?tags ?labels ?(additional = "") exn trace =
   let config = read_config () in
@@ -82,9 +82,9 @@ let start () =
   else Lwt.return_unit
 ;;
 
-let lifecycle = Sihl.Container.create_lifecycle ~start "Canary"
+let lifecycle = Pool_core.Container.create_lifecycle ~start "Canary"
 
 let register () =
-  let configuration = Sihl.Configuration.make ~schema () in
-  Sihl.Container.Service.create ~configuration lifecycle
+  let configuration = Pool_core.Configuration.make ~schema () in
+  Pool_core.Container.Service.create ~configuration lifecycle
 ;;

@@ -14,11 +14,13 @@
   pool_version
   session
   sexplib
-  sihl-storage
   time_window
   user_import
   version
-  waiting_list)
+  waiting_list
+  pool_core
+  webserver
+  storage)
  (preprocess
   (pps
    lwt_ppx

@@ -555,7 +555,7 @@ let filter_form
                 (experiment.Experiment.id
                  |> Experiment.Id.value
                  |> Format.asprintf "/admin/experiments/%s/filter-statistics"
-                 |> Sihl.Web.externalize_path)
+                 |> Webserver.externalize_path)
             ]
           [ Component_statistics.ExperimentFilter.create language statistics ])
   in
@@ -570,7 +570,7 @@ let filter_form
            ~a:
              [ a_method `Post
              ; a_action
-                 (Sihl.Web.externalize_path
+                 (Webserver.externalize_path
                     (Format.asprintf
                        "/admin/experiments/%s/filter/%s/delete"
                        (experiment.Experiment.id |> Experiment.Id.value)

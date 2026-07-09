@@ -21,7 +21,7 @@ let show { Pool_context.language; _ } (location : Pool_location.t) files =
                    (file.language |> Pool_common.Language.show)
                in
                let path =
-                 contact_file_path location.id file |> Sihl.Web.externalize_path
+                 contact_file_path location.id file |> Webserver.externalize_path
                in
                [ a ~a:[ a_href path ] [ txt label ] ])
             files

@@ -61,7 +61,7 @@ let show req =
     let%lwt contact_b = get_fields duplicate.contact_b in
     Page.show context fields contact_a contact_b duplicate
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -96,7 +96,7 @@ let merge req =
   let tags = Pool_context.Logger.Tags.req req in
   let result { Pool_context.database_label; user; _ } =
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
+      Webserver.Request.to_urlencoded req ||> Http_utils.remove_empty_values
     in
     let* duplicate =
       duplicate_id req |> Duplicate_contacts.find database_label >|- Response.not_found

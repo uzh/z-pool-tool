@@ -125,7 +125,7 @@ let index entity role req =
       context
     |> Lwt_result.ok
     >>= create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;

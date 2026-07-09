@@ -12,7 +12,7 @@ let handle_tag action redirect error_handler req =
   let tags = Pool_context.Logger.Tags.req req in
   let experiment_id = experiment_id req in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    Webserver.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
   let result { Pool_context.database_label; user; _ } =
     let* experiment =

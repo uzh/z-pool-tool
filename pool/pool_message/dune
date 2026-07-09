@@ -1,7 +1,7 @@
 (library
  (name pool_message)
  (public_name pool.message)
- (libraries containers caqti-lwt.unix lwt pool.utils)
+ (libraries containers caqti-lwt.unix lwt pool.utils sexplib)
  (wrapped true)
  (preprocess
   (pps

@@ -14,7 +14,7 @@ val schema : unit -> (Pool_conformist.error_msg, t) Pool_conformist.Field.t
     token signature, by default `SIHL_SECRET` is used. *)
 val create
   :  ?secret:string
-  -> ?expires_in:Sihl.Time.duration
+  -> ?expires_in:Pool_core.Time.duration
   -> Database.Label.t
   -> (string * string) list
   -> t Lwt.t
@@ -85,7 +85,7 @@ val find_active_by_data : Database.Label.t -> (string * string) list -> t option
 (** [extend_expiry database_label token duration] extends the expiry of [token] to
     [duration] from now. Does nothing if the token cannot be found or is no
     longer valid. *)
-val extend_expiry : Database.Label.t -> t -> Sihl.Time.duration -> unit Lwt.t
+val extend_expiry : Database.Label.t -> t -> Pool_core.Time.duration -> unit Lwt.t
 
-val lifecycle : Sihl.Container.lifecycle
-val register : unit -> Sihl.Container.Service.t
+val lifecycle : Pool_core.Container.lifecycle
+val register : unit -> Pool_core.Container.Service.t

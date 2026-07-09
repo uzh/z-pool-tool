@@ -43,7 +43,7 @@ module App = struct
   let create_title ?(icon_link = "/index") query_parameters title =
     let path =
       Http_utils.url_with_field_params query_parameters icon_link
-      |> Sihl.Web.externalize_path
+      |> Webserver.externalize_path
     in
     a ~a:[ a_href path; a_class [ "app-title" ] ] [ txt title ]
   ;;

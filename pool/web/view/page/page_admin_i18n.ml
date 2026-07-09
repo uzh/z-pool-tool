@@ -45,7 +45,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
            CCList.map
              (fun translation ->
                 let action =
-                  Sihl.Web.externalize_path
+                  Webserver.externalize_path
                     (Format.asprintf
                        "/admin/i18n/%s"
                        (translation |> I18n.id |> Pool_common.Id.value))

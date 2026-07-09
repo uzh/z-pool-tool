@@ -95,7 +95,7 @@ let filter { additional_url_params; language; url; query; push_url; _ } target_i
            ?additional_params:additional_url_params
            { query with pagination = None; filter = Some filter })
       |> Format.asprintf "%a" Uri.pp
-      |> Sihl.Web.externalize_path
+      |> Webserver.externalize_path
     in
     a_user_data "hx-trigger" "change" :: hx_get ~url ~target_id ~push_url
   in
@@ -188,7 +188,7 @@ let pagination
     Query.to_uri_query ~additional_params { query with pagination = None }
     |> Uri.with_query url
     |> Format.asprintf "%a" Uri.pp
-    |> Sihl.Web.externalize_path
+    |> Webserver.externalize_path
   in
   let open Pagination in
   let hx_params page =
@@ -287,7 +287,7 @@ let searchbar
          ?additional_params:additional_url_params
          { query with search = None; pagination = None })
     |> Format.asprintf "%a" Uri.pp
-    |> Sihl.Web.externalize_path
+    |> Webserver.externalize_path
   in
   div
     ~a:[ a_class [ "form-group"; "span-2"; "search-bar" ] ]
@@ -333,7 +333,7 @@ let resetbar language =
 ;;
 
 let make_sortable_head target_id sort col field =
-  let url = make_url sort col |> Sihl.Web.externalize_path in
+  let url = make_url sort col |> Webserver.externalize_path in
   span
     ~a:
       (hx_get ~url ~target_id ~push_url:sort.push_url
@@ -442,7 +442,7 @@ let make
         Query.to_uri_query ?additional_params:additional_url_params data_table.query
         |> Uri.with_query url
         |> Format.asprintf "%a" Uri.pp
-        |> Sihl.Web.externalize_path
+        |> Webserver.externalize_path
       in
       a_user_data "hx-trigger" "load" :: hx_get ~url ~target_id ~push_url)
     else []

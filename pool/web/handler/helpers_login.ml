@@ -232,7 +232,7 @@ let decode_2fa_confirmation database_label req ~tags =
   let log_request = log_request "Failed to confirm 2FA login" req tags in
   let open Cqrs_command.Login_command.Confirm2FaLogin in
   let* auth_id, token =
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     decode urlencoded
     |> Lwt_result.lift
     >|- fun err ->

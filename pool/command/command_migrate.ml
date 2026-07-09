@@ -21,7 +21,7 @@ end = struct
       Letters.create_email ~reply_to ~from:sender ~recipients ~subject ~body ()
       |> function
       | Ok message -> Letters.send ~config ~sender ~recipients ~message
-      | Error msg -> raise (Sihl.Contract.Email.Exception msg)
+      | Error msg -> raise (Email.Message.Exception msg)
     in
     !notifications
     |> Lwt_list.iter_s (fun notification ->
@@ -36,7 +36,7 @@ end = struct
   ;;
 
   let send () =
-    if Sihl.Configuration.is_development ()
+    if Pool_core.Configuration.is_development ()
     then Lwt.return_unit
     else send_notifications ()
   ;;
@@ -55,8 +55,8 @@ let root =
 ;;
 
 let create_failure_notification db_label error =
-  let open Sihl_email in
-  let read_config = Sihl.Configuration.read_string in
+  let open Email.Message in
+  let read_config = Pool_core.Configuration.read_string in
   let sender = read_config "SMTP_SENDER" in
   let recipient = read_config "SMTP_SENDER" in
   match sender, recipient with

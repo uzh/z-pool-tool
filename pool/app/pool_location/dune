@@ -9,7 +9,6 @@
   pool_tenant
   storage
   query
-  sihl
   utils)
  (preprocess
   (pps

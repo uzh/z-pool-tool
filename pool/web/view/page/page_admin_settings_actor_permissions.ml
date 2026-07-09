@@ -47,7 +47,8 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
       form
         ~a:
           [ a_method `Post
-          ; a_action (actor_permission_path ~suffix:target () |> Sihl.Web.externalize_path)
+          ; a_action
+              (actor_permission_path ~suffix:target () |> Webserver.externalize_path)
           ; a_user_data
               "confirmable"
               (Pool_common.Utils.confirmable_to_string language confirm_text)
@@ -67,7 +68,7 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
     let create_link text =
       let default = txt text in
       CCOption.map_or ~default (fun uri ->
-        a ~a:[ a_href (Sihl.Web.externalize_path uri) ] [ default ])
+        a ~a:[ a_href (Webserver.externalize_path uri) ] [ default ])
     in
     let actor_link =
       create_target_path

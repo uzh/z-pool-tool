@@ -37,7 +37,7 @@ let form case req =
     in
     Page.Root.Version.form context ?version ()
     |> create_layout context
-    ||> Sihl.Web.Response.of_html
+    ||> Webserver.Response.of_html
     ||> CCResult.return
   in
   Response.handle ~src req result
@@ -49,7 +49,7 @@ let edit = form `Edit
 let create req =
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
+    Webserver.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
   let result { Pool_context.database_label; user; _ } =
     Response.bad_request_on_error ~urlencoded new_form
@@ -73,7 +73,7 @@ let create req =
 let update req =
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
+    Webserver.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
   let id = version_id req in
   let result { Pool_context.database_label; user; _ } =

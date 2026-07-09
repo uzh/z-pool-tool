@@ -27,14 +27,14 @@ let src = Logs.Src.create "pool_tenant.service"
 let tags = Database.(Logger.Tags.create Pool.Root.label)
 
 module DevInbox = struct
-  let dev_inbox : Sihl.Contract.Email.t list ref = ref []
+  let dev_inbox : Email_message.t list ref = ref []
   let inbox () = !dev_inbox
   let add_to_inbox email = dev_inbox := email :: !dev_inbox
   let clear_inbox () = dev_inbox := []
 end
 
 let print ?(tags = tags) ?(log_level = Logs.Debug) email =
-  let open Sihl.Contract.Email in
+  let open Email_message in
   Logs.msg ~src log_level (fun m ->
     m
       ~tags
@@ -61,20 +61,22 @@ Html:
 ;;
 
 let bypass () =
-  CCOption.get_or ~default:false (Sihl.Configuration.read_bool "EMAIL_BYPASS_INTERCEPT")
+  CCOption.get_or
+    ~default:false
+    (Pool_core.Configuration.read_bool "EMAIL_BYPASS_INTERCEPT")
 ;;
 
-let intercept_email_address () = Sihl.Configuration.read_string "TEST_EMAIL"
+let intercept_email_address () = Pool_core.Configuration.read_string "TEST_EMAIL"
 
 let console () =
   CCOption.get_or
-    ~default:(Sihl.Configuration.is_development ())
-    (Sihl.Configuration.read_bool "EMAIL_CONSOLE")
+    ~default:(Pool_core.Configuration.is_development ())
+    (Pool_core.Configuration.read_bool "EMAIL_CONSOLE")
 ;;
 
 let redirected_email
       new_recipient
-      (Sihl_email.{ recipient; subject; cc; bcc; text; _ } as email)
+      (Email_message.{ recipient; subject; cc; bcc; text; _ } as email)
   =
   let subject =
     Format.asprintf
@@ -83,7 +85,7 @@ let redirected_email
       recipient
       (if cc @ bcc |> CCList.is_empty |> not then ", DEL CC/BCC" else "")
   in
-  Sihl_email.
+  Email_message.
     { email with
       subject
     ; recipient = new_recipient
@@ -100,7 +102,7 @@ let redirected_email
 
 let intercept_prepare ({ Entity.Job.email; _ } as job) =
   let () = if console () then print ~log_level:Logs.Info email else () in
-  match Sihl.Configuration.is_production (), intercept_email_address () with
+  match Pool_core.Configuration.is_production (), intercept_email_address () with
   | true, _ -> Ok job
   | false, Some new_recipient ->
     Logs.info ~src (fun m ->
@@ -119,7 +121,7 @@ let intercept_prepare ({ Entity.Job.email; _ } as job) =
 
 let intercept_send sender email =
   let () = if console () then print email else () in
-  match Sihl.Configuration.is_production (), bypass () with
+  match Pool_core.Configuration.is_production (), bypass () with
   | true, _ | _, true -> sender email
   | false, false ->
     Logs.info ~src (fun m ->
@@ -132,7 +134,7 @@ let default_sender_of_pool database_label =
   let open Utils.Lwt_result.Infix in
   if Database.Pool.is_root database_label
   then
-    Sihl.Configuration.read_string "SMTP_SENDER"
+    Pool_core.Configuration.read_string "SMTP_SENDER"
     |> CCOption.get_exn_or "Undefined 'SMTP_SENDER'"
     |> Pool_user.EmailAddress.of_string
     |> Lwt.return
@@ -161,7 +163,7 @@ module Smtp = struct
         mechanism
         protocol
         default_sender_of_pool
-        { Sihl.Contract.Email.sender; recipient; subject; text; html; cc; bcc }
+        { Email_message.sender; recipient; subject; text; html; cc; bcc }
     =
     let open CCFun.Infix in
     let recipients =
@@ -267,7 +269,7 @@ module Smtp = struct
       let text = "This is a test" in
       let html = Some text in
       Lwt.return
-        Sihl.Contract.Email.{ sender; recipient; subject; text; html; cc = []; bcc = [] }
+        Email_message.{ sender; recipient; subject; text; html; cc = []; bcc = [] }
     in
     email_from_smtp_auth
       username
@@ -292,9 +294,9 @@ module Smtp = struct
           ~tags:(Database.Logger.Tags.create database_label)
           "Send email as %s to %s"
           sender
-          email.Sihl_email.recipient);
+          email.Email_message.recipient);
       Letters.send ~config ~sender ~recipients ~message
-    | Error msg -> raise (Sihl.Contract.Email.Exception msg)
+    | Error msg -> raise (Email_message.Exception msg)
   ;;
 end
 
@@ -323,16 +325,16 @@ let start () = Lwt.return_unit
 let stop () = Lwt.return_unit
 
 let lifecycle =
-  Sihl.Container.create_lifecycle
-    Sihl.Contract.Email.name
+  Pool_core.Container.create_lifecycle
+    Email_message.name
     ~dependencies:(fun () -> [ Pool_database.lifecycle ])
     ~start
     ~stop
 ;;
 
 let register () =
-  let configuration = Sihl.Configuration.make () in
-  Sihl.Container.Service.create ~configuration lifecycle
+  let configuration = Pool_core.Configuration.make () in
+  Pool_core.Container.Service.create ~configuration lifecycle
 ;;
 
 module Job = struct
@@ -386,7 +388,7 @@ module Job = struct
   let show_recipient =
     Pool_queue.Instance.input
     %> decode
-    %> CCResult.map_or ~default:"error" (email %> fun x -> x.Sihl_email.recipient)
+    %> CCResult.map_or ~default:"error" (email %> fun x -> x.Email_message.recipient)
   ;;
 
   let send =
@@ -410,13 +412,13 @@ module Job = struct
            let%lwt () =
              Pool_user.reset_smtp_bounce
                label
-               (Pool_user.EmailAddress.of_string email_data.Sihl_email.recipient)
+               (Pool_user.EmailAddress.of_string email_data.Email_message.recipient)
            in
            Lwt.return result)
         (fun exn ->
            match Printexc.to_string exn with
            | msg when is_recipient_not_found msg ->
-             let recipient = email_data.Sihl_email.recipient in
+             let recipient = email_data.Email_message.recipient in
              Logs.info ~src (fun m ->
                m
                  ~tags:(Database.Logger.Tags.create label)
@@ -433,7 +435,7 @@ module Job = struct
     Pool_queue.(
       Job.create
         ~max_tries:10
-        ~retry_delay:(Sihl.Time.Span.hours 1)
+        ~retry_delay:(Pool_core.Time.Span.hours 1)
         handle
         encode
         decode
@@ -451,7 +453,7 @@ let dispatch
       ({ Entity.Job.email; _ } as job)
   =
   let tags = Database.Logger.Tags.create database_label in
-  Logs.debug ~src (fun m -> m ~tags "Dispatch email to %s" email.Sihl_email.recipient);
+  Logs.debug ~src (fun m -> m ~tags "Dispatch email to %s" email.Email_message.recipient);
   let%lwt resolved =
     match new_smtp_auth_id, Job.smtp_auth_id job, message_template with
     | Some id, _, _ -> Lwt.return_some id
@@ -495,7 +497,7 @@ let dispatch_all database_label jobs =
          in
          let job = job |> Job.update ?new_smtp_auth_id:resolved_new_smtp_auth_id in
          Lwt.return
-           ( email.Sihl_email.recipient :: recipients
+           ( email.Email_message.recipient :: recipients
            , ( id
              , job |> Job.intercept_prepare_of_event
              , message_template

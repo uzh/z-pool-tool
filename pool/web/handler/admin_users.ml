@@ -25,7 +25,7 @@ let redirect req =
         let id = Admin.Id.of_string user_id in
         Url.Admin.admin_path ~id ()
     in
-    redirect |> Sihl.Web.externalize_path |> redirect_to |> Lwt_result.ok
+    redirect |> Webserver.externalize_path |> redirect_to |> Lwt_result.ok
   in
   Response.handle ~src req result
 ;;

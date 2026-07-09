@@ -556,7 +556,7 @@ let create_cancellation_message experiment reason contact =
   let recipient = contact |> Contact.email_address |> Pool_user.EmailAddress.value in
   let email = Model.create_email ~recipient () in
   let email =
-    reason |> Session.CancellationReason.value |> flip Sihl_email.set_text email
+    reason |> Session.CancellationReason.value |> flip Email.Message.set_text email
   in
   create_email_job experiment email
   |> Email.create_dispatch

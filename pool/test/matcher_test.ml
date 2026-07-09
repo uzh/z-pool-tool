@@ -67,7 +67,7 @@ let create_message ?sender invitation =
   let sender =
     sender |> CCOption.map_or ~default:"it@econ.uzh.ch" Pool_user.EmailAddress.value
   in
-  Sihl_email.
+  Email.Message.
     { sender
     ; recipient = "contact@econ.uzh.ch"
     ; subject = "Invitation"

@@ -19,10 +19,10 @@
   pool_user
   session
   settings
-  sihl
-  sihl-storage
   utils
-  waiting_list)
+  waiting_list
+  pool_core
+  storage)
  (preprocess
   (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_yojson_conv)))
 

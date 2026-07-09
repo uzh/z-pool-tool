@@ -8,7 +8,7 @@ let detail session follow_ups experiment Pool_context.{ language; csrf; _ } =
       "/experiments/%s/sessions/%s"
       Experiment.(experiment |> Public.id |> Id.value)
       Session.(Id.value session.Public.id)
-    |> Sihl.Web.externalize_path
+    |> Webserver.externalize_path
   in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]

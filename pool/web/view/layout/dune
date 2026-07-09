@@ -14,8 +14,8 @@
   message_template
   pool_common
   schedule
-  sihl
   signup_code
-  waiting_list)
+  waiting_list
+  webserver)
  (preprocess
   (pps lwt_ppx ppx_deriving.eq ppx_deriving.show)))

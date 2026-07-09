@@ -92,7 +92,6 @@ depends: [
   "jane-street-headers" {= "v0.17.0" & with-test}
   "jsonrpc" {= "1.23.1" & with-dev-setup}
   "jst-config" {= "v0.17.0" & with-test}
-  "jwto" {= "0.4.0"}
   "kdf" {= "1.1.0"}
   "ke" {= "0.6"}
   "letters" {= "0.4.0-bug-connection-close-wait+HEAD"}
@@ -184,9 +183,6 @@ depends: [
   "seq" {= "base"}
   "sexplib" {= "v0.17.0"}
   "sexplib0" {= "v0.17.0"}
-  "sihl" {= "4.0.0-master+6c3c404"}
-  "sihl-email" {= "4.0.0-master+6c3c404"}
-  "sihl-storage" {= "4.0.0-master+6c3c404"}
   "spawn" {= "v0.17.0" & with-dev-setup}
   "ssl" {= "0.7.0"}
   "stdio" {= "v0.17.0" & with-test}
@@ -206,8 +202,8 @@ depends: [
   "unstrctrd" {= "0.4"}
   "uri" {= "4.4.0"}
   "uri-sexp" {= "4.4.0"}
-  "uucp" {= "17.0.0" & with-test}
   "uuidm" {= "0.9.10"}
+  "uucp" {= "17.0.0" & with-test}
   "uuseg" {= "17.0.0" & with-test}
   "uutf" {= "1.0.4"}
   "uuuu" {= "0.4.0"}
@@ -251,17 +247,5 @@ pin-depends: [
   [
   "rock.0.20.0-master+da1b22e"
   "git+https://github.com/rgrinberg/opium.git#da1b22e2ee31889fea68a943b4a6358a633df0c6"
-]
-  [
-  "sihl.4.0.0-master+6c3c404"
-  "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"
-]
-  [
-  "sihl-email.4.0.0-master+6c3c404"
-  "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"
-]
-  [
-  "sihl-storage.4.0.0-master+6c3c404"
-  "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"
 ]
 ]

@@ -1,3 +1,5 @@
+module Message = Email_message
+
 module VerifiedAt : sig
   type t
 
@@ -260,25 +262,25 @@ module Service : sig
       ; config : Letters.Config.t
       }
 
-    val inbox : unit -> Sihl_email.t list
+    val inbox : unit -> Email_message.t list
     val clear_inbox : unit -> unit
 
     val prepare
       :  Database.Label.t
       -> ?smtp_auth_id:SmtpAuth.Id.t
-      -> Sihl_email.t
+      -> Email_message.t
       -> prepared Lwt.t
   end
 
   module Job : sig
     type t
 
-    val email : t -> Sihl_email.t
+    val email : t -> Email_message.t
     val smtp_auth_id : t -> SmtpAuth.Id.t option
     val encode : t -> string
     val decode : string -> (t, Pool_message.Error.t) result
     val show_recipient : Pool_queue.Instance.t -> string
-    val create : ?smtp_auth_id:SmtpAuth.Id.t -> Sihl_email.t -> t
+    val create : ?smtp_auth_id:SmtpAuth.Id.t -> Email_message.t -> t
 
     val update
       :  ?new_email_address:Pool_user.EmailAddress.t
@@ -311,8 +313,8 @@ module Service : sig
          list
     -> unit Lwt.t
 
-  val lifecycle : Sihl.Container.lifecycle
-  val register : unit -> Sihl.Container.Service.t
+  val lifecycle : Pool_core.Container.lifecycle
+  val register : unit -> Pool_core.Container.Service.t
 
   val test_smtp_config
     :  Database.Label.t

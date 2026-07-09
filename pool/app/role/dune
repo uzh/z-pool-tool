@@ -1,6 +1,6 @@
 (library
  (name role)
- (libraries pool.message sihl guardian)
+ (libraries pool.message guardian)
  (preprocess
   (pps
    ppx_deriving.enum

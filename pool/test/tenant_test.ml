@@ -24,7 +24,7 @@ module Data = struct
   let gtx_sender = "Econ"
 
   let database_url =
-    Sihl.Configuration.read_string "DATABASE_URL_TENANT_ONE"
+    Pool_core.Configuration.read_string "DATABASE_URL_TENANT_ONE"
     |> CCOption.get_exn_or "DATABASE_URL_TENANT_ONE undefined"
   ;;
 
@@ -604,7 +604,7 @@ let create_operator_with_verification_email () =
     let ({ email_subject; email_text; label; _ } : Message_template.t) =
       Test_utils.Model.create_message_template ()
     in
-    Sihl_email.
+    Email.Message.
       { sender
       ; recipient = email
       ; subject = email_subject |> EmailSubject.value

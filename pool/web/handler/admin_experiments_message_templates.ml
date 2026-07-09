@@ -65,7 +65,7 @@ let form form_context req =
       label
       form_context
     >|> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;

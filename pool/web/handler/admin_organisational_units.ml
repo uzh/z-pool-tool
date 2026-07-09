@@ -11,7 +11,7 @@ let src = Logs.Src.create "handler.admin.organisational_units"
 let create_layout req = General.create_tenant_layout req
 
 let id req =
-  Sihl.Web.Router.param req @@ Field.show Field.OrganisationalUnit
+  Webserver.Router.param req @@ Field.show Field.OrganisationalUnit
   |> Organisational_unit.Id.of_string
 ;;
 
@@ -50,7 +50,7 @@ let show action req =
       | `New -> View.create context
       | `Edit -> View.detail context ou
     in
-    html |> create_layout req context >|+ Sihl.Web.Response.of_html
+    html |> create_layout req context >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -60,7 +60,7 @@ let edit = show `Edit
 
 let create req =
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    Webserver.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
   let result { Pool_context.database_label; user; _ } =
     Response.bad_request_on_error ~urlencoded new_form
@@ -83,7 +83,7 @@ let create req =
 
 let update req =
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    Webserver.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
   let id = id req in
   let result { Pool_context.database_label; user; _ } =

@@ -11,8 +11,8 @@
   pool_tenant
   ppx_deriving_yojson.runtime
   schedule
-  sihl
-  utils)
+  utils
+  pool_core)
  (preprocess
   (pps
    lwt_ppx

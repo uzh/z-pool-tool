@@ -24,7 +24,7 @@ let login_information
   =
   let form_attrs action =
     [ a_method `Post
-    ; a_action (Format.asprintf "%s%s" action_prefix action |> Sihl.Web.externalize_path)
+    ; a_action (Format.asprintf "%s%s" action_prefix action |> Webserver.externalize_path)
     ; a_class [ "stack" ]
     ]
   in

@@ -66,7 +66,7 @@ NOTE: There is NO check if the UUID of a role is correct for CLI commands.
 Example: admin.create econ-uzh example@mail.com securePassword Max Muster RecruiterAll
         |}
   in
-  Sihl.Command.make ~name:"admin.create" ~description:"New admin" ~help (function
+  Pool_core.Command.make ~name:"admin.create" ~description:"New admin" ~help (function
     | [ db_pool; email; password; given_name; name; role ] ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
       (role_of_string role, None)
@@ -115,7 +115,11 @@ Provide all fields to sign up a new contact:
 Example: admin.root.create example@mail.com securePassword Max Muster
         |}
   in
-  Sihl.Command.make ~name:"admin.root.create" ~description:"New admin" ~help (function
+  Pool_core.Command.make
+    ~name:"admin.root.create"
+    ~description:"New admin"
+    ~help
+    (function
     | [ email; password; given_name; name ] ->
       let%lwt () = Database.Pool.Root.setup () in
       create_exn email password given_name name
@@ -150,7 +154,7 @@ NOTE: There is NO check if the UUID of a role is correct for CLI commands.
 Example: admin.grant_role econ-uzh example@mail.com RecruiterAll
         |}
   in
-  Sihl.Command.make
+  Pool_core.Command.make
     ~name:"admin.grant_role"
     ~description:"grant role to admin"
     ~help

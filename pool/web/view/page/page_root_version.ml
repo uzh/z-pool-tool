@@ -110,7 +110,7 @@ let form { Pool_context.csrf; language; flash_fetcher; _ } ?version () =
     ; form
         ~a:
           [ a_method `Post
-          ; a_action (Sihl.Web.externalize_path action)
+          ; a_action (Webserver.externalize_path action)
           ; a_class [ "stack"; "gap-lg" ]
           ; a_user_data "detect-unsaved-changes" ""
           ]

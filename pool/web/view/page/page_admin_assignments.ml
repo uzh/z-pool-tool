@@ -153,7 +153,7 @@ module Partials = struct
       let open Pool_common in
       let action =
         assignment_specific_path ~suffix:"remind" experiment_id session.Session.id id
-        |> Sihl.Web.externalize_path
+        |> Webserver.externalize_path
       in
       let available_channels =
         MessageChannel.filtered_channels
@@ -235,7 +235,7 @@ module Partials = struct
             [ hx_target ("#" ^ id)
             ; hx_trigger "change"
             ; hx_swap "innerHTML"
-            ; hx_get (action |> Sihl.Web.externalize_path)
+            ; hx_get (action |> Webserver.externalize_path)
             ])
       else None
     in
@@ -272,7 +272,7 @@ module Partials = struct
         experiment.Experiment.id
         session.Session.id
         assignment.Assignment.id
-      |> Sihl.Web.externalize_path
+      |> Webserver.externalize_path
     in
     let option_formatter m =
       let open Session in
@@ -356,7 +356,7 @@ module Partials = struct
         ~suffix:"direct-message/send"
         ~id:session.id
         experiment.Experiment.id
-      |> Sihl.Web.externalize_path
+      |> Webserver.externalize_path
     in
     let text_message_enabled =
       match assignments with
@@ -559,7 +559,7 @@ let data_table
   let button_form ?(style = `Primary) suffix confirmable control icon assignment =
     form
       ~a:
-        [ a_action (action assignment suffix |> Sihl.Web.externalize_path)
+        [ a_action (action assignment suffix |> Webserver.externalize_path)
         ; a_method `Post
         ; a_user_data "confirmable" (Utils.confirmable_to_string language confirmable)
         ]
@@ -591,7 +591,7 @@ let data_table
                "%s/%s"
                (Page_admin_contact.path contact)
                Field.(human_url ExternalDataId)
-             |> Sihl.Web.externalize_path)
+             |> Webserver.externalize_path)
         ; a_class [ "has-icon"; "primary"; "btn"; "is-text" ]
         ]
       [ Icon.(to_html ReorderThree)
@@ -599,7 +599,7 @@ let data_table
       ]
   in
   let session_change_toggle assignment =
-    let action = action assignment "swap-session" |> Sihl.Web.externalize_path in
+    let action = action assignment "swap-session" |> Webserver.externalize_path in
     link_as_button
       "#"
       ~attributes:
@@ -620,7 +620,7 @@ let data_table
         ~suffix:"direct-message"
         ~id:(session_id session)
         experiment.Experiment.id
-      |> Sihl.Web.externalize_path
+      |> Webserver.externalize_path
     in
     link_as_button
       "#"
@@ -809,7 +809,7 @@ let edit
   let session_id = HttpUtils.Session.session_id session in
   let action =
     assignment_specific_path experiment.Experiment.id session_id id
-    |> Sihl.Web.externalize_path
+    |> Webserver.externalize_path
   in
   let changelog_url =
     HttpUtils.Url.Admin.assignment_path

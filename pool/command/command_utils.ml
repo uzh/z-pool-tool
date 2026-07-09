@@ -28,7 +28,7 @@ Example: %s
   |}
       name
   in
-  Sihl.Command.make ~name ~description ~help (function
+  Pool_core.Command.make ~name ~description ~help (function
     | [] -> fcn ()
     | _ -> failwith_missmatch help)
 ;;
@@ -45,7 +45,7 @@ Example: %s econ-uzh
   |}
       name
   in
-  Sihl.Command.make ~name ~description ~help (function
+  Pool_core.Command.make ~name ~description ~help (function
     | [ pool ] ->
       let%lwt pool = is_available_exn pool in
       fcn pool
@@ -66,7 +66,7 @@ Example: %s hello world
   |}
       name
   in
-  Sihl.Command.make ~name ~description ~help (fun decrypted ->
+  Pool_core.Command.make ~name ~description ~help (fun decrypted ->
     let encrypted =
       Utils.Crypto.String.encrypt_to_string (CCString.concat " " decrypted)
     in

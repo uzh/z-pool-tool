@@ -21,7 +21,7 @@ let template_label_url label suffix =
     "/admin/message-template/%s/%s"
     (Pool_common.MessageTemplateLabel.show label)
     suffix
-  |> Sihl.Web.externalize_path
+  |> Webserver.externalize_path
 ;;
 
 let table

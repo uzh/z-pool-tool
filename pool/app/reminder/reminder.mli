@@ -7,7 +7,7 @@ module Service : sig
 
   val send_tenant_reminder : Database.Label.t -> unit Lwt.t
   val run : unit -> unit Lwt.t
-  val register : unit -> Sihl.Container.Service.t
+  val register : unit -> Pool_core.Container.Service.t
 end
 
 val prepare_messages

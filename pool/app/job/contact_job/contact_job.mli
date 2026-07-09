@@ -15,5 +15,5 @@ module Inactivity : sig
     -> Ptime.Span.t list
     -> (Email.dispatch list * Contact.event list, Pool_message.Error.t) result Lwt.t
 
-  val register : unit -> Sihl.Container.Service.t
+  val register : unit -> Pool_core.Container.Service.t
 end

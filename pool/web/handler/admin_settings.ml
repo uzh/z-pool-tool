@@ -21,7 +21,7 @@ let settings_page ?open_tab req =
     let open_tab =
       let open CCOption in
       open_tab
-      <+> (Sihl.Web.Request.query "action" req
+      <+> (Webserver.Request.query "action" req
            >>= CCFun.(Settings.action_of_param %> of_result))
     in
     let languages = Pool_context.Tenant.get_tenant_languages_exn req in
@@ -74,7 +74,7 @@ let settings_page ?open_tab req =
       context
       text_messages_enabled
     |> create_layout req ~active_navigation:"/admin/settings" context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -87,11 +87,11 @@ let update_settings req =
   let lift = Lwt_result.lift in
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    Webserver.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
   let result { Pool_context.database_label; user; _ } =
     let* action =
-      Sihl.Web.Router.param req "action"
+      Webserver.Router.param req "action"
       |> Settings.action_of_param
       |> Lwt_result.lift
       |> Response.bad_request_on_error ~urlencoded show
@@ -131,7 +131,7 @@ let update_settings req =
           InactiveUser.DisableAfter.(urlencoded |> decode >>= handle ~tags) |> lift
         | `UpdateInactiveUserWarning ->
           let open Pool_message in
-          let urlencoded_list field = Sihl.Web.Request.urlencoded_list field req in
+          let urlencoded_list field = Webserver.Request.urlencoded_list field req in
           let%lwt values = urlencoded_list Field.(show InactiveUserWarning) in
           let%lwt units = urlencoded_list Field.(show (TimeUnitOf InactiveUserWarning)) in
           InactiveUser.Warning.(handle ~tags ~values ~units ()) |> lift
@@ -276,7 +276,7 @@ module Access : module type of Helpers.Access = struct
       | `UpdateHeadScripts | `UpdateBodyScripts -> Command.UpdatePageScript.effects
       | `UpdateProfileOnly -> Command.UpdateProfileOnly.effects
     in
-    flip Sihl.Web.Router.param "action"
+    flip Webserver.Router.param "action"
     %> Settings.action_of_param
     %> CCResult.map find_effects
     |> Guardian.validate_generic

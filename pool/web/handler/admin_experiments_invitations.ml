@@ -35,7 +35,7 @@ let index req =
         Lwt.return (query_experiments, query_tags, query_tagged_experiments)
     in
     let* filtered_contacts =
-      if Sihl.Configuration.is_production ()
+      if Pool_core.Configuration.is_production ()
       then Lwt_result.return None
       else
         Filter.(
@@ -63,7 +63,7 @@ let index req =
       filtered_contacts
       context
     >|> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src ~enable_cache:false req result
 ;;
@@ -118,7 +118,7 @@ let create req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* contact_ids =
-      Sihl.Web.Request.urlencoded_list Field.(Contacts |> array_key) req
+      Webserver.Request.urlencoded_list Field.(Contacts |> array_key) req
       ||> CCList.map Contact.Id.of_string
       ||> fun list ->
       if CCList.is_empty list

@@ -29,7 +29,7 @@ let selected_tenants_from_urlencoded req =
   let open Pool_tenant in
   let%lwt tenants = find_all () in
   let%lwt selected_tenants =
-    Sihl.Web.Request.urlencoded_list Field.(array_key Tenant) req
+    Webserver.Request.urlencoded_list Field.(array_key Tenant) req
   in
   tenants
   |> filter_map (fun { id; _ } ->
@@ -68,7 +68,7 @@ let form case req =
     in
     Page.Root.Announcement.form context tenants sys_languages ?announcement
     |> create_layout context
-    ||> Sihl.Web.Response.of_html
+    ||> Webserver.Response.of_html
     ||> CCResult.return
   in
   Response.handle ~src req result
@@ -80,7 +80,7 @@ let edit = form `Edit
 let create req =
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
+    Webserver.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
   let result { Pool_context.database_label; user; _ } =
     Response.bad_request_on_error ~urlencoded new_form
@@ -109,7 +109,7 @@ let create req =
 let update req =
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
+    Webserver.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
   let id = announcement_id req in
   let result { Pool_context.database_label; user; _ } =

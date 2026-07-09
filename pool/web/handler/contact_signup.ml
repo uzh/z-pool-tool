@@ -18,7 +18,7 @@ let sign_up req =
     in
     Page.Contact.sign_up terms custom_fields context
     |> create_layout req ~active_navigation:"/signup" context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -28,7 +28,7 @@ let sign_up_create req =
   let terms_key = Field.(TermsAccepted |> show) in
   let user_id = Contact.Id.create () in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req
+    Webserver.Request.to_urlencoded req
     ||> HttpUtils.remove_empty_values
     ||> HttpUtils.format_request_boolean_values [ terms_key ]
   in
@@ -53,7 +53,7 @@ let sign_up_create req =
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
        let* email_address =
-         Sihl.Web.Request.urlencoded Field.(Email |> show) req
+         Webserver.Request.urlencoded Field.(Email |> show) req
          ||> CCOption.to_result Error.ContactSignupInvalidEmail
          >== Pool_user.EmailAddress.create
        in
@@ -179,7 +179,7 @@ let email_verification req =
         context_user_of_user database_label user ||> dashboard_path
     in
     let* token =
-      Sihl.Web.Request.query Field.(show Token) req
+      Webserver.Request.query Field.(show Token) req
       |> CCOption.map Pool_token.of_string
       |> CCOption.to_result (Error.NotFound Field.Token)
       |> Lwt_result.lift
@@ -274,7 +274,7 @@ let terms req =
     in
     Page.Contact.terms ?notification terms context
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;

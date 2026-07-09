@@ -28,7 +28,7 @@ module Pool = struct
     let to_txt value = txt (CCInt.to_string value) in
     let period_select =
       let attributes =
-        [ a_user_data "hx-get" (Sihl.Web.externalize_path "/admin/statistics")
+        [ a_user_data "hx-get" (Webserver.externalize_path "/admin/statistics")
         ; a_user_data "hx-swap" "outerHTML"
         ; a_user_data "hx-target" "closest [data-statistics]"
         ]

@@ -92,5 +92,5 @@ end
 
 module Service : sig
   val run : Database.Label.t -> unit Lwt.t
-  val register : unit -> Sihl.Container.Service.t
+  val register : unit -> Pool_core.Container.Service.t
 end

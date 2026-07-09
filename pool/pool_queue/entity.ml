@@ -2,7 +2,7 @@ open Pool_message
 open Ppx_yojson_conv_lib.Yojson_conv.Primitives
 
 let default_tries = 5
-let default_retry_delay = Sihl.Time.Span.minutes 1
+let default_retry_delay = Pool_core.Time.Span.minutes 1
 
 module Id : module type of Pool_common.Id = Pool_model.Base.Id
 
@@ -300,7 +300,7 @@ module History = struct
     [@equal
       fun (m1, id1) (m2, id2) ->
         equal_model m1 m2
-        && (Pool_common.Id.equal id1 id2 || Sihl.Configuration.is_test ())])
+        && (Pool_common.Id.equal id1 id2 || Pool_core.Configuration.is_test ())])
   [@@deriving eq, ord, show, yojson]
 
   let sort = CCList.stable_sort compare_item

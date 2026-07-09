@@ -122,8 +122,8 @@ module Password : sig
       -> Confirmation.t
       -> (unit, Pool_message.Error.t) Lwt_result.t
 
-    val register : unit -> Sihl.Container.Service.t
-    val lifecycle : Sihl.Container.lifecycle
+    val register : unit -> Pool_core.Container.Service.t
+    val lifecycle : Pool_core.Container.lifecycle
   end
 end
 
@@ -440,5 +440,5 @@ val login
   -> Password.Plain.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
-val lifecycle : Sihl.Container.lifecycle
-val register : ?commands:Sihl.Command.t list -> unit -> Sihl.Container.Service.t
+val lifecycle : Pool_core.Container.lifecycle
+val register : ?commands:Pool_core.Command.t list -> unit -> Pool_core.Container.Service.t

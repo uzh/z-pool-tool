@@ -53,7 +53,7 @@ let save_files allow_list req =
         Hashtbl.add assocs name filename;
         write file
   in
-  let%lwt _ = Sihl.Web.Request.to_multipart_form_data_exn ~callback req in
+  let%lwt _ = Webserver.Request.to_multipart_form_data_exn ~callback req in
   CCList.map
     (fun (name, filename) -> name, Filename.concat import_dir filename)
     (Hashtbl.fold (fun k v acc -> (k, v) :: acc) assocs [])
@@ -84,7 +84,7 @@ let file_to_storage_add pool filename =
   let* filesize, mime, data = load_file filename |> Lwt_result.lift in
   let asset_id = Id.(create () |> value) in
   let file =
-    Sihl_storage.
+    Storage.
       { id = asset_id
       ; filename = Filename.basename filename
       ; filesize
@@ -94,7 +94,7 @@ let file_to_storage_add pool filename =
   let base64 = Base64.encode_exn data in
   let%lwt _ = Storage.upload_base64 pool file base64 in
   let%lwt () = remove_imported_file filename in
-  file.Sihl_storage.id |> Lwt.return_ok
+  file.Storage.id |> Lwt.return_ok
 ;;
 
 let multipart_form_data_to_urlencoded list =
@@ -129,7 +129,7 @@ let update_files pool files req =
        | Ok (filesize, mime, data) ->
          let%lwt file = Storage.find pool id in
          let updated_file =
-           let open Sihl_storage in
+           let open Storage in
            file
            |> set_filename_stored (Filename.basename filename)
            |> set_filesize_stored filesize

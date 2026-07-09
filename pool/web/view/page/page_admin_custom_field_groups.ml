@@ -52,7 +52,7 @@ let form
               [ a_class [ "stack" ]
               ; a_method `Post
               ; a_action
-                  (Sihl.Web.externalize_path
+                  (Webserver.externalize_path
                      (Url.Group.detail_path Group.(group.model, group.id)
                       |> Format.asprintf "%s/sort-fields"))
               ; a_user_data "detect-unsaved-changes" ""
@@ -97,7 +97,7 @@ let form
     [ form
         ~a:
           [ a_method `Post
-          ; a_action (Sihl.Web.externalize_path action)
+          ; a_action (Webserver.externalize_path action)
           ; a_class [ "stack-lg" ]
           ; a_user_data "detect-unsaved-changes" ""
           ]

@@ -57,7 +57,7 @@ let layout_from_tenant (tenant : Pool_tenant.t) =
 let root_layout () =
   let open CCOption in
   let root_url =
-    Sihl.Configuration.read_string "PUBLIC_URL"
+    Pool_core.Configuration.read_string "PUBLIC_URL"
     >>= CCFun.(Pool_tenant.Url.create %> CCOption.of_result)
   in
   let logo_src =
@@ -91,8 +91,8 @@ let line_breaks_to_html str =
   lst |> CCList.flat_map (CCString.split ~by:"\\n") |> CCString.concat "<br>"
 ;;
 
-let render_email_params params ({ Sihl_email.text; html; subject; _ } as email) =
-  Sihl_email.
+let render_email_params params ({ Email.Message.text; html; subject; _ } as email) =
+  Email.Message.
     { email with
       subject = render_params params subject
     ; text = render_params params text

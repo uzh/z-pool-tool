@@ -128,7 +128,7 @@ let tenant_form
   form
     ~a:
       [ a_method `Post
-      ; a_action (Sihl.Web.externalize_path action)
+      ; a_action (Webserver.externalize_path action)
       ; a_class [ "grid-col-2" ]
       ; a_enctype "multipart/form-data"
       ; a_user_data "detect-unsaved-changes" ""
@@ -190,7 +190,7 @@ let list tenant_list (Pool_context.{ language; _ } as context) =
                ~a:
                  [ a_href
                      (Http_utils.Url.Root.pool_path ~id:tenant.id ()
-                      |> Sihl.Web.externalize_path)
+                      |> Webserver.externalize_path)
                  ]
                [ txt Pool_common.(Utils.control_to_string language Control.More) ]
            ])
@@ -247,7 +247,7 @@ let operator_existing_admin_modal
             [ a_method `Post
             ; a_action
                 (pool_path ~id:tenant_id ~suffix:"promote-operator" ()
-                 |> Sihl.Web.externalize_path)
+                 |> Webserver.externalize_path)
             ]
           [ csrf_element csrf ()
           ; input_element
@@ -314,7 +314,7 @@ let manage_operators { Pool_tenant.id; _ } operators Pool_context.{ language; cs
           ~a:
             (let action =
                HttpUtils.Url.Root.pool_path ~id ~suffix:"create-operator" ()
-               |> Sihl.Web.externalize_path
+               |> Webserver.externalize_path
              in
              a_action action
              :: a_method `Post
@@ -333,7 +333,7 @@ let manage_operators { Pool_tenant.id; _ } operators Pool_context.{ language; cs
                  ~a:[ a_class [ "flexrow"; "align-center"; "flex-gap" ] ]
                  [ div
                      [ a
-                         ~a:[ a_href (Sihl.Web.externalize_path (pool_path ~id ())) ]
+                         ~a:[ a_href (Webserver.externalize_path (pool_path ~id ())) ]
                          [ Pool_common.Utils.control_to_string language Control.Back
                            |> txt
                          ]
@@ -395,7 +395,7 @@ let detail
                            ~id:(File.id file)
                            ~suffix:"delete"
                            ()
-                         |> Sihl.Web.externalize_path)
+                         |> Webserver.externalize_path)
                     ; a_method `Post
                     ; a_class [ "stack" ]
                     ]
@@ -423,7 +423,7 @@ let detail
       ~a:
         [ a_action
             (HttpUtils.Url.Root.pool_path ~id:tenant.id ~suffix:"update-database" ()
-             |> Sihl.Web.externalize_path)
+             |> Webserver.externalize_path)
         ; a_method `Post
         ; a_enctype "multipart/form-data"
         ; a_class [ "stack" ]
@@ -444,7 +444,7 @@ let detail
             ~a:
               [ a_href
                   (HttpUtils.Url.Root.pool_path ~id:tenant.id ~suffix:"operator" ()
-                   |> Sihl.Web.externalize_path)
+                   |> Webserver.externalize_path)
               ]
             [ txt (control_to_string (Control.Manage Field.PrimaryUsers)) ]
         ]
@@ -456,7 +456,7 @@ let detail
         ; p
             [ a
                 ~a:
-                  [ a_href (Http_utils.Url.Root.pool_path () |> Sihl.Web.externalize_path)
+                  [ a_href (Http_utils.Url.Root.pool_path () |> Webserver.externalize_path)
                   ]
                 [ txt (control_to_string Control.Back) ]
             ]

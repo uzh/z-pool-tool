@@ -38,7 +38,7 @@ let check_result ?(msg = "succeeds") =
 (* Helper functions *)
 
 let setup_test ?(log_level = Logs.Info) ?(reporter = Logger.reporter) () =
-  let open Sihl.Configuration in
+  let open Pool_core.Configuration in
   let () = read_env_file () |> CCOption.value ~default:[] |> store in
   let () = Logs.set_level (Some log_level) in
   let () = Logs.set_reporter reporter in
@@ -74,7 +74,7 @@ let urlencoded_remove urlencoded validation =
 let file_to_storage file =
   let open Seed.Assets in
   let stored_file =
-    Sihl_storage.
+    Storage.
       { id = file.Seed.Assets.id
       ; filename = file.filename
       ; filesize = file.filesize
@@ -303,7 +303,7 @@ module Model = struct
   let create_mailing
         ?id
         ?start
-        ?(duration = Sihl.Time.(OneHour |> duration_to_span))
+        ?(duration = Pool_core.Time.(OneHour |> duration_to_span))
         ?(limit = Mailing.Limit.default)
         ?distribution
         ()
@@ -312,7 +312,9 @@ module Model = struct
     let start =
       let default () =
         let start_at =
-          Ptime.add_span (Ptime_clock.now ()) Sihl.Time.(OneSecond |> duration_to_span)
+          Ptime.add_span
+            (Ptime_clock.now ())
+            Pool_core.Time.(OneSecond |> duration_to_span)
           |> CCOption.get_exn_or "Time calculation failed!"
           |> StartAt.create
           |> get_or_failwith
@@ -331,7 +333,7 @@ module Model = struct
   ;;
 
   let create_email ?(sender = "sender@mail.com") ?(recipient = "recipient@mail.com") () =
-    Sihl_email.create
+    Email.Message.create
       ~html:"<p>Hello</p>"
       ~cc:[ "cc1@mail.com"; "cc2@mail.com" ]
       ~bcc:[ "bcc@mail.com" ]

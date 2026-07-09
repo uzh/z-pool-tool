@@ -171,7 +171,7 @@ module CalendarUtils = struct
   let start_time = Ptime_clock.now ()
 
   let end_time =
-    Ptime.add_span start_time Sihl.Time.(duration_to_span OneWeek)
+    Ptime.add_span start_time Pool_core.Time.(duration_to_span OneWeek)
     |> CCOption.get_exn_or "Invalid timespan"
   ;;
 
@@ -188,15 +188,16 @@ module CalendarUtils = struct
     let location_id = session.location.Pool_location.id in
     let experiment_link =
       if experiment_link
-      then Some (experiment_path ~id:experiment_id () |> Sihl.Web.externalize_path)
+      then Some (experiment_path ~id:experiment_id () |> Webserver.externalize_path)
       else None
     in
     let session_link =
       match session_link, location_link with
       | true, _ ->
-        Some (session_path experiment_id ~id:session.id |> Sihl.Web.externalize_path)
+        Some (session_path experiment_id ~id:session.id |> Webserver.externalize_path)
       | _, true ->
-        Some (location_session_path location_id session.id () |> Sihl.Web.externalize_path)
+        Some
+          (location_session_path location_id session.id () |> Webserver.externalize_path)
       | false, false -> None
     in
     Calendar.{ experiment = experiment_link; session = session_link }

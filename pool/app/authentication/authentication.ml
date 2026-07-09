@@ -29,13 +29,13 @@ let start () =
 ;;
 
 let lifecycle =
-  Sihl.Container.create_lifecycle
+  Pool_core.Container.create_lifecycle
     label
     ~dependencies:(fun () -> [ Schedule.lifecycle ])
     ~start
 ;;
 
 let register () =
-  let configuration = Sihl.Configuration.make () in
-  Sihl.Container.Service.create ~configuration lifecycle
+  let configuration = Pool_core.Configuration.make () in
+  Pool_core.Container.Service.create ~configuration lifecycle
 ;;

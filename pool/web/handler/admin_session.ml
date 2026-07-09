@@ -69,7 +69,7 @@ let list req =
     Time_window.query_by_experiment ~query database_label experiment_id >|> to_html
   | false ->
     let chronological =
-      Sihl.Web.Request.query Field.(show Chronological) req
+      Webserver.Request.query Field.(show Chronological) req
       |> CCOption.map_or ~default:false (CCString.equal "true")
     in
     let to_html sessions =
@@ -134,7 +134,7 @@ let new_helper req page =
                  text_messages_enabled
              | true -> Page.Admin.TimeWindow.new_form context experiment)
        in
-       html >>= create_layout req context >|+ Sihl.Web.Response.of_html
+       html >>= create_layout req context >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -165,7 +165,7 @@ let duplicate req =
        in
        Page.Admin.Session.duplicate context experiment session ?parent_session followups
        >|> create_layout req context
-       >|+ Sihl.Web.Response.of_html
+       >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -176,7 +176,7 @@ let duplicate_form_htmx req =
       duplication_session_data req database_label
     in
     let* counter =
-      Sihl.Web.Request.query "counter" req
+      Webserver.Request.query "counter" req
       |> CCFun.flip CCOption.bind CCInt.of_string
       |> CCOption.to_result Error.InvalidHtmxRequest
       |> Lwt_result.lift
@@ -194,7 +194,7 @@ let duplicate_post_htmx req =
   let result { Pool_context.database_label; user; _ } =
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+      Webserver.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     let* _, session, followups, parent_session =
       duplication_session_data req database_label
@@ -217,7 +217,7 @@ let create req =
   let result { Pool_context.database_label; user; _ } =
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+      Webserver.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     Response.bad_request_on_error ~urlencoded new_form
     @@
@@ -493,7 +493,7 @@ let detail page req =
          | `Reschedule | `Cancel | `Close -> Lwt_result.fail (Error.Invalid Field.Action)
        in
        time_window_page database_label req context time_window experiment page)
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -526,7 +526,7 @@ let update_handler action req =
       Lwt_result.return (session, follow_ups, parent)
     in
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+      Webserver.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     Response.bad_request_on_error ~urlencoded error_handler
     @@
@@ -613,7 +613,7 @@ let cancel req =
   let session_id = session_id req in
   let success_path = session_path experiment_id ~id:session_id in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req
+    Webserver.Request.to_urlencoded req
     ||> HttpUtils.remove_empty_values
     ||> HttpUtils.format_request_boolean_values Field.[ show Email; show SMS ]
   in
@@ -635,7 +635,7 @@ let cancel req =
     in
     let* notify_via =
       let open Pool_common in
-      Sihl.Web.Request.urlencoded_list Field.(NotifyVia |> array_key) req
+      Webserver.Request.urlencoded_list Field.(NotifyVia |> array_key) req
       ||> CCList.map NotifyVia.create
       ||> CCList.all_ok
       >|+ CCList.uniq ~eq:NotifyVia.equal
@@ -777,7 +777,7 @@ let create_follow_up req =
   let result ({ Pool_context.database_label; user; _ } as context) =
     let* session = Session.find database_label session_id >|- Response.not_found in
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+      Webserver.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     Response.bad_request_on_error ~urlencoded follow_up
     @@
@@ -929,7 +929,7 @@ let message_template_form ?template_id label req =
       label
       form_context
     >|> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -1002,7 +1002,7 @@ let resend_reminders req =
   let tags = Pool_context.Logger.Tags.req req in
   let result { Pool_context.database_label; user; _ } =
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+      Webserver.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     let* experiment =
       Experiment.find database_label experiment_id >|- Response.not_found
@@ -1046,7 +1046,7 @@ let changelog req =
 module DirectMessage = struct
   let assignments_from_requeset req database_label session_id =
     let open Assignment in
-    Sihl.Web.Request.urlencoded_list Field.(array_key Assignment) req
+    Webserver.Request.urlencoded_list Field.(array_key Assignment) req
     ||> CCList.map Id.of_string
     >|> find_multiple_by_session database_label session_id
     ||> function
@@ -1102,7 +1102,7 @@ module DirectMessage = struct
     let session_path = session_path experiment_id ~id:session_id in
     let result { Pool_context.database_label; user; _ } =
       let%lwt urlencoded =
-        Sihl.Web.Request.to_urlencoded req
+        Webserver.Request.to_urlencoded req
         ||> HttpUtils.format_request_boolean_values Field.[ show FallbackToEmail ]
       in
       let* session = Session.find database_label session_id >|- Response.not_found in
@@ -1181,7 +1181,7 @@ end
 
 module Api = struct
   let handle_request query_sessions req =
-    let query_params = Sihl.Web.Request.query_list req in
+    let query_params = Webserver.Request.query_list req in
     let find_param field =
       let open CCResult.Infix in
       HttpUtils.find_in_urlencoded field query_params

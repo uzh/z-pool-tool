@@ -266,7 +266,8 @@ end
 let register_migration () = Database.Migration.register_migration (Migration.migration ())
 
 let register_cleaner () =
-  Sihl.Cleaner.register_cleaner (fun ?(ctx = []) -> Sql.clean (Database.of_ctx_exn ctx))
+  Pool_core.Cleaner.register_cleaner (fun ?(ctx = []) ->
+    Sql.clean (Database.of_ctx_exn ctx))
 ;;
 
 let find = Sql.find

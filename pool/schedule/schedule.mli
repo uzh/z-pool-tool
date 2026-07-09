@@ -62,8 +62,8 @@ type public =
 
 val add_and_start : ?tags:Logs.Tag.set -> t -> unit Lwt.t
 val stop : unit -> unit Lwt.t
-val lifecycle : Sihl.Container.lifecycle
-val register : ?schedules:t list -> unit -> Sihl.Container.Service.t
+val lifecycle : Pool_core.Container.lifecycle
+val register : ?schedules:t list -> unit -> Pool_core.Container.Service.t
 val is_ok : public -> bool
 val find_all : unit -> public list Lwt.t
 val find_by_db_label : Database.Label.t -> Query.t -> (public list * Query.t) Lwt.t

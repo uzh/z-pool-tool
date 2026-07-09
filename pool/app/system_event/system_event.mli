@@ -76,10 +76,10 @@ val handle_system_event : identifier -> t -> unit Lwt.t
 
 module Service : sig
   val run : identifier -> unit -> unit Lwt.t
-  val register : identifier -> unit -> Sihl.Container.Service.t
+  val register : identifier -> unit -> Pool_core.Container.Service.t
 
   module ConnectionWatcher : sig
     val rerun_migrations_for_connection_issues : unit -> unit Lwt.t
-    val register : unit -> Sihl.Container.Service.t
+    val register : unit -> Pool_core.Container.Service.t
   end
 end

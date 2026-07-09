@@ -147,7 +147,7 @@ module File = struct
   let id m = m.id
   let size m = m.size
   let path m = Format.asprintf "/custom/assets/%s/%s" m.id m.name
-  let externalized_path = CCFun.(path %> Sihl.Web.externalize_path)
+  let externalized_path = CCFun.(path %> Webserver.externalize_path)
 end
 
 module SortOrder = struct

@@ -8,8 +8,10 @@
   pool_token
   ptime
   settings
-  sihl
-  utils)
+  utils
+  pool_core
+  safepass
+  webserver)
  (preprocess
   (pps
    lwt_ppx

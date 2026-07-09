@@ -115,9 +115,9 @@ let context () =
   in
   let filter handler req =
     let is_root = Http_utils.is_req_from_root_host req in
-    let csrf = Sihl.Web.Csrf.find_exn req in
+    let csrf = Webserver.Csrf.find_exn req in
     let message =
-      CCOption.bind (Sihl.Web.Flash.find_alert req) Pool_message.Collection.of_string
+      CCOption.bind (Webserver.Flash.find_alert req) Pool_message.Collection.of_string
     in
     let find_user pool =
       Http_utils.user_from_session pool req

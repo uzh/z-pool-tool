@@ -12,7 +12,7 @@ let create () =
       (fun file ->
          let open Assets in
          let stored_file =
-           Sihl_storage.
+           Storage.
              { id = file.Assets.id
              ; filename = file.filename
              ; filesize = file.filesize
@@ -25,15 +25,15 @@ let create () =
       [ styles; icon; tenant_logo ]
   in
   let data =
-    if Sihl.Configuration.is_test ()
+    if Pool_core.Configuration.is_test ()
     then (
       let database_url =
-        Sihl.Configuration.read_string "DATABASE_URL_TENANT_ONE"
+        Pool_core.Configuration.read_string "DATABASE_URL_TENANT_ONE"
         |> CCOption.get_exn_or "DATABASE_URL_TENANT_ONE undefined"
       in
       [ ( "Econ test"
         , "description"
-        , Sihl.Configuration.read_string "PUBLIC_HOST_TENANT_ONE"
+        , Pool_core.Configuration.read_string "PUBLIC_HOST_TENANT_ONE"
           |> CCOption.value ~default:"test.pool.econ.uzh.ch"
         , database_url
         , "econ-test"
@@ -44,9 +44,9 @@ let create () =
     else
       [ ( "Econ UZH"
         , "description"
-        , Sihl.Configuration.read_string "PUBLIC_HOST_TENANT_ONE"
+        , Pool_core.Configuration.read_string "PUBLIC_HOST_TENANT_ONE"
           |> CCOption.value ~default:"localhost:3017"
-        , Sihl.Configuration.read_string "DATABASE_URL_TENANT_ONE"
+        , Pool_core.Configuration.read_string "DATABASE_URL_TENANT_ONE"
           |> CCOption.value ~default:"mariadb://root@database-tenant:3306/dev_econ"
         , "econ-uzh"
         , styles.Assets.id
@@ -54,9 +54,9 @@ let create () =
         , "EN" )
       ; ( "ZHAW"
         , "description"
-        , Sihl.Configuration.read_string "PUBLIC_HOST_TENANT_TWO"
+        , Pool_core.Configuration.read_string "PUBLIC_HOST_TENANT_TWO"
           |> CCOption.value ~default:"pool.zhaw.ch"
-        , Sihl.Configuration.read_string "DATABASE_URL_TENANT_TWO"
+        , Pool_core.Configuration.read_string "DATABASE_URL_TENANT_TWO"
           |> CCOption.value ~default:"mariadb://root@database-tenant:3306/dev_zhaw"
         , "zhaw"
         , styles.Assets.id

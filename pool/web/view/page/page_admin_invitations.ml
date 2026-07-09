@@ -46,7 +46,7 @@ module Partials = struct
                 (form_action
                    ~path:(Format.asprintf "%s/resend" (id |> Pool_common.Id.value))
                    experiment.Experiment.id
-                 |> Sihl.Web.externalize_path)
+                 |> Webserver.externalize_path)
             ; a_class [ "flexrow"; "justify-end" ]
             ]
           [ csrf_element csrf (); submit_element language Control.(Resend None) () ]
@@ -137,7 +137,7 @@ module Partials = struct
               ~a:
                 [ a_method `Post
                 ; a_action
-                    (form_action experiment.Experiment.id |> Sihl.Web.externalize_path)
+                    (form_action experiment.Experiment.id |> Webserver.externalize_path)
                 ; a_class [ "stack" ]
                 ]
               [ csrf_element csrf ()

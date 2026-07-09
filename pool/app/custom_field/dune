@@ -10,7 +10,6 @@
   ptime
   role
   settings
-  sihl
   utils)
  (preprocess
   (pps

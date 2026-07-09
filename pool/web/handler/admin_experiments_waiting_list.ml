@@ -43,7 +43,7 @@ let detail req =
       let open Session in
       let sessions = group_and_sort sessions in
       let sort_sessions (s1 : t) (s2 : t) = Start.compare s1.start s2.start in
-      match Sihl.Web.Request.query Pool_message.Field.(show Chronological) req with
+      match Webserver.Request.query Pool_message.Field.(show Chronological) req with
       | Some "true" ->
         let open CCList in
         ( sessions
@@ -65,7 +65,7 @@ let detail req =
         (Settings.PhoneVerification.value phone_verification_enabled)
       chronological
     >|> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -74,7 +74,7 @@ let update req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
   let waiting_list_id = waiting_list_id req in
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded = Webserver.Request.to_urlencoded req in
   let result { Pool_context.database_label; user; _ } =
     Response.bad_request_on_error ~urlencoded detail
     @@
@@ -103,7 +103,7 @@ let assign_contact req =
   let waiting_list_id = waiting_list_id req in
   let redirect_path = waiting_list_path experiment_id in
   let result { Pool_context.database_label; user; _ } =
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     let* experiment =
       Experiment.find database_label experiment_id >|- Response.not_found
     in

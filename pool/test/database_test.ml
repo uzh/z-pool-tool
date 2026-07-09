@@ -12,7 +12,7 @@ module Data = struct
 
   let database =
     let url =
-      Sihl.Configuration.read_string "DATABASE_URL_TENANT_ONE"
+      Pool_core.Configuration.read_string "DATABASE_URL_TENANT_ONE"
       |> CCOption.get_exn_or "DATABASE_URL_TENANT_ONE undefined"
       |> Url.create
       |> get_exn
@@ -36,7 +36,7 @@ let check_find_tenant_database _ () =
 
 let check_tenant_database _ () =
   let ctx = Data.database_label |> Database.to_ctx in
-  let _ = Sihl.Database.fetch_pool ~ctx () in
+  let _ = Database.of_ctx_exn ctx in
   Lwt.return_unit
 ;;
 

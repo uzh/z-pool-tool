@@ -10,7 +10,7 @@ let error_channel = ref None
 
 let get_log_level () =
   let default = Info in
-  Sihl.Configuration.read_string "LOG_LEVEL"
+  Pool_core.Configuration.read_string "LOG_LEVEL"
   |> CCOption.map_or ~default (function
     | "debug" -> Debug
     | "error" -> Error
@@ -20,7 +20,9 @@ let get_log_level () =
 ;;
 
 let logs_dir () =
-  match Sihl.Configuration.root_path (), Sihl.Configuration.read_string "LOGS_DIR" with
+  match
+    Pool_core.Configuration.root_path (), Pool_core.Configuration.read_string "LOGS_DIR"
+  with
   | _, Some logs_dir -> logs_dir
   | Some root, None -> root ^ "/logs"
   | None, None -> "logs"
@@ -140,7 +142,7 @@ let combine r1 r2 =
 
 let reporter =
   set_level (get_log_level ());
-  if Sihl.Configuration.is_production ()
+  if Pool_core.Configuration.is_production ()
   then lwt_file_reporter ()
   else combine (cli_reporter ()) (lwt_file_reporter ())
 ;;

@@ -9,7 +9,7 @@
   organisational_unit
   pool_common
   query
-  sihl)
+  pool_core)
  (preprocess
   (pps
    lwt_ppx

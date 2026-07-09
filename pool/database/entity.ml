@@ -88,26 +88,28 @@ let schema =
       Field.
         [ string
             ~meta:
-              "The root database connection url. This is the only string that Sihl needs \
-               to connect to a database."
+              "The root database connection url. This is the only string that the app \
+               needs to connect to a database."
             "DATABASE_URL"
         ; Conformist.optional
             ~meta:
-              "The amount of connections in the database connection pool that Sihl \
+              "The amount of connections in the database connection pool that the app \
                manages. If the number is too high, the server might struggle. If the \
-               number is too low, your Sihl app performs badly. This can be configured \
-               using DATABASE_SIZE and the default is 10."
+               number is too low, your app performs badly. This can be configured using \
+               DATABASE_SIZE and the default is 10."
             (int ~default:10 "DATABASE_SIZE")
         ]
       config)
 ;;
 
 let database_url () =
-  (Sihl.Configuration.read schema).url |> Url.create |> Pool_message.Error.get_or_failwith
+  (Pool_core.Configuration.read schema).url
+  |> Url.create
+  |> Pool_message.Error.get_or_failwith
 ;;
 
 let pool_size () =
-  (Sihl.Configuration.read schema).pool_size |> CCOption.value ~default:10
+  (Pool_core.Configuration.read schema).pool_size |> CCOption.value ~default:10
 ;;
 
 let to_ctx (pool : Label.t) = [ "pool", Label.value pool ]

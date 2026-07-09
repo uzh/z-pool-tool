@@ -38,7 +38,7 @@ let find_identifier urlencoded =
   |> all_ok
 ;;
 
-let get_id req field encode = Sihl.Web.Router.param req @@ Field.show field |> encode
+let get_id req field encode = Webserver.Router.param req @@ Field.show field |> encode
 
 let index req =
   Response.Htmx.index_handler
@@ -93,7 +93,7 @@ let form is_edit req =
       query_tags
       query_tagged_experiments
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -106,7 +106,7 @@ let write action req =
   let open Cqrs_command in
   let result { Pool_context.database_label; user; _ } =
     let tags = Pool_context.Logger.Tags.req req in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     let* query =
       let open CCResult in
       HttpUtils.find_in_urlencoded Field.Query urlencoded
@@ -177,7 +177,7 @@ let write action req =
 let handle_toggle_predicate_type action req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.language; database_label; _ } =
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     let templates_disabled = templates_disabled urlencoded in
     let%lwt key_list = Filter.all_keys database_label in
     let%lwt template_list = find_all_templates database_label templates_disabled in
@@ -226,7 +226,7 @@ let handle_toggle_predicate_type action req =
 let handle_toggle_key _ req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.language; database_label; _ } =
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     let* key =
       HttpUtils.find_in_urlencoded Field.Key urlencoded
       |> Lwt_result.lift
@@ -242,7 +242,7 @@ let handle_toggle_key _ req =
 let handle_add_predicate action req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.language; database_label; _ } =
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     let templates_disabled = templates_disabled urlencoded in
     let%lwt key_list = Filter.all_keys database_label in
     let%lwt template_list = find_all_templates database_label templates_disabled in
@@ -284,7 +284,7 @@ let filter_statistics req =
   let result { Pool_context.database_label; language; _ } =
     let open Utils.Lwt_result.Infix in
     let* experiment = Experiment.find database_label experiment_id in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     let* query =
       let open CCResult in
       HttpUtils.find_in_urlencoded Field.Query urlencoded

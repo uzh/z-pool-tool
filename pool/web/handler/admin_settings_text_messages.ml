@@ -23,7 +23,7 @@ let index req =
       gtx_config
       (Settings.PhoneVerification.value phone_verification_enabled)
     |> create_layout ~active_navigation req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -31,7 +31,7 @@ let index req =
 let update req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.database_label; user; _ } =
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     Response.bad_request_on_error ~urlencoded index
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -79,9 +79,9 @@ let delete req =
 let delivery_report req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
-  let respond () = Sihl.Web.Response.of_plain_text "OK" ~status:`OK |> Lwt.return in
+  let respond () = Webserver.Response.of_plain_text "OK" ~status:`OK |> Lwt.return in
   let request_to_string req =
-    Sihl.Web.Request.pp_hum Format.str_formatter req;
+    Webserver.Request.pp_hum Format.str_formatter req;
     Format.flush_str_formatter ()
   in
   let log_error err =
@@ -124,7 +124,7 @@ let delivery_report req =
       | None -> Ok ()
     in
     let raw = request_to_string req in
-    let urlparams = Sihl.Web.Request.query_list req in
+    let urlparams = Webserver.Request.query_list req in
     let* events =
       let open CCResult.Infix in
       let open Cqrs_command.Queue_command.CreateTextMessageDeliveryReport in
@@ -159,7 +159,7 @@ end
 let update_phone_verification req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.database_label; user; _ } =
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     Response.bad_request_on_error ~urlencoded index
     @@
     let tags = Pool_context.Logger.Tags.req req in

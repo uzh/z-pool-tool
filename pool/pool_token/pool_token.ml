@@ -23,11 +23,11 @@ let is_valid_token token =
   && Ptime.is_later token.expires_at ~than:(Utils.Ptime.now ())
 ;;
 
-let make id ?(expires_in = Sihl.Time.OneDay) ?now ?(length = 80) data =
+let make id ?(expires_in = Pool_core.Time.OneDay) ?now ?(length = 80) data =
   let open Repo.Model in
-  let value = Sihl.Random.base64 length in
-  let expires_in = Sihl.Time.duration_to_span expires_in in
-  let now = CCOption.value ~default:(Utils.Ptime.now ()) now in
+  let value = Pool_core.Random.base64 length in
+  let expires_in = Pool_core.Time.duration_to_span expires_in in
+  let now = CCOption.value ~default:(Ptime_clock.now ()) now in
   let expires_at =
     match Ptime.add_span now expires_in with
     | Some expires_at -> expires_at
@@ -42,7 +42,9 @@ let create ?secret:_ ?expires_in label data =
   let open Repo.Model in
   let id = Pool_common.Id.(create () |> value) in
   let length =
-    CCOption.value ~default:30 (Sihl.Configuration.read configuration_schema).token_length
+    CCOption.value
+      ~default:30
+      (Pool_core.Configuration.read configuration_schema).token_length
   in
   let token = make id ?expires_in ~length data in
   let%lwt () = Repo.insert label token in
@@ -126,7 +128,7 @@ let extend_expiry label token duration =
   let open Repo.Model in
   let%lwt model_opt = Repo.find_opt label (value token) in
   let new_expiry =
-    Sihl.Time.duration_to_span duration |> Ptime.add_span (Utils.Ptime.now ())
+    Pool_core.Time.duration_to_span duration |> Ptime.add_span (Ptime_clock.now ())
   in
   match model_opt, new_expiry with
   | Some model, Some expires_at when is_valid_token model ->
@@ -136,14 +138,14 @@ let extend_expiry label token duration =
 
 let start () =
   (* Make sure that configuration is valid *)
-  Sihl.Configuration.require configuration_schema;
+  Pool_core.Configuration.require configuration_schema;
   Lwt.return ()
 ;;
 
 let stop () = Lwt.return ()
 
 let lifecycle =
-  Sihl.Container.create_lifecycle
+  Pool_core.Container.create_lifecycle
     "pool_token"
     ~dependencies:(fun () -> Repo.lifecycles)
     ~start
@@ -153,6 +155,6 @@ let lifecycle =
 let register () =
   Repo.register_migration ();
   Repo.register_cleaner ();
-  let configuration = Sihl.Configuration.make ~schema:configuration_schema () in
-  Sihl.Container.Service.create ~configuration lifecycle
+  let configuration = Pool_core.Configuration.make ~schema:configuration_schema () in
+  Pool_core.Container.Service.create ~configuration lifecycle
 ;;

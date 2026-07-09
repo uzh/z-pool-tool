@@ -22,5 +22,5 @@ val create_invitation_events
   -> Pool_event.t list Lwt.t
 
 val match_invitations : Ptime.Span.t -> Database.Label.t -> unit Lwt.t
-val lifecycle : Sihl.Container.lifecycle
-val register : unit -> Sihl.Container.Service.t
+val lifecycle : Pool_core.Container.lifecycle
+val register : unit -> Pool_core.Container.Service.t

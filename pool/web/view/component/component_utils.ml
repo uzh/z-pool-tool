@@ -50,7 +50,7 @@ let htmx_attribs
       |> CCString.concat ","
       |> fun values -> [ a_user_data "hx-vals" (Format.asprintf "{%s}" values) ]
   in
-  [ a_user_data "hx-post" (action |> Sihl.Web.externalize_path)
+  [ a_user_data "hx-post" (action |> Webserver.externalize_path)
   ; a_user_data "hx-trigger" trigger
   ; a_user_data "hx-swap" swap
   ]

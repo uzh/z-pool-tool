@@ -17,7 +17,7 @@ let login_get req =
     | None ->
       Logs.info (fun m ->
         m ~tags:(Pool_context.Logger.Tags.req req) "User not found in session");
-      let open Sihl.Web in
+      let open Webserver in
       Page.Root.Login.login ?intended:(HttpUtils.find_intended_opt req) context
       |> General.create_root_layout ~active_navigation:"/root/login" context
       ||> Response.of_html
@@ -40,7 +40,7 @@ let login_token_confirmation req =
       ~email:(Pool_user.email user)
       context
     |> General.create_root_layout ~active_navigation:"/root/login" context
-    ||> Sihl.Web.Response.of_html
+    ||> Webserver.Response.of_html
     |> Lwt_result.ok
   in
   Response.handle ~src req result
@@ -48,7 +48,7 @@ let login_token_confirmation req =
 
 let login_post req =
   let tags = Pool_context.Logger.Tags.req req in
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded = Webserver.Request.to_urlencoded req in
   let result ({ Pool_context.database_label; user; _ } as context) =
     Response.bad_request_on_error ~urlencoded login_get
     @@
@@ -63,7 +63,7 @@ let login_post req =
         ~email:(Pool_user.email user)
         context
       |> General.create_root_layout ~active_navigation:"/root/login" context
-      ||> Sihl.Web.Response.of_html
+      ||> Webserver.Response.of_html
     in
     events |> handle_events >|> success |> Lwt_result.ok
   in
@@ -86,7 +86,7 @@ let confirmation_post req =
     let success () =
       HttpUtils.redirect_to_with_actions
         root_entrypoint_path
-        [ Sihl.Web.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ] ]
+        [ Webserver.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ] ]
     in
     events |> handle_events >|> success |> Lwt_result.ok
   in
@@ -98,7 +98,7 @@ let request_reset_password_get req =
     Response.bad_request_render_error context
     @@
     let open Utils.Lwt_result.Infix in
-    let open Sihl.Web in
+    let open Webserver in
     Pool_user.Web.user_from_session Database.Pool.Root.label req
     >|> function
     | Some _ -> redirect_to_entrypoint |> Lwt_result.ok
@@ -118,7 +118,7 @@ let request_reset_password_post req =
   let open HttpUtils in
   let open Cqrs_command.Common_command.ResetPassword in
   let open Message_template in
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded = Webserver.Request.to_urlencoded req in
   let result { Pool_context.database_label; language; user; _ } =
     Response.bad_request_on_error ~urlencoded request_reset_password_get
     @@
@@ -147,20 +147,20 @@ let reset_password_get req =
     let open Utils.Lwt_result.Infix in
     Response.bad_request_render_error context
     @@ let* token =
-         Sihl.Web.Request.query Field.(Token |> show) req
+         Webserver.Request.query Field.(Token |> show) req
          |> CCOption.to_result (Error.NotFound Field.Token)
          |> Lwt_result.lift
        in
        Page.Root.Login.reset_password token context
        |> General.create_root_layout ~active_navigation:"/root/reset-password" context
-       ||> Sihl.Web.Response.of_html
+       ||> Webserver.Response.of_html
        |> Lwt_result.ok
   in
   Response.handle ~src req result
 ;;
 
 let reset_password_post req =
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded = Webserver.Request.to_urlencoded req in
   let result { Pool_context.user; _ } =
     let open Utils.Lwt_result.Infix in
     Response.bad_request_on_error reset_password_get
@@ -182,5 +182,5 @@ let reset_password_post req =
 let logout _ =
   HttpUtils.redirect_to_with_actions
     root_login_path
-    [ Sihl.Web.Session.set [ "user_id", "" ] ]
+    [ Webserver.Session.set [ "user_id", "" ] ]
 ;;

@@ -31,7 +31,7 @@ let index req =
     let%lwt template_list = Message_template.all_default database_label () in
     Page.Admin.MessageTemplate.index context template_list
     |> create_layout ~active_navigation:"/admin/message-template" req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -47,7 +47,7 @@ let edit req =
     let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     Page.Admin.MessageTemplate.edit ~text_messages_enabled context template tenant
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -64,7 +64,7 @@ type action =
 let write action req =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    Webserver.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
   let redirect, success =
     match action with
@@ -160,7 +160,7 @@ let default_templates_from_request req ?languages database_label params =
 let preview_default req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.database_label; language; _ } =
-    let query_params = Sihl.Web.Request.query_list req in
+    let query_params = Webserver.Request.query_list req in
     let* label = template_label req |> Lwt_result.lift in
     let* message_templates, _ =
       default_templates_from_request req database_label query_params
@@ -176,7 +176,7 @@ let reset_to_default_htmx req =
   let open Utils.Lwt_result.Infix in
   let open Message_template in
   let result ({ Pool_context.database_label; _ } as context) =
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     let* current_template =
       let open Message_template in
       let open CCOption in

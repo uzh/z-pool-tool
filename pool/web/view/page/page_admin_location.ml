@@ -31,7 +31,7 @@ let make_statistics ?year year_range language location_id t =
       [ hx_get
           (location_id
            |> location_specific_path ~suffix:"statistics"
-           |> Sihl.Web.externalize_path)
+           |> Webserver.externalize_path)
       ; hx_trigger "change"
       ; hx_target ("#" ^ id)
       ; hx_swap "outerHTML"
@@ -161,7 +161,7 @@ let file_form
     ; form
         ~a:
           [ a_method `Post
-          ; a_action (Sihl.Web.externalize_path action)
+          ; a_action (Webserver.externalize_path action)
           ; a_enctype "multipart/form-data"
           ; a_class [ "stack" ]
           ; a_user_data "detect-unsaved-changes" ""
@@ -286,7 +286,7 @@ let form
     ; form
         ~a:
           [ a_method `Post
-          ; a_action (Sihl.Web.externalize_path action)
+          ; a_action (Webserver.externalize_path action)
           ; a_class [ "stack" ]
           ; a_user_data "detect-unsaved-changes" ""
           ]
@@ -445,7 +445,7 @@ module FileList = struct
     a
       ~a:
         [ location_specific_path ~suffix:"files/create" location_id
-          |> Sihl.Web.externalize_path
+          |> Webserver.externalize_path
           |> a_href
         ]
       Message.[ Control.Add (Some Field.File) |> Utils.control_to_string language |> txt ]
@@ -475,7 +475,7 @@ module FileList = struct
                  "/admin/locations/%s/mapping/%s/delete"
                  (Id.value location_id)
                  (File.Id.value id)
-               |> Sihl.Web.externalize_path)
+               |> Webserver.externalize_path)
           ; a_user_data
               "confirmable"
               Pool_common.(Utils.confirmable_to_string page_language I18n.DeleteFile)
@@ -600,7 +600,7 @@ let detail
           ~a:
             [ a_href
                 (Format.asprintf "/location/%s" (location.Pool_location.id |> Id.value)
-                 |> Sihl.Web.externalize_path)
+                 |> Webserver.externalize_path)
             ; a_target "_blank"
             ]
           [ txt

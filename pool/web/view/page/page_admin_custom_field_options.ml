@@ -34,7 +34,10 @@ let option_form
   in
   form
     ~a:
-      [ a_method `Post; a_action (Sihl.Web.externalize_path action); a_class [ "stack" ] ]
+      [ a_method `Post
+      ; a_action (Webserver.externalize_path action)
+      ; a_class [ "stack" ]
+      ]
     [ csrf_element csrf ()
     ; div ~a:[ a_class [ "stack" ] ] name_inputs
     ; div
@@ -59,7 +62,7 @@ let field_buttons language csrf custom_field option =
   let action option appendix =
     Url.Option.detail_path (model custom_field, custom_field |> id) option.SelectOption.id
     |> (fun base -> Format.asprintf "%s/%s" base appendix)
-    |> Sihl.Web.externalize_path
+    |> Webserver.externalize_path
   in
   let make_form action msg submit_type confirmable =
     form

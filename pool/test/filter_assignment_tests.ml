@@ -125,7 +125,7 @@ let assignment ~experiment ~session ~contact =
       handle
         { experiment; contact; follow_up_sessions = []; session }
         (fun (_ : Assignment.t) ->
-           Sihl_email.create
+           Email.Message.create
              ~sender:"sender"
              ~recipient:"recipient"
              ~subject:"subject"
@@ -148,7 +148,7 @@ let invitation ~experiment ~contacts =
         ; invited_contacts = []
         ; create_message =
             (fun (_ : Invitation.t) ->
-              Sihl_email.create
+              Email.Message.create
                 ~sender:"sender"
                 ~recipient:"recipient"
                 ~subject:"subject"

@@ -27,7 +27,7 @@ let confirmation_email experiment (session : Session.t) assignment =
     Model.create_message_template ()
   in
   let email =
-    Sihl_email.
+    Email.Message.
       { sender
       ; recipient = email
       ; subject = email_subject |> EmailSubject.value

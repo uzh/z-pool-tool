@@ -6,7 +6,8 @@ let create_layout req = General.create_tenant_layout req
 let statistics_from_request req database_label =
   let open CCOption.Infix in
   let period =
-    Sihl.Web.Request.query Pool_message.Field.(show Period) req >>= Statistics.read_period
+    Webserver.Request.query Pool_message.Field.(show Period) req
+    >>= Statistics.read_period
   in
   let%lwt statistics = Statistics.Pool.create ?period database_label () in
   Lwt.return (period, statistics)
@@ -61,7 +62,7 @@ let index req =
     in
     index statistics duplicate_contacts_count layout context
     |> create_layout req ~active_navigation:"/admin/dashboard" context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;

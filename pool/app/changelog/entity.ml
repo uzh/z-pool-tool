@@ -5,7 +5,7 @@ exception Exception of string
 module Id = struct
   include Pool_common.Id
 
-  let equal a b = equal a b || Sihl.Configuration.is_test ()
+  let equal a b = equal a b || Pool_core.Configuration.is_test ()
 end
 
 module Change = struct

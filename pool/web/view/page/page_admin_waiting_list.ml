@@ -200,7 +200,7 @@ let detail
           ~a:
             [ a_class [ "stack" ]
             ; a_method `Post
-            ; a_action (waiting_list_path ~id experiment_id |> Sihl.Web.externalize_path)
+            ; a_action (waiting_list_path ~id experiment_id |> Webserver.externalize_path)
             ]
           [ csrf_element csrf ()
           ; textarea_element
@@ -235,7 +235,7 @@ let detail
             [ a_method `Post
             ; a_action
                 (waiting_list_path ~id ~suffix:"assign" experiment_id
-                 |> Sihl.Web.externalize_path)
+                 |> Webserver.externalize_path)
             ]
           [ csrf_element csrf ()
           ; content

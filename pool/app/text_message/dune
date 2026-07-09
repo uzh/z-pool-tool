@@ -2,11 +2,15 @@
  (name text_message)
  (libraries
   email
+  cohttp
+  cohttp-lwt
+  cohttp-lwt-unix
   gtx_config
   pool_common
   pool_tenant
   pool_user
   pool_queue
+  str
   utils)
  (preprocess
   (pps

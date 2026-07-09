@@ -58,7 +58,7 @@ let parse_urlencoded ~is_admin req database_label language urlencoded contact_id
 let update ?contact req =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req
+    Webserver.Request.to_urlencoded req
     ||> HttpUtils.format_htmx_request_boolean_values Field.[ Paused |> show ]
   in
   let result
@@ -114,7 +114,7 @@ let update ?contact req =
           Htmx.(
             if is_admin then admin_profile_hx_post contact_id else contact_profile_hx_post)
           |> path_with_params
-          |> Sihl.Web.externalize_path
+          |> Webserver.externalize_path
         in
         let hx_delete =
           field_id |> CCOption.map (Htmx.admin_profile_hx_delete contact_id)
@@ -124,7 +124,7 @@ let update ?contact req =
           let open Custom_field.PartialUpdate in
           (match partial_update with
            | Language _ when not is_admin ->
-             Response.Htmx.redirect (Sihl.Web.externalize_path back_path)
+             Response.Htmx.redirect (Webserver.externalize_path back_path)
            | Language _ | Firstname _ | Lastname _ | Custom _ ->
              Htmx.partial_update_to_htmx
                language

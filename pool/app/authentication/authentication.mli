@@ -55,5 +55,5 @@ val find_valid_by_id
   -> Id.t
   -> (t * Pool_user.t, Pool_message.Error.t) Lwt_result.t
 
-val lifecycle : Sihl.Container.lifecycle
-val register : unit -> Sihl.Container.Service.t
+val lifecycle : Pool_core.Container.lifecycle
+val register : unit -> Pool_core.Container.Service.t

@@ -29,7 +29,7 @@ let set ?(error = []) ?(warning = []) ?(success = []) ?(info = []) res =
     |> to_string
   in
   (* We use alerts for all messages *)
-  Sihl.Web.Flash.set_alert message res
+  Webserver.Flash.set_alert message res
 ;;
 
 let error_to_html ?(language = Pool_common.Language.En) =

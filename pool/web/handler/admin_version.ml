@@ -29,7 +29,7 @@ let show req =
     let* version = req |> version_id |> Pool_version.find >|- Response.not_found in
     Page.Admin.Version.show context version
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
     |> Response.bad_request_render_error context
   in
   Response.handle ~src req result

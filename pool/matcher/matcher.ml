@@ -11,7 +11,7 @@ let to_string = function
 ;;
 
 let read_bool env =
-  Sihl.Configuration.read_bool (env |> to_string)
+  Pool_core.Configuration.read_bool (env |> to_string)
   |> CCOption.get_exn_or (Format.asprintf "Variable not defined: %s" (env |> to_string))
 ;;
 
@@ -22,7 +22,7 @@ let schema =
       [ Conformist.optional
           (bool
              ~meta:"If set to false, the matcher will not be executed."
-             ~default:(Sihl.Configuration.is_production ())
+             ~default:(Pool_core.Configuration.is_production ())
              (Run |> to_string))
       ]
     CCFun.id
@@ -58,7 +58,7 @@ let experiment_has_bookable_spots database_label { Experiment.id; online_experim
 ;;
 
 let sort_contacts contacts =
-  match Sihl.Configuration.is_test () with
+  match Pool_core.Configuration.is_test () with
   | false -> contacts
   | true ->
     CCList.stable_sort (fun c1 c2 -> Contact.(Id.compare (id c1) (id c2))) contacts
@@ -317,14 +317,14 @@ let start_matcher () =
 ;;
 
 let start () =
-  Sihl.Configuration.require schema;
+  Pool_core.Configuration.require schema;
   if read_bool Run then start_matcher () else Lwt.return_unit
 ;;
 
 let stop () = Lwt.return_unit
 
 let lifecycle =
-  Sihl.Container.create_lifecycle
+  Pool_core.Container.create_lifecycle
     "Matcher"
     ~dependencies:(fun () -> [ Schedule.lifecycle ])
     ~start
@@ -332,6 +332,6 @@ let lifecycle =
 ;;
 
 let register () =
-  let configuration = Sihl.Configuration.make ~schema () in
-  Sihl.Container.Service.create ~configuration lifecycle
+  let configuration = Pool_core.Configuration.make ~schema () in
+  Pool_core.Container.Service.create ~configuration lifecycle
 ;;

@@ -10,7 +10,7 @@ end = struct
   type t = string
 
   let find_exn () =
-    Sihl.Configuration.read_secret ()
+    Pool_core.Configuration.read_secret ()
     |> Digestif.SHA256.digest_string
     |> Digestif.SHA256.to_raw_string
   ;;
@@ -29,7 +29,7 @@ module String = struct
     let open Z in
     to_octets_be
       ~size:block_size
-      (Sihl.Configuration.read_secret () |> CCString.length |> of_int)
+      (Pool_core.Configuration.read_secret () |> CCString.length |> of_int)
     |> Mirage_crypto.AES.CTR.ctr_of_octets
   ;;
 

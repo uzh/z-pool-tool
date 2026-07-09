@@ -13,7 +13,7 @@ let handle_tag action req =
   let contact_id = contact_id req in
   let path = contact_path ~id:contact_id ~suffix:"edit" () in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    Webserver.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
   let result { Pool_context.database_label; user; _ } =
     let* contact =

@@ -1,6 +1,6 @@
 open Ppx_yojson_conv_lib.Yojson_conv
 
-let equal_ptime a b = Sihl.Configuration.is_test () || Ptime.equal a b
+let equal_ptime a b = Pool_core.Configuration.is_test () || Ptime.equal a b
 
 module Id = struct
   include Pool_common.Id

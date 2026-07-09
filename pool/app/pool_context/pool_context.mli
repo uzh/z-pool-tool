@@ -156,13 +156,13 @@ end
 
 module Logger : sig
   module Tags : sig
-    val req : Sihl.Web.Request.t -> Logs.Tag.set
+    val req : Webserver.Request.t -> Logs.Tag.set
     val context : t -> Logs.Tag.set
   end
 
   module Api : sig
     module Tags : sig
-      val req : Sihl.Web.Request.t -> Logs.Tag.set
+      val req : Webserver.Request.t -> Logs.Tag.set
       val context : Api.t -> Logs.Tag.set
     end
   end

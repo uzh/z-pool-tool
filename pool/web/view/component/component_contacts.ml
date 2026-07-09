@@ -25,7 +25,7 @@ let external_data_ids language external_data_ids =
               Format.asprintf "/admin/experiments/%s" Experiment.(Id.value experiment_id)
             in
             [ a
-                ~a:[ a_href (experiment_path |> Sihl.Web.externalize_path) ]
+                ~a:[ a_href (experiment_path |> Webserver.externalize_path) ]
                 [ txt (Experiment.Title.value experiment_title) ]
             ; a
                 ~a:
@@ -34,7 +34,7 @@ let external_data_ids language external_data_ids =
                          "%s/sessions/%s"
                          experiment_path
                          (Session.Id.value session_id)
-                       |> Sihl.Web.externalize_path)
+                       |> Webserver.externalize_path)
                   ]
                 [ txt
                     Session.(
@@ -55,7 +55,7 @@ let contact_lastname_firstname access_contact_profiles contact =
       ~a:
         [ a_href
             (Http_utils.Url.Admin.contact_path ~id:(Contact.id contact) ()
-             |> Sihl.Web.externalize_path)
+             |> Webserver.externalize_path)
         ]
       [ text ]
   | false -> text

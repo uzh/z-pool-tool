@@ -20,7 +20,7 @@ let edit_target_modal
   let open Role in
   let action =
     HttpUtils.Url.Admin.role_permission_target_path ~target role ()
-    |> Sihl.Web.externalize_path
+    |> Webserver.externalize_path
   in
   let all_permissions = Guard.Permission.all in
   let title language =
@@ -133,7 +133,7 @@ let list
                    ~target
                    role
                    ()
-                 |> Sihl.Web.externalize_path)
+                 |> Webserver.externalize_path)
             ; hx_swap "outerHTML"
             ; hx_target (Format.asprintf "#%s" edit_permission_modal_id)
             ]

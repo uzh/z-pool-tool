@@ -45,7 +45,7 @@ let list Pool_context.{ language; _ } url changelog =
   match changelog with
   | None ->
     let trigger_onload =
-      let url = url |> Uri.to_string |> Sihl.Web.externalize_path in
+      let url = url |> Uri.to_string |> Webserver.externalize_path in
       [ a_id target_id; a_user_data "hx-trigger" "load" ]
       @ Data_table.hx_get ~url ~target_id ~push_url:false
     in
@@ -72,7 +72,7 @@ let list Pool_context.{ language; _ } url changelog =
             ~a:
               [ a_href
                   (Http_utils.Url.Admin.user_redirect_path ~id:uuid
-                   |> Sihl.Web.externalize_path)
+                   |> Webserver.externalize_path)
               ]
             [ txt email ]
       in

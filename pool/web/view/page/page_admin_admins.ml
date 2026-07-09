@@ -125,7 +125,7 @@ let new_form { Pool_context.language; csrf; flash_fetcher; _ } =
           ]
     ; form
         ~a:
-          [ a_action (Sihl.Web.externalize_path "/admin/admins")
+          [ a_action (Webserver.externalize_path "/admin/admins")
           ; a_method `Post
           ; a_class [ "stack" ]
           ]

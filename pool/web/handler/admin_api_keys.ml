@@ -49,7 +49,7 @@ let show req =
     let%lwt granted_roles = find_granted_roles database_label api_key in
     Page.Admin.ApiKey.show context api_key target_id granted_roles
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   result |> Response.handle ~src req
 ;;
@@ -58,7 +58,7 @@ let new_form req =
   let result context =
     Page.Admin.ApiKey.create context ()
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
     |> Response.bad_request_render_error context
   in
   Response.handle ~src req result
@@ -84,7 +84,7 @@ let edit req =
     let%lwt granted_roles = find_granted_roles database_label api_key in
     Page.Admin.ApiKey.edit context api_key target_id available_roles granted_roles
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -92,7 +92,7 @@ let edit req =
 let create req =
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
+    Webserver.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
   let result { Pool_context.database_label; user; _ } =
     Response.bad_request_on_error ~urlencoded new_form
@@ -117,7 +117,7 @@ let create req =
 let update req =
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
+    Webserver.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
   let result { Pool_context.database_label; user; _ } =
     let id = api_key_id req in

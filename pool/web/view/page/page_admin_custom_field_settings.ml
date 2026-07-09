@@ -8,7 +8,7 @@ let show { Pool_context.csrf; language; _ } contact_fields =
   let action suffix =
     suffix
     |> Format.asprintf "/admin/custom-fields/settings/%s"
-    |> Sihl.Web.externalize_path
+    |> Webserver.externalize_path
   in
   let checkbox is_checked field =
     let checked = if is_checked field then [ a_checked () ] else [] in

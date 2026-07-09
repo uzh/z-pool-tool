@@ -1,6 +1,6 @@
 (library
  (name pool_canary)
  (public_name pool.canary)
- (libraries canary sihl)
+ (libraries canary pool_core)
  (preprocess
   (pps lwt_ppx ppx_fields_conv)))

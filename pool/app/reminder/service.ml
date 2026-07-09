@@ -159,7 +159,7 @@ let start_handler () =
 ;;
 
 let start () =
-  let open Sihl.Configuration in
+  let open Pool_core.Configuration in
   match
     CCOption.get_or ~default:false (read_bool "RUN_SESSION_REMINDER") || is_production ()
   with
@@ -170,11 +170,11 @@ let start () =
 let stop () = Lwt.return_unit
 
 let lifecycle =
-  Sihl.Container.create_lifecycle
+  Pool_core.Container.create_lifecycle
     "System events"
     ~dependencies:(fun () -> [ Schedule.lifecycle ])
     ~start
     ~stop
 ;;
 
-let register () = Sihl.Container.Service.create lifecycle
+let register () = Pool_core.Container.Service.create lifecycle

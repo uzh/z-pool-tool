@@ -9,9 +9,10 @@
   layout
   page
   pool_canary
-  sihl
   system_event
   tyxml
-  utils)
+  utils
+  pool_core
+  webserver)
  (preprocess
   (pps lwt_ppx ppx_deriving.show ppx_string tyxml-ppx)))

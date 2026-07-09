@@ -30,7 +30,7 @@ let form ?id req model =
     let%lwt sys_languages = Settings.find_languages database_label in
     Page.Admin.CustomFieldGroups.detail ?custom_field_group model context sys_languages
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -45,7 +45,7 @@ let edit req =
 let write ?id req model =
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    Webserver.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
   let field_names =
     let open Pool_common in
@@ -130,7 +130,7 @@ let sort req =
       @@
       let tags = Pool_context.Logger.Tags.req req in
       let%lwt ids =
-        Sihl.Web.Request.urlencoded_list Field.(CustomFieldGroup |> array_key) req
+        Webserver.Request.urlencoded_list Field.(CustomFieldGroup |> array_key) req
       in
       let%lwt groups =
         let open Utils.Lwt_result.Infix in

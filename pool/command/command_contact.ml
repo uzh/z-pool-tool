@@ -21,7 +21,7 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
 Example: contact.signup econ-uzh example@mail.com securePassword Max Muster online
        |}
   in
-  Sihl.Command.make
+  Pool_core.Command.make
     ~name:"contact.signup"
     ~description:"New contact signup"
     ~help
@@ -121,7 +121,7 @@ Provide all fields to sign up a new contact:
         <user_uuid>           : string
         |}
   in
-  Sihl.Command.make
+  Pool_core.Command.make
     ~name:"find_duplicates"
     ~description:"Finds duplicate contacts"
     ~help

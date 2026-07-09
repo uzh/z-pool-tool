@@ -77,7 +77,7 @@ let handle_error context req =
   let html_response status page =
     page
     |> Page.make_layout req context
-    ||> Sihl.Web.Response.of_html
+    ||> Webserver.Response.of_html
     ||> set_response_code status
   in
   function

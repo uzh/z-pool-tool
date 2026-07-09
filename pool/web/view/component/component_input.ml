@@ -544,7 +544,7 @@ let link_as_button
     | Some _, Some _ -> "has-icon" :: base
   in
   let attrs =
-    [ a_href (Sihl.Web.externalize_path href); a_class classnames ] @ attributes
+    [ a_href (Webserver.externalize_path href); a_class classnames ] @ attributes
   in
   let content =
     let icon_elm =

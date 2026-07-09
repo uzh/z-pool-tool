@@ -37,15 +37,15 @@ let create ?(id = Pool_common.Id.create ()) contact =
 ;;
 
 let equal_queue_entry (mail1, queue1) (mail2, queue2) =
-  CCString.equal mail1.Sihl_email.recipient mail2.Sihl_email.recipient
-  && CCString.equal mail1.Sihl_email.subject mail2.Sihl_email.subject
-  && CCString.equal mail1.Sihl_email.text mail2.Sihl_email.text
+  CCString.equal mail1.Email.Message.recipient mail2.Email.Message.recipient
+  && CCString.equal mail1.Email.Message.subject mail2.Email.Message.subject
+  && CCString.equal mail1.Email.Message.text mail2.Email.Message.text
   && Pool_queue.(Id.equal (Instance.id queue1) (Instance.id queue2))
 ;;
 
 type notification_history =
   { invitation : t
-  ; queue_entries : (Sihl_email.t * Pool_queue.Instance.t) list
+  ; queue_entries : (Email.Message.t * Pool_queue.Instance.t) list
         [@equal
           fun queue_entries1 queue_entries2 ->
             CCList.map2 equal_queue_entry queue_entries1 queue_entries2

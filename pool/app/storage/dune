@@ -7,7 +7,9 @@
   pool_common
   pool_database
   settings
-  sihl
+  base64
+  pool_core
+  sexplib0
   utils)
  (preprocess
   (pps

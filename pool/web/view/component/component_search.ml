@@ -124,7 +124,7 @@ let multi_search
     ]
     |> wrap
   | Dynamic { hx_url; hx_method; to_label; to_value; selected } ->
-    let url = Sihl.Web.externalize_path hx_url in
+    let url = Webserver.externalize_path hx_url in
     let hx_method =
       match hx_method with
       | `Get -> a_user_data "hx-get" url

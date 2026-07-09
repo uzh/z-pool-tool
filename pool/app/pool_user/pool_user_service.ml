@@ -79,13 +79,13 @@ let create_admin ?id label email lastname firstname password password_confirmati
 ;;
 
 let lifecycle =
-  Sihl.Container.create_lifecycle "pool_user_service" ~dependencies:(fun () ->
+  Pool_core.Container.create_lifecycle "pool_user_service" ~dependencies:(fun () ->
     [ Pool_database.lifecycle ])
 ;;
 
 let register ?(commands = []) () =
   Repo.register_migration ();
-  Sihl.Container.Service.create ~commands lifecycle
+  Pool_core.Container.Service.create ~commands lifecycle
 ;;
 
 module Password = struct
@@ -109,7 +109,7 @@ module Password = struct
       let%lwt user = Repo.find_by_email_opt label email in
       match user with
       | Some { id; _ } ->
-        let expires_in = Sihl.Time.OneDay in
+        let expires_in = Pool_core.Time.OneDay in
         Pool_token.create label ~expires_in [ "user_id", Id.value id ]
         |> Lwt.map CCOption.return
       | None ->
@@ -126,12 +126,11 @@ module Password = struct
     ;;
 
     let lifecycle =
-      Sihl.Container.create_lifecycle
-        Sihl.Contract.Password_reset.name
-        ~dependencies:(fun () -> [ Pool_token.lifecycle; lifecycle ])
+      Pool_core.Container.create_lifecycle "password.reset" ~dependencies:(fun () ->
+        [ Pool_token.lifecycle; lifecycle ])
     ;;
 
-    let register () = Sihl.Container.Service.create lifecycle
+    let register () = Pool_core.Container.Service.create lifecycle
   end
 end
 

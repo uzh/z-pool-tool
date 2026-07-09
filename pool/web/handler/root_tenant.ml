@@ -15,14 +15,14 @@ let tenants req =
   let%lwt tenant_list = Pool_tenant.find_all () in
   Page.Root.Tenant.list tenant_list context
   |> General.create_root_layout ~active_navigation context
-  ||> Sihl.Web.Response.of_html
+  ||> Webserver.Response.of_html
 ;;
 
 let create req =
   let open Database.Pool in
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt multipart_encoded =
-    Sihl.Web.Request.to_multipart_form_data_exn req
+    Webserver.Request.to_multipart_form_data_exn req
     ||> HttpUtils.remove_empty_values_multiplart
   in
   let urlencoded =
@@ -78,7 +78,7 @@ let manage_operators req =
     in
     Page.Root.Tenant.manage_operators tenant operators context
     |> General.create_root_layout context
-    ||> Sihl.Web.Response.of_html
+    ||> Webserver.Response.of_html
     |> Lwt_result.ok
   in
   Response.handle ~src req result
@@ -89,7 +89,7 @@ let create_operator req =
     HttpUtils.get_field_router_param req Field.Tenant |> Pool_tenant.Id.of_string
   in
   let redirect_path = pool_path ~id:tenant_id ~suffix:"operator" () in
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded = Webserver.Request.to_urlencoded req in
   let result ({ Pool_context.language; user; _ } as context) =
     let tags = Pool_context.Logger.Tags.req req in
     let* tenant = Pool_tenant.find tenant_id in
@@ -122,7 +122,7 @@ let create_operator req =
         let password =
           (* Random dummy password; the operator sets their own via the password
              reset link sent below. *)
-          Format.asprintf "%s-N1!" (Sihl.Random.base64 32)
+          Format.asprintf "%s-N1!" (Pool_core.Random.base64 32)
           |> Pool_user.Password.Plain.create
         in
         handle ~id ~tags ~password cmd |> Lwt_result.lift
@@ -174,7 +174,7 @@ let promote_operator req =
     HttpUtils.get_field_router_param req Field.Tenant |> Pool_tenant.Id.of_string
   in
   let redirect_path = pool_path ~id:tenant_id ~suffix:"operator" () in
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded = Webserver.Request.to_urlencoded req in
   let result { Pool_context.user; _ } =
     Response.bad_request_on_error ~urlencoded manage_operators
     @@
@@ -211,7 +211,7 @@ let tenant_detail req =
     let* tenant = Pool_tenant.find id in
     Page.Root.Tenant.detail tenant context
     |> General.create_root_layout context
-    ||> Sihl.Web.Response.of_html
+    ||> Webserver.Response.of_html
     |> Lwt_result.ok
   in
   Response.handle ~src req result

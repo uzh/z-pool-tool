@@ -37,7 +37,7 @@ let preview (location : Pool_location.t) =
          "%s/%s"
          Pool_message.Field.(human_url Location)
          (Id.value location.id)
-       |> Sihl.Web.externalize_path
+       |> Webserver.externalize_path
      in
      a ~a:[ a_href url ] [ name ])
   |> CCList.return

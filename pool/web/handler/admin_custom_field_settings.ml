@@ -15,7 +15,7 @@ let index req =
     let%lwt contact_fields = Custom_field.(find_by_model database_label Model.Contact) in
     Page.Admin.CustomFieldSettings.show context contact_fields
     |> create_layout ~active_navigation:settings_path req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -28,7 +28,7 @@ let update setting req =
     let open Custom_field in
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt selected =
-      Sihl.Web.Request.urlencoded_list Pool_message.Field.(array_key CustomField) req
+      Webserver.Request.urlencoded_list Pool_message.Field.(array_key CustomField) req
     in
     let%lwt contact_fields = find_by_model database_label Model.Contact in
     let events =

@@ -4,7 +4,7 @@ open Utils.Lwt_result.Infix
 let src = Logs.Src.create "queue.notifier"
 
 let create_external_link pool_url =
-  Sihl.Web.externalize_path
+  Webserver.externalize_path
   %> Format.asprintf "http://%s%s" (Pool_tenant.Url.value pool_url)
 ;;
 
@@ -21,7 +21,7 @@ let job_reporter
       let path = [%string "/admin/settings/queue/%{Entity.Id.value id}"] in
       if Database.(Label.equal Pool.Root.label database_label)
       then
-        Sihl.Configuration.read_string "PUBLIC_URL"
+        Pool_core.Configuration.read_string "PUBLIC_URL"
         |> CCOption.map_or
              ~default
              (Pool_tenant.Url.of_string %> flip create_external_link path)

@@ -1,7 +1,7 @@
 type t
 
-val lifecycle : Sihl.Container.lifecycle
-val register : unit -> Sihl.Container.Service.t
+val lifecycle : Pool_core.Container.lifecycle
+val register : unit -> Pool_core.Container.Service.t
 
 val notify
   :  ?src:Logs.src

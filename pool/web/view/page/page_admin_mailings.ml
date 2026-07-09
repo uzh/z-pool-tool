@@ -98,7 +98,7 @@ module List = struct
           [ a_method `Post
           ; a_action
               (mailings_path ~suffix:target ~id:mailing.id experiment_id
-               |> Sihl.Web.externalize_path)
+               |> Webserver.externalize_path)
           ; a_user_data
               "confirmable"
               (Pool_common.Utils.confirmable_to_string language confirm_text)
@@ -448,7 +448,7 @@ let form
                             (mailings_path
                                ~suffix:"add-condition"
                                experiment.Experiment.id
-                             |> Sihl.Web.externalize_path)
+                             |> Webserver.externalize_path)
                         ; a_user_data "hx-trigger" "click"
                         ; a_user_data "hx-target" "#distribution-list"
                         ; a_user_data "hx-swap" "beforeend"
@@ -516,7 +516,7 @@ let form
              ~a:
                [ a_class [ "stack" ]
                ; a_method `Post
-               ; a_action (action |> Sihl.Web.externalize_path)
+               ; a_action (action |> Webserver.externalize_path)
                ; a_user_data "detect-unsaved-changes" ""
                ]
              [ csrf_element csrf ()
@@ -540,7 +540,7 @@ let form
                    ; hx_swap "innerHTML"
                    ; hx_post
                        (mailings_path ~suffix:"search-info" experiment.Experiment.id
-                        |> Sihl.Web.externalize_path)
+                        |> Webserver.externalize_path)
                    ; make_hx_vals
                        [ ( Field.(show MatchingFilterCount)
                          , CCInt.to_string matching_filter_count )

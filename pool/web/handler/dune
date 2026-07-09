@@ -26,11 +26,13 @@
   pool_version
   reminder
   schedule
-  sihl
   signup_code
   statistics
   tags
   user_import
-  waiting_list)
+  waiting_list
+  pool_core
+  webserver
+  storage)
  (preprocess
   (pps lwt_ppx ppx_deriving.show)))

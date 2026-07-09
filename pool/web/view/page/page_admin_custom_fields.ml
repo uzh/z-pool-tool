@@ -260,7 +260,7 @@ let field_form
                  ~a:
                    [ a_method `Post
                    ; a_action
-                       (Sihl.Web.externalize_path
+                       (Webserver.externalize_path
                           (Url.Field.detail_path (model m, id m)
                            |> Format.asprintf "%s/sort-options"))
                    ; a_class [ "stack" ]
@@ -395,7 +395,7 @@ let field_form
   [ form
       ~a:
         [ a_method `Post
-        ; a_action (Sihl.Web.externalize_path action)
+        ; a_action (Webserver.externalize_path action)
         ; a_class [ "stack-lg" ]
         ; a_user_data "detect-unsaved-changes" ""
         ]
@@ -576,7 +576,7 @@ let field_buttons language csrf current_model field =
   let action field appendix =
     Url.Field.detail_path (current_model, field |> id)
     |> (fun base -> Format.asprintf "%s/%s" base appendix)
-    |> Sihl.Web.externalize_path
+    |> Webserver.externalize_path
   in
   let make_form ?disabled_reason action msg submit_type confirmable =
     let button_attribs =
@@ -729,7 +729,7 @@ let index
               [ a_class [ "stack"; "gap" ]
               ; a_method `Post
               ; a_action
-                  (Sihl.Web.externalize_path (Url.index_path current_model)
+                  (Webserver.externalize_path (Url.index_path current_model)
                    |> Format.asprintf "%s/sort-fields")
               ; a_user_data "detect-unsaved-changes" ""
               ]
@@ -787,7 +787,7 @@ let index
               ; a_action
                   (Url.Group.index_path current_model
                    |> Format.asprintf "%s/group/sort"
-                   |> Sihl.Web.externalize_path)
+                   |> Webserver.externalize_path)
               ; a_class [ "stack" ]
               ; a_user_data "detect-unsaved-changes" ""
               ]

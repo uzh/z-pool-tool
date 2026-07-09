@@ -164,7 +164,7 @@ module Close = struct
     let result ({ Pool_context.database_label; language; user; _ } as context) =
       let* experiment, session = router_params req database_label in
       let* assignment = find database_label assignment_id in
-      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+      let%lwt urlencoded = Webserver.Request.to_urlencoded req in
       let* updated =
         decode_update urlencoded |> Lwt_result.lift >|+ UpdateHtmx.handle assignment
       in
@@ -228,7 +228,7 @@ module Close = struct
     let tags = Pool_context.Logger.Tags.req req in
     let result ({ Pool_context.database_label; language; user; _ } as context) =
       let* experiment, session = router_params req database_label in
-      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+      let%lwt urlencoded = Webserver.Request.to_urlencoded req in
       let* decoded =
         decode_update urlencoded
         |> Lwt_result.lift
@@ -303,7 +303,7 @@ let edit req =
     in
     Page.Admin.Assignment.edit context view_contact_name experiment session assignment
     >|> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -330,7 +330,7 @@ let update req =
     let tags = Pool_context.Logger.Tags.req req in
     let boolean_fields = boolean_fields |> CCList.map Field.show in
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req
+      Webserver.Request.to_urlencoded req
       ||> HttpUtils.format_request_boolean_values boolean_fields
       ||> HttpUtils.remove_empty_values
     in
@@ -373,7 +373,7 @@ let remind req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+      Webserver.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
@@ -480,7 +480,7 @@ let swap_session_post req =
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let redirect_path = Page.Admin.Session.session_path ~id:session_id experiment_id in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req
+    Webserver.Request.to_urlencoded req
     ||> HttpUtils.remove_empty_values
     ||> HttpUtils.format_request_boolean_values Field.[ show NotifyContact ]
   in

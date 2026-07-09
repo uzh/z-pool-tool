@@ -9,8 +9,8 @@
   logger
   pool_common
   pool_tenant
-  sihl
-  utils)
+  utils
+  webserver)
  (preprocess
   (pps
    lwt_ppx

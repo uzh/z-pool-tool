@@ -26,7 +26,7 @@ let note ~title ~body req =
     let txt_to_string m = Pool_common.Utils.text_to_string language m in
     Page.Utils.note (txt_to_string title) (txt_to_string body)
     |> create_tenant_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Http_response.handle ~src req result
 ;;

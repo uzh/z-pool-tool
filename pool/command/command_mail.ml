@@ -9,7 +9,7 @@ Provide all fields to send a test email:
 Example: test.mail admin@mail.com contact@mail.com
     |}
   in
-  Sihl.Command.make
+  Pool_core.Command.make
     ~name:"test.mail"
     ~description:"Dispatch pre-defined test email to the provided recipient"
     ~help
@@ -18,7 +18,7 @@ Example: test.mail admin@mail.com contact@mail.com
       let%lwt () = Database.Pool.initialize () in
       let message = "Hi! \n\n This is a test message." in
       let subject = "Test subject" in
-      let email = Sihl_email.create ~sender ~recipient ~subject message in
+      let email = Email.Message.create ~sender ~recipient ~subject message in
       let job = Email.Service.Job.create email in
       let%lwt () = Email.Service.dispatch Database.Pool.Root.label job in
       Lwt.return_some ()

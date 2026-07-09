@@ -53,7 +53,7 @@ let confirmed_and_terms_agreed () =
        | Error ImportPending ->
          redirect_to_with_actions
            (url_with_field_params query_parameters "/import-pending")
-           [ Sihl.Web.Session.set [ "user_id", "" ] ]
+           [ Webserver.Session.set [ "user_id", "" ] ]
        | _ -> invalid_session_redirect req query_parameters)
   in
   Rock.Middleware.create ~name:"contact.confirmed" ~filter
@@ -67,7 +67,7 @@ let completion_in_progress () =
       |> CCOption.map_or ~default:[] (fun { Pool_context.query_parameters; _ } ->
         query_parameters)
     in
-    match Sihl.Web.Session.find Contact.profile_completion_cookie req with
+    match Webserver.Session.find Contact.profile_completion_cookie req with
     | Some "true" ->
       Http_utils.redirect_to_with_actions
         (Http_utils.url_with_field_params query_parameters "/user/completion")

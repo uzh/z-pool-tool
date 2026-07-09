@@ -7,7 +7,7 @@ let from_root_only () =
     | false ->
       let context =
         let open Pool_context in
-        let csrf = Sihl.Web.Csrf.find_exn req in
+        let csrf = Webserver.Csrf.find_exn req in
         create
           ( []
           , Pool_common.Language.En
@@ -20,7 +20,7 @@ let from_root_only () =
       in
       Page.Utils.error_page_not_found Pool_common.Language.En ()
       |> Layout.Root.create context
-      ||> Sihl.Web.Response.of_html
+      ||> Webserver.Response.of_html
   in
   Rock.Middleware.create ~name:"root.only" ~filter
 ;;

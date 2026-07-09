@@ -239,13 +239,14 @@ let available_spots (m : t) =
 let has_assignments (m : t) = AssignmentCount.value m.assignment_count > 0
 
 type notification_log =
-  | Email of Sihl_email.t * Pool_queue.Instance.t
+  | Email of Email.Message.t * Pool_queue.Instance.t
   | SMS of string * Pool_queue.Instance.t
 (* TODO: update notification history with types, add equal and pp functions *)
 
 type notification_history =
   { session : t
-  ; queue_entries : (Sihl_email.t * Pool_queue.Instance.t) list [@equal fun _ _ -> true]
+  ; queue_entries : (Email.Message.t * Pool_queue.Instance.t) list
+        [@equal fun _ _ -> true]
   }
 
 let session_date_to_human (session : t) =
@@ -445,7 +446,7 @@ module Calendar = struct
 
   let make_links actor guardian experiment_id session_id (location : location) : links =
     let open Guard in
-    let externalize_opt = CCOption.map Sihl.Web.externalize_path in
+    let externalize_opt = CCOption.map Webserver.externalize_path in
     let id_string = Uuid.Target.to_string in
     let session_id = Uuid.target_of Id.value session_id in
     let experiment_id = Uuid.target_of Experiment.Id.value experiment_id in

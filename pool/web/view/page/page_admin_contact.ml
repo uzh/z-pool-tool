@@ -21,7 +21,7 @@ let enroll_contact_path ?suffix contact_id =
   match suffix with
   | None -> base
   | Some suffix -> Format.asprintf "%s/%s" base suffix)
-  |> Sihl.Web.externalize_path
+  |> Webserver.externalize_path
 ;;
 
 let heading_with_icons contact =
@@ -371,7 +371,7 @@ let experiment_history Pool_context.{ language; _ } contact experiments query =
           "/admin/experiments/%s/contact-history/%s"
           Experiment.(Id.value experiment.id)
           Contact.(contact |> id |> Id.value)
-        |> Sihl.Web.externalize_path
+        |> Webserver.externalize_path
       in
       let attributes =
         Htmx.
@@ -455,7 +455,7 @@ let experiment_history_modal
                 ~id
                 ~suffix
                 ()
-              |> Sihl.Web.externalize_path
+              |> Webserver.externalize_path
             in
             Pool_message.
               [ ( "cancel"
@@ -548,7 +548,7 @@ let detail
       a
         ~a:
           [ a_class [ "btn small primary is-text has-icon" ]
-          ; a_href (Sihl.Web.externalize_path path)
+          ; a_href (Webserver.externalize_path path)
           ]
         [ Icon.(to_html icon)
         ; txt Pool_common.(Utils.nav_link_to_string language nav_link)
@@ -637,7 +637,7 @@ let edit
   =
   let open Page_contact_partials in
   let base_action =
-    Htmx.admin_profile_hx_post (Contact.id contact) |> Sihl.Web.externalize_path
+    Htmx.admin_profile_hx_post (Contact.id contact) |> Webserver.externalize_path
   in
   let assign_tags =
     if allowed_to_assign

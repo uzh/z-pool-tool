@@ -7,8 +7,9 @@
   database
   pool_user
   settings
-  sihl
-  utils)
+  utils
+  pool_core
+  webserver)
  (preprocess
   (pps
    lwt_ppx

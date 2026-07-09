@@ -53,7 +53,8 @@ let list { Pool_context.language; csrf; _ } (api_keys, query) =
         form
           ~a:
             [ a_method `Post
-            ; a_action (Sihl.Web.externalize_path (api_key_path ~id ~suffix:"disable" ()))
+            ; a_action
+                (Webserver.externalize_path (api_key_path ~id ~suffix:"disable" ()))
             ; a_user_data "confirmable" confirmable
             ]
           [ Input.csrf_element csrf ()
@@ -114,7 +115,7 @@ let form { Pool_context.csrf; language; flash_fetcher; _ } ~control ?api_key () 
   form
     ~a:
       [ a_method `Post
-      ; a_action (Sihl.Web.externalize_path action)
+      ; a_action (Webserver.externalize_path action)
       ; a_class [ "stack" ]
       ; a_user_data "detect-unsaved-changes" ""
       ]

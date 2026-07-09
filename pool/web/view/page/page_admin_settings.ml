@@ -109,7 +109,7 @@ let show
       ~a:[ a_class [ "flexrow"; "justify-end" ] ]
       [ button
           ~a:
-            [ hx_get (url |> Sihl.Web.externalize_path)
+            [ hx_get (url |> Webserver.externalize_path)
             ; hx_swap "outerHTML"
             ; hx_target ("#" ^ changelog_modal_id)
             ; a_class [ "small" ]
@@ -196,7 +196,7 @@ let show
             ; a_class [ "success"; "small" ]
             ; hx_get
                 (HttpUtils.Url.Admin.settings_path "email-suffix"
-                 |> Sihl.Web.externalize_path)
+                 |> Webserver.externalize_path)
             ; hx_trigger "click"
             ; hx_target ("#" ^ subforms_id)
             ; hx_swap "beforeend"
@@ -351,7 +351,7 @@ let show
                   ; a_class [ "success"; "small" ]
                   ; hx_get
                       (HttpUtils.Url.Admin.settings_path "inactive-user-warnings"
-                       |> Sihl.Web.externalize_path)
+                       |> Webserver.externalize_path)
                   ; hx_trigger "click"
                   ; hx_target ("#" ^ subforms_id)
                   ; hx_swap "beforeend"

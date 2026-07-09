@@ -21,7 +21,7 @@ val render_and_create
   -> t
 
 module Service : sig
-  val register : unit -> Sihl.Container.Service.t
+  val register : unit -> Pool_core.Container.Service.t
 
   val test_api_key
     :  tags:Logs.Tag.set

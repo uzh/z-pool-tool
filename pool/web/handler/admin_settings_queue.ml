@@ -26,7 +26,7 @@ let detail req =
     in
     Page.Admin.Settings.Queue.detail context ?text_message_dlr instance
     |> General.create_tenant_layout req ~active_navigation:base_path context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;

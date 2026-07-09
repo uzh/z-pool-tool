@@ -26,7 +26,8 @@ let public_scheme () =
     %> CCOption.exists (CCString.lowercase_ascii %> CCString.equal "localhost")
   in
   match
-    Sihl.Configuration.is_production (), Sihl.Configuration.read_string "PUBLIC_URL"
+    ( Pool_core.Configuration.is_production ()
+    , Pool_core.Configuration.read_string "PUBLIC_URL" )
   with
   | true, _ -> "https"
   | false, Some url when is_localhost url -> "http"
@@ -34,7 +35,7 @@ let public_scheme () =
 ;;
 
 let create_public_url pool_url =
-  Sihl.Web.externalize_path
+  Webserver.externalize_path
   %> Format.asprintf "%s://%s%s" (public_scheme ()) (Url.value pool_url)
 ;;
 

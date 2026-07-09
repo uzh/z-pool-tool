@@ -24,9 +24,9 @@ let find_intended_opt req =
   let key = Pool_message.Field.(location |> show) in
   let remove_key = CCList.filter (fun (a, _) -> CCString.equal key a |> not) in
   req
-  |> Sihl.Web.Request.query key
+  |> Webserver.Request.query key
   |> CCOption.map (fun intended ->
-    Sihl.Web.Request.query_list req
+    Webserver.Request.query_list req
     |> CCList.uniq ~eq:Utils.equal_key
     |> remove_key
     |> with_query (of_string intended)
@@ -39,7 +39,7 @@ let intended_to_url url intended =
   let equal_path a b = CCString.equal (path a) (path b) in
   let intended =
     let open CCOption in
-    Sihl.Configuration.read_string "PREFIX_PATH"
+    Pool_core.Configuration.read_string "PREFIX_PATH"
     >|= (fun p -> if CCString.prefix ~pre:"/" p then p else Format.asprintf "/%s" p)
     |> value ~default:""
     |> fun pre ->
@@ -60,7 +60,7 @@ let intended_or ?default url =
   map_or ~default (intended_to_url url)
 ;;
 
-let intended_of_request ({ Sihl.Web.Request.target; _ } as req) =
+let intended_of_request ({ Webserver.Request.target; _ } as req) =
   match find_intended_opt req with
   | Some intended -> flip intended_to_url intended
   | None -> flip intended_to_url target
@@ -71,7 +71,7 @@ let user_from_session db_pool req : Pool_user.t option Lwt.t =
 ;;
 
 let get_field_router_param req field =
-  Sihl.Web.Router.param req Pool_message.Field.(field |> show)
+  Webserver.Router.param req Pool_message.Field.(field |> show)
 ;;
 
 let find_field_router_param_opt req field =
@@ -86,13 +86,13 @@ let retain_url_params req url =
 
 let find_query_lang req =
   let open CCOption.Infix in
-  Sihl.Web.Request.query Pool_message.Field.(Language |> show) req
+  Webserver.Request.query Pool_message.Field.(Language |> show) req
   >>= CCString.uppercase_ascii %> Pool_common.Language.create %> CCOption.of_result
 ;;
 
 let find_query_param req field decode =
   let open CCResult.Infix in
-  Sihl.Web.Request.query (Pool_message.Field.show field) req
+  Webserver.Request.query (Pool_message.Field.show field) req
   |> CCOption.to_result Pool_message.Error.(NotFound field)
   >>= decode
 ;;
@@ -101,7 +101,7 @@ let find_referer req =
   let open CCOption.Infix in
   let strip_prefix path =
     let pre =
-      Sihl.Configuration.read_string "PREFIX_PATH" |> CCOption.value ~default:""
+      Pool_core.Configuration.read_string "PREFIX_PATH" |> CCOption.value ~default:""
     in
     CCString.chop_prefix ~pre path |> CCOption.value ~default:path
   in
@@ -113,11 +113,11 @@ let find_referer req =
 
 let redirect_to_with_actions ?(skip_externalize = false) path actions =
   let externalize_path path =
-    if skip_externalize then path else Sihl.Web.externalize_path path
+    if skip_externalize then path else Webserver.externalize_path path
   in
   path
   |> externalize_path
-  |> Sihl.Web.Response.redirect_to
+  |> Webserver.Response.redirect_to
   |> CCList.fold_left ( % ) id actions
   |> Lwt.return
 ;;
@@ -150,7 +150,7 @@ let urlencoded_to_params urlencoded keys =
 ;;
 
 let urlencoded_to_flash urlencoded =
-  Sihl.Web.Flash.set
+  Webserver.Flash.set
     (urlencoded
      |> CCList.map (fun (m, k) -> m, k |> CCList.head_opt |> CCOption.get_or ~default:"")
     )
@@ -181,7 +181,7 @@ let find_in_urlencoded ?error field =
 (* This is required as HTMX sends "undefined" if all checkboxes are unchecked *)
 let htmx_urlencoded_list key req =
   let open Utils.Lwt_result.Infix in
-  Sihl.Web.Request.urlencoded_list key req
+  Webserver.Request.urlencoded_list key req
   ||> function
   | [ hd ] when CCString.equal "undefined" (hd |> CCString.lowercase_ascii) -> []
   | lst -> lst
@@ -265,13 +265,13 @@ let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
 
 let is_req_from_root_host req =
   req
-  |> Sihl.Web.Request.header "host"
+  |> Webserver.Request.header "host"
   |> CCOption.map2 CCString.equal_caseless Utils.Url.public_host
   |> CCOption.value ~default:false
 ;;
 
 let externalize_path_with_params params path =
-  url_with_field_params params path |> Sihl.Web.externalize_path
+  url_with_field_params params path |> Webserver.externalize_path
 ;;
 
 let add_line_breaks = Utils.Html.handle_line_breaks Tyxml.Html.span
@@ -287,7 +287,7 @@ let invalid_session_redirect
 ;;
 
 let find_id encode field req =
-  Sihl.Web.Router.param req @@ Pool_message.Field.show field |> encode
+  Webserver.Router.param req @@ Pool_message.Field.show field |> encode
 ;;
 
 let find_id_save encode field req =
@@ -307,10 +307,10 @@ let default_value_style elms =
 ;;
 
 let externalized_path_with_version url =
-  (if Sihl.Configuration.(is_development () || is_test ())
+  (if Pool_core.Configuration.(is_development () || is_test ())
    then url
    else Format.asprintf "%s?v=%s" url Version.to_string)
-  |> Sihl.Web.externalize_path
+  |> Webserver.externalize_path
 ;;
 
 let first_n_characters ?(n = 47) m =

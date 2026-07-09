@@ -36,7 +36,7 @@ let services =
   ; Email.Service.register ()
   ; Text_message.Service.register ()
   ; Storage.register ()
-  ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
+  ; Webserver.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ; System_event.Service.register `Server ()
   ]
 ;;
@@ -79,9 +79,9 @@ let commands =
   ]
 ;;
 
-(* This is the entry point of your Sihl app *)
+(* This is the entry point of the app *)
 let () =
-  Sihl.App.(
+  Pool_core.App.(
     empty
     |> with_services services
     |> before_start (fun () ->

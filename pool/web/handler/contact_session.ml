@@ -59,7 +59,7 @@ let show req =
     Page.Contact.Assignment.detail session follow_ups experiment context
     |> Lwt.return_ok
     >>= create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;

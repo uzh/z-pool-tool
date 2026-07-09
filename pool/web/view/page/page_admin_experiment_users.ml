@@ -36,7 +36,7 @@ let assign_form
   let button_attrs = if disabled then [ a_disabled (); a_title disabled_hint ] else [] in
   form
     ~a:
-      [ a_action (url ~admin_id:(Admin.id admin) ~suffix () |> Sihl.Web.externalize_path)
+      [ a_action (url ~admin_id:(Admin.id admin) ~suffix () |> Webserver.externalize_path)
       ; a_method `Post
       ]
     [ csrf_element csrf ()

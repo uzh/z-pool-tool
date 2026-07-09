@@ -85,7 +85,7 @@ let grant_role ~redirect_path ~user ~target_id database_label req =
   in
   let lift = Lwt_result.lift in
   let tags = Pool_context.Logger.Tags.req req in
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded = Webserver.Request.to_urlencoded req in
   let* role =
     Http_utils.find_in_urlencoded Field.Role urlencoded
     |> lift
@@ -143,7 +143,7 @@ let revoke_role ~redirect_path ~user ~target_id database_label req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
   let role =
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     let role =
       let open CCResult in
       Http_utils.find_in_urlencoded Field.Role urlencoded
@@ -172,7 +172,7 @@ let revoke_role ~redirect_path ~user ~target_id database_label req =
 (* TODO: Make sure handle_error_message is not called twice, see admin_api_key.ml *)
 let handle_toggle_role target_id req =
   let result (_ : Pool_context.t) =
-    Sihl.Web.Request.to_urlencoded req
+    Webserver.Request.to_urlencoded req
     ||> Http_utils.find_in_urlencoded Field.Role
     >== Role.Role.of_string_res %> CCResult.map_err Error.authorization
     >|+ fun key ->
@@ -189,7 +189,7 @@ let handle_toggle_role target_id req =
 
 let search_role_entities target req =
   let result { Pool_context.database_label; language; user; _ } =
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     let target_id = target.Guard.Target.uuid in
     let* actor =
       Pool_context.Utils.find_authorizable ~admin_only:true database_label user

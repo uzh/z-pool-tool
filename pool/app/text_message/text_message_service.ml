@@ -13,7 +13,7 @@ let start () = Lwt.return_unit
 let stop () = Lwt.return_unit
 
 let lifecycle =
-  Sihl.Container.create_lifecycle
+  Pool_core.Container.create_lifecycle
     "text_messages"
     ~dependencies:(fun () -> [ Pool_database.lifecycle ])
     ~start
@@ -21,18 +21,18 @@ let lifecycle =
 ;;
 
 let register () =
-  let configuration = Sihl.Configuration.make () in
-  Sihl.Container.Service.create ~configuration lifecycle
+  let configuration = Pool_core.Configuration.make () in
+  Pool_core.Container.Service.create ~configuration lifecycle
 ;;
 
 let bypass () =
   CCOption.get_or
     ~default:false
-    (Sihl.Configuration.read_bool "TEXT_MESSAGE_BYPASS_INTERCEPT")
+    (Pool_core.Configuration.read_bool "TEXT_MESSAGE_BYPASS_INTERCEPT")
 ;;
 
 let incercept_text_message_address () =
-  Sihl.Configuration.read_string "TEXT_MESSAGE_INTERCEPT_ADDRESS"
+  Pool_core.Configuration.read_string "TEXT_MESSAGE_INTERCEPT_ADDRESS"
 ;;
 
 module Config = struct
@@ -98,12 +98,13 @@ let print_message ~tags ?(log_level = Logs.Info) msg =
 let intercept_prepare database_label message =
   let tags = tags database_label in
   let () =
-    if Sihl.Configuration.is_development ()
+    if Pool_core.Configuration.is_development ()
     then print_message ~tags ~log_level:Logs.Info message
     else ()
   in
   match
-    Sihl.Configuration.is_production () || bypass (), incercept_text_message_address ()
+    ( Pool_core.Configuration.is_production () || bypass ()
+    , incercept_text_message_address () )
   with
   | true, _ -> Lwt.return_ok (TextMessageJob message)
   | false, Some new_recipient ->
@@ -122,7 +123,7 @@ let intercept_prepare database_label message =
         (CellPhone.value message.recipient)
     in
     EmailJob
-      (Sihl_email.create
+      (Email.Message.create
          ~sender
          ~recipient:new_recipient
          ~subject
@@ -153,7 +154,7 @@ let send_message ?dlr api_key msg =
 ;;
 
 let test_api_key ~tags api_key cell_phone sender =
-  let open Sihl.Configuration in
+  let open Pool_core.Configuration in
   let open Cohttp in
   let msg = create cell_phone sender "Your API Key is valid." in
   let () = if is_development () then print_message ~tags msg else () in
@@ -222,7 +223,7 @@ module Job = struct
   ;;
 
   let handle ?id database_label message =
-    let open Sihl.Configuration in
+    let open Pool_core.Configuration in
     let%lwt api_key, tenant_url = get_api_key_and_url database_label in
     let tags = tags database_label in
     match is_production () || bypass () with
@@ -267,7 +268,7 @@ module Job = struct
     let open Pool_queue in
     Job.create
       ~max_tries:10
-      ~retry_delay:(Sihl.Time.Span.hours 1)
+      ~retry_delay:(Pool_core.Time.Span.hours 1)
       handle
       encode
       decode

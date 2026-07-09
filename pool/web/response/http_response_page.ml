@@ -40,7 +40,7 @@ let internal_server_error_response error =
     (show_error default_language Error.InternalServerError)
     (show_error default_language error)
   |> Layout.Error.create
-  |> Sihl.Web.Response.of_html ~status:`Internal_server_error
+  |> Webserver.Response.of_html ~status:`Internal_server_error
 ;;
 
 let generic_error_response
@@ -52,5 +52,5 @@ let generic_error_response
   =
   Page.Utils.note (show_error language title) (show_error language error)
   |> make_layout req context
-  ||> Sihl.Web.Response.of_html ~status
+  ||> Webserver.Response.of_html ~status
 ;;

@@ -21,7 +21,7 @@ let session_item layout language (experiment : Experiment.Public.t) session =
                  "/experiments/%s/sessions/%s"
                  Experiment.(experiment |> Public.id |> Id.value)
                  (session.Public.id |> Id.value)
-               |> Sihl.Web.externalize_path)
+               |> Webserver.externalize_path)
           ]
         [ txt (Utils.control_to_string language Pool_message.Control.Register) ]
     | false, Some _ ->

@@ -96,7 +96,7 @@ let invitation ~experiment ~contacts =
         ; invited_contacts = []
         ; create_message =
             (fun (_ : Invitation.t) ->
-              Sihl_email.create
+              Email.Message.create
                 ~sender:"sender"
                 ~recipient:"recipient"
                 ~subject:"subject"

@@ -11,7 +11,7 @@ let account_suspension_notification ?unblock_url { Pool_context.csrf; language; 
       | Some unblock_url ->
         let open Component_input in
         form
-          ~a:[ a_method `Post; a_action (unblock_url |> Sihl.Web.externalize_path) ]
+          ~a:[ a_method `Post; a_action (unblock_url |> Webserver.externalize_path) ]
           [ csrf_element csrf ()
           ; submit_element
               ~classnames:[ "small" ]

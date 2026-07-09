@@ -34,7 +34,7 @@ let read_variable fcn env =
   |> CCOption.get_exn_or (Format.asprintf "Variable not defined: %s" (env |> to_string))
 ;;
 
-let read_bool = read_variable Sihl.Configuration.read_bool
+let read_bool = read_variable Pool_core.Configuration.read_bool
 
 let schema =
   let open Conformist in
@@ -43,21 +43,21 @@ let schema =
       [ Conformist.optional
           (bool
              ~meta:"If set to false, system events will not be handled."
-             ~default:(Sihl.Configuration.is_production ())
+             ~default:(Pool_core.Configuration.is_production ())
              (Run |> to_string))
       ]
     config
 ;;
 
 let start identifier () =
-  Sihl.Configuration.require schema;
+  Pool_core.Configuration.require schema;
   if read_bool Run then start_handler identifier () else Lwt.return_unit
 ;;
 
 let stop () = Lwt.return_unit
 
 let lifecycle identifier () =
-  Sihl.Container.create_lifecycle
+  Pool_core.Container.create_lifecycle
     "System events"
     ~dependencies:(fun () -> [ Schedule.lifecycle ])
     ~start:(start identifier)
@@ -65,6 +65,6 @@ let lifecycle identifier () =
 ;;
 
 let register identifier () =
-  let configuration = Sihl.Configuration.make ~schema () in
-  Sihl.Container.Service.create ~configuration (lifecycle identifier ())
+  let configuration = Pool_core.Configuration.make ~schema () in
+  Pool_core.Container.Service.create ~configuration (lifecycle identifier ())
 ;;

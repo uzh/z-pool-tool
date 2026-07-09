@@ -75,7 +75,7 @@ let rule_from_request req role =
       (try (Yojson.Safe.from_string %> RolePermission.of_yojson) str with
        | _ -> Error "Undefined Yojson for rule.")
   in
-  Sihl.Web.Request.to_urlencoded req
+  Webserver.Request.to_urlencoded req
   ||> HttpUtils.find_in_urlencoded Field.Rule
   >== read
   >== fun rule ->
@@ -105,7 +105,7 @@ let index req =
     in
     Page.Admin.Settings.RolePermission.index context roles
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -158,7 +158,7 @@ let update req =
       Persistence.RolePermission.permissions_by_role_and_target database_label role target
     in
     let events =
-      Sihl.Web.Request.to_urlencoded req
+      Webserver.Request.to_urlencoded req
       ||> HttpUtils.format_request_boolean_values Permission.(all |> CCList.map show)
       ||> UpdateRolePermissions.decode
       >== UpdateRolePermissions.handle ~tags role target current_permissions

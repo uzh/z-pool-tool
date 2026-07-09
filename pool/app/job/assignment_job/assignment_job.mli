@@ -7,7 +7,7 @@ val update_matches_filter
   -> (Assignment.event list * Email.dispatch list, Pool_message.Error.t) Lwt_result.t
 
 val dispatch_update_upcomming : Database.Label.t -> unit Lwt.t
-val register : unit -> Sihl.Container.Service.t
+val register : unit -> Pool_core.Container.Service.t
 val job : Database.Label.t Pool_queue.Job.t
 
 type event = Dispatched

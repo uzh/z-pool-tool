@@ -9,7 +9,6 @@
   database
   role
   query
-  sihl
   utils)
  (preprocess
   (pps

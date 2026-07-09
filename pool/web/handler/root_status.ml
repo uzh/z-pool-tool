@@ -9,7 +9,7 @@ let active_navigation = "/admin/settings/schedules"
 (* TODO: Use Api Utils *)
 let yojson_response ?status json =
   let headers = Opium.Headers.of_list [ "Content-Type", "application/json" ] in
-  json |> Sihl.Web.Response.of_json ?status ~headers |> Lwt.return
+  json |> Webserver.Response.of_json ?status ~headers |> Lwt.return
 ;;
 
 let schedule_to_json

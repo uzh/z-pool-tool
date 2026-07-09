@@ -12,6 +12,8 @@ bug-reports: "https://github.com/uzh/z-pool-tool"
 depends: [
   "dune" {>= "3.7"}
   "alcotest-lwt" {with-test}
+  "astring" {>= "0.8.5"}
+  "base64" {>= "3.4.0"}
   "canary"
   "caqti" {>= "2.3.0" & < "3.0.0"}
   "caqti-driver-mariadb" {>= "2.3.0" & < "3.0.0"}
@@ -19,23 +21,42 @@ depends: [
   "conformist" {>= "0.8.1"}
   "containers" {>= "3.14"}
   "containers-data" {>= "3.14"}
+  "cstruct" {>= "6.0.1"}
   "digestif"
+  "dune-build-info" {>= "2.8.4"}
+  "fmt" {>= "0.8.8"}
   "guardian" {= "0.4.0"}
+  "letters" {>= "0.4.0"}
   "logs" {>= "0.7.0"}
   "lwt" {>= "5.7.0"}
+  "lwt_ppx" {>= "2.0.1"}
   "mariadb" {>= "1.2.0" & < "2.0.0"}
+  "mirage-crypto" {>= "1.1.0"}
+  "mirage-crypto-pk" {>= "1.1.0"}
+  "mirage-crypto-rng" {>= "1.2.0"}
+  "mtime" {>= "2.0.0"}
   "ocaml" {>= "4.14.0"}
   "ocaml-lsp-server" {with-dev-setup}
   "ocamlformat" {>= "0.18.0" & (with-dev-setup | with-test)}
+  "opium" {>= "0.20.0"}
   "ppx_deriving" {>= "5.2.1"}
+  "ppx_deriving_yojson" {>= "3.5.2"}
+  "ppx_fields_conv" {>= "v0.13.0"}
   "ppx_inline_test" {with-test}
+  "ppx_sexp_conv" {>= "v0.13.0"}
   "ppx_string" {= "v0.17.0"}
   "ppx_variants_conv" {= "v0.17.0"}
   "ppx_yojson_conv" {= "v0.17.0"}
-  "sihl" {>= "4.0.0" & < "5.0.0"}
-  "sihl-email" {>= "4.0.0" & < "5.0.0"}
-  "sihl-storage" {>= "4.0.0" & < "5.0.0"}
+  "ptime" {>= "0.8.1"}
+  "rock" {>= "0.20.0"}
+  "safepass" {>= "3.0"}
+  "sexplib" {>= "v0.13.0"}
+  "sexplib0"
+  "stringext" {>= "1.6.0"}
+  "tsort" {>= "2.0.0"}
   "tyxml-ppx" {>= "4.6.0"}
+  "uri" {>= "4.2.0"}
+  "uuidm" {>= "0.9.9"}
   "yojson" {>= "2.2.2"}
   "odoc" {with-doc}
 ]
@@ -55,11 +76,6 @@ build: [
 ]
 dev-repo: "git+https://github.com/uzh/z-pool-tool.git"
 pin-depends: [
-    # pin Sihl repos to ensure edge is available
-    ["sihl.4.0.0-master+6c3c404" "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"]
-    ["sihl-email.4.0.0-master+6c3c404" "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"]
-    ["sihl-storage.4.0.0-master+6c3c404" "git+https://github.com/uzh/sihl.git#6c3c4040413294155cda3a363edf0ff3c7e638b8"]
-
     ["conformist.0.8.1-master+aa7b95d" "git+https://github.com/oxidizing/conformist.git#aa7b95d1f39215cdaab8cf96d765d63e41d5f8a6"]
 
     ["letters.0.4.0-bug-connection-close-wait+HEAD" "git+https://github.com/mabiede/letters.git#bug/connection-close-wait"]

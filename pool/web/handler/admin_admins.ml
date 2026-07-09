@@ -81,7 +81,7 @@ let admin_detail req is_edit =
        Page.Admin.Admins.detail context admin target_id roles failed_login_attempt
        |> Lwt.return)
     >|> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -94,21 +94,21 @@ let new_form req =
     Response.bad_request_render_error context
     @@ (Page.Admin.Admins.new_form context
         |> create_layout req context
-        >|+ Sihl.Web.Response.of_html)
+        >|+ Webserver.Response.of_html)
   in
   Response.handle ~src req result
 ;;
 
 let create_admin req =
   let result { Pool_context.database_label; language; user; _ } =
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     Response.bad_request_on_error ~urlencoded new_form
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let id = Admin.Id.create () in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let validate_user () =
-      Sihl.Web.Request.urlencoded Field.(Email |> show) req
+      Webserver.Request.urlencoded Field.(Email |> show) req
       ||> CCOption.to_result Error.EmailAddressMissingAdmin
       >== Pool_user.EmailAddress.create
       >>= HttpUtils.validate_email_existance database_label

@@ -85,7 +85,7 @@ module Url = struct
       | Some host, Some port -> Some (Format.asprintf "%s:%d" host port)
       | None, _ -> None
     in
-    Sihl.Configuration.read_string "PUBLIC_URL" >>= decode_host
+    Pool_core.Configuration.read_string "PUBLIC_URL" >>= decode_host
   ;;
 end
 

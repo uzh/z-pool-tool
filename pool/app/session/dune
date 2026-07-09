@@ -7,8 +7,9 @@
   pool_common
   pool_location
   ptime
-  sihl
-  utils)
+  utils
+  webserver
+  email)
  (preprocess
   (pps
    lwt_ppx

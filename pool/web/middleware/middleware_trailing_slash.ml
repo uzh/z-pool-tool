@@ -1,7 +1,7 @@
 let middleware () =
   let filter handler req =
     let root_path =
-      Sihl.Configuration.read_string "PREFIX_PATH"
+      Pool_core.Configuration.read_string "PREFIX_PATH"
       |> CCOption.value ~default:""
       |> Format.asprintf "%s/"
     in

@@ -10,10 +10,11 @@
   reminder
   seed
   settings
-  sihl
   utils
   user_import
   system_event
-  version)
+  version
+  pool_core
+  email)
  (preprocess
   (pps lwt_ppx ppx_deriving.show)))

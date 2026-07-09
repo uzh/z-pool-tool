@@ -43,7 +43,7 @@ let list { Pool_context.language; _ } ?contact (possible_duplicates, query) =
         ~a:
           [ a_href
               (Http_utils.Url.Admin.contact_path ~id:(Contact.id contact) ()
-               |> Sihl.Web.externalize_path)
+               |> Webserver.externalize_path)
           ]
         [ txt (fullname contact) ]
     in
@@ -125,7 +125,7 @@ let show
   in
   let path ?suffix () =
     Http_utils.Url.Admin.duplicate_path ~id:duplicate.id ?suffix ()
-    |> Sihl.Web.externalize_path
+    |> Webserver.externalize_path
   in
   let title =
     if is_merge
@@ -283,7 +283,7 @@ let show
               [ a_method `Post
               ; a_action
                   (Http_utils.Url.Admin.duplicate_path ~suffix:"merge" ~id:duplicate.id ()
-                   |> Sihl.Web.externalize_path)
+                   |> Webserver.externalize_path)
               ]
             [ Input.csrf_element csrf ()
             ; table

@@ -18,7 +18,7 @@ let rerun_migrations_for_connection_issues () =
 let start () =
   let open Schedule in
   let interval =
-    (if Sihl.Configuration.is_production () then 15 * 60 else 10)
+    (if Pool_core.Configuration.is_production () then 15 * 60 else 10)
     |> Ptime.Span.of_int_s
     |> ScheduledTimeSpan.of_span
   in
@@ -27,10 +27,10 @@ let start () =
 ;;
 
 let lifecycle =
-  Sihl.Container.create_lifecycle
+  Pool_core.Container.create_lifecycle
     name
     ~dependencies:(fun () -> [ Schedule.lifecycle ])
     ~start
 ;;
 
-let register () = Sihl.Container.Service.create lifecycle
+let register () = Pool_core.Container.Service.create lifecycle

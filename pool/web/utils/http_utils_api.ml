@@ -8,5 +8,5 @@ let is_api_request req =
 ;;
 
 let find_id validate_and_encode field req =
-  Sihl.Web.Router.param req @@ Pool_message.Field.show field |> validate_and_encode
+  Webserver.Router.param req @@ Pool_message.Field.show field |> validate_and_encode
 ;;

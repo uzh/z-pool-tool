@@ -15,12 +15,12 @@ let index req =
   let%lwt root_list = Admin.all ~query:Admin.default_query Database.Pool.Root.label in
   Page.Root.Users.list root_list context
   |> General.create_root_layout ~active_navigation context
-  ||> Sihl.Web.Response.of_html
+  ||> Webserver.Response.of_html
 ;;
 
 let create req =
   let result { Pool_context.database_label; user; _ } =
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     Response.bad_request_on_error ~urlencoded index
     @@
     let tags = Pool_context.Logger.Tags.req req in

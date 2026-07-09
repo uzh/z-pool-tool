@@ -29,14 +29,14 @@ module MakeUserProfile (Config : module type of Config) = struct
       in
       Page.Admin.login_information ~action_prefix:prefix admin context password_policy
       |> create_layout ~active_navigation req context
-      >|+ Sihl.Web.Response.of_html
+      >|+ Webserver.Response.of_html
     in
     Response.handle ~src req result
   ;;
 
   let update_password req =
     let open HttpUtils in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     let result { Pool_context.database_label; language; user; _ } =
       let tags = Pool_context.Logger.Tags.req req in
       Response.bad_request_on_error show
@@ -63,7 +63,7 @@ module MakeUserProfile (Config : module type of Config) = struct
 
   let update_name req =
     let open HttpUtils in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     let result { Pool_context.database_label; user; _ } =
       let tags = Pool_context.Logger.Tags.req req in
       Response.bad_request_on_error show

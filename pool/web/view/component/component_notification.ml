@@ -27,7 +27,7 @@ let create
       div
         ~a:[ a_class [ "push" ] ]
         [ a
-            ~a:[ a_href (Sihl.Web.externalize_path link) ]
+            ~a:[ a_href (Webserver.externalize_path link) ]
             [ txt Pool_common.(Utils.nav_link_to_string language label) ]
         ]
   in

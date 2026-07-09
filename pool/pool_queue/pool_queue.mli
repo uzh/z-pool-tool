@@ -229,11 +229,11 @@ type kind =
   | Service
   | Worker
 
-val lifecycle_service : Sihl.Container.lifecycle
-val lifecycle_worker : Sihl.Container.lifecycle
+val lifecycle_service : Pool_core.Container.lifecycle
+val lifecycle_worker : Pool_core.Container.lifecycle
 val hide : ?execute_on_root:bool -> 'a Job.t -> AnyJob.t
 val register_jobs : AnyJob.t list -> unit Lwt.t
-val register : ?kind:kind -> ?jobs:AnyJob.t list -> unit -> Sihl.Container.Service.t
+val register : ?kind:kind -> ?jobs:AnyJob.t list -> unit -> Pool_core.Container.Service.t
 
 module Repo : sig
   module Id : sig

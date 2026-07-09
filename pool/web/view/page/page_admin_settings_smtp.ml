@@ -36,7 +36,7 @@ let list Pool_context.{ language; csrf; _ } location smtp_auth_list query =
     let open SmtpAuth in
     let action_path =
       Format.asprintf "%s/%s/delete" (base_path location) (auth.id |> Id.value)
-      |> Sihl.Web.externalize_path
+      |> Webserver.externalize_path
     in
     form
       ~a:
@@ -191,7 +191,7 @@ let smtp_form_inputs ?flash_fetcher language (smtp_auth : SmtpAuth.t option) =
 let show Pool_context.{ language; csrf; flash_fetcher; _ } location smtp_auth =
   let open SmtpAuth in
   let action_path sub =
-    Sihl.Web.externalize_path
+    Webserver.externalize_path
       (Format.asprintf "%s/%s%s" (base_path location) (smtp_auth |> id |> Id.value) sub)
   in
   let submit ?submit_type ?(has_icon = Icon.Save) ?(control = Control.Update None) () =
@@ -266,7 +266,7 @@ let show Pool_context.{ language; csrf; flash_fetcher; _ } location smtp_auth =
 (* TODO: Add option to force default *)
 let smtp_create_form Pool_context.{ language; csrf; flash_fetcher; _ } location =
   let action_path =
-    location |> base_path |> Format.asprintf "%s/create" |> Sihl.Web.externalize_path
+    location |> base_path |> Format.asprintf "%s/create" |> Webserver.externalize_path
   in
   let submit () =
     div

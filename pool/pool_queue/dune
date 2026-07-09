@@ -7,8 +7,10 @@
   pool_canary
   pool_tenant
   schedule
-  sihl
-  utils)
+  utils
+  pool_core
+  uuidm
+  webserver)
  (preprocess
   (pps
    lwt_ppx

@@ -291,14 +291,14 @@ module Web = struct
       ||> Pool_common.Utils.get_or_failwith
     in
     let cookie =
-      Sihl.Web.Response.of_plain_text ""
-      |> Sihl.Web.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ]
-      |> Sihl.Web.Response.cookie "_session"
+      Webserver.Response.of_plain_text ""
+      |> Webserver.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ]
+      |> Webserver.Response.cookie "_session"
       |> CCOption.get_exn_or "undefined session"
     in
     let req =
       Opium.Request.get "/some/path/login"
-      |> Opium.Request.add_cookie cookie.Sihl.Web.Cookie.value
+      |> Opium.Request.add_cookie cookie.Webserver.Cookie.value
     in
     let handler req =
       let%lwt user = Pool_user.Web.user_from_session database_label req in
@@ -345,6 +345,6 @@ let () =
   let services = [ Pool_database.register (); Pool_token.register () ] in
   Lwt_main.run
     (let%lwt () = Test_utils.setup_test () in
-     let%lwt _ = Sihl.Container.start_services services in
+     let%lwt _ = Pool_core.Container.start_services services in
      Alcotest_lwt.run "pool_user_test" @@ suite)
 ;;

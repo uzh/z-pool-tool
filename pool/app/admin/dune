@@ -1,6 +1,6 @@
 (library
  (name admin)
- (libraries guard pool_common pool_tenant pool_user ptime role sihl utils)
+ (libraries guard pool_common pool_tenant pool_user ptime role utils)
  (preprocess
   (pps
    lwt_ppx

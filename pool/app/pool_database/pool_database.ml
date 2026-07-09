@@ -69,11 +69,11 @@ let stop () =
 ;;
 
 let lifecycle =
-  Sihl.Container.create_lifecycle
+  Pool_core.Container.create_lifecycle
     "database"
     ~implementation_name:"root and tenants incl. migrations"
     ~start
     ~stop
 ;;
 
-let register () = Sihl.Container.Service.create lifecycle
+let register () = Pool_core.Container.Service.create lifecycle

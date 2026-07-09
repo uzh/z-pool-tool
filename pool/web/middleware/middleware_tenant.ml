@@ -7,7 +7,7 @@ let tenant_url_of_request =
   let open CCFun in
   (* TODO handle PREFIX_PATH of Tenant URLs, multiple tenants behind the same host cannot
      be handled at the moment *)
-  Sihl.Web.Request.header "host"
+  Webserver.Request.header "host"
   %> CCOption.to_result Pool_message.(Error.NotFound Field.Host)
   %> flip CCResult.( >>= ) Pool_tenant.Url.create
 ;;
@@ -68,7 +68,7 @@ let web_filter handler req =
     let text = I18n.TenantMaintenanceText |> to_string in
     Page.Utils.note title text
     |> Layout.Error.create
-    |> Sihl.Web.Response.of_html
+    |> Webserver.Response.of_html
     |> Lwt.return
   in
   let connection_issue_handler () = Http_utils.redirect_to "/error" in

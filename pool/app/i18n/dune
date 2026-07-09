@@ -1,6 +1,6 @@
 (library
  (name i18n)
- (libraries guard pool_common pool_tenant settings sihl)
+ (libraries guard pool_common pool_tenant settings)
  (preprocess
   (pps
    lwt_ppx

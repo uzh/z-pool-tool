@@ -8,7 +8,6 @@
   pool_location
   ptime
   session
-  sihl
   utils)
  (preprocess
   (pps

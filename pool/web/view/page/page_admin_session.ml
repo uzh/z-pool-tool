@@ -96,7 +96,7 @@ module Partials = struct
                  "/admin/experiments/%s/sessions/%s/delete"
                  (Experiment.Id.value experiment_id)
                  (Id.value id)
-               |> Sihl.Web.externalize_path)
+               |> Webserver.externalize_path)
           ; a_user_data
               "confirmable"
               Pool_common.(Utils.confirmable_to_string language I18n.DeleteSession)
@@ -145,7 +145,7 @@ module Partials = struct
       in
       let url =
         HttpUtils.Url.Admin.session_user_path experiment_id session_id Field.Assistants ()
-        |> Sihl.Web.externalize_path
+        |> Webserver.externalize_path
       in
       a
         ~a:[ a_href url; a_class classes ]
@@ -267,7 +267,7 @@ let session_form
           "/admin/experiments/%s/sessions/%s/reschedule"
           (Experiment.Id.value experiment.Experiment.id)
           Session.(session.id |> Id.value)
-        |> Sihl.Web.externalize_path
+        |> Webserver.externalize_path
       in
       div
         ~a:[ a_class [ "full-width" ] ]
@@ -327,7 +327,7 @@ let session_form
     ~a:
       [ a_class [ "stack" ]
       ; a_method `Post
-      ; a_action (action |> Sihl.Web.externalize_path)
+      ; a_action (action |> Webserver.externalize_path)
       ; a_user_data "detect-unsaved-changes" ""
       ]
     [ csrf_element csrf ()
@@ -473,7 +473,7 @@ let reschedule_session
       ~a:
         [ a_class [ "stack" ]
         ; a_method `Post
-        ; a_action (action |> Sihl.Web.externalize_path)
+        ; a_action (action |> Webserver.externalize_path)
         ; a_user_data
             "confirmable"
             (Utils.confirmable_to_string language I18n.RescheduleSession)
@@ -791,7 +791,7 @@ let duplicate
             ~a:
               [ a_href
                   (session_path ~id:session.id experiment.Experiment.id
-                   |> Sihl.Web.externalize_path)
+                   |> Webserver.externalize_path)
               ; a_target "_blank"
               ]
             [ Icon.(to_html OpenOutline) ]
@@ -835,7 +835,7 @@ let duplicate
           ; hx_trigger "click"
           ; hx_get
               (Format.asprintf "%s/duplicate/form" session_path
-               |> Sihl.Web.externalize_path)
+               |> Webserver.externalize_path)
           ; hx_target ("#" ^ subform_wrapper)
           ; hx_swap "beforeend"
           ]
@@ -849,7 +849,7 @@ let duplicate
           ; hx_trigger "click"
           ; hx_swap "none"
           ; hx_post
-              (Format.sprintf "%s/duplicate" session_path |> Sihl.Web.externalize_path)
+              (Format.sprintf "%s/duplicate" session_path |> Webserver.externalize_path)
           ]
       [ txt
           Pool_common.(
@@ -890,7 +890,7 @@ let session_details { Pool_context.language; _ } session =
                       "/admin/experiments/%s/sessions/%s"
                       (Experiment.Id.value experiment_id)
                       (Id.value follow_up_to)
-                    |> Sihl.Web.externalize_path)
+                    |> Webserver.externalize_path)
                ]
              [ Control.Show
                |> Pool_common.Utils.control_to_string language
@@ -998,7 +998,7 @@ let detail
       in
       let inner =
         let resend_action =
-          Format.asprintf "%s/resend-reminders" session_path |> Sihl.Web.externalize_path
+          Format.asprintf "%s/resend-reminders" session_path |> Webserver.externalize_path
         in
         let warning =
           match
@@ -1216,7 +1216,7 @@ let detail
         ~suffix:"direct-message"
         ~id:session.id
         experiment.Experiment.id
-      |> Sihl.Web.externalize_path
+      |> Webserver.externalize_path
     in
     let direct_messaging_buttons =
       if send_direct_message
@@ -1260,7 +1260,7 @@ let detail
                    ~suffix:"update-matches-filter"
                    ~id:session.id
                    experiment_id
-                 |> Sihl.Web.externalize_path)
+                 |> Webserver.externalize_path)
             ; hx_swap "None"
             ]
       else txt ""
@@ -1508,7 +1508,7 @@ module CloseScreen = struct
   let action experiment session { Assignment.id; _ } suffix =
     let session_path = session_path ~id:session.Session.id experiment.Experiment.id in
     Format.asprintf "%s/assignments/%s/%s" session_path (Id.value id) suffix
-    |> Sihl.Web.externalize_path
+    |> Webserver.externalize_path
   ;;
 
   let hx_attribs experiment session assignment ~name ~suffix =
@@ -1691,7 +1691,7 @@ let close_assignments_table
         let action =
           session_path ~id:session.Session.id experiment.Experiment.id
           |> Format.asprintf "%s/toggle-assignments"
-          |> Sihl.Web.externalize_path
+          |> Webserver.externalize_path
         in
         let attributes field =
           Htmx.
@@ -1874,7 +1874,7 @@ let close
       ~a:
         [ a_method `Post
         ; a_class [ "stack" ]
-        ; a_action (Format.asprintf "%s/close" session_path |> Sihl.Web.externalize_path)
+        ; a_action (Format.asprintf "%s/close" session_path |> Webserver.externalize_path)
         ; a_user_data
             "confirmable"
             Pool_common.(Utils.confirmable_to_string language I18n.CloseSession)
@@ -1940,7 +1940,7 @@ let cancel
            ~a:
              [ a_class [ "stack" ]
              ; a_method `Post
-             ; a_action (action |> Sihl.Web.externalize_path)
+             ; a_action (action |> Webserver.externalize_path)
              ]
            [ csrf_element csrf ()
            ; textarea_element

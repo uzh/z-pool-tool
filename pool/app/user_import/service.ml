@@ -73,11 +73,11 @@ let start () =
 let stop () = Lwt.return_unit
 
 let lifecycle =
-  Sihl.Container.create_lifecycle
+  Pool_core.Container.create_lifecycle
     "System events"
     ~dependencies:(fun () -> [ Pool_database.lifecycle; Pool_queue.lifecycle_service ])
     ~start
     ~stop
 ;;
 
-let register () = Sihl.Container.Service.create lifecycle
+let register () = Pool_core.Container.Service.create lifecycle

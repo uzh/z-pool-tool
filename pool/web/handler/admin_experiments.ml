@@ -142,7 +142,7 @@ let new_form req =
       default_sender
       text_messages_enabled
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   result |> Response.handle ~src req
 ;;
@@ -150,7 +150,7 @@ let new_form req =
 let create req =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req
+    Webserver.Request.to_urlencoded req
     ||> HttpUtils.format_request_boolean_values experiment_boolean_fields
     ||> HttpUtils.remove_empty_values
   in
@@ -295,7 +295,7 @@ let detail edit req =
          text_messages_enabled
        |> Lwt_result.ok)
     >>= create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   result |> Response.handle ~src req
 ;;
@@ -318,7 +318,7 @@ let update req =
     let id = experiment_id req in
     let* experiment = Experiment.find database_label id |> Response.not_found_on_error in
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req
+      Webserver.Request.to_urlencoded req
       ||> HttpUtils.format_request_boolean_values experiment_boolean_fields
       ||> HttpUtils.remove_empty_values
     in

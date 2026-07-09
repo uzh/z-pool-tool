@@ -25,7 +25,7 @@ let user_and_import_from_token database_label token =
 
 let user_import_from_req database_label req =
   let open Utils.Lwt_result.Infix in
-  Sihl.Web.Request.query Field.(show Token) req
+  Webserver.Request.query Field.(show Token) req
   |> CCOption.to_result (Error.NotFound Field.Token)
   |> Lwt_result.lift
   >== User_import.Token.create
@@ -61,7 +61,7 @@ let render_import_confirmation_page req context user_import user =
     ~token
     context
   |> General.create_tenant_layout req context
-  >|+ Sihl.Web.Response.of_html
+  >|+ Webserver.Response.of_html
   |> Response.bad_request_render_error context
 ;;
 
@@ -119,7 +119,7 @@ let import_confirmation_post req =
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded =
     let open Http_utils in
-    Sihl.Web.Request.to_urlencoded req
+    Webserver.Request.to_urlencoded req
     ||> remove_empty_values
     ||> format_request_boolean_values Field.[ show TermsAccepted ]
   in
@@ -180,7 +180,7 @@ let contact_import_from_req { Pool_context.database_label; user; _ } req =
     | Pool_context.Admin _ | Pool_context.Guest ->
       Lwt.return_error Pool_message.(Error.NotFound Field.Contact)
   in
-  match Sihl.Web.Request.query Field.(show Token) req with
+  match Webserver.Request.query Field.(show Token) req with
   | Some token -> Pool_token.of_string token |> contact_from_unsubscribe_token
   | None -> contact_from_context_user ()
 ;;
@@ -195,7 +195,7 @@ let unsubscribe req =
       let email = contact |> Contact.email_address |> Pool_user.EmailAddress.value in
       Page.Contact.pause_account context ?token:token_opt ~email ()
       |> General.create_tenant_layout req context
-      >|+ Sihl.Web.Response.of_html
+      >|+ Webserver.Response.of_html
       |> Response.bad_request_render_error context
   in
   Response.handle ~src req result

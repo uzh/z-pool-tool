@@ -24,7 +24,7 @@ let login_get req =
   let result context =
     Response.bad_request_render_error context
     @@
-    let open Sihl.Web in
+    let open Webserver in
     Page.Public.login ?intended:(HttpUtils.find_intended_opt req) context
     |> create_layout req ~active_navigation:"/login" context
     >|+ Response.of_html
@@ -47,14 +47,14 @@ let login_token_confirmation req =
           ~email:(Pool_user.email user)
           context
         |> create_layout req ~active_navigation:"/login" context
-        >|+ Sihl.Web.Response.of_html)
+        >|+ Webserver.Response.of_html)
   in
   Response.handle ~src req result
 ;;
 
 let login_post req =
   let tags = Pool_context.Logger.Tags.req req in
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded = Webserver.Request.to_urlencoded req in
   let result ({ Pool_context.database_label; user; query_parameters; _ } as context) =
     Response.bad_request_on_error ~urlencoded login_get
     @@
@@ -69,7 +69,7 @@ let login_post req =
           ~email:(Pool_user.email login_user)
           context
         |> create_layout req ~active_navigation:"/login" context
-        >|+ Sihl.Web.Response.of_html
+        >|+ Webserver.Response.of_html
       in
       events |> handle_events >|> success
     | Helpers_login.DirectLogin login_user ->
@@ -83,7 +83,7 @@ let login_post req =
         let* () = increase_sign_in_count ~tags database_label context_user in
         HttpUtils.redirect_to_with_actions
           redirect
-          [ Sihl.Web.Session.set
+          [ Webserver.Session.set
               [ "user_id", login_user.Pool_user.id |> Pool_user.Id.value ]
           ]
         |> Lwt_result.ok
@@ -126,12 +126,12 @@ let login_cofirmation req =
       let* () = increase_sign_in_count ~tags database_label context_user in
       redirect_to_with_actions
         redirect
-        ([ Sihl.Web.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ] ]
+        ([ Webserver.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ] ]
          @ actions)
       ||> (fun res ->
       if set_completion_cookie
       then
-        Sihl.Web.Session.set_value ~key:Contact.profile_completion_cookie "true" req res
+        Webserver.Session.set_value ~key:Contact.profile_completion_cookie "true" req res
       else res)
       |> Lwt_result.ok
     in
@@ -174,7 +174,7 @@ let request_reset_password_get req =
   let result context =
     Response.bad_request_render_error context
     @@
-    let open Sihl.Web in
+    let open Webserver in
     Page.Public.request_reset_password context
     |> create_layout req ~active_navigation:"/request-reset-password" context
     >|+ Response.of_html
@@ -196,7 +196,7 @@ let request_reset_password_post req =
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let* user =
-      Sihl.Web.Request.to_urlencoded req
+      Webserver.Request.to_urlencoded req
       ||> decode
       |>> Pool_user.find_active_by_email_opt database_label
     in
@@ -277,7 +277,7 @@ let reset_password_get req =
   let result ({ Pool_context.database_label; language; _ } as context) =
     Response.bad_request_render_error context
     @@
-    let token = Sihl.Web.Request.query Pool_message.Field.(Token |> show) req in
+    let token = Webserver.Request.query Pool_message.Field.(Token |> show) req in
     let%lwt password_policy =
       I18n.find_by_key database_label I18n.Key.PasswordPolicyText language
     in
@@ -290,13 +290,13 @@ let reset_password_get req =
     | Some token ->
       Page.Public.reset_password token context password_policy
       |> create_layout req ~active_navigation:"/reset-password" context
-      >|+ Sihl.Web.Response.of_html
+      >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
 
 let reset_password_post req =
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded = Webserver.Request.to_urlencoded req in
   let result { Pool_context.database_label; user; _ }
     : (Rock.Response.t, Response.http_error) Lwt_result.t
     =
@@ -373,5 +373,5 @@ let logout req =
   HttpUtils.(
     redirect_to_with_actions
       (HttpUtils.retain_url_params req "/login" |> Uri.to_string)
-      [ Sihl.Web.Session.set [ "user_id", "" ] ])
+      [ Webserver.Session.set [ "user_id", "" ] ])
 ;;

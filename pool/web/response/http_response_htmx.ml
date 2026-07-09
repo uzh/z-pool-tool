@@ -37,7 +37,7 @@ let inline_error lang err =
 let of_html ?(status = `OK) html =
   html
   |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
-  |> Sihl.Web.Response.of_plain_text ~status ~headers
+  |> Webserver.Response.of_plain_text ~status ~headers
 ;;
 
 let of_html_list ?(status = `OK) html =
@@ -45,7 +45,7 @@ let of_html_list ?(status = `OK) html =
   |> CCList.fold_left
        (fun acc cur -> Format.asprintf "%s\n%a" acc (Tyxml.Html.pp_elt ()) cur)
        ""
-  |> Sihl.Web.Response.of_plain_text ~status ~headers
+  |> Webserver.Response.of_plain_text ~status ~headers
 ;;
 
 let redirect
@@ -57,10 +57,10 @@ let redirect
   =
   let open CCFun in
   let externalize_path path =
-    if skip_externalize then path else Sihl.Web.externalize_path path
+    if skip_externalize then path else Webserver.externalize_path path
   in
-  Sihl.Web.Response.of_plain_text "" ?status
-  |> Sihl.Web.Response.add_header
+  Webserver.Response.of_plain_text "" ?status
+  |> Webserver.Response.add_header
        ( "HX-Redirect"
        , Http_utils.url_with_field_params query_parameters path |> externalize_path )
   |> CCList.fold_left CCFun.( % ) id actions
@@ -104,7 +104,7 @@ let index_handler
     match Http_utils.Htmx.is_hx_request req with
     | true -> of_html page |> Lwt_result.return
     | false ->
-      create_layout ?active_navigation req context page >|+ Sihl.Web.Response.of_html
+      create_layout ?active_navigation req context page >|+ Webserver.Response.of_html
   in
   let tags = Pool_context.Logger.Tags.req req in
   Pool_context.find req

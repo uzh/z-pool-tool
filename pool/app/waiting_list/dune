@@ -1,6 +1,6 @@
 (library
  (name waiting_list)
- (libraries contact experiment pool_common sihl sihl-email)
+ (libraries contact experiment pool_common)
  (preprocess
   (pps
    lwt_ppx

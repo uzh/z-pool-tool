@@ -8,7 +8,7 @@ let index
   =
   let open Pool_common in
   let open Gtx_config in
-  let action = "/admin/settings/text-messages" |> Sihl.Web.externalize_path in
+  let action = "/admin/settings/text-messages" |> Webserver.externalize_path in
   let delete_form, hint =
     let notification hint style =
       Utils.hint_to_string language hint
@@ -21,7 +21,7 @@ let index
     | Some _ ->
       ( form
           ~a:
-            [ a_action (Sihl.Web.externalize_path (Format.asprintf "%s/delete" action))
+            [ a_action (Webserver.externalize_path (Format.asprintf "%s/delete" action))
             ; a_method `Post
             ; a_class [ "stack" ]
             ; a_user_data

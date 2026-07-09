@@ -99,7 +99,7 @@ let validate_confirmation (password : Plain.t) (confirmation : Confirmation.t) =
 
 module Hashing = struct
   let hash ?count plain =
-    match count, not (Sihl.Configuration.is_production ()) with
+    match count, not (Pool_core.Configuration.is_production ()) with
     | _, true -> Ok (Bcrypt.hash ~count:4 plain |> Bcrypt.string_of_hash)
     | Some count, false ->
       if count < 4 || count > 31

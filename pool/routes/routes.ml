@@ -1,5 +1,5 @@
 module CustomMiddleware = Middleware
-open Sihl.Web
+open Webserver
 module Field = Pool_message.Field
 
 let session_expiration = `Max_age (60 * 60 * 4 |> CCInt64.of_int)
@@ -19,7 +19,7 @@ let add_key ?(prefix = "") ?(suffix = "") field =
 let add_human_field = CCFun.(Field.human_url %> Format.asprintf "/%s")
 
 let global_middlewares =
-  [ Middleware.id ~id:(fun () -> CCString.sub (Sihl.Random.base64 12) 0 10) ()
+  [ Middleware.id ~id:(fun () -> CCString.sub (Pool_core.Random.base64 12) 0 10) ()
   ; CustomMiddleware.Error.middleware ()
   ; CustomMiddleware.TrailingSlash.middleware ()
   ; Middleware.static_file ()

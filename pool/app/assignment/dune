@@ -1,6 +1,6 @@
 (library
  (name assignment)
- (libraries contact experiment pool_common session schedule sihl)
+ (libraries contact experiment pool_common session schedule pool_core)
  (preprocess
   (pps
    lwt_ppx

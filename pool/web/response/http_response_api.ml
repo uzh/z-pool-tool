@@ -4,7 +4,7 @@ open Utils.Lwt_result.Infix
    As soon the API handles other requests then GET, the error handling should be adapted to the web *)
 let src = Logs.Src.create "web.handler.response.api"
 let headers = Opium.Headers.of_list [ "Content-Type", "application/json" ]
-let response_with_headers = Sihl.Web.Response.of_json ~headers
+let response_with_headers = Webserver.Response.of_json ~headers
 
 let respond_error ?(status = `Bad_request) ?(language = Pool_common.Language.En) error =
   let error = Pool_common.Utils.error_to_string language error in

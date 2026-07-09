@@ -46,7 +46,7 @@ let generate_events (experiments : Experiment.Id.t list) =
 
 let create pool =
   let open Utils.Lwt_result.Infix in
-  if Sihl.Configuration.is_test ()
+  if Pool_core.Configuration.is_test ()
   then Lwt.return_unit
   else
     Experiment.all pool

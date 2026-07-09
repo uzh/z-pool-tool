@@ -7,7 +7,7 @@ let from_request
       ?(default : t option)
       req
   =
-  let query_params = Sihl.Web.Request.query_list req in
+  let query_params = Webserver.Request.query_list req in
   let open CCOption in
   let find field =
     CCList.assoc_opt ~eq:CCString.equal (Pool_message.Field.show field) query_params

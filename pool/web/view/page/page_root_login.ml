@@ -5,7 +5,7 @@ open Pool_message
 let login ?intended Pool_context.{ language; csrf; _ } =
   let input_element = input_element language in
   let action =
-    HttpUtils.intended_or "/root/login" intended |> Sihl.Web.externalize_path
+    HttpUtils.intended_or "/root/login" intended |> Webserver.externalize_path
   in
   div
     ~a:[ a_class [ "trim"; "narrow" ] ]
@@ -25,7 +25,7 @@ let login ?intended Pool_context.{ language; csrf; _ } =
                     [ a
                         ~a:
                           [ a_href
-                              (Sihl.Web.externalize_path "/root/request-reset-password")
+                              (Webserver.externalize_path "/root/request-reset-password")
                           ]
                         [ txt
                             Pool_common.(
@@ -55,7 +55,7 @@ let request_reset_password Pool_context.{ language; csrf; _ } =
     [ h1 [ txt "Reset Password" ]
     ; form
         ~a:
-          [ a_action (Sihl.Web.externalize_path "/root/request-reset-password")
+          [ a_action (Webserver.externalize_path "/root/request-reset-password")
           ; a_method `Post
           ; a_class [ "stack" ]
           ]
@@ -74,7 +74,7 @@ let reset_password token Pool_context.{ language; csrf; _ } =
     [ h1 [ txt "Reset Password" ]
     ; form
         ~a:
-          [ a_action (Sihl.Web.externalize_path "/root/reset-password")
+          [ a_action (Webserver.externalize_path "/root/reset-password")
           ; a_method `Post
           ; a_class [ "stack" ]
           ]

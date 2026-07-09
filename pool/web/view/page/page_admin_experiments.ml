@@ -368,7 +368,7 @@ let experiment_form
   form
     ~a:
       [ a_method `Post
-      ; a_action (Sihl.Web.externalize_path action)
+      ; a_action (Webserver.externalize_path action)
       ; a_class [ "stack" ]
       ; a_user_data "detect-unsaved-changes" ""
       ]
@@ -705,7 +705,7 @@ let detail
             ~a:
               [ a_method `Post
               ; a_action
-                  (experiment_path ~id ~suffix:"delete" () |> Sihl.Web.externalize_path)
+                  (experiment_path ~id ~suffix:"delete" () |> Webserver.externalize_path)
               ; a_user_data
                   "confirmable"
                   (Utils.confirmable_to_string language I18n.DeleteExperiment)
@@ -740,7 +740,7 @@ let detail
             [ a_method `Post
             ; a_action
                 (experiment_path ~id ~suffix:"reset-invitations" ()
-                 |> Sihl.Web.externalize_path)
+                 |> Webserver.externalize_path)
             ; a_user_data
                 "confirmable"
                 (Utils.confirmable_to_string language I18n.ResetInvitations)
@@ -962,7 +962,7 @@ let invitations
               ~a:
                 [ a_href
                     (experiment_path ~id ~suffix:"invitations/sent" ()
-                     |> Sihl.Web.externalize_path)
+                     |> Webserver.externalize_path)
                 ]
               [ txt (Utils.nav_link_to_string language I18n.SentInvitations) ]
           ]

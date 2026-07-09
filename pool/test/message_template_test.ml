@@ -292,7 +292,7 @@ module ExperimentSenderData = struct
 end
 
 let sender_of_job =
-  Email.job %> Email.Service.Job.email %> fun email -> email.Sihl_email.sender
+  Email.job %> Email.Service.Job.email %> fun email -> email.Email.Message.sender
 ;;
 
 let experiment_invitation_with_sender _ () =

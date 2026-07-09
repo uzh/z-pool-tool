@@ -40,7 +40,7 @@ module Url = struct
     Database.find_opt Database.Pool.Root.label find_url_request pool
     ||> function
     | None ->
-      Sihl.Configuration.read_string "PUBLIC_URL"
+      Pool_core.Configuration.read_string "PUBLIC_URL"
       |> CCOption.get_exn_or "PUBLIC_URL not found in configuration"
       |> Url.of_string
     | Some url -> url

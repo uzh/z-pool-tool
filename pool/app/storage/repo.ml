@@ -1,12 +1,12 @@
 let stored_file =
   let encode m =
-    let open Sihl.Contract.Storage in
+    let open Entity in
     let { file; blob } = m in
     let { id; filename; filesize; mime } = file in
     Ok (id, (filename, (filesize, (mime, blob))))
   in
   let decode (id, (filename, (filesize, (mime, blob)))) =
-    let open Sihl.Contract.Storage in
+    let open Entity in
     let file = { id; filename; filesize; mime } in
     Ok { file; blob }
   in
@@ -218,7 +218,7 @@ let register_cleaner () =
     let%lwt () = clean_handles label () in
     clean_blobs label ()
   in
-  Sihl.Cleaner.register_cleaner (fun ?ctx () ->
+  Pool_core.Cleaner.register_cleaner (fun ?ctx () ->
     cleaner
       CCOption.(
         map Database.of_ctx_exn ctx

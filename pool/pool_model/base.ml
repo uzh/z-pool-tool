@@ -230,7 +230,7 @@ module Ptime = struct
   type date = Ptime.date
 
   let equal a b =
-    if not (Sihl.Configuration.is_test ())
+    if not (Pool_core.Configuration.is_test ())
     then equal a b
     else (
       (* Allowed tolerance for Ptime equality comparisons, in seconds.

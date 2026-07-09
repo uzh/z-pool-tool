@@ -45,7 +45,7 @@ let index req =
 
 let urlencoded_with_distribution urlencoded req =
   let open Utils.Lwt_result.Infix in
-  Sihl.Web.Request.urlencoded_list Field.(array_key Distribution) req
+  Webserver.Request.urlencoded_list Field.(array_key Distribution) req
   ||> Mailing.Distribution.of_urlencoded_list
   >|+ function
   | None -> urlencoded
@@ -79,7 +79,7 @@ let new_form req =
       context
       experiment
     >|> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -89,7 +89,7 @@ let create req =
   let experiment_id = experiment_id req in
   let result { Pool_context.database_label; user; _ } =
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req
+      Webserver.Request.to_urlencoded req
       ||> HttpUtils.remove_empty_values
       ||> HttpUtils.format_request_boolean_values
             Field.([ StartNow; RandomOrder ] |> CCList.map show)
@@ -138,7 +138,7 @@ let detail edit req =
           Page.Admin.Mailing.form ~matching_filter_count ~mailing context experiment
           |> Lwt_result.ok)
        >>= create_layout req context
-       >|+ Sihl.Web.Response.of_html
+       >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -155,7 +155,7 @@ let update req =
   in
   let result { Pool_context.database_label; user; _ } =
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req
+      Webserver.Request.to_urlencoded req
       ||> HttpUtils.remove_empty_values
       ||> HttpUtils.format_request_boolean_values
             Field.([ StartNow; RandomOrder ] |> CCList.map show)
@@ -185,7 +185,7 @@ let search_info req =
   let id = experiment_id req in
   let result ({ Pool_context.database_label; _ } as context) =
     let open Utils.Lwt_result.Infix in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     let* mailing =
       Lwt_result.lift
       @@
@@ -224,7 +224,7 @@ let add_condition req =
   let result { Pool_context.language; _ } =
     let open Mailing.Distribution in
     let open CCResult in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Webserver.Request.to_urlencoded req in
     let invalid field = Error.Invalid field in
     let find_in_urlencoded read field =
       urlencoded

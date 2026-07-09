@@ -32,7 +32,7 @@ let confirmation_mail contact =
   let ({ email_subject; email_text; label; _ } : Message_template.t) =
     Test_utils.Model.create_message_template ()
   in
-  Sihl_email.
+  Email.Message.
     { sender
     ; recipient = email
     ; subject = email_subject |> EmailSubject.value
@@ -102,7 +102,7 @@ let verification_email (email_address, _, _, _, _) =
   let ({ email_subject; email_text; label; _ } : Message_template.t) =
     Test_utils.Model.create_message_template ()
   in
-  Sihl_email.
+  Email.Message.
     { sender
     ; recipient = email_address
     ; subject = email_subject |> EmailSubject.value
@@ -490,7 +490,7 @@ let should_not_send_registration_notification _ () =
     let%lwt () = Test_seed.Contacts.create ~contact_data Test_utils.Data.database_label in
     let%lwt contact = Test_seed.Contacts.find_contact_by_id database_label 12 in
     let%lwt () =
-      Sihl_email.
+      Email.Message.
         { sender = "test@econ.uzh.ch"
         ; recipient = Contact.email_address contact |> Pool_user.EmailAddress.value
         ; subject = "subject"

@@ -15,7 +15,7 @@ let require_admin () =
           | true ->
             HttpUtils.redirect_to_with_actions
               "/import-pending"
-              [ Sihl.Web.Session.set [ "user_id", "" ] ]
+              [ Webserver.Session.set [ "user_id", "" ] ]
           | false -> handler req)
        | Contact _ | Guest -> fail_action req)
   in

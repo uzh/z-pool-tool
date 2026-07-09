@@ -177,7 +177,7 @@ let start ?tags () =
 let stop = Registered.stop_all_active
 
 let lifecycle =
-  Sihl.Container.create_lifecycle
+  Pool_core.Container.create_lifecycle
     "pool schedule"
     ~dependencies:(fun () -> [ Pool_database.lifecycle ])
     ~start
@@ -186,7 +186,7 @@ let lifecycle =
 
 let register ?(schedules = []) () =
   CCList.iter Registered.add_base schedules;
-  Sihl.Container.Service.create lifecycle
+  Pool_core.Container.Service.create lifecycle
 ;;
 
 let add_and_start ?tags schedule =

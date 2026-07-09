@@ -1,0 +1,26 @@
+(library
+ (name webserver)
+ ; Code extracted from the Sihl framework; keep close to upstream by relaxing
+ ; the fragile-match (4) and name-out-of-scope (40, 41) warnings.
+ (flags
+  (:standard -w +A-4-40-41-42-44-45-48-66-70 -warn-error +A-3))
+ (libraries
+  astring
+  base64
+  containers
+  cstruct
+  digestif
+  logs
+  lwt
+  mirage-crypto
+  mirage-crypto-rng
+  mirage-crypto-rng.unix
+  opium
+  pool_core
+  rock
+  sexplib
+  stringext
+  uri
+  yojson)
+ (preprocess
+  (pps lwt_ppx ppx_deriving.eq ppx_deriving_yojson ppx_sexp_conv)))

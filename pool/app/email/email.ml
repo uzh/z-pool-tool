@@ -1,3 +1,4 @@
+module Message = Email_message
 include Entity
 include Event
 

@@ -10,7 +10,7 @@ module Data = struct
      Pipeline ;-)"
   ;;
 
-  let create_email () = Sihl_email.create ~sender ~recipient ~subject body
+  let create_email () = Email.Message.create ~sender ~recipient ~subject body
 
   let smtp_account =
     let open Email.SmtpAuth in
@@ -49,8 +49,8 @@ let validate_email =
     check
       string
       "intercepted recipient"
-      email.Sihl_email.recipient
-      (Sihl.Configuration.read_string "TEST_EMAIL" |> CCOption.get_exn_or msg));
+      email.Email.Message.recipient
+      (Pool_core.Configuration.read_string "TEST_EMAIL" |> CCOption.get_exn_or msg));
   let%lwt { Smtp.subject; _ } = Smtp.prepare ?smtp_auth_id database_label email in
   Alcotest.(
     check

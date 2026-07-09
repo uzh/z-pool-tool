@@ -25,7 +25,7 @@ let schema =
 let table () =
   CCOption.value
     ~default:"core_migration_state"
-    (Sihl.Configuration.read schema).migration_state_table
+    (Pool_core.Configuration.read schema).migration_state_table
 ;;
 
 let setup label () =
@@ -311,14 +311,14 @@ let check_migrations_status ?migrations database_label () =
 ;;
 
 let start database_label () =
-  Sihl.Configuration.require schema;
+  Pool_core.Configuration.require schema;
   let%lwt () = setup database_label () in
   let skip_default_pool_creation =
     CCOption.value
       ~default:false
-      (Sihl.Configuration.read_bool "DATABASE_SKIP_DEFAULT_POOL_CREATION")
+      (Pool_core.Configuration.read_bool "DATABASE_SKIP_DEFAULT_POOL_CREATION")
   in
-  if Sihl.Configuration.is_test () || skip_default_pool_creation
+  if Pool_core.Configuration.is_test () || skip_default_pool_creation
   then Lwt.return ()
   else check_migrations_status database_label ()
 ;;

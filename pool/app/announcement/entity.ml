@@ -5,7 +5,7 @@ let ptime_schema field =
   Pool_conformist.schema_decoder Pool_model.Time.parse_time Utils.Ptime.to_rfc3339 field
 ;;
 
-let equal_ptime a b = Sihl.Configuration.is_test () || Ptime.equal a b
+let equal_ptime a b = Pool_core.Configuration.is_test () || Ptime.equal a b
 
 module Id = struct
   include Pool_common.Id
@@ -28,7 +28,7 @@ module Text = struct
 
   let equal a b =
     let sort = CCList.sort (fun (a, _) (b, _) -> Language.compare a b) in
-    if Sihl.Configuration.is_test () then equal (sort a) (sort b) else equal a b
+    if Pool_core.Configuration.is_test () then equal (sort a) (sort b) else equal a b
   ;;
 end
 

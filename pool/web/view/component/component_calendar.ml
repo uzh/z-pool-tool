@@ -5,7 +5,7 @@ type calendar =
   | User
 
 let calendar_endpoint calendar =
-  Sihl.Web.externalize_path
+  Webserver.externalize_path
   @@
   match calendar with
   | Location id ->

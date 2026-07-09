@@ -118,7 +118,7 @@ let tag_form ?flash_fetcher ?tag Pool_context.{ language; csrf; _ } =
   form
     ~a:
       [ a_method `Post
-      ; a_action (Sihl.Web.externalize_path action)
+      ; a_action (Webserver.externalize_path action)
       ; a_class [ "stack" ]
       ; a_user_data "detect-unsaved-changes" ""
       ]

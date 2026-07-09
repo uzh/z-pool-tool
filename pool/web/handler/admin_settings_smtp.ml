@@ -57,7 +57,7 @@ let new_form req =
     let open Page.Admin.Settings.Smtp in
     smtp_create_form context location
     |> General.create_tenant_layout req ~active_navigation context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -86,7 +86,7 @@ let smtp_form location req =
         >|> General.create_root_layout ~active_navigation context
         ||> CCResult.return
     in
-    html |> Sihl.Web.Response.of_html |> Lwt_result.return
+    html |> Webserver.Response.of_html |> Lwt_result.return
   in
   Response.handle ~src req result
 ;;
@@ -98,7 +98,7 @@ let create_post location req =
   let tags = Pool_context.Logger.Tags.req req in
   let redirect_path = active_navigation location in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req
+    Webserver.Request.to_urlencoded req
     ||> HttpUtils.format_request_boolean_values boolean_fields
     ||> HttpUtils.remove_empty_values
   in
@@ -144,7 +144,7 @@ let update_base location command success_message req =
   let redirect_path = settings_detail_path location req in
   let result { Pool_context.database_label; user; _ } =
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req
+      Webserver.Request.to_urlencoded req
       ||> HttpUtils.format_request_boolean_values boolean_fields
       ||> HttpUtils.remove_empty_values
     in
@@ -188,7 +188,7 @@ let delete_base location req =
   let path = active_navigation location in
   let result { Pool_context.database_label; user; _ } =
     let* smtp =
-      Sihl.Web.Router.param req (Field.show Field.Smtp)
+      Webserver.Router.param req (Field.show Field.Smtp)
       |> SmtpAuth.Id.of_string
       |> SmtpAuth.find database_label
       >|- Response.not_found
@@ -213,7 +213,7 @@ let validate location req =
   let open Utils.Lwt_result.Infix in
   let id = req |> smtp_auth_id in
   let redirect_path = settings_detail_path location req in
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded = Webserver.Request.to_urlencoded req in
   let result { Pool_context.database_label; _ } =
     let* smtp = SmtpAuth.find_full database_label id >|- Response.not_found in
     Response.bad_request_on_error ~urlencoded (smtp_form location)

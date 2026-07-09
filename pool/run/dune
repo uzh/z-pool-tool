@@ -13,6 +13,8 @@
   pool_queue
   reminder
   routes
-  sihl
   system_event
-  text_message))
+  text_message
+  pool_core
+  webserver
+  storage))

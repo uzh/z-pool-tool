@@ -18,13 +18,13 @@ let show usage req =
     @@
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     let create_layout active_navigation html =
-      html |> create_layout ~active_navigation req context >|+ Sihl.Web.Response.of_html
+      html |> create_layout ~active_navigation req context >|+ Webserver.Response.of_html
     in
     match usage with
     | `ContactInformation ->
       let was_reset =
         let open CCOption in
-        Sihl.Web.Request.query_list req
+        Webserver.Request.query_list req
         |> CCList.assoc_opt ~eq:CCString.equal "reset"
         >>= CCList.head_opt
         |> CCOption.is_some
@@ -72,7 +72,7 @@ let contact_information = show `ContactInformation
 let update = Helpers.PartialUpdate.update
 
 let update_email req =
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded = Webserver.Request.to_urlencoded req in
   let result
         ({ Pool_context.database_label; query_parameters; language; user; _ } as context)
     =
@@ -167,7 +167,7 @@ let update_email req =
 ;;
 
 let update_password req =
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded = Webserver.Request.to_urlencoded req in
   let result
         ({ Pool_context.database_label; query_parameters; language; user; _ } as context)
     =
@@ -197,7 +197,7 @@ let update_password req =
 ;;
 
 let update_cell_phone req =
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded = Webserver.Request.to_urlencoded req in
   let result
         ({ Pool_context.database_label; language; query_parameters; user; _ } as context)
     =
@@ -270,7 +270,7 @@ let update_cell_phone req =
 ;;
 
 let verify_cell_phone req =
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded = Webserver.Request.to_urlencoded req in
   let result ({ Pool_context.database_label; query_parameters; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let tags = tags req in
@@ -408,7 +408,7 @@ let completion req =
     in
     Page.Contact.completion context custom_fields
     |> create_layout req ~active_navigation:"/user" context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -416,7 +416,7 @@ let completion req =
 let completion_post req =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req
+    Webserver.Request.to_urlencoded req
     ||> HttpUtils.format_request_boolean_values []
     ||> HttpUtils.remove_empty_values
   in
@@ -459,7 +459,7 @@ let completion_post req =
           redirect_to_with_actions
             "/experiments"
             [ Message.set ~success:[ Success.Updated Field.Profile ] ])
-        ||> Sihl.Web.Session.set_value ~key:Contact.profile_completion_cookie "" req
+        ||> Webserver.Session.set_value ~key:Contact.profile_completion_cookie "" req
       | false ->
         Http_utils.(
           redirect_to_with_actions
@@ -485,7 +485,7 @@ let pause_account req =
     in
     Page.Contact.pause_account context ~email ()
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;

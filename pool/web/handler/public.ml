@@ -35,7 +35,7 @@ let index req =
          in
          Page.Public.index tenant context welcome_text signup_cta
          |> create_layout req context
-         >|+ Sihl.Web.Response.of_html
+         >|+ Webserver.Response.of_html
     in
     Response.handle ~src req result)
 ;;
@@ -60,8 +60,8 @@ let index_css req =
     let%lwt content =
       Storage.download_data_base64 root_label file ||> Base64.decode_exn
     in
-    Sihl.Web.Response.of_plain_text content
-    |> Sihl.Web.Response.set_content_type
+    Webserver.Response.of_plain_text content
+    |> Webserver.Response.set_content_type
          (styles |> Pool_tenant.Styles.mime_type |> Common.File.Mime.to_string)
     |> Lwt.return_ok
   in
@@ -105,25 +105,25 @@ let denied req =
      | false, Error _ | true, Ok _ | true, Error _ ->
        let context =
          let open Pool_context in
-         let csrf = Sihl.Web.Csrf.find_exn req in
+         let csrf = Webserver.Csrf.find_exn req in
          create ([], Pool_common.Language.En, database_label, None, csrf, Guest, [], [])
        in
        Layout.Root.create context html)
-    ||> Sihl.Web.Response.of_html
+    ||> Webserver.Response.of_html
 ;;
 
 let asset req =
   let open Utils.Lwt_result.Infix in
-  let open Sihl.Contract.Storage in
+  let open Storage in
   let%lwt response =
     let tags = Pool_context.Logger.Tags.req req in
-    let asset_id = Sihl.Web.Router.param req Field.(Id |> show) in
+    let asset_id = Webserver.Router.param req Field.(Id |> show) in
     let* file = Http_utils.File.get_storage_file ~tags root_label asset_id in
     let%lwt content = Storage.download_data_base64 root_label file in
     let mime = file.file.mime in
     let content = content |> Base64.decode_exn in
-    Sihl.Web.Response.of_plain_text content
-    |> Sihl.Web.Response.set_content_type mime
+    Webserver.Response.of_plain_text content
+    |> Webserver.Response.set_content_type mime
     |> Lwt.return_ok
   in
   response
@@ -144,7 +144,7 @@ let error req =
   Error.(TerminatoryRootErrorTitle, TerminatoryRootError)
   |> error_page
   |> Layout.Error.create
-  |> Sihl.Web.Response.of_html
+  |> Webserver.Response.of_html
   |> Lwt.return
 ;;
 
@@ -157,7 +157,7 @@ let credits req =
       I18n.find_by_key database_label I18n.Key.CreditsText language
       ||> Page.Utils.i18n_page
     in
-    html |> create_layout req context >|+ Sihl.Web.Response.of_html
+    html |> create_layout req context >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -177,7 +177,7 @@ let privacy_policy req =
       policy
       |> Page.Utils.i18n_page
       |> create_layout req context
-      >|+ Sihl.Web.Response.of_html
+      >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -193,7 +193,7 @@ let terms_and_conditions req =
     let%lwt terms_last_updated = I18n.terms_and_conditions_last_updated database_label in
     Page.Public.terms_and_conditions language terms terms_last_updated
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;

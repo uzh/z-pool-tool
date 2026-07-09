@@ -13,7 +13,7 @@ let announcement ?id (version : t) =
         "/admin/%s/%s"
         Pool_message.Field.(human_url Version)
         (Entity.Id.value version.id)
-      |> Sihl.Web.externalize_path
+      |> Webserver.externalize_path
     in
     p
       [ txt

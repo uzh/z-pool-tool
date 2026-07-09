@@ -11,7 +11,7 @@ Available tables:
 Example: seed.default guardian_role_permission
     |}
   in
-  Sihl.Command.make
+  Pool_core.Command.make
     ~name:"seed.default"
     ~description:"Insert required default data into tenant database."
     ~help

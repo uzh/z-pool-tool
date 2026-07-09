@@ -4,6 +4,7 @@
  (libraries
   database
   i18n
+  letters
   pool.conformist
   pool_common
   pool_tenant
@@ -11,7 +12,8 @@
   pool_user
   pool_queue
   query
-  sihl-email
+  pool_core
+  sexplib0
   utils)
  (preprocess
   (pps

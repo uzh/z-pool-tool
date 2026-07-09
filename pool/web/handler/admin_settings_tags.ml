@@ -8,7 +8,7 @@ let field = Field.Tag
 let base_path = "/admin/settings/tags"
 let src = Logs.Src.create "handler.admin.settings_tags"
 let active_navigation = base_path
-let id req = Sihl.Web.Router.param req @@ Field.show field |> Tags.Id.of_string
+let id req = Webserver.Router.param req @@ Field.show field |> Tags.Id.of_string
 
 let index req =
   Response.Htmx.index_handler
@@ -27,7 +27,7 @@ let new_form req =
   let result context =
     Page.Admin.Settings.Tags.new_form context
     |> General.create_tenant_layout req ~active_navigation context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
     |> Response.bad_request_render_error context
   in
   Response.handle ~src req result
@@ -39,7 +39,7 @@ let edit req =
     let* tag = Tags.find database_label id >|- Response.not_found in
     Page.Admin.Settings.Tags.edit context tag
     |> General.create_tenant_layout req ~active_navigation context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
     |> Response.bad_request_render_error context
   in
   Response.handle ~src req result
@@ -48,7 +48,7 @@ let edit req =
 let write action req =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    Webserver.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
   let error_handler, success =
     let open Pool_message.Success in

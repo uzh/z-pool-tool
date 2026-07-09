@@ -14,7 +14,7 @@ let update req command success_message =
   let open Pool_tenant in
   let open Database.Pool in
   let%lwt multipart_encoded =
-    Sihl.Web.Request.to_multipart_form_data_exn req
+    Webserver.Request.to_multipart_form_data_exn req
     ||> HttpUtils.remove_empty_values_multiplart
   in
   let urlencoded = multipart_encoded |> HttpUtils.multipart_to_urlencoded file_fields in
@@ -95,7 +95,7 @@ let update_database req =
 
 let delete_asset req =
   let open Pool_message in
-  let go m fcn = m |> Sihl.Web.Router.param req |> fcn in
+  let go m fcn = m |> Webserver.Router.param req |> fcn in
   let asset_id = go Field.(AssetId |> show) Common.Id.of_string in
   let tenant_id = go Field.(Tenant |> show) Pool_tenant.Id.of_string in
   let redirect_path =

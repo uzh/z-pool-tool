@@ -16,7 +16,7 @@ Provide all fields to create a new tenant:
       <operator_email>                    : string
   |}
   in
-  Sihl.Command.make
+  Pool_core.Command.make
     ~name:"tenant.create"
     ~description:"Creates a new test tenant"
     ~help
@@ -62,7 +62,7 @@ Example: %s econ-uzh mariadb://user:pw@localhost:3306/dev_econ
   |}
       name
   in
-  Sihl.Command.make ~name ~description ~help (function
+  Pool_core.Command.make ~name ~description ~help (function
     | [ pool; database_url ] ->
       let open Utils.Lwt_result.Infix in
       let open Pool_tenant in

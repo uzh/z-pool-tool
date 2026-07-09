@@ -4,7 +4,23 @@ open Ppx_yojson_conv_lib.Yojson_conv
 module Content = struct
   type t = string [@@deriving eq, show, yojson]
 
-  let render text params = Sihl.Contract.Email_template.render params text None |> fst
+  (* Extracted from the Sihl web framework (https://github.com/oxidizing/sihl), MIT
+     license. This is the [render] function of the former
+     [Sihl.Contract.Email_template] module, reduced to plain-text rendering. Source:
+     https://github.com/uzh/sihl/blob/6c3c4040413294155cda3a363edf0ff3c7e638b8/sihl/src/contract_email_template.ml *)
+  let render text params =
+    let replace_element str k v =
+      let regexp = Str.regexp @@ "{" ^ k ^ "}" in
+      Str.global_replace regexp v str
+    in
+    let rec render_value data value =
+      match data with
+      | [] -> value
+      | (k, v) :: data -> render_value data @@ replace_element value k v
+    in
+    render_value params text
+  ;;
+
   let of_string m = m
   let value m = m
 end

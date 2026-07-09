@@ -2,8 +2,8 @@ open CCFun.Infix
 module SmtpAuth = Entity_smtp
 module User = Pool_user
 
-module Sihl_email = struct
-  include Sihl_email
+module Email_message = struct
+  include Email_message
 
   let equal (e1 : t) (e2 : t) =
     let open CCString in
@@ -13,7 +13,7 @@ module Sihl_email = struct
     && equal e1.text e2.text
   ;;
 
-  let yojson_of_t = Sihl.Contract.Email.to_yojson
+  let yojson_of_t = Email_message.to_yojson
 
   let t_of_yojson =
     of_yojson
@@ -113,7 +113,7 @@ let verify (Unverified email) =
 
 module Job = struct
   type t =
-    { email : Sihl_email.t
+    { email : Email_message.t
     ; smtp_auth_id : SmtpAuth.Id.t option [@yojson.option]
     }
   [@@deriving eq, fields, show, yojson] [@@yojson.allow_extra_fields]
@@ -124,7 +124,7 @@ module Job = struct
     let open CCOption in
     let email =
       let email_address = map Pool_user.EmailAddress.value new_email_address in
-      Sihl.Contract.Email.
+      Email_message.
         { email with recipient = value ~default:email.recipient email_address }
     in
     let smtp_auth_id = new_smtp_auth_id <+> smtp_auth_id in

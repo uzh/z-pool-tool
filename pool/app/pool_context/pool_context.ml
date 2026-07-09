@@ -100,10 +100,10 @@ end
 
 module Logger = struct
   module Tags = struct
-    let req (req : Sihl.Web.Request.t) : Logs.Tag.set =
+    let req (req : Webserver.Request.t) : Logs.Tag.set =
       let open CCOption in
       let default = "undefined" in
-      let id = Sihl.Web.Id.find req |> value ~default in
+      let id = Webserver.Id.find req |> value ~default in
       let ip = Opium.Request.header "X-Real-IP" req |> value ~default in
       let database_label, user =
         find req
@@ -132,10 +132,10 @@ module Logger = struct
     open Api
 
     module Tags = struct
-      let req (req : Sihl.Web.Request.t) : Logs.Tag.set =
+      let req (req : Webserver.Request.t) : Logs.Tag.set =
         let open CCOption in
         let default = "undefined" in
-        let id = Sihl.Web.Id.find req |> value ~default in
+        let id = Webserver.Id.find req |> value ~default in
         let ip = Opium.Request.header "X-Real-IP" req |> value ~default in
         let database_label, api_key =
           find req

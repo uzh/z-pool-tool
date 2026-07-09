@@ -107,7 +107,7 @@ let time_window_form
     ~a:
       [ a_class [ "stack" ]
       ; a_method `Post
-      ; a_action (action |> Sihl.Web.externalize_path)
+      ; a_action (action |> Webserver.externalize_path)
       ; a_user_data "detect-unsaved-changes" ""
       ]
     [ csrf_element csrf ()

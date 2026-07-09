@@ -18,7 +18,7 @@ module Job = struct
     Pool_queue.Job.create
       handle
       ~max_tries:10
-      ~retry_delay:(Sihl.Time.Span.hours 1)
+      ~retry_delay:(Pool_core.Time.Span.hours 1)
       encode
       decode
       Pool_queue.JobName.CheckMatchesFilter
@@ -50,13 +50,13 @@ let start () =
 ;;
 
 let lifecycle =
-  Sihl.Container.create_lifecycle
+  Pool_core.Container.create_lifecycle
     "System events"
     ~dependencies:(fun () -> [ Pool_database.lifecycle; Pool_queue.lifecycle_service ])
     ~start
 ;;
 
-let register () = Sihl.Container.Service.create lifecycle
+let register () = Pool_core.Container.Service.create lifecycle
 let job = Job.job
 let dispatch_update_upcomming = Job.dispatch
 

@@ -500,7 +500,7 @@ let () =
   Lwt_main.run
     (let open Test_utils in
      let%lwt () = setup_test () in
-     let%lwt _ = Sihl.Container.start_services services in
+     let%lwt _ = Pool_core.Container.start_services services in
      let%lwt () = Test_seed.create Data.database_label () in
      Alcotest_lwt.run "integration" @@ suite)
 ;;

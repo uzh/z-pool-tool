@@ -33,7 +33,7 @@ let dashboard req =
         dashboard_intro
         custom_fields_anwsered
       |> create_layout ~active_navigation:"/experiments" req context
-      >|+ Sihl.Web.Response.of_html
+      >|+ Webserver.Response.of_html
     | false ->
       let%lwt upcoming_sessions =
         let open Session in
@@ -67,7 +67,7 @@ let dashboard req =
           context
         |> create context dashboard_intro custom_fields_anwsered)
       |> create_layout ~active_navigation:"/experiments" req context
-      >|+ Sihl.Web.Response.of_html
+      >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -224,7 +224,7 @@ let show req =
       matches_filter
       contact
     >>= create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -289,7 +289,7 @@ module OnlineSurvey = struct
       in
       let handle events =
         let%lwt () = Pool_event.handle_events ~tags database_label user events in
-        Sihl.Web.Response.redirect_to survey_url |> Lwt_result.return
+        Webserver.Response.redirect_to survey_url |> Lwt_result.return
       in
       events |> handle
     in
@@ -311,7 +311,7 @@ module OnlineSurvey = struct
       Response.bad_request_render_error context
       @@
       let tags = Pool_context.Logger.Tags.req req in
-      let query = Sihl.Web.Request.query_list req in
+      let query = Webserver.Request.query_list req in
       let* events =
         let open Command.Submit in
         let open CCResult.Infix in
@@ -322,7 +322,7 @@ module OnlineSurvey = struct
         Page.Contact.Experiment.online_study_completition experiment context
         |> Lwt.return_ok
         >>= create_layout req context
-        >|+ Sihl.Web.Response.of_html
+        >|+ Webserver.Response.of_html
       in
       events |> handle >|> return
     in

@@ -16,7 +16,7 @@ module Report = struct
 
   let create exn req =
     let stack = Printexc.get_backtrace () in
-    let req_id = Sihl.Web.Id.find req |> CCOption.value ~default:"-" in
+    let req_id = Webserver.Id.find req |> CCOption.value ~default:"-" in
     let req = Format.asprintf "%a" Opium.Request.pp_hum req in
     { exn; stack; req_id; req }
   ;;
@@ -28,12 +28,12 @@ module Report = struct
 end
 
 let site_error_handler req =
-  let request_id = Sihl.Web.Id.find req |> CCOption.value ~default:"-" in
-  Page.Utils.error request_id |> Sihl.Web.Response.of_html |> Lwt.return
+  let request_id = Webserver.Id.find req |> CCOption.value ~default:"-" in
+  Page.Utils.error request_id |> Webserver.Response.of_html |> Lwt.return
 ;;
 
 let json_error_handler req =
-  let request_id = Sihl.Web.Id.find req |> CCOption.value ~default:"-" in
+  let request_id = Webserver.Id.find req |> CCOption.value ~default:"-" in
   let msg = "Something went wrong, our administrators have been notified." in
   let body = [%string {|"{"errors": ["%{msg}"], "request_id": "%{request_id}"}"|}] in
   Opium.Response.of_plain_text body
@@ -116,7 +116,7 @@ let middleware ?error_handler () =
   in
   (* In a production setting we don't want to use the built in debugger middleware of
      opium. It is useful for development but it exposed too much information. *)
-  if Sihl.Configuration.is_production ()
+  if Pool_core.Configuration.is_production ()
   then Rock.Middleware.create ~name:"error" ~filter
   else Opium.Middleware.debugger
 ;;

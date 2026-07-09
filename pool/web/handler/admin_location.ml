@@ -6,7 +6,7 @@ module Response = Http_response
 
 let src = Logs.Src.create "handler.admin.location"
 let create_layout req = General.create_tenant_layout req
-let id req field encode = Sihl.Web.Router.param req @@ Field.show field |> encode
+let id req field encode = Webserver.Router.param req @@ Field.show field |> encode
 let location_path = HttpUtils.Url.Admin.location_path
 
 let descriptions_from_urlencoded req urlencoded =
@@ -46,14 +46,14 @@ let new_form req =
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     Page.Admin.Location.form context tenant_languages
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
 
 let create req =
   let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req
+    Webserver.Request.to_urlencoded req
     ||> HttpUtils.format_request_boolean_values [ Field.(Virtual |> show) ]
     ||> HttpUtils.remove_empty_values
   in
@@ -93,7 +93,7 @@ let new_file req =
        let languages = Pool_common.Language.all in
        Page.Admin.Location.file_form labels languages location context
        |> create_layout req context
-       >|+ Sihl.Web.Response.of_html
+       >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -107,7 +107,7 @@ let add_file req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* location = Pool_location.find database_label id in
-    let%lwt multipart_encoded = Sihl.Web.Request.to_multipart_form_data_exn req in
+    let%lwt multipart_encoded = Webserver.Request.to_multipart_form_data_exn req in
     let* files =
       HttpUtils.File.upload_files database_label [ Field.(FileMapping |> show) ] req
     in
@@ -163,7 +163,7 @@ let detail edit req =
       | true -> form ~location ~states context tenant_languages |> Lwt.return)
     |> Lwt_result.ok
     >>= create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -203,7 +203,7 @@ let update req =
   let result { Pool_context.database_label; user; _ } =
     let id = id req Field.Location Pool_location.Id.of_string in
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req
+      Webserver.Request.to_urlencoded req
       ||> HttpUtils.format_request_boolean_values [ Field.(Virtual |> show) ]
       ||> HttpUtils.remove_empty_values
     in

@@ -25,7 +25,7 @@ let email_job_instance_detail instance =
   let open Email.Service.Job in
   decode (Pool_queue.Instance.input instance)
   |> CCResult.map_or ~default:[] (fun job ->
-    let { Sihl_email.sender; recipient; subject; text; html; _ } = email job in
+    let { Email.Message.sender; recipient; subject; text; html; _ } = email job in
     [ Field.Sender, txt sender
     ; Field.Recipient, txt recipient
     ; Field.EmailSubject, txt subject
@@ -75,7 +75,7 @@ let queue_instance_detail language ?text_message_dlr instance =
         ; txt " "
         ; a
             ~a:
-              [ a_href (Format.asprintf "%s/%s" base_path id |> Sihl.Web.externalize_path)
+              [ a_href (Format.asprintf "%s/%s" base_path id |> Webserver.externalize_path)
               ]
             [ txt id ]
         ]
@@ -149,7 +149,7 @@ let index queue_table (Pool_context.{ language; _ } as context) job =
             ~a:
               [ a_href
                   (HttpUtils.Url.Admin.Settings.queue_list_path path_table
-                   |> Sihl.Web.externalize_path)
+                   |> Webserver.externalize_path)
               ]
             [ txt
                 (i18n
@@ -178,7 +178,7 @@ let resend_form Pool_context.{ csrf; language; _ } job =
              "%s/%s/resend"
              base_path
              (job |> Pool_queue.Instance.id |> Pool_queue.Id.value)
-           |> Sihl.Web.externalize_path)
+           |> Webserver.externalize_path)
       ; a_method `Post
       ]
     [ Input.csrf_element csrf ()

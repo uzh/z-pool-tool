@@ -114,7 +114,7 @@ let detail req =
       past_experiments
       failed_login_attempt
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -161,7 +161,7 @@ let edit req =
       contact_tags
       all_tags
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -297,7 +297,7 @@ let external_data_ids req =
     in
     Page.Admin.Contact.external_data_ids context contact external_data_ids
     |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+    >|+ Webserver.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -305,7 +305,7 @@ let external_data_ids req =
 let htmx_experiments_get req =
   let contact_id = contact_id req in
   let result ({ Pool_context.database_label; user; _ } as context) =
-    let query = Sihl.Web.Request.query Field.(show Search) req in
+    let query = Webserver.Request.query Field.(show Search) req in
     let* contact = Contact.find database_label contact_id in
     let* actor =
       Pool_context.Utils.find_authorizable ~admin_only:true database_label user
@@ -354,7 +354,7 @@ let enroll_contact_post req =
   let tags = Pool_context.Logger.Tags.req req in
   let result { Pool_context.database_label; user; _ } =
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+      Webserver.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     let* contact = find_contact database_label contact_id in
     Response.bad_request_on_error ~urlencoded edit

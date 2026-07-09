@@ -15,7 +15,7 @@ include Admin_user_profile.MakeUserProfile (Config)
 
 let update_password req =
   let open HttpUtils in
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded = Webserver.Request.to_urlencoded req in
   let result { Pool_context.database_label; user; _ } =
     let tags = Pool_context.Logger.Tags.req req in
     Response.bad_request_on_error ~urlencoded show
