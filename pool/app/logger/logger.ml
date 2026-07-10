@@ -70,7 +70,7 @@ let pp_exec_header ?(tags = Tag.empty) src =
   let find tag = Tag.find tag tags |> CCOption.get_or ~default:"-" in
   let pp_h ppf style level =
     let now =
-      let now = Ptime_clock.now () in
+      let now = Utils.Ptime.now () in
       Ptime.to_rfc3339 ~tz_offset_s:(Utils.Ptime.to_zurich_tz_offset_s now) now
     in
     let pp_styled_values ppf values =

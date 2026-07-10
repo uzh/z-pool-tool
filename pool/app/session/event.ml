@@ -51,7 +51,7 @@ let handle_event ?user_uuid pool =
     let%lwt () = create_changelog session updated in
     Repo.update pool updated
   | Closed session ->
-    let updated = { session with closed_at = Some (Ptime_clock.now ()) } in
+    let updated = { session with closed_at = Some (Utils.Ptime.now ()) } in
     let%lwt () = create_changelog session updated in
     Repo.update pool updated
   | Deleted session -> Repo.delete pool session.id

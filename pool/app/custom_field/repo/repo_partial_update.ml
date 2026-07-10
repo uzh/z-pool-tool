@@ -158,7 +158,7 @@ let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
   let dyn =
     Dynparam.empty
     |> Dynparam.add Contact.Repo.Id.t (contact |> Contact.id)
-    |> Dynparam.add Caqti_type.ptime (Ptime_clock.now ())
+    |> Dynparam.add Caqti_type.ptime (Utils.Ptime.now ())
   in
   let update_user_table (dyn, sql) =
     let open Caqti_request.Infix in

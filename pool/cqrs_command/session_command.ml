@@ -598,7 +598,7 @@ end = struct
     let* () = validate_start follow_up_sessions parent_session start in
     let* duration = Session.Duration.of_int duration duration_unit in
     let* () =
-      if Ptime.is_earlier ~than:(Ptime_clock.now ()) (start |> Session.Start.value)
+      if Ptime.is_earlier ~than:(Pool_model.Time.now ()) (start |> Session.Start.value)
       then Error Pool_message.Error.TimeInPast
       else Ok ()
     in

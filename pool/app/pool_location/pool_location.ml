@@ -26,7 +26,7 @@ let admin_file_path id file =
 module Statistics = struct
   include Entity_statistics
 
-  let current_year () = Ptime_clock.now () |> Ptime.to_year
+  let current_year () = Utils.Ptime.now () |> Ptime.to_year
   let create ?(year = current_year ()) = Repo_statistics.statistics year
 
   let year_select database_label =

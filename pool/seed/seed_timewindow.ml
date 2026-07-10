@@ -12,9 +12,9 @@ let timewindow pool =
   in
   let get_or_failwith = Pool_common.Utils.get_or_failwith in
   let from_now_ms offset =
-    Ptime.add_span (Ptime_clock.now ()) offset |> CCOption.get_exn_or "Invalid time"
+    Ptime.add_span (Utils.Ptime.now ()) offset |> CCOption.get_exn_or "Invalid time"
   in
-  let now = Ptime_clock.now () in
+  let now = Utils.Ptime.now () in
   let time_window_data =
     [ "Morning session - 1", "Initial data collection phase", Some 10, now, hour
     ; "Afternoon session - 1", "Follow-up data collection", Some 10, now, hour

@@ -45,7 +45,17 @@ module Make (Config : Pools_sig.ConfigSig) = struct
 
     let connect_pool =
       let pool_config = Caqti_pool_config.create ~max_size:Config.database_pool_size () in
-      Url.to_uri %> Caqti_lwt_unix.connect_pool ~pool_config
+      (* Ptime values are written as UTC wall-clock; pin the session so NOW()
+         and CURRENT_TIMESTAMP defaults agree with them regardless of the
+         server's time_zone setting. *)
+      let set_utc_request =
+        let open Caqti_request.Infix in
+        "SET time_zone = '+00:00'" |> Caqti_type.(unit ->. unit)
+      in
+      let post_connect (module Connection : Caqti_lwt.CONNECTION) =
+        Connection.exec set_utc_request ()
+      in
+      Url.to_uri %> Caqti_lwt_unix.connect_pool ~pool_config ~post_connect
     ;;
 
     let connect_base ?(retries = 2) ({ required; _ } as pool) =

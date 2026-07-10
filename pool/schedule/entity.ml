@@ -74,7 +74,7 @@ let create label scheduled_time database_label fcn =
 ;;
 
 let run_in = function
-  | At time -> Ptime.diff time (Ptime_clock.now ()) |> Ptime.Span.to_float_s |> max 1.
+  | At time -> Ptime.diff time (Utils.Ptime.now ()) |> Ptime.Span.to_float_s |> max 1.
   | Every duration -> duration |> ScheduledTimeSpan.value |> Ptime.Span.to_float_s
 ;;
 
@@ -106,7 +106,7 @@ let is_ok ({ scheduled_time; status; last_run; _ } : public) =
           |> Ptime.Span.of_int_s)
       in
       Ptime.add_span last_run (Ptime.Span.add minimum_interval minimum_interval)
-      |> CCOption.map_or ~default:false (Ptime.is_later ~than:(Ptime_clock.now ()))
+      |> CCOption.map_or ~default:false (Ptime.is_later ~than:(Utils.Ptime.now ()))
   in
   is_fine status || did_run ()
 ;;

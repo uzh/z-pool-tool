@@ -43,8 +43,13 @@
 
 (include_subdirs unqualified)
 
+; TZ is pinned to a zone that matches neither UTC nor Europe/Zurich on purpose:
+; timestamp handling must not depend on the host's timezone, so any code that
+; leaks Unix.localtime/host-TZ into parsing, storage or display fails the suite.
+
 (env
  (_
   (env-vars
    (SIHL_ENV "test")
+   (TZ "America/New_York")
    (TEST_MAIL "test@econ.uzh.ch"))))

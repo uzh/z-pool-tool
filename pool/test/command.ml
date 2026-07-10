@@ -590,5 +590,15 @@ let () =
       , [ test_case "update page scripts" `Quick Tenant_settings_test.update_page_scripts
         ] )
     ; ("time window", Time_window_test.[ test_case "create" `Slow create_timewindow ])
+    ; ( "time"
+      , Time_test.
+          [ test_case "zurich tz offsets across DST transitions" `Quick zurich_offsets
+          ; test_case "zurich display formatting" `Quick zurich_formatting
+          ; test_case "parse calendar range bounds" `Quick parse_date_from_calendar
+          ; test_case
+              "rfc3339 output carries explicit UTC offset"
+              `Quick
+              rfc3339_stamps_utc
+          ] )
     ]
 ;;

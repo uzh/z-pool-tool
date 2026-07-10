@@ -149,7 +149,7 @@ let run ({ database_label; label; scheduled_time; status; _ } as schedule : t) =
       let open Status in
       match scheduled_time, status with
       | Every _, Active -> process schedule
-      | At time, Active when Ptime.is_later ~than:(Ptime_clock.now ()) time ->
+      | At time, Active when Ptime.is_later ~than:(Utils.Ptime.now ()) time ->
         let%lwt () = Registered.update_status Status.Running schedule in
         process schedule
       | (Every _ | At _), ((Paused | Failed) as status) -> notify status

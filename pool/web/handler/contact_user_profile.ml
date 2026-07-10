@@ -362,7 +362,7 @@ let resend_token req =
            let expires = Pool_common.ExpiresAt.value expires_at in
            let time_since_last_send =
              token_ttl_s
-             -. (Ptime.diff expires (Ptime_clock.now ()) |> Ptime.Span.to_float_s)
+             -. (Ptime.diff expires (Pool_model.Time.now ()) |> Ptime.Span.to_float_s)
            in
            if time_since_last_send < resend_cooldown_s
            then Lwt_result.fail Error.TokenAlreadySentRecently

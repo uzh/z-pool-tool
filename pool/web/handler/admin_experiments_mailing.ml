@@ -126,7 +126,7 @@ let detail edit req =
     let* m, count = Mailing.find_with_detail database_label id >|- Response.not_found in
     Response.bad_request_render_error context
     @@ let* mailing, count =
-         if edit && Ptime_clock.now () > Mailing.StartAt.value m.Mailing.start_at
+         if edit && Pool_model.Time.now () > Mailing.StartAt.value m.Mailing.start_at
          then Lwt_result.fail Error.AlreadyStarted
          else Lwt_result.return (m, count)
        in

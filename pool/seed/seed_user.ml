@@ -117,7 +117,7 @@ let contacts db_label =
   let combinations =
     let open CCList in
     let languages = Pool_common.Language.[ Some En; Some De; None ] in
-    let terms_accepted_at = [ Some (Ptime_clock.now ()); None ] in
+    let terms_accepted_at = [ Some (Utils.Ptime.now ()); None ] in
     let booleans = [ true; false ] in
     let active_after_import = [ Some true; Some false; None ] in
     (fun a b c d e f -> a, b, c, d, e, f)

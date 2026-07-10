@@ -16,13 +16,69 @@ let time_to_human ?(with_seconds = false) time =
 ;;
 
 (* Public functions *)
-let to_zurich_tz_offset_s =
-  let open Ptime in
-  to_float_s
-  %> Unix.localtime
-  %> (fun { Unix.tm_isdst; _ } -> if tm_isdst then 2 else 1)
-  %> CCInt.mul (60 * 60)
-;;
+
+(* Current instant from the system clock. [Ptime.t] carries no timezone — the
+   value is a POSIX instant. Timezone information is attached at the
+   boundaries: [to_rfc3339] below stamps the explicit UTC offset ("Z") on
+   every serialised value, and the [formatted_*] functions convert to the
+   display timezone. Use this instead of calling [Ptime_clock.now] directly. *)
+let now = Ptime_clock.now
+
+(* Serialise with an explicit UTC marker ("Z"). [Ptime.to_rfc3339]'s default
+   is "-00:00", which RFC 3339 defines as "offset unknown" — i.e. a timestamp
+   without timezone information. *)
+let to_rfc3339 time = Ptime.to_rfc3339 ~tz_offset_s:0 time
+
+(* A display timezone as UTC offsets plus a DST predicate over UTC instants.
+   Storage and computation stay UTC; only rendering converts. Derived from the
+   EU rule directly so the result does not depend on the host's TZ setting. *)
+module Timezone = struct
+  type t =
+    { std_offset_s : int
+    ; dst_offset_s : int
+    ; is_dst : Ptime.t -> bool
+    }
+
+  let europe_zurich =
+    let hour = 60 * 60 in
+    (* March and October both have 31 days *)
+    let last_sunday year month =
+      let weekday_num = function
+        | `Sun -> 0
+        | `Mon -> 1
+        | `Tue -> 2
+        | `Wed -> 3
+        | `Thu -> 4
+        | `Fri -> 5
+        | `Sat -> 6
+      in
+      let last_day =
+        (year, month, 31) |> Ptime.of_date |> CCOption.get_exn_or "Invalid date"
+      in
+      31 - weekday_num (Ptime.weekday last_day)
+    in
+    (* EU rule: CEST from last Sunday of March, 01:00 UTC, until last Sunday of
+       October, 01:00 UTC; CET otherwise. *)
+    let transition year month =
+      Ptime.of_date_time ((year, month, last_sunday year month), ((1, 0, 0), 0))
+      |> CCOption.get_exn_or "Invalid DST transition"
+    in
+    let is_dst time =
+      let year, _, _ = Ptime.to_date time in
+      let dst_start = transition year 3 in
+      let dst_end = transition year 10 in
+      (not (Ptime.is_earlier time ~than:dst_start)) && Ptime.is_earlier time ~than:dst_end
+    in
+    { std_offset_s = hour; dst_offset_s = 2 * hour; is_dst }
+  ;;
+
+  let to_offset_s { std_offset_s; dst_offset_s; is_dst } time =
+    if is_dst time then dst_offset_s else std_offset_s
+  ;;
+end
+
+let display_timezone = Timezone.europe_zurich
+let to_zurich_tz_offset_s = Timezone.to_offset_s display_timezone
 
 let to_local_date date =
   let open Ptime in
@@ -118,7 +174,7 @@ let ptime_of_yojson m =
   |> CCResult.get_exn
 ;;
 
-let yojson_of_ptime m = m |> Ptime.to_rfc3339 |> Rfc3339.wrap |> Yojson.Safe.from_string
+let yojson_of_ptime m = m |> to_rfc3339 |> Rfc3339.wrap |> Yojson.Safe.from_string
 
 let print_time_span span =
   Ptime.Span.to_int_s span

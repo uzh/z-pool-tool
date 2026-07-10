@@ -93,7 +93,7 @@ let handle_event ?tags pool : event -> unit Lwt.t =
     let%lwt () =
       { contact with
         cell_phone = Some cell_phone
-      ; cell_phone_verified_at = Some (Ptime_clock.now ())
+      ; cell_phone_verified_at = Some (Utils.Ptime.now ())
       }
       |> Repo.update pool
     in
