@@ -38,7 +38,6 @@ end =
   Lwt_trace
 
 module Crypto = Crypto
-module Ptime = Utils_ptime
 
 let flat_unit (_ : unit list) = ()
 let todo _ = failwith "todo"

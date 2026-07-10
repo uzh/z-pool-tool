@@ -1,4 +1,4 @@
-include Utils.Ptime
+include Pool_core.Time
 
 (* Parsing *)
 let parse_time str =
@@ -21,18 +21,22 @@ let parse_time_span str =
     >|= fun h -> h *. 60. |> CCInt.of_float |> Ptime.Span.of_int_s
 ;;
 
-let parse_date str =
-  let open CCOption in
-  let error = Pool_message.(Error.Invalid Field.Date) in
-  let split_date_string date =
-    date |> CCString.split_on_char '-' |> CCList.map CCInt.of_string |> sequence_l
-  in
-  split_date_string str
-  >>= (function
-   | [ y; m; d ] -> (y, m, d) |> Ptime.of_date >|= Ptime.to_date
-   | _ -> None)
-  |> CCOption.to_result error
-;;
+module Date = struct
+  include Pool_core.Time.Date
+
+  let of_string str =
+    let open CCOption in
+    let error = Pool_message.(Error.Invalid Field.Date) in
+    let split_date_string date =
+      date |> CCString.split_on_char '-' |> CCList.map CCInt.of_string |> sequence_l
+    in
+    split_date_string str
+    >>= (function
+     | [ y; m; d ] -> (y, m, d) |> Ptime.of_date >|= Ptime.to_date
+     | _ -> None)
+    |> CCOption.to_result error
+  ;;
+end
 
 let parse_date_from_calendar str =
   let open CCFun.Infix in
@@ -45,7 +49,7 @@ let parse_date_from_calendar str =
     str
     |> CCString.split ~by:"T"
     |> CCList.hd
-    |> parse_date
+    |> Date.of_string
     >>= Ptime.of_date %> CCOption.to_result Pool_message.(Error.Invalid Field.Date)
 ;;
 
@@ -54,3 +58,25 @@ let start_is_before_end ~start ~end_at =
   then Error Pool_message.Error.EndBeforeStart
   else Ok ()
 ;;
+
+(* The conformist schemas live here rather than in [Pool_core.Time] because
+   of the [Pool_conformist]/[Pool_message] dependency. *)
+let schema field create () : (Pool_message.Error.t, t) Pool_conformist.Field.t =
+  let decode str = CCResult.(parse_time str >>= create) in
+  let encode time = to_rfc3339 time in
+  Pool_conformist.schema_decoder decode encode field
+;;
+
+module Span = struct
+  include Pool_core.Time.Span
+
+  (* Encode as total seconds; spans beyond [int] range (> 136 years on 64-bit)
+     cannot occur for form values. *)
+  let encode_s span = span |> to_int_s |> CCOption.map_or ~default:"" CCInt.to_string
+
+  let schema field create () : (Pool_message.Error.t, t) Pool_conformist.Field.t =
+    let open CCResult in
+    let decode str = parse_time_span str >>= create in
+    Pool_conformist.schema_decoder decode encode_s field
+  ;;
+end
