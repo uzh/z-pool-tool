@@ -29,11 +29,17 @@
   (alcotest-lwt :with-test)
   canary
   (caqti
-   (>= 2.0.1))
+   (and
+    (>= 2.3.0)
+    (< 3.0.0)))
   (caqti-driver-mariadb
-   (>= 2.0.1))
+   (and
+    (>= 2.3.0)
+    (< 3.0.0)))
   (caqti-lwt
-   (>= 2.0.1))
+   (and
+    (>= 2.3.0)
+    (< 3.0.0)))
   (conformist
    (>= 0.8.1))
   (containers
