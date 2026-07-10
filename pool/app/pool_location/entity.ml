@@ -136,8 +136,8 @@ let create ?(id = Id.create ()) name description address link status =
     ; address
     ; link
     ; status
-    ; created_at = Pool_common.CreatedAt.create_now ()
-    ; updated_at = Pool_common.UpdatedAt.create_now ()
+    ; created_at = Pool_common.CreatedAt.now ()
+    ; updated_at = Pool_common.UpdatedAt.now ()
     }
 ;;
 

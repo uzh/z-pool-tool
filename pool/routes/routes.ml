@@ -2,7 +2,9 @@ module CustomMiddleware = Middleware
 open Webserver
 module Field = Pool_message.Field
 
-let session_expiration = `Max_age (60 * 60 * 4 |> CCInt64.of_int)
+let session_expiration =
+  `Max_age (Pool_core.Time.Span.(hours 4 |> to_int_s_exn) |> CCInt64.of_int)
+;;
 
 let validate_entity action entity =
   CustomMiddleware.Guardian.validate_admin_entity

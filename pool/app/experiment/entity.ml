@@ -239,8 +239,8 @@ let create
     ; text_message_session_reminder_lead_time
     ; online_experiment
     ; matcher_notification_sent = false
-    ; created_at = Pool_common.CreatedAt.create_now ()
-    ; updated_at = Pool_common.UpdatedAt.create_now ()
+    ; created_at = Pool_common.CreatedAt.now ()
+    ; updated_at = Pool_common.UpdatedAt.now ()
     }
 ;;
 

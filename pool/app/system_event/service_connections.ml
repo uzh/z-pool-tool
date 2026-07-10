@@ -18,8 +18,8 @@ let rerun_migrations_for_connection_issues () =
 let start () =
   let open Schedule in
   let interval =
-    (if Pool_core.Configuration.is_production () then 15 * 60 else 10)
-    |> Ptime.Span.of_int_s
+    let open Pool_core.Time.Span in
+    (if Pool_core.Configuration.is_production () then minutes 15 else seconds 10)
     |> ScheduledTimeSpan.of_span
   in
   create name (Every interval) None rerun_migrations_for_connection_issues

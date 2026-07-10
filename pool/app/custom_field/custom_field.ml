@@ -122,7 +122,7 @@ let validate_htmx ~is_admin ~entity_uuid value (m : Public.t) =
     (match single_value, required with
      | Some value, _ ->
        value
-       |> Ptime.date_of_string
+       |> Ptime.Date.of_string
        >|= create_answer is_admin entity_uuid answer
        >|= to_field
      | None, false -> to_field None |> CCResult.return

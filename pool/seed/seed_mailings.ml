@@ -5,7 +5,7 @@ let generate_end (start : Mailing.StartAt.t) rand_day =
   let rand_day = rand_day + 1 in
   start
   |> Mailing.StartAt.value
-  |> CCFun.flip Ptime.add_span (Ptime.Span.of_int_s ((rand_day * 24) + (rand_day * 3600)))
+  |> Pool_core.Time.(CCFun.flip add_span (Span.days rand_day))
   |> CCOption.get_exn_or "Mailing series seed: Could not generate mailing end ptime."
   |> Mailing.EndAt.create
   |> get_or_failwith
@@ -19,8 +19,7 @@ let generate_events (experiments : Experiment.Id.t list) =
     CCList.range_by ~step:5 0 80
     |> CCList.map (fun delta ->
       let start =
-        Utils.Ptime.now ()
-        |> CCFun.flip Ptime.add_span (Ptime.Span.of_int_s ((delta * 24 * 3600) + 1))
+        Pool_core.Time.(now () |> CCFun.flip add_span Span.(add (days delta) (seconds 1)))
         |> CCOption.get_exn_or "Mailing series seed: could not generate mailings."
         |> Mailing.StartAt.create
         |> get_or_failwith

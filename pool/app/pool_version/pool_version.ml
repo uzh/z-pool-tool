@@ -23,7 +23,7 @@ let announcement ?id (version : t) =
       ]
     |> Format.asprintf "%a" (Tyxml.Html.pp_elt ~indent:true ())
   in
-  let start_at = StartAt.create_now () |> CCOption.return in
+  let start_at = StartAt.now () |> CCOption.return in
   let* text = [ Pool_common.Language.En, text ] |> Text.create in
   let show_to_admins = ShowToAdmins.create true in
   let show_to_contacts = ShowToContacts.create false in

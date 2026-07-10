@@ -60,8 +60,8 @@ end = struct
       ; address
       ; link
       ; status = Status.Active
-      ; created_at = Pool_common.CreatedAt.create_now ()
-      ; updated_at = Pool_common.UpdatedAt.create_now ()
+      ; created_at = Pool_common.CreatedAt.now ()
+      ; updated_at = Pool_common.UpdatedAt.now ()
       }
     in
     Ok [ Created location |> Pool_event.pool_location ]

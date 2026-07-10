@@ -16,18 +16,11 @@ module Text : sig
 end
 
 module StartAt : sig
-  include Pool_model.Base.BaseSig
-
-  val value : t -> Ptime.t
-  val create : Ptime.t -> t
-  val create_now : unit -> t
+  include Pool_model.Base.TimeSig
 end
 
 module EndAt : sig
-  include Pool_model.Base.BaseSig
-
-  val value : t -> Ptime.t
-  val create : Ptime.t -> t
+  include Pool_model.Base.TimeSig
 end
 
 module ShowToAdmins : sig

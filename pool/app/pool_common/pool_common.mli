@@ -30,15 +30,15 @@ module Version : sig
 end
 
 module CreatedAt : sig
-  include Pool_model.Base.PtimeSig
+  include Pool_model.Base.TimeSig
 end
 
 module UpdatedAt : sig
-  include Pool_model.Base.PtimeSig
+  include Pool_model.Base.TimeSig
 end
 
 module ExpiresAt : sig
-  include Pool_model.Base.PtimeSig
+  include Pool_model.Base.TimeSig
 end
 
 module File : sig
@@ -138,7 +138,7 @@ module Reminder : sig
   end
 
   module SentAt : sig
-    include Pool_model.Base.PtimeSig
+    include Pool_model.Base.TimeSig
   end
 end
 

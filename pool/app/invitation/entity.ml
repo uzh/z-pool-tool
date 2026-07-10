@@ -1,7 +1,7 @@
 module ResentAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
-  let create = Utils.Ptime.now
+  let create = Pool_core.Time.now
 end
 
 module SendCount = struct
@@ -31,8 +31,8 @@ let create ?(id = Pool_common.Id.create ()) contact =
   ; contact
   ; resent_at = None
   ; send_count = SendCount.init
-  ; created_at = Pool_common.CreatedAt.create_now ()
-  ; updated_at = Pool_common.UpdatedAt.create_now ()
+  ; created_at = Pool_common.CreatedAt.now ()
+  ; updated_at = Pool_common.UpdatedAt.now ()
   }
 ;;
 

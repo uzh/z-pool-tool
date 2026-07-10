@@ -213,7 +213,7 @@ let create_invitations _ () =
   in
   let%lwt (_ : Session.t) = Integration_utils.SessionRepo.create experiment () in
   let limit = Limit.create 100 |> get_or_failwith in
-  let interval = 2 * 60 |> Ptime.Span.of_int_s in
+  let interval = Pool_core.Time.Span.(minutes 2) in
   let%lwt (_ : Mailing.t) =
     let distribution =
       Distribution.(Sorted [ SortableField.Firstname, SortOrder.Ascending ])
@@ -644,7 +644,10 @@ let create_invitations_for_online_experiment _ () =
   in
   let run_test expected message =
     let%lwt events =
-      Matcher.create_invitation_events ~invitation_ids (Ptime.Span.of_int_s (5 * 60)) pool
+      Matcher.create_invitation_events
+        ~invitation_ids
+        Pool_core.Time.Span.(minutes 5)
+        pool
     in
     let%lwt expected =
       match expected with

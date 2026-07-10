@@ -17,32 +17,26 @@ let enroll_from_main_urlencoded =
 
 module Data = struct
   module Raw = struct
+    let day = Pool_core.Time.Span.(days 1)
+
     let start1 =
       Ptime.of_date_time ((2022, 8, 2), ((10, 57, 5), 2))
       |> CCOption.get_exn_or "Invalid start1"
     ;;
 
-    let start2 =
-      Ptime.add_span start1 @@ Ptime.Span.of_int_s 86400
-      |> CCOption.get_exn_or "Invalid start2"
-    ;;
-
-    let start3 =
-      Ptime.add_span start2 @@ Ptime.Span.of_int_s 86400
-      |> CCOption.get_exn_or "Invalid start3"
-    ;;
-
-    let duration = Ptime.Span.of_int_s 3600
+    let start2 = Ptime.add_span start1 day |> CCOption.get_exn_or "Invalid start2"
+    let start3 = Ptime.add_span start2 day |> CCOption.get_exn_or "Invalid start3"
+    let duration = Pool_core.Time.Span.hours 1
     let duration_unit = TimeUnit.Minutes
     let internal_description = "Description"
     let public_description = "Limitations"
     let max_participants = 24
     let min_participants = 5
     let overbook = 0
-    let lead_time = Ptime.Span.of_int_s 1800
+    let lead_time = Pool_core.Time.Span.(minutes 30)
 
     let sent_at =
-      Ptime.add_span start1 @@ Ptime.Span.of_int_s (2 * 86400)
+      (Ptime.add_span start1 @@ Pool_core.Time.Span.(days 2))
       |> CCOption.get_exn_or "Invalid sent_at"
     ;;
 
@@ -50,17 +44,21 @@ module Data = struct
   end
 
   module String = struct
+    let span_to_minutes =
+      Ptime.Span.to_int_s %> CCOption.map_or ~default:"" CCInt.(div 60 %> to_string)
+    ;;
+
     let start1 = Raw.start1 |> Ptime.to_rfc3339 ~frac_s:12
     let start2 = Raw.start2 |> Ptime.to_rfc3339 ~frac_s:12
     let start3 = Raw.start3 |> Ptime.to_rfc3339 ~frac_s:12
-    let duration = Raw.duration |> Pool_model.Time.timespan_to_minutes
+    let duration = Raw.duration |> span_to_minutes
     let duration_unit = Raw.duration_unit |> TimeUnit.show
     let internal_description = Raw.internal_description
     let public_description = Raw.public_description
     let max_participants = Raw.max_participants |> string_of_int
     let min_participants = Raw.min_participants |> string_of_int
     let overbook = Raw.overbook |> string_of_int
-    let lead_time = Raw.lead_time |> Pool_model.Time.timespan_to_minutes
+    let lead_time = Raw.lead_time |> span_to_minutes
     let sent_at = Raw.sent_at |> Ptime.to_rfc3339 ~frac_s:12
     let assignment_count = Raw.assignment_count |> string_of_int
   end
@@ -626,7 +624,7 @@ let cancel_no_message_channels () =
 
 let cancel_in_past () =
   let open CCResult.Infix in
-  let twohours = Ptime.Span.of_int_s @@ (120 * 60) in
+  let twohours = Pool_core.Time.Span.(hours 2) in
   let session =
     Session.
       { (Model.create_session ()) with
@@ -733,7 +731,7 @@ let cancel_valid () =
   check_result
     (Ok (messages @ [ Pool_event.Session (Session.Canceled session1) ] @ contact_events))
     res;
-  let halfhour = Ptime.Span.of_int_s @@ (30 * 60) in
+  let halfhour = Pool_core.Time.Span.(minutes 30) in
   let session2 =
     Session.
       { session1 with
@@ -1042,7 +1040,7 @@ let create_follow_up_later () =
   let later_start =
     parent_session.Session.start
     |> Session.Start.value
-    |> flip Ptime.add_span @@ Ptime.Span.of_int_s (60 * 60)
+    |> (flip Ptime.add_span @@ Pool_core.Time.Span.(hours 1))
     |> CCOption.get_exn_or "Invalid new start"
   in
   let input =
@@ -1090,7 +1088,7 @@ let update_follow_up_later () =
   let later_start =
     session.Session.start
     |> Session.Start.value
-    |> flip Ptime.add_span @@ Ptime.Span.of_int_s (60 * 60)
+    |> (flip Ptime.add_span @@ Pool_core.Time.Span.(hours 1))
     |> CCOption.get_exn_or "Invalid new start"
   in
   let input =
@@ -1141,7 +1139,7 @@ let update_follow_ups_earlier () =
   let later_start1 =
     Data.Validated.start2
     |> Session.Start.value
-    |> flip Ptime.add_span @@ Ptime.Span.of_int_s (60 * 60)
+    |> (flip Ptime.add_span @@ Pool_core.Time.Span.(hours 1))
     |> CCOption.get_exn_or "Invalid new start"
     |> Ptime.to_rfc3339 ~frac_s:12
   in
@@ -1155,7 +1153,7 @@ let update_follow_ups_earlier () =
   let later_start2 =
     Data.Validated.start3
     |> Session.Start.value
-    |> flip Ptime.add_span @@ Ptime.Span.of_int_s (60 * 60)
+    |> (flip Ptime.add_span @@ Pool_core.Time.Span.(hours 1))
     |> CCOption.get_exn_or "Invalid new start"
     |> Ptime.to_rfc3339 ~frac_s:12
   in
@@ -1213,7 +1211,7 @@ let update_follow_ups_later () =
   let later_start =
     Data.Validated.start1
     |> Session.Start.value
-    |> flip Ptime.add_span @@ Ptime.Span.of_int_s (60 * 60)
+    |> (flip Ptime.add_span @@ Pool_core.Time.Span.(hours 1))
     |> CCOption.get_exn_or "Invalid new start"
   in
   let input =
@@ -1260,7 +1258,7 @@ let reschedule_to_past () =
     let open Session in
     SessionC.
       { start =
-          Ptime.sub_span (Ptime_clock.now ()) (Ptime.Span.of_int_s @@ (60 * 60))
+          Pool_core.Time.(sub_span (now ()) Span.(hours 1))
           |> CCOption.get_exn_or "Invalid start"
           |> Start.create
       ; duration =
@@ -1676,21 +1674,19 @@ let send_session_reminders_with_default_leat_time _ () =
       PhoneVerificationEnabledUpdated (PhoneVerification.create false)
       |> handle_event database_label)
   in
-  let s_to_lead encode s = s |> Ptime.Span.of_int_s |> encode |> get_exn in
+  let to_lead encode = encode %> get_exn in
   let%lwt () =
+    let open Pool_core.Time.Span in
     Pool_common.Reminder.
-      [ Settings.DefaultReminderLeadTimeUpdated
-          (24 * 60 * 60 |> s_to_lead EmailLeadTime.create)
+      [ Settings.DefaultReminderLeadTimeUpdated (hours 24 |> to_lead EmailLeadTime.create)
       ; Settings.DefaultTextMsgReminderLeadTimeUpdated
-          (12 * 60 * 60 |> s_to_lead TextMessageLeadTime.create)
+          (hours 12 |> to_lead TextMessageLeadTime.create)
       ]
     |> Lwt_list.iter_s (Settings.handle_event database_label)
   in
   let%lwt experiment = ExperimentRepo.create () in
   let create_session ?email_reminder_sent_at hours =
-    let start =
-      hours * 60 * 60 |> Ptime.Span.of_int_s |> Test_utils.Model.session_start_in
-    in
+    let start = Pool_core.Time.Span.hours hours |> Test_utils.Model.session_start_in in
     SessionRepo.create ~start ?email_reminder_sent_at experiment ()
   in
   let%lwt session1 = create_session 16 in
@@ -1852,10 +1848,7 @@ module Duplication = struct
 
   let add_timespan = handle_timespan_update Ptime.add_span
   let sub_timespan = handle_timespan_update Ptime.sub_span
-
-  let start_to_string start =
-    start |> Session.Start.value |> Pool_model.Base.Ptime.date_time_to_flatpickr
-  ;;
+  let start_to_string start = start |> Session.Start.value |> Pool_model.Time.to_rfc3339
 
   let data_to_urlencded =
     CCList.map (fun (session, group, start) ->

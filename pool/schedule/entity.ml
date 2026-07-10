@@ -6,7 +6,7 @@ module Label = struct
 end
 
 module ScheduledTime = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let create m = Ok m
   let field = Pool_message.Field.ScheduledTime
@@ -14,7 +14,7 @@ module ScheduledTime = struct
 end
 
 module ScheduledTimeSpan = struct
-  include Pool_model.Base.PtimeSpan
+  include Pool_model.Time.Span
 
   let create m =
     if Ptime.Span.abs m |> Ptime.Span.equal m
@@ -27,7 +27,7 @@ module ScheduledTimeSpan = struct
 end
 
 module LastRunAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let field = Pool_message.Field.LastRunAt
   let schema = schema field CCFun.(create %> CCResult.return)
@@ -74,7 +74,7 @@ let create label scheduled_time database_label fcn =
 ;;
 
 let run_in = function
-  | At time -> Ptime.diff time (Utils.Ptime.now ()) |> Ptime.Span.to_float_s |> max 1.
+  | At time -> Ptime.diff time (Pool_core.Time.now ()) |> Ptime.Span.to_float_s |> max 1.
   | Every duration -> duration |> ScheduledTimeSpan.value |> Ptime.Span.to_float_s
 ;;
 
@@ -97,16 +97,9 @@ let is_ok ({ scheduled_time; status; last_run; _ } : public) =
     | (At _ | Every _), None -> false
     | At _, Some _ -> true
     | Every interval, Some last_run ->
-      let minimum_interval =
-        let default = 60 in
-        CCOption.(
-          Ptime.Span.to_int_s interval
-          >|= CCInt.(max default)
-          |> value ~default
-          |> Ptime.Span.of_int_s)
-      in
+      let minimum_interval = Pool_core.Time.Span.(max (minutes 1) interval) in
       Ptime.add_span last_run (Ptime.Span.add minimum_interval minimum_interval)
-      |> CCOption.map_or ~default:false (Ptime.is_later ~than:(Utils.Ptime.now ()))
+      |> CCOption.map_or ~default:false (Ptime.is_later ~than:(Pool_core.Time.now ()))
   in
   is_fine status || did_run ()
 ;;

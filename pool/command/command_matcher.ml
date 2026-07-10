@@ -1,4 +1,4 @@
-let interval = Ptime.Span.of_int_s (5 * 60)
+let interval = Pool_core.Time.Span.minutes 5
 
 let run_tenant =
   Command_utils.make_pool_specific

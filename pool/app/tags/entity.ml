@@ -1,7 +1,7 @@
 open Ppx_yojson_conv_lib.Yojson_conv
 open CCFun.Infix
 module Message = Pool_message
-module Ptime = Pool_model.Base.Ptime
+module Ptime = Pool_model.Time
 module Id = Pool_common.Id
 
 let model = Pool_message.Field.Tag

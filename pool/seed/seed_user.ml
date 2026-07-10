@@ -117,7 +117,7 @@ let contacts db_label =
   let combinations =
     let open CCList in
     let languages = Pool_common.Language.[ Some En; Some De; None ] in
-    let terms_accepted_at = [ Some (Utils.Ptime.now ()); None ] in
+    let terms_accepted_at = [ Some (Pool_core.Time.now ()); None ] in
     let booleans = [ true; false ] in
     let active_after_import = [ Some true; Some false; None ] in
     (fun a b c d e f -> a, b, c, d, e, f)
@@ -251,8 +251,8 @@ let contacts db_label =
                      ; reminder_count = ReminderCount.init
                      ; last_reminded_at = None
                      ; active_after_import = ActiveAfterImport.create active_after_import
-                     ; created_at = Pool_common.CreatedAt.create_now ()
-                     ; updated_at = Pool_common.UpdatedAt.create_now ()
+                     ; created_at = Pool_common.CreatedAt.now ()
+                     ; updated_at = Pool_common.UpdatedAt.now ()
                      }
                    |> User_import.insert db_label
                in

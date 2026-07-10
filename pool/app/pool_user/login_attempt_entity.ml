@@ -14,7 +14,7 @@ module BlockedUntil = struct
   let value m = m
 
   let create m =
-    if Ptime.is_earlier ~than:(Utils.Ptime.now ()) m
+    if Ptime.is_earlier ~than:(Pool_core.Time.now ()) m
     then Error Pool_message.Error.TimeInPast
     else Ok m
   ;;

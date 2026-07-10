@@ -127,7 +127,7 @@ let verify_request =
 ;;
 
 let verify pool t =
-  Database.exec pool verify_request (user_id t, address t, VerifiedAt.create_now ())
+  Database.exec pool verify_request (user_id t, address t, VerifiedAt.now ())
 ;;
 
 let delete_unverified_by_user_request =

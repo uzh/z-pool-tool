@@ -28,7 +28,7 @@ end = struct
         ?(tags = Logs.Tag.empty)
         ?allowed_email_suffixes
         ?(user_id = Contact.Id.create ())
-        ?(terms_accepted_at = Some (Pool_user.TermsAccepted.create_now ()))
+        ?(terms_accepted_at = Some (Pool_user.TermsAccepted.now ()))
         ?signup_code
         custom_fields
         token
@@ -429,7 +429,7 @@ end = struct
     let open Contact in
     let verified =
       match contact.verified with
-      | None -> Some (Pool_user.Verified.create_now ())
+      | None -> Some (Pool_user.Verified.now ())
       | Some _ -> None
     in
     Ok [ Contact.Updated { contact with verified } |> Pool_event.contact ]

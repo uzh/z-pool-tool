@@ -156,7 +156,7 @@ module SentInvitations = struct
              make_row
                (created_at
                 |> Pool_common.CreatedAt.value
-                |> Utils.Ptime.formatted_date_time)
+                |> Pool_core.Time.formatted_date_time)
                (invitations_sent, contacts_matching_filter))
           resets
       in

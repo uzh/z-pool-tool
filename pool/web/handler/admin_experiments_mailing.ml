@@ -209,7 +209,7 @@ let search_info req =
       Mailing.(mailing.limit |> Limit.value) > matching_filter_count
     in
     let average_send =
-      let interval = 5 * 60 |> Ptime.Span.of_int_s in
+      let interval = Pool_core.Time.Span.minutes 5 in
       Mailing.per_interval interval mailing
     in
     let%lwt mailings = Mailing.find_overlaps database_label mailing in

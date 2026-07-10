@@ -33,7 +33,7 @@ let handle_event ?user_uuid pool =
     updated |> Repo.update pool
   | Deleted { id; _ } -> Repo.delete pool id
   | Stopped mailing ->
-    let stopped = { mailing with end_at = Utils.Ptime.now () } in
+    let stopped = { mailing with end_at = Pool_core.Time.now () } in
     let%lwt () = create_changelog mailing stopped in
     stopped |> Repo.update pool
 ;;

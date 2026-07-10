@@ -47,11 +47,11 @@ let handle_event ?user_uuid pool =
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | Canceled session ->
-    let updated = { session with canceled_at = Some (CanceledAt.create_now ()) } in
+    let updated = { session with canceled_at = Some (CanceledAt.now ()) } in
     let%lwt () = create_changelog session updated in
     Repo.update pool updated
   | Closed session ->
-    let updated = { session with closed_at = Some (Utils.Ptime.now ()) } in
+    let updated = { session with closed_at = Some (Pool_core.Time.now ()) } in
     let%lwt () = create_changelog session updated in
     Repo.update pool updated
   | Deleted session -> Repo.delete pool session.id
@@ -59,13 +59,11 @@ let handle_event ?user_uuid pool =
     let%lwt () = create_changelog session updated in
     Repo.update pool updated
   | EmailReminderSent session ->
-    let updated = { session with email_reminder_sent_at = Some (SentAt.create_now ()) } in
+    let updated = { session with email_reminder_sent_at = Some (SentAt.now ()) } in
     let%lwt () = create_changelog session updated in
     Repo.update pool updated
   | TextMsgReminderSent session ->
-    let updated =
-      { session with text_message_reminder_sent_at = Some (SentAt.create_now ()) }
-    in
+    let updated = { session with text_message_reminder_sent_at = Some (SentAt.now ()) } in
     let%lwt () = create_changelog session updated in
     Repo.update pool updated
   | Rescheduled (session, { start; duration }) ->

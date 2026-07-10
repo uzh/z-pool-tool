@@ -99,6 +99,9 @@ module Span : sig
   val hours : int -> t
   val days : int -> t
 
+  (** The longer of two spans. *)
+  val max : t -> t -> t
+
   (** Decompose a span into the largest unit that divides it evenly, e.g.
       7200s becomes [(2, Hours)]. [units] restricts the candidates;
       non-positive spans fall back to their total seconds. *)

@@ -45,7 +45,7 @@ let find_contacts_to_remind _ () =
   let%lwt make_warning_msg = InactiveContactWarning.prepare pool ||> get_exn in
   let%lwt _ = InactiveContactDeactivation.prepare pool ||> get_exn in
   let%lwt c1, c2 = init () in
-  let n_days n = 60 * 60 * 24 * n |> Ptime.Span.of_int_s in
+  let n_days n = Pool_core.Time.Span.days n in
   let time_ago span =
     Ptime.(sub_span (Ptime_clock.now ()) span) |> CCOption.get_exn_or "Invalid ptime"
   in

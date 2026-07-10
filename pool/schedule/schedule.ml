@@ -41,7 +41,7 @@ module Registered = struct
   ;;
 
   let update_last_run_base ({ label; _ } : t) =
-    let last_run = Some (LastRunAt.create_now ()) in
+    let last_run = Some (LastRunAt.now ()) in
     let add_last_run = CCOption.map (fun (s : t) -> { s with last_run }) in
     registered := ScheduleMap.update label add_last_run !registered
   ;;
@@ -55,7 +55,7 @@ module Registered = struct
     let open ScheduleMap in
     let add_finished =
       CCOption.map (fun schedule : Entity.t ->
-        let last_run = Some (LastRunAt.create_now ()) in
+        let last_run = Some (LastRunAt.now ()) in
         let status = Status.Finished in
         { schedule with last_run; status })
     in
@@ -149,7 +149,7 @@ let run ({ database_label; label; scheduled_time; status; _ } as schedule : t) =
       let open Status in
       match scheduled_time, status with
       | Every _, Active -> process schedule
-      | At time, Active when Ptime.is_later ~than:(Utils.Ptime.now ()) time ->
+      | At time, Active when Ptime.is_later ~than:(Pool_core.Time.now ()) time ->
         let%lwt () = Registered.update_status Status.Running schedule in
         process schedule
       | (Every _ | At _), ((Paused | Failed) as status) -> notify status

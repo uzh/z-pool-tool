@@ -27,7 +27,7 @@ let create_changelog changes =
   ; model
   ; entity_uuid = Pool_location.(Id.to_common location.id)
   ; user_uuid = Some user_uuid
-  ; created_at = Pool_common.CreatedAt.create_now ()
+  ; created_at = Pool_common.CreatedAt.now ()
   }
 ;;
 
@@ -143,7 +143,7 @@ let update_filter () =
       ; model = Pool_message.Field.Filter
       ; entity_uuid = Filter.Id.to_common before.id
       ; user_uuid = None
-      ; created_at = Pool_common.CreatedAt.create_now ()
+      ; created_at = Pool_common.CreatedAt.now ()
       }
     |> CCOption.return
   in
@@ -196,7 +196,7 @@ let update_list_value () =
       ; model = Pool_message.Field.Filter
       ; entity_uuid = Filter.Id.to_common before.id
       ; user_uuid = None
-      ; created_at = Pool_common.CreatedAt.create_now ()
+      ; created_at = Pool_common.CreatedAt.now ()
       }
     |> CCOption.return
   in

@@ -63,8 +63,8 @@ type t =
 let create ~title =
   { id = Id.create ()
   ; title
-  ; created_at = Pool_common.CreatedAt.create_now ()
-  ; updated_at = Pool_common.UpdatedAt.create_now ()
+  ; created_at = Pool_common.CreatedAt.now ()
+  ; updated_at = Pool_common.UpdatedAt.now ()
   }
 ```
 

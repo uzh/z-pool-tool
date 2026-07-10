@@ -62,7 +62,7 @@ let to_string = function
   | ExperimentOnlineParticiated submitted ->
     Format.asprintf
       "You completed this survey on %s."
-      (Utils.Ptime.formatted_date submitted)
+      (Pool_core.Time.formatted_date submitted)
   | ExperimentOnlineParticipationDeadline end_at ->
     Format.asprintf
       "You can participate in this experiment until %s."
@@ -393,7 +393,7 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | DefaultReminderLeadTime lead_time ->
     Format.asprintf
       "If left blank, the default lead time of %s is applied."
-      (lead_time |> Pool_model.Time.formatted_timespan)
+      (lead_time |> Pool_model.Time.Span.to_human)
   | DeleteContact ->
     "The user is marked as deleted and can no longer log in. This action cannot be \
      undone."
@@ -682,7 +682,7 @@ If you trigger the reminders manually now, no more automatic reminders will be s
       Note: When the application restarts all active schedules get stopped.
       |}
   | ScheduleEvery sec ->
-    sec |> Pool_model.Time.formatted_timespan |> Format.asprintf "every %s"
+    sec |> Pool_model.Time.Span.to_human |> Format.asprintf "every %s"
   | SearchByFields fields ->
     Format.asprintf
       "Search by: %s"

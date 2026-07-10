@@ -45,8 +45,8 @@ let create ?(id = Id.create ()) ?(token = Token.generate ()) name expires_at =
   ; name
   ; token
   ; expires_at
-  ; created_at = Pool_common.CreatedAt.create_now ()
-  ; updated_at = Pool_common.UpdatedAt.create_now ()
+  ; created_at = Pool_common.CreatedAt.now ()
+  ; updated_at = Pool_common.UpdatedAt.now ()
   }
 ;;
 

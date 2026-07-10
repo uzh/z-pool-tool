@@ -139,20 +139,20 @@ module Disabled = struct
 end
 
 module TermsAccepted = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let schema = schema Pool_message.Field.TermsAccepted CCResult.return
 end
 
 module Verified = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let schema = schema Pool_message.Field.Verified CCResult.return
   let equal a b = Pool_core.Configuration.is_test () || equal a b
 end
 
 module EmailVerified = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let schema = schema Pool_message.Field.EmailAddressVerified CCResult.return
 end

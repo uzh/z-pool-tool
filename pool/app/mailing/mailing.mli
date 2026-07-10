@@ -5,13 +5,9 @@ module Id : sig
 end
 
 module StartAt : sig
-  include Pool_model.Base.BaseSig
+  include Pool_model.Base.TimeSig
 
   val create : Ptime.t -> (t, Pool_message.Error.t) result
-  val create_now : unit -> t
-  val value : t -> Ptime.t
-  val to_human : t -> string
-  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module StartNow : sig
@@ -19,12 +15,9 @@ module StartNow : sig
 end
 
 module EndAt : sig
-  include Pool_model.Base.BaseSig
+  include Pool_model.Base.TimeSig
 
   val create : Ptime.t -> (t, Pool_message.Error.t) result
-  val value : t -> Ptime.t
-  val to_human : t -> string
-  val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
 
 module Start : sig

@@ -67,7 +67,7 @@ let to_string = function
   | ExperimentOnlineParticiated submitted ->
     Format.asprintf
       "Sie haben diese Umfrage am %s abgeschlossen."
-      (Utils.Ptime.formatted_date submitted)
+      (Pool_core.Time.formatted_date submitted)
   | ExperimentOnlineParticipationUpcoming start_at ->
     Format.asprintf
       "Das nächste Zeitfenster für die Teilnahme an dieser Umfrage beginnt am %s."
@@ -403,7 +403,7 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | DefaultReminderLeadTime lead_time ->
     Format.asprintf
       "Bleibt diese Angabe leer, wird die Standardvorlaufzeit von %s verwendet."
-      (lead_time |> Pool_model.Time.formatted_timespan)
+      (lead_time |> Pool_model.Time.Span.to_human)
   | DeleteContact ->
     "Der Benutzer wird als gelöscht markiert und kann sich nicht mehr anmelden. Diese \
      Aktion kann nicht rückgängig gemacht werden."
@@ -718,8 +718,7 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     {|Informationen über alle periodischen Hintergrund-Prozesse.
 
     Beachte: Wenn die Applikation neugestartet wird, werden alle auf "stopped" gesetzt|}
-  | ScheduleEvery sec ->
-    sec |> Pool_model.Time.formatted_timespan |> Format.asprintf "alle %s"
+  | ScheduleEvery sec -> sec |> Pool_model.Time.Span.to_human |> Format.asprintf "alle %s"
   | SearchByFields fields ->
     Format.asprintf
       "Suche nach: %s"

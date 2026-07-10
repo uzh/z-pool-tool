@@ -111,7 +111,7 @@ let run () = Database.(Pool.Tenant.all ()) |> Lwt_list.iter_s run_by_tenant
 
 let start_handler () =
   let open Schedule in
-  let interval = Ptime.Span.of_int_s (60 * 60 * 4) in
+  let interval = Pool_core.Time.Span.hours 4 in
   let periodic_fcn () =
     Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
     run ()

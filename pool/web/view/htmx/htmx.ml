@@ -352,7 +352,9 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
        >>= field_overridden_value
        >|= build_html (Pool_common.Utils.bool_to_string lang %> txt)
      | Public.Date (_, answer) ->
-       answer >>= field_overridden_value >|= build_html (Utils.Ptime.date_to_human %> txt)
+       answer
+       >>= field_overridden_value
+       >|= build_html (Pool_core.Time.Date.to_human %> txt)
      | Public.MultiSelect (_, _, answer) ->
        answer
        >>= field_overridden_value

@@ -20,13 +20,12 @@ let configuration_schema =
 let is_valid_token token =
   let open Repo.Model in
   Status.equal token.status Status.Active
-  && Ptime.is_later token.expires_at ~than:(Utils.Ptime.now ())
+  && Ptime.is_later token.expires_at ~than:(Pool_core.Time.now ())
 ;;
 
-let make id ?(expires_in = Pool_core.Time.OneDay) ?now ?(length = 80) data =
+let make id ?(expires_in = Pool_core.Time.Span.days 1) ?now ?(length = 80) data =
   let open Repo.Model in
   let value = Pool_core.Random.base64 length in
-  let expires_in = Pool_core.Time.duration_to_span expires_in in
   let now = CCOption.value ~default:(Ptime_clock.now ()) now in
   let expires_at =
     match Ptime.add_span now expires_in with
@@ -107,7 +106,7 @@ let is_active label token =
 let is_expired ?secret:_ label token =
   let open Repo.Model in
   let%lwt token = Repo.find label token in
-  Lwt.return (Ptime.is_earlier token.expires_at ~than:(Utils.Ptime.now ()))
+  Lwt.return (Ptime.is_earlier token.expires_at ~than:(Pool_core.Time.now ()))
 ;;
 
 let is_valid ?secret:_ label token =
@@ -119,17 +118,15 @@ let is_valid ?secret:_ label token =
     (match token.status with
      | Status.Inactive -> Lwt.return false
      | Status.Active ->
-       Lwt.return (Ptime.is_later token.expires_at ~than:(Utils.Ptime.now ())))
+       Lwt.return (Ptime.is_later token.expires_at ~than:(Pool_core.Time.now ())))
 ;;
 
 let find_active_by_data = Repo.Sql.find_active_by_data
 
-let extend_expiry label token duration =
+let extend_expiry label token expires_in =
   let open Repo.Model in
   let%lwt model_opt = Repo.find_opt label (value token) in
-  let new_expiry =
-    Pool_core.Time.duration_to_span duration |> Ptime.add_span (Ptime_clock.now ())
-  in
+  let new_expiry = Ptime.add_span (Ptime_clock.now ()) expires_in in
   match model_opt, new_expiry with
   | Some model, Some expires_at when is_valid_token model ->
     Repo.update label { model with expires_at }

@@ -40,7 +40,7 @@ let run_all () =
 
 let start () =
   let open Schedule in
-  let interval = Ptime.Span.of_int_s (60 * 60) |> ScheduledTimeSpan.of_span in
+  let interval = Pool_core.Time.Span.hours 1 |> ScheduledTimeSpan.of_span in
   let periodic_fcn () =
     Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
     run_all ()

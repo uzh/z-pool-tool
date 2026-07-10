@@ -300,7 +300,7 @@ let match_invitations interval database_label =
 
 let start_matcher () =
   let open Schedule in
-  let interval = Ptime.Span.of_int_s (5 * 60) in
+  let interval = Pool_core.Time.Span.minutes 5 in
   Database.Pool.Tenant.all ()
   |> Lwt_list.iter_s (fun database_label ->
     let label = [%string "matcher [%{Database.Label.value database_label}]"] in

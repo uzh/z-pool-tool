@@ -608,7 +608,7 @@ let mark_uncanceled_as_deleted () =
 let marked_canceled_as_deleted () =
   let open Assignment in
   let assignment = Model.create_assignment () in
-  let assignment = { assignment with canceled_at = Some (CanceledAt.create_now ()) } in
+  let assignment = { assignment with canceled_at = Some (CanceledAt.now ()) } in
   let events =
     AssignmentCommand.MarkAsDeleted.handle
       (assignment.contact, [ assignment ], IncrementParticipationCount.create false)
@@ -690,7 +690,7 @@ let send_reminder_invalid () =
     Assignment.{ assignment with marked_as_deleted = MarkedAsDeleted.(create true) }
   in
   let assignment2 =
-    Assignment.{ assignment with canceled_at = Some (CanceledAt.create_now ()) }
+    Assignment.{ assignment with canceled_at = Some (CanceledAt.now ()) }
   in
   let handle assignment =
     handle (create_email, create_tet_message) session assignment channel

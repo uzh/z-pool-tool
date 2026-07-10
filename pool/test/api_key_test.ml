@@ -10,9 +10,8 @@ module Data = struct
   let name = "API Key Name"
 
   let expires_at =
-    Ptime.Span.of_int_s @@ (60 * 60 * 2)
-    |> Ptime.add_span (Ptime_clock.now ())
-    |> CCOption.get_exn_or "Failed to create expires_at"
+    let open Pool_core.Time in
+    Span.hours 2 |> add_span (now ()) |> CCOption.get_exn_or "Failed to create expires_at"
   ;;
 
   let urlencoded =

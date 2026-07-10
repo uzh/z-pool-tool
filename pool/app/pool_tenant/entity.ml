@@ -167,8 +167,8 @@ module Write = struct
     ; icon
     ; email_logo
     ; default_language
-    ; created_at = CreatedAt.create_now ()
-    ; updated_at = UpdatedAt.create_now ()
+    ; created_at = CreatedAt.now ()
+    ; updated_at = UpdatedAt.now ()
     }
   ;;
 

@@ -91,7 +91,7 @@ module CancellationReason : sig
 end
 
 module CanceledAt : sig
-  include Pool_model.Base.PtimeSig
+  include Pool_model.Base.TimeSig
 
   val create : Ptime.t -> (t, Pool_message.Error.t) result
 end

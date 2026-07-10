@@ -41,26 +41,25 @@ let notify_user database_label tags email = function
 
 let block_until counter =
   let open Pool_user.FailedLoginAttempt in
-  let minutes =
+  let open Pool_core.Time in
+  let duration =
+    let open Span in
     let counter = counter |> Counter.value in
     match counter with
     | _ when counter < 5 -> None
-    | _ when counter < 6 -> Some 1
-    | _ when counter < 7 -> Some 5
-    | _ when counter < 8 -> Some 10
-    | _ when counter < 9 -> Some 30
-    | _ when counter < 10 -> Some 60
-    | _ -> Some (60 * 24)
+    | _ when counter < 6 -> Some (minutes 1)
+    | _ when counter < 7 -> Some (minutes 5)
+    | _ when counter < 8 -> Some (minutes 10)
+    | _ when counter < 9 -> Some (minutes 30)
+    | _ when counter < 10 -> Some (hours 1)
+    | _ -> Some (hours 24)
   in
-  minutes
-  |> CCOption.map (fun minutes ->
-    let open Ptime in
-    minutes * 60
-    |> Span.of_int_s
-    |> add_span (Pool_model.Time.now ())
-    |> CCOption.get_exn_or "Invalid time span provided"
-    |> BlockedUntil.create
-    |> get_or_failwith_pool_error)
+  duration
+  |> CCOption.map
+       (add_span (now ())
+        %> CCOption.get_exn_or "Invalid time span provided"
+        %> BlockedUntil.create
+        %> get_or_failwith_pool_error)
 ;;
 
 let login_params urlencoded =

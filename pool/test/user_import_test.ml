@@ -28,8 +28,8 @@ let create_user_import
   ; reminder_count = ReminderCount.init
   ; last_reminded_at = None
   ; active_after_import
-  ; created_at = Pool_common.CreatedAt.create_now ()
-  ; updated_at = Pool_common.UpdatedAt.create_now ()
+  ; created_at = Pool_common.CreatedAt.now ()
+  ; updated_at = Pool_common.UpdatedAt.now ()
   }
 ;;
 
@@ -601,7 +601,8 @@ module Repo = struct
     let () = Alcotest.(check (list user_import) "succeeds" expected contacts_to_remind) in
     (* Expect list to be empty with increased duration *)
     let first_reminder_after =
-      Settings.UserImportReminder.FirstReminderAfter.of_int_s (60 * 60 * 24 * 10)
+      Pool_core.Time.Span.days 10
+      |> Settings.UserImportReminder.FirstReminderAfter.create
       |> get_exn
     in
     let%lwt contacts_to_remind =

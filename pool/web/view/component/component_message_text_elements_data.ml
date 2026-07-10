@@ -1,4 +1,4 @@
-let hour = Ptime.Span.of_int_s @@ (60 * 60)
+let hour = Pool_core.Time.Span.hours 1
 
 let create_user ?(as_admin = false) () : Pool_user.t =
   let user_email, user_firstname, user_lastname =
@@ -28,7 +28,7 @@ let create_contact () =
   let open Pool_common in
   Contact.
     { user = create_user ()
-    ; terms_accepted_at = Pool_user.TermsAccepted.create_now () |> CCOption.pure
+    ; terms_accepted_at = Pool_user.TermsAccepted.now () |> CCOption.pure
     ; language = Some Language.En
     ; experiment_type_preference = None
     ; cell_phone = Some (Pool_user.CellPhone.of_string "+41791234567")
@@ -36,7 +36,7 @@ let create_contact () =
     ; paused = Pool_user.Paused.create false
     ; disabled = Pool_user.Disabled.create false
     ; verified = None
-    ; email_verified = Some (Pool_user.EmailVerified.create_now ())
+    ; email_verified = Some (Pool_user.EmailVerified.now ())
     ; num_invitations = NumberOfInvitations.init
     ; num_assignments = NumberOfAssignments.init
     ; num_show_ups = NumberOfShowUps.init
@@ -48,8 +48,8 @@ let create_contact () =
     ; language_version = Version.create ()
     ; experiment_type_preference_version = Version.create ()
     ; import_pending = Pool_user.ImportPending.create false
-    ; created_at = CreatedAt.create_now ()
-    ; updated_at = UpdatedAt.create_now ()
+    ; created_at = CreatedAt.now ()
+    ; updated_at = UpdatedAt.now ()
     }
 ;;
 
@@ -102,8 +102,8 @@ let location =
   ; address
   ; link = Some link
   ; status = Status.Active
-  ; created_at = Pool_common.CreatedAt.create_now ()
-  ; updated_at = Pool_common.UpdatedAt.create_now ()
+  ; created_at = Pool_common.CreatedAt.now ()
+  ; updated_at = Pool_common.UpdatedAt.now ()
   }
 ;;
 
@@ -135,8 +135,8 @@ let create_session experiment =
     ; text_message_reminder_sent_at = None
     ; closed_at = None
     ; canceled_at = None
-    ; created_at = Pool_common.CreatedAt.create_now ()
-    ; updated_at = Pool_common.UpdatedAt.create_now ()
+    ; created_at = Pool_common.CreatedAt.now ()
+    ; updated_at = Pool_common.UpdatedAt.now ()
     ; experiment
     }
 ;;
@@ -171,8 +171,8 @@ let create_experiment () =
   ; email_session_reminder_lead_time = None
   ; text_message_session_reminder_lead_time = None
   ; matcher_notification_sent = MatcherNotificationSent.create false
-  ; created_at = Pool_common.CreatedAt.create_now ()
-  ; updated_at = Pool_common.UpdatedAt.create_now ()
+  ; created_at = Pool_common.CreatedAt.now ()
+  ; updated_at = Pool_common.UpdatedAt.now ()
   }
 ;;
 
@@ -189,7 +189,7 @@ let create_assignment ?contact () =
   ; external_data_id = Some (ExternalDataId.of_string "DATA_ID")
   ; reminder_manually_last_sent_at = None
   ; custom_fields = None
-  ; created_at = Pool_common.CreatedAt.create_now ()
-  ; updated_at = Pool_common.UpdatedAt.create_now ()
+  ; created_at = Pool_common.CreatedAt.now ()
+  ; updated_at = Pool_common.UpdatedAt.now ()
   }
 ;;

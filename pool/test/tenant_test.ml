@@ -180,8 +180,8 @@ module Data = struct
       ; icon = icon |> CCOption.return
       ; email_logo = None
       ; default_language = Common.Language.En
-      ; created_at = Common.CreatedAt.create_now ()
-      ; updated_at = Common.UpdatedAt.create_now ()
+      ; created_at = Common.CreatedAt.now ()
+      ; updated_at = Common.UpdatedAt.now ()
       }
   ;;
 
@@ -202,8 +202,8 @@ module Data = struct
          ; name
          ; size
          ; mime_type
-         ; created_at = Common.CreatedAt.create_now ()
-         ; updated_at = Common.UpdatedAt.create_now ()
+         ; created_at = Common.CreatedAt.now ()
+         ; updated_at = Common.UpdatedAt.now ()
          }
          |> Styles.create)
     in
@@ -217,8 +217,8 @@ module Data = struct
         ; name
         ; size
         ; mime_type
-        ; created_at = Common.CreatedAt.create_now ()
-        ; updated_at = Common.UpdatedAt.create_now ()
+        ; created_at = Common.CreatedAt.now ()
+        ; updated_at = Common.UpdatedAt.now ()
         }
     in
     let logos = logo_file |> CCResult.get_exn |> CCList.pure |> Logos.of_files in
@@ -239,8 +239,8 @@ module Data = struct
       ; email_logo = None
       ; status = Database.Status.Active
       ; default_language = Common.Language.En
-      ; created_at = Common.CreatedAt.create_now ()
-      ; updated_at = Common.UpdatedAt.create_now ()
+      ; created_at = Common.CreatedAt.now ()
+      ; updated_at = Common.UpdatedAt.now ()
       }
   ;;
 end

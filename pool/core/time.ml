@@ -264,6 +264,7 @@ module Span = struct
   let minutes n = of_duration (n, TimeUnit.Minutes)
   let hours n = of_duration (n, TimeUnit.Hours)
   let days n = of_duration (n, TimeUnit.Days)
+  let max a b = if compare a b >= 0 then a else b
 
   (* Decompose a span into the largest unit that divides it evenly, e.g.
      7200s becomes [(2, Hours)]. [units] restricts the candidates;

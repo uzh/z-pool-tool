@@ -5,7 +5,7 @@ module Command = Cqrs_command.Settings_command
 let get_or_failwith = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
 let current_user = Test_utils.Model.create_admin ()
-let days_to_timespan days = days * 60 * 60 * 24 |> Ptime.Span.of_int_s
+let days_to_timespan = Pool_core.Time.Span.days
 
 module Testable = struct
   let contact_email = Settings.ContactEmail.(Alcotest.testable pp equal)

@@ -1,4 +1,4 @@
-module Ptime = Utils.Ptime
+module Ptime = Pool_core.Time
 open Pool_message
 
 let rec field_to_string =

@@ -128,7 +128,7 @@ module Pool = struct
     ; login_count : LoginCount.t
     ; sign_up_count : SignUpCount.t
     ; terms_accepted_count : TermsAcceptedCount.t
-    ; terms_last_changed : Pool_model.Base.Ptime.t
+    ; terms_last_changed : Pool_model.Time.t
     ; assignments_created : AssignmentsCreated.t
     ; invitations_sent : InvitationsSent.t
     ; reminders_sent : RemindersSent.t

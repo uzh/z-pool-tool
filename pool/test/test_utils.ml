@@ -10,7 +10,7 @@ let authentification = Authentication.(Alcotest.testable pp equal)
 let calendar_session = Session.Calendar.(Alcotest.testable pp equal)
 let contact = Contact.(Alcotest.testable pp equal)
 let database_label = Database.Label.(Alcotest.testable pp equal)
-let date = Pool_model.Base.Ptime.(Alcotest.testable pp_date equal_date)
+let date = Pool_model.Time.Date.(Alcotest.testable pp equal)
 let error = Pool_message.Error.(Alcotest.testable pp equal)
 let event = Pool_event.(Alcotest.testable pp equal)
 let experiment = Experiment.(Alcotest.testable pp equal)
@@ -97,8 +97,8 @@ let dummy_to_file (dummy : Seed.Assets.file) =
     ; name
     ; size = filesize
     ; mime_type
-    ; created_at = Pool_common.CreatedAt.create_now ()
-    ; updated_at = Pool_common.UpdatedAt.create_now ()
+    ; created_at = Pool_common.CreatedAt.now ()
+    ; updated_at = Pool_common.UpdatedAt.now ()
     }
 ;;
 
@@ -107,9 +107,9 @@ module Time = struct
   open Ptime_clock
   open CCOption
 
-  let hour = Ptime.Span.of_int_s @@ (60 * 60)
-  let two_hours = Ptime.Span.of_int_s @@ (60 * 60 * 2)
-  let day = Ptime.Span.of_int_s @@ (60 * 60 * 24)
+  let hour = Pool_core.Time.Span.hours 1
+  let two_hours = Pool_core.Time.Span.hours 2
+  let day = Pool_core.Time.Span.days 1
   let in_an_hour () = add_span (now ()) hour |> get_exn_or "Invalid timespan"
   let in_two_hours () = add_span (now ()) two_hours |> get_exn_or "Invalid timespan"
   let an_hour_ago () = sub_span (now ()) hour |> get_exn_or "Invalid timespan"
@@ -142,7 +142,7 @@ module Model = struct
     Pool_user.Password.Plain.(create password_str |> validate |> get_or_failwith)
   ;;
 
-  let create_api_key ?id ?token ?(expires_at = Pool_common.ExpiresAt.create_now ()) () =
+  let create_api_key ?id ?token ?(expires_at = Pool_common.ExpiresAt.now ()) () =
     let open Api_key in
     let name = Name.of_string "Name" in
     create ?id ?token name expires_at
@@ -174,7 +174,7 @@ module Model = struct
     { Contact.user
     ; terms_accepted_at =
         (if with_terms_accepted
-         then Pool_user.TermsAccepted.create_now () |> CCOption.return
+         then Pool_user.TermsAccepted.now () |> CCOption.return
          else None)
     ; language
     ; experiment_type_preference = None
@@ -196,15 +196,15 @@ module Model = struct
     ; language_version = Pool_common.Version.create ()
     ; experiment_type_preference_version = Pool_common.Version.create ()
     ; import_pending = Pool_user.ImportPending.create false
-    ; created_at = Pool_common.CreatedAt.create_now ()
-    ; updated_at = Pool_common.UpdatedAt.create_now ()
+    ; created_at = Pool_common.CreatedAt.now ()
+    ; updated_at = Pool_common.UpdatedAt.now ()
     }
   ;;
 
   let create_admin ?id ?email () =
     ()
     |> create_user ?id ?email
-    |> Admin.create ~email_verified:(Some (Pool_user.EmailVerified.create_now ()))
+    |> Admin.create ~email_verified:(Some (Pool_user.EmailVerified.now ()))
     |> Pool_context.admin
   ;;
 
@@ -216,8 +216,8 @@ module Model = struct
       ; link = None
       ; address = Pool_location.Address.Virtual
       ; status = Pool_location.Status.Active
-      ; created_at = Pool_common.CreatedAt.create_now ()
-      ; updated_at = Pool_common.UpdatedAt.create_now ()
+      ; created_at = Pool_common.CreatedAt.now ()
+      ; updated_at = Pool_common.UpdatedAt.now ()
       }
   ;;
 
@@ -244,7 +244,7 @@ module Model = struct
     let email_session_reminder_lead_time =
       let open CCResult in
       CCOption.bind email_session_reminder_lead_time_hours (fun h ->
-        Ptime.Span.of_int_s @@ (h * 60 * 60)
+        Pool_core.Time.Span.hours h
         |> Pool_common.Reminder.EmailLeadTime.create
         |> map_err show_error
         |> to_opt)
@@ -285,8 +285,8 @@ module Model = struct
     ; contact
     ; experiment
     ; admin_comment = None
-    ; created_at = Pool_common.CreatedAt.create_now ()
-    ; updated_at = Pool_common.UpdatedAt.create_now ()
+    ; created_at = Pool_common.CreatedAt.now ()
+    ; updated_at = Pool_common.UpdatedAt.now ()
     }
   ;;
 
@@ -295,15 +295,15 @@ module Model = struct
     ; contact
     ; experiment
     ; admin_comment = None
-    ; created_at = Pool_common.CreatedAt.create_now ()
-    ; updated_at = Pool_common.UpdatedAt.create_now ()
+    ; created_at = Pool_common.CreatedAt.now ()
+    ; updated_at = Pool_common.UpdatedAt.now ()
     }
   ;;
 
   let create_mailing
         ?id
         ?start
-        ?(duration = Pool_core.Time.(OneHour |> duration_to_span))
+        ?(duration = Pool_core.Time.Span.hours 1)
         ?(limit = Mailing.Limit.default)
         ?distribution
         ()
@@ -312,9 +312,7 @@ module Model = struct
     let start =
       let default () =
         let start_at =
-          Ptime.add_span
-            (Ptime_clock.now ())
-            Pool_core.Time.(OneSecond |> duration_to_span)
+          Ptime.add_span (Ptime_clock.now ()) (Pool_core.Time.Span.seconds 1)
           |> CCOption.get_exn_or "Time calculation failed!"
           |> StartAt.create
           |> get_or_failwith
@@ -528,8 +526,8 @@ module Model = struct
     ; external_data_id
     ; reminder_manually_last_sent_at = None
     ; custom_fields = None
-    ; created_at = Pool_common.CreatedAt.create_now ()
-    ; updated_at = Pool_common.UpdatedAt.create_now ()
+    ; created_at = Pool_common.CreatedAt.now ()
+    ; updated_at = Pool_common.UpdatedAt.now ()
     }
   ;;
 

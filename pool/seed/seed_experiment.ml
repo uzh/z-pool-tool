@@ -10,7 +10,7 @@ let experiments pool =
       , "It was great fun."
       , Some "F-00000-11-22"
       , false
-      , Some (60 * 60)
+      , Some 1
       , None )
     ; ( "The Wallet Game"
       , "Finance experiment"
@@ -27,7 +27,7 @@ let experiments pool =
          most microeconomics lectures or lectures on public economics."
       , None
       , true
-      , Some (60 * 60)
+      , Some 1
       , None )
     ; ( "The Blame Game"
       , "Git Blame Game"
@@ -58,7 +58,7 @@ let experiments pool =
            let cost_center = cost_center |> CCOption.map CostCenter.of_string in
            let email_session_reminder_lead_time =
              email_session_reminder_lead_time
-             >|= Ptime.Span.of_int_s
+             >|= Pool_core.Time.Span.hours
              >|= Reminder.EmailLeadTime.create
              >|= get_or_failwith
            in

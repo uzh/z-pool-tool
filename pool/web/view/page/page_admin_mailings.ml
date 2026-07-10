@@ -139,8 +139,8 @@ module List = struct
       let open Pool_message in
       let attrs = if is_past mailing then [ a_class [ "bg-green-lighter" ] ] else [] in
       let buttons = buttons experiment_id mailing language csrf in
-      [ mailing.start_at |> StartAt.to_human |> txt, Some Field.Start
-      ; mailing.end_at |> EndAt.to_human |> txt, Some Field.End
+      [ mailing.start_at |> StartAt.formatted_date_time |> txt, Some Field.Start
+      ; mailing.end_at |> EndAt.formatted_date_time |> txt, Some Field.End
       ; mailing.limit |> Limit.value |> CCInt.to_string |> txt, Some Field.Limit
       ; ( count |> InvitationCount.value |> CCInt.to_string |> txt
         , Some Field.InvitationCount )
@@ -168,8 +168,8 @@ module List = struct
     in
     let row (mailing : t) =
       let open Mailing in
-      [ mailing.start_at |> StartAt.to_human |> txt
-      ; mailing.end_at |> EndAt.to_human |> txt
+      [ mailing.start_at |> StartAt.formatted_date_time |> txt
+      ; mailing.end_at |> EndAt.formatted_date_time |> txt
       ; mailing.limit |> Limit.value |> CCInt.to_string |> txt
       ; mailing_detail_btn experiment_id mailing
       ]
@@ -210,8 +210,8 @@ let detail
       ~a:[ a_class [ "stack" ] ]
       [ (* TODO [aerben] use better formatted date *)
         (let rows =
-           [ Field.Start, mailing.start_at |> StartAt.to_human
-           ; Field.End, mailing.end_at |> EndAt.to_human
+           [ Field.Start, mailing.start_at |> StartAt.formatted_date_time
+           ; Field.End, mailing.end_at |> EndAt.formatted_date_time
            ; Field.Limit, mailing.limit |> Limit.value |> CCInt.to_string
            ; Field.InvitationCount, count |> InvitationCount.value |> CCInt.to_string
            ; ( Field.Distribution

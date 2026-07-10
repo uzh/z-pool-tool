@@ -73,8 +73,8 @@ type delivery_report =
   ; dlr_mask : int
   ; error_code : string
   ; error_message : string
-  ; submit_date : Pool_model.Base.Ptime.t
-  ; done_date : Pool_model.Base.Ptime.t
+  ; submit_date : Pool_model.Time.t
+  ; done_date : Pool_model.Time.t
   ; plmn : string
   ; country : string
   ; sms_cost : float

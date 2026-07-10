@@ -162,11 +162,11 @@ module Disabled : sig
 end
 
 module TermsAccepted : sig
-  include Pool_model.Base.PtimeSig
+  include Pool_model.Base.TimeSig
 end
 
 module Verified : sig
-  include Pool_model.Base.PtimeSig
+  include Pool_model.Base.TimeSig
 end
 
 module CellPhone : sig
@@ -192,7 +192,7 @@ module UnverifiedCellPhone : sig
 end
 
 module EmailVerified : sig
-  include Pool_model.Base.PtimeSig
+  include Pool_model.Base.TimeSig
 end
 
 module IsAdmin : sig

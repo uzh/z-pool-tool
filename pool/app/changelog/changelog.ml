@@ -109,7 +109,7 @@ module T (R : RecordSig) = struct
         ; model
         ; entity_uuid
         ; user_uuid
-        ; created_at = Pool_common.CreatedAt.create_now ()
+        ; created_at = Pool_common.CreatedAt.now ()
         })
   ;;
 

@@ -441,7 +441,7 @@ let session_base_information language session =
   let amount amt = amt |> ParticipantAmount.value |> string_of_int in
   [ Field.Start, session |> Session.start_end_human |> txt
   ; ( Field.Duration
-    , session.duration |> Duration.value |> Pool_model.Time.formatted_timespan |> txt )
+    , session.duration |> Duration.value |> Pool_model.Time.Span.to_human |> txt )
   ; ( Field.InternalDescription
     , CCOption.map_or ~default:"" InternalDescription.value session.internal_description
       |> Http_utils.add_line_breaks )

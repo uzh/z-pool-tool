@@ -13,7 +13,7 @@ let time str =
 let zurich_offsets () =
   let check name expected str =
     Alcotest.(
-      check int name (expected * hour) (Utils.Ptime.to_zurich_tz_offset_s (time str)))
+      check int name (expected * hour) (Pool_core.Time.to_zurich_tz_offset_s (time str)))
   in
   check "winter is CET (+01:00)" 1 "2026-01-15T12:00:00Z";
   check "summer is CEST (+02:00)" 2 "2026-07-15T12:00:00Z";
@@ -25,7 +25,7 @@ let zurich_offsets () =
 
 let zurich_formatting () =
   let check name expected str =
-    Alcotest.(check string name expected (Utils.Ptime.formatted_date_time (time str)))
+    Alcotest.(check string name expected (Pool_core.Time.formatted_date_time (time str)))
   in
   check "UTC noon renders as 13:00 in winter" "15.01.2026 13:00" "2026-01-15T12:00:00Z";
   check "UTC noon renders as 14:00 in summer" "15.07.2026 14:00" "2026-07-15T12:00:00Z"
@@ -40,13 +40,13 @@ let rfc3339_stamps_utc () =
       string
       "to_rfc3339 stamps the explicit UTC offset"
       "2026-07-15T12:00:00Z"
-      (Utils.Ptime.to_rfc3339 instant));
+      (Pool_core.Time.to_rfc3339 instant));
   Alcotest.(
     check
       string
       "yojson serialisation carries the UTC offset"
       {|"2026-07-15T12:00:00Z"|}
-      (Yojson.Safe.to_string (Utils.Ptime.yojson_of_ptime instant)))
+      (Yojson.Safe.to_string (Pool_core.Time.yojson_of_ptime instant)))
 ;;
 
 let parse_date_from_calendar () =

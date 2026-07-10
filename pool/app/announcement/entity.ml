@@ -1,11 +1,6 @@
+open CCFun.Infix
 open Ppx_yojson_conv_lib.Yojson_conv
 module Language = Pool_common.Language
-
-let ptime_schema field =
-  Pool_conformist.schema_decoder Pool_model.Time.parse_time Utils.Ptime.to_rfc3339 field
-;;
-
-let equal_ptime a b = Pool_core.Configuration.is_test () || Ptime.equal a b
 
 module Id = struct
   include Pool_common.Id
@@ -33,19 +28,15 @@ module Text = struct
 end
 
 module StartAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
-  let create m = m
-  let schema () = ptime_schema Pool_message.Field.Start
-  let equal = equal_ptime
+  let schema = schema Pool_message.Field.Start (create %> CCResult.return)
 end
 
 module EndAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
-  let create m = m
-  let schema () = ptime_schema Pool_message.Field.End
-  let equal = equal_ptime
+  let schema = schema Pool_message.Field.End (create %> CCResult.return)
 end
 
 module ShowToAdmins = struct
@@ -85,8 +76,8 @@ let create ?(id = Id.create ()) text start_at end_at show_to_admins show_to_cont
   ; end_at
   ; show_to_admins
   ; show_to_contacts
-  ; created_at = Pool_common.CreatedAt.create_now ()
-  ; updated_at = Pool_common.UpdatedAt.create_now ()
+  ; created_at = Pool_common.CreatedAt.now ()
+  ; updated_at = Pool_common.UpdatedAt.now ()
   }
 ;;
 

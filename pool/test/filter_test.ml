@@ -782,7 +782,7 @@ let filter_by_date_custom_field _ () =
     Birthday.(save () :: save_answers ~answer_value:(Some answer_value) [ contact ])
     |> Pool_event.handle_events Test_utils.Data.database_label current_user
   in
-  let date = "1985-01-01" |> Pool_model.Base.Ptime.date_of_string |> get_exn in
+  let date = "1985-01-01" |> Pool_model.Time.Date.of_string |> get_exn in
   let greater_filter = Birthday.filter ~date Operator.(Size.Greater |> size) () in
   let%lwt () = test_filter true contact greater_filter experiment in
   let less_filter = Birthday.filter ~date Operator.(Size.Less |> size) () in

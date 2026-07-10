@@ -237,7 +237,7 @@ let session_params
       [ main_session; follow_ups ] |> CCString.concat "\n\n"
   in
   let start = start |> Start.value |> Pool_model.Time.formatted_date_time in
-  let duration = duration |> Duration.value |> Pool_model.Time.formatted_timespan in
+  let duration = duration |> Duration.value |> Pool_model.Time.Span.to_human in
   let description =
     session.public_description |> CCOption.map_or ~default:"" PublicDescription.value
   in
@@ -591,12 +591,13 @@ module ExperimentInvitation = struct
   let find_or_create_unsubscribe_token pool contact =
     let user_id = Contact.id contact |> Contact.Id.value in
     let data = [ "user_id", user_id; "type", "unsubscribe" ] in
+    let one_year = Pool_core.Time.Span.days 365 in
     match%lwt Pool_token.find_active_by_data pool data with
     | Some token ->
-      let%lwt () = Pool_token.extend_expiry pool token Pool_core.Time.OneYear in
+      let%lwt () = Pool_token.extend_expiry pool token one_year in
       Lwt.return token
     | None ->
-      let%lwt token = Pool_token.create ~expires_in:Pool_core.Time.OneYear pool data in
+      let%lwt token = Pool_token.create ~expires_in:one_year pool data in
       Lwt.return token
   ;;
 
@@ -1235,7 +1236,7 @@ module SessionReschedule = struct
     let open Session in
     global_params layout contact.Contact.user
     @ [ "newStart", new_start |> Start.value |> formatted_date_time
-      ; "newDuration", new_duration |> Duration.value |> formatted_timespan
+      ; "newDuration", new_duration |> Duration.value |> Span.to_human
       ]
     @ experiment_params layout experiment
     @ session_params layout lang session

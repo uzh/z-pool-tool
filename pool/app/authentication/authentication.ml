@@ -12,7 +12,7 @@ let find_valid_by_id = Repo.find_valid_by_id
 
 let start () =
   let open Schedule in
-  let interval = Ptime.Span.of_int_s (5 * 60) in
+  let interval = Pool_core.Time.Span.minutes 5 in
   let periodic_fcn () =
     Database.Pool.Tenant.all ()
     |> Lwt_list.iter_s (fun pool ->

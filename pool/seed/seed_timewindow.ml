@@ -1,4 +1,4 @@
-let day, hour = (24 * 60 * 60, 60 * 60) |> CCPair.map_same Ptime.Span.of_int_s
+let day, hour = Pool_core.Time.Span.(days 1, hours 1)
 
 let timewindow pool =
   let open Utils.Lwt_result.Infix in
@@ -12,9 +12,9 @@ let timewindow pool =
   in
   let get_or_failwith = Pool_common.Utils.get_or_failwith in
   let from_now_ms offset =
-    Ptime.add_span (Utils.Ptime.now ()) offset |> CCOption.get_exn_or "Invalid time"
+    Ptime.add_span (Pool_core.Time.now ()) offset |> CCOption.get_exn_or "Invalid time"
   in
-  let now = Utils.Ptime.now () in
+  let now = Pool_core.Time.now () in
   let time_window_data =
     [ "Morning session - 1", "Initial data collection phase", Some 10, now, hour
     ; "Afternoon session - 1", "Follow-up data collection", Some 10, now, hour

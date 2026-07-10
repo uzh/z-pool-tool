@@ -73,7 +73,7 @@ type t =
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
   ; cell_phone : Pool_user.CellPhone.t option
-  ; cell_phone_verified_at : Pool_model.Base.Ptime.t option
+  ; cell_phone_verified_at : Pool_model.Time.t option
   ; paused : Pool_user.Paused.t
   ; disabled : Pool_user.Disabled.t
   ; verified : Pool_user.Verified.t option
@@ -142,8 +142,8 @@ let create ?terms_accepted_at ?language user =
   ; language_version = Pool_common.Version.create ()
   ; experiment_type_preference_version = Pool_common.Version.create ()
   ; import_pending = Pool_user.ImportPending.create false
-  ; created_at = Pool_common.CreatedAt.create_now ()
-  ; updated_at = Pool_common.UpdatedAt.create_now ()
+  ; created_at = Pool_common.CreatedAt.now ()
+  ; updated_at = Pool_common.UpdatedAt.now ()
   }
 ;;
 
@@ -154,7 +154,7 @@ module Write = struct
     ; language : Pool_common.Language.t option
     ; experiment_type_preference : Pool_common.ExperimentType.t option
     ; cell_phone : Pool_user.CellPhone.t option
-    ; cell_phone_verified_at : Pool_model.Base.Ptime.t option
+    ; cell_phone_verified_at : Pool_model.Time.t option
     ; paused : Pool_user.Paused.t
     ; disabled : Pool_user.Disabled.t
     ; verified : Pool_user.Verified.t option

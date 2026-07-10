@@ -128,7 +128,7 @@ let upsert_answer pool is_admin entity_uuid t =
   | Date (_, answer) ->
     answer
     |> value_to_store is_admin
-    |> map_or ~clear (fun (id, value) -> update_answer id (Ptime.date_to_string value))
+    |> map_or ~clear (fun (id, value) -> update_answer id (Ptime.Date.to_string value))
   | MultiSelect (_, _, answer) ->
     answer
     |> value_to_store is_admin
@@ -158,7 +158,7 @@ let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
   let dyn =
     Dynparam.empty
     |> Dynparam.add Contact.Repo.Id.t (contact |> Contact.id)
-    |> Dynparam.add Caqti_type.ptime (Utils.Ptime.now ())
+    |> Dynparam.add Caqti_type.ptime (Pool_core.Time.now ())
   in
   let update_user_table (dyn, sql) =
     let open Caqti_request.Infix in

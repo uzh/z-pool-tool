@@ -36,8 +36,8 @@ let create
   ; no_show_count = count NoShowCount.create
   ; participant_count = count ParticipantCount.create
   ; experiment
-  ; created_at = Pool_common.CreatedAt.create_now ()
-  ; updated_at = Pool_common.UpdatedAt.create_now ()
+  ; created_at = Pool_common.CreatedAt.now ()
+  ; updated_at = Pool_common.UpdatedAt.now ()
   }
 ;;
 
@@ -58,8 +58,8 @@ let duration ~start ~end_at =
 
 let has_assignments (m : t) = AssignmentCount.value m.assignment_count > 0
 let is_deletable (m : t) = m |> has_assignments |> not
-let is_closed m = ends_at m |> Ptime.is_earlier ~than:(Utils.Ptime.now ())
+let is_closed m = ends_at m |> Ptime.is_earlier ~than:(Pool_core.Time.now ())
 
 let start_end_with_duration_human ({ start; duration; _ } : t) =
-  Utils.Ptime.format_start_end (Start.value start) (Duration.value duration)
+  Pool_core.Time.format_start_end (Start.value start) (Duration.value duration)
 ;;

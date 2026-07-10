@@ -33,10 +33,5 @@ type t =
 
 let create ?(id = Id.create ()) api_key sender =
   let open Pool_common in
-  { id
-  ; api_key
-  ; sender
-  ; created_at = CreatedAt.create_now ()
-  ; updated_at = UpdatedAt.create_now ()
-  }
+  { id; api_key; sender; created_at = CreatedAt.now (); updated_at = UpdatedAt.now () }
 ;;

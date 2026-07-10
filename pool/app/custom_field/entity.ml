@@ -4,7 +4,7 @@ module Answer = Entity_answer
 module User = Pool_user
 
 module Ptime = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 end
 
 let printer = Utils.ppx_printer
@@ -98,7 +98,7 @@ module Disabled = struct
 end
 
 module PublishedAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let create m = Ok m
   let schema = schema Pool_message.Field.PublishedAt create
@@ -440,7 +440,7 @@ module Public = struct
 
   type t =
     | Boolean of bool public * bool Answer.t option
-    | Date of Ptime.date public * Ptime.date Answer.t option
+    | Date of Ptime.Date.t public * Ptime.Date.t Answer.t option
     | MultiSelect of
         SelectOption.Public.t list public
         * SelectOption.Public.t list
@@ -684,7 +684,7 @@ type 'a custom_field =
 
 type t =
   | Boolean of bool custom_field
-  | Date of Ptime.date custom_field
+  | Date of Ptime.Date.t custom_field
   | Number of int custom_field
   | MultiSelect of SelectOption.t list custom_field * SelectOption.t list
   | Select of SelectOption.t custom_field * SelectOption.t list
@@ -885,7 +885,7 @@ let published_at = function
 ;;
 
 let set_published_at =
-  let published_at = Some (PublishedAt.create_now ()) in
+  let published_at = Some (PublishedAt.now ()) in
   function
   | Boolean m -> Boolean { m with published_at }
   | Date m -> Date { m with published_at }

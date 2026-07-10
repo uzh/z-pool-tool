@@ -76,7 +76,7 @@ let public_detail language =
   let rows session =
     [ Field.Start, session.Public.start |> Start.value |> Time.formatted_date_time |> txt
     ; ( Field.Duration
-      , session.Public.duration |> Duration.value |> Time.formatted_timespan |> txt )
+      , session.Public.duration |> Duration.value |> Time.Span.to_human |> txt )
     ; ( Field.Description
       , CCOption.map_or ~default:"" PublicDescription.value session.Public.description
         |> txt )

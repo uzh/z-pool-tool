@@ -66,7 +66,7 @@ let override_answer ~entity_uuid (t : Public.t) =
     let to_string = Utils.Bool.to_string in
     override_values to_string answer |> override
   | Public.Date (_, answer) ->
-    let to_string = Ptime.date_to_string in
+    let to_string = Ptime.Date.to_string in
     override_values to_string answer |> override
   | Public.Number (_, answer) ->
     let to_string = CCInt.to_string in

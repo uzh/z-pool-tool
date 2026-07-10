@@ -41,7 +41,7 @@ type t =
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
   ; cell_phone : Pool_user.CellPhone.t option
-  ; cell_phone_verified_at : Pool_model.Base.Ptime.t option
+  ; cell_phone_verified_at : Pool_model.Time.t option
   ; paused : Pool_user.Paused.t
   ; disabled : Pool_user.Disabled.t
   ; verified : Pool_user.Verified.t option

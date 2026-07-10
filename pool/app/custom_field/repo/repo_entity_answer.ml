@@ -89,7 +89,7 @@ module VersionHistory = struct
       | FieldType.Boolean ->
         make_anwer (Utils.Bool.of_string %> CCOption.return) |> boolean
       | FieldType.Date ->
-        make_anwer (Entity.Ptime.date_of_string %> CCResult.to_opt) |> date
+        make_anwer (Entity.Ptime.Date.of_string %> CCResult.to_opt) |> date
       | FieldType.Number -> make_anwer CCInt.of_string |> number
       | FieldType.Select ->
         make_anwer (SelectOption.Id.of_string %> CCOption.return) |> select

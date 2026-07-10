@@ -1,10 +1,10 @@
 open Sexplib.Conv
 
 module Ptime = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   module Span = struct
-    include Pool_model.Base.PtimeSpan
+    include Pool_model.Time.Span
   end
 end
 

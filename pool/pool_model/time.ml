@@ -18,7 +18,7 @@ let parse_time_span str =
     str
     |> CCFloat.of_string_opt
     |> CCOption.to_result error
-    >|= fun h -> h *. 60. |> CCInt.of_float |> Ptime.Span.of_int_s
+    >|= fun h -> h *. 60. |> CCInt.of_float |> Pool_core.Time.Span.of_int_s
 ;;
 
 module Date = struct

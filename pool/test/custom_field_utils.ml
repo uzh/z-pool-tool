@@ -6,7 +6,7 @@ let lang = Pool_common.Language.En
 module Data = struct
   open Custom_field
 
-  let published = () |> PublishedAt.create_now |> CCOption.pure
+  let published = () |> PublishedAt.now |> CCOption.pure
   let get = CCResult.get_exn
   let sys_languages = Pool_common.Language.[ En; De ]
   let model = Model.Contact
@@ -256,7 +256,7 @@ module NrOfSiblings = struct
 end
 
 module Birthday = struct
-  let answer_value = "1990-01-01" |> Pool_model.Base.Ptime.date_of_string |> get_exn
+  let answer_value = "1990-01-01" |> Pool_model.Time.Date.of_string |> get_exn
   let field = create_custom_field "Birthday" (fun a -> Custom_field.Date a)
 
   let public ?(entity_uuid = Pool_common.Id.create ()) is_admin answer_value =

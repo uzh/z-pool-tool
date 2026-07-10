@@ -28,7 +28,7 @@ let print = Utils.ppx_printer
 
 type single_val =
   | Bool of bool [@name "bool"] [@printer print "bool"]
-  | Date of Pool_model.Base.Ptime.date [@name "date"] [@printer print "date"]
+  | Date of Pool_model.Time.Date.t [@name "date"] [@printer print "date"]
   | Language of Pool_common.Language.t [@name "language"] [@printer print "language"]
   | Nr of float [@name "nr"] [@printer print "nr"]
   | Option of Custom_field.SelectOption.Id.t [@name "option"] [@printer print "option"]
@@ -49,7 +49,7 @@ let single_value_of_yojson (yojson : Yojson.Safe.t) =
      | "bool", `Bool b -> Ok (Bool b)
      | "date", `String str ->
        str
-       |> Pool_model.Base.Ptime.date_of_string
+       |> Pool_model.Time.Date.of_string
        |> CCResult.map2 (fun date -> Date date) (fun _ -> error)
      | "language", `String str ->
        let open CCResult in
@@ -79,7 +79,7 @@ let to_assoc key value = `Assoc [ key, value ]
 
 let yojson_of_single_val = function
   | Bool b -> `Bool b
-  | Date date -> `String (Pool_model.Base.Ptime.date_to_string date)
+  | Date date -> `String (Pool_model.Time.Date.to_string date)
   | Language lang -> `String (Pool_common.Language.show lang)
   | Nr n -> `Float n
   | Option id -> `String (Custom_field.SelectOption.Id.value id)
@@ -671,8 +671,8 @@ let create ?(id = Pool_common.Id.create ()) title query =
   { id
   ; query
   ; title
-  ; created_at = Pool_common.CreatedAt.create_now ()
-  ; updated_at = Pool_common.UpdatedAt.create_now ()
+  ; created_at = Pool_common.CreatedAt.now ()
+  ; updated_at = Pool_common.UpdatedAt.now ()
   }
 ;;
 

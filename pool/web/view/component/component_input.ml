@@ -28,9 +28,7 @@ let csrf_attibs ?id csrf =
   | None -> attribs
 ;;
 
-let flatpickr_min =
-  CCFun.(Pool_model.Base.Ptime.date_time_to_flatpickr %> a_user_data "min-date")
-;;
+let flatpickr_min = CCFun.(Pool_model.Time.to_rfc3339 %> a_user_data "min-date")
 
 module Elements = struct
   let input_label language name label_field required =
@@ -218,13 +216,13 @@ let flatpicker_element
 
 let date_picker_element ?value =
   let value =
-    value |> CCOption.map (fun date -> Pool_model.Base.Ptime.date_to_flatpickr date)
+    value |> CCOption.map (fun date -> Pool_model.Time.Date.to_flatpickr date)
   in
   flatpicker_element `Date ?value
 ;;
 
 let date_time_picker_element ?value =
-  let value = value |> CCOption.map Pool_model.Base.Ptime.date_time_to_flatpickr in
+  let value = value |> CCOption.map Pool_model.Time.to_rfc3339 in
   flatpicker_element `DateTime ?value
 ;;
 

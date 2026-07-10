@@ -177,7 +177,7 @@ let message_template_help
     InactiveContactDeactivation.email_params layout (create_contact ())
   | InactiveContactWarning ->
     let open Ptime in
-    let half_year = Span.of_int_s (60 * 60 * 24 * 365 / 2) in
+    let half_year = Pool_core.Time.Span.days (365 / 2) in
     let now = Pool_model.Time.now () in
     let last_login = sub_span now half_year |> CCOption.get_exn_or "Invalid ptime span" in
     InactiveContactWarning.email_params layout (create_contact ()) ~last_login
@@ -221,7 +221,7 @@ let message_template_help
       let open Session in
       let follow_up = create_session () in
       let start =
-        Ptime.add_span (follow_up.start |> Start.value) (Ptime.Span.of_int_s 3600)
+        Pool_core.Time.(add_span (follow_up.start |> Start.value) (Span.hours 1))
         |> CCOption.get_exn_or "Invalid timespan provided"
         |> Start.create
       in

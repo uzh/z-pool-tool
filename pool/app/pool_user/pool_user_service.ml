@@ -109,7 +109,7 @@ module Password = struct
       let%lwt user = Repo.find_by_email_opt label email in
       match user with
       | Some { id; _ } ->
-        let expires_in = Pool_core.Time.OneDay in
+        let expires_in = Pool_core.Time.Span.days 1 in
         Pool_token.create label ~expires_in [ "user_id", Id.value id ]
         |> Lwt.map CCOption.return
       | None ->

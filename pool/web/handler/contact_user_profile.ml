@@ -355,14 +355,14 @@ let resend_token req =
            Contact.find_full_cell_phone_verification_by_contact database_label contact
          in
          let* () =
+           let open Pool_core.Time in
            (* expires_at = last_sent_at + 1h, so last_sent_at = expires_at - 1h.
               If expires_at is more than (1h - cooldown) in the future, the cooldown has not elapsed. *)
-           let resend_cooldown_s = 60. in
-           let token_ttl_s = 3600. in
+           let resend_cooldown_s = Span.(minutes 1 |> to_float_s) in
+           let token_ttl_s = Span.(hours 1 |> to_float_s) in
            let expires = Pool_common.ExpiresAt.value expires_at in
            let time_since_last_send =
-             token_ttl_s
-             -. (Ptime.diff expires (Pool_model.Time.now ()) |> Ptime.Span.to_float_s)
+             token_ttl_s -. (diff expires (now ()) |> Span.to_float_s)
            in
            if time_since_last_send < resend_cooldown_s
            then Lwt_result.fail Error.TokenAlreadySentRecently

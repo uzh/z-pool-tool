@@ -26,7 +26,7 @@ module AnswerRecord = struct
 
   type t =
     | Boolean of bool answer
-    | Date of Entity.Ptime.date answer
+    | Date of Entity.Ptime.Date.t answer
     | MultiSelect of SelectOption.Id.t list answer
     | Number of int answer
     | Select of SelectOption.Id.t answer

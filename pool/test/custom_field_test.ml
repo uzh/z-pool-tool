@@ -307,7 +307,7 @@ let update () =
 let update_type_of_published_field () =
   let open CCResult in
   let custom_field =
-    Data.custom_text_field ~published_at:(Custom_field.PublishedAt.create_now ()) ()
+    Data.custom_text_field ~published_at:(Custom_field.PublishedAt.now ()) ()
   in
   let events =
     let data =
@@ -354,7 +354,7 @@ let create_option () =
 
 let delete_published_field () =
   let custom_field =
-    Data.custom_text_field ~published_at:(Custom_field.PublishedAt.create_now ()) ()
+    Data.custom_text_field ~published_at:(Custom_field.PublishedAt.now ()) ()
   in
   let events = Cqrs_command.Custom_field_command.Delete.handle custom_field in
   let expected = Error (Error.AlreadyPublished Field.CustomField) in
@@ -366,7 +366,7 @@ let delete_published_option () =
   let open Custom_field in
   let custom_field_option =
     let name = Data.(Name.create sys_languages name |> get) in
-    SelectOption.create ~published_at:(PublishedAt.create_now ()) name
+    SelectOption.create ~published_at:(PublishedAt.now ()) name
   in
   let events =
     Cqrs_command.Custom_field_option_command.Destroy.handle custom_field_option

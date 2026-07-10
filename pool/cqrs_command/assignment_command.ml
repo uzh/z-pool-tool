@@ -481,9 +481,7 @@ end = struct
       Assignment.(
         Updated
           ( assignment
-          , { assignment with
-              reminder_manually_last_sent_at = Some (SentAt.create_now ())
-            } ))
+          , { assignment with reminder_manually_last_sent_at = Some (SentAt.now ()) } ))
       |> Pool_event.assignment
     in
     Ok [ msg_event; update ]

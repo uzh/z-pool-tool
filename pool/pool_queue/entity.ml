@@ -2,7 +2,7 @@ open Pool_message
 open Ppx_yojson_conv_lib.Yojson_conv.Primitives
 
 let default_tries = 5
-let default_retry_delay = Pool_core.Time.Span.minutes 1
+let default_retry_delay = Pool_core.Time.Span.hours 1
 
 module Id : module type of Pool_common.Id = Pool_model.Base.Id
 
@@ -42,15 +42,15 @@ end
 open Status
 
 module PersistedAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 end
 
 module PolledAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 end
 
 module HandledAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 end
 
 type run_at =
@@ -58,10 +58,10 @@ type run_at =
   | Now
 
 module RunAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let of_run_at =
-    let now = Utils.Ptime.now () in
+    let now = Pool_core.Time.now () in
     function
     | Delay delay ->
       Ptime.add_span now delay |> CCOption.get_exn_or "Could not add delay for job."
@@ -70,7 +70,7 @@ module RunAt = struct
 end
 
 module ErrorAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 end
 
 module Instance = struct
@@ -105,7 +105,7 @@ module Instance = struct
 
   let should_run ?(is_polled = false) ({ tries; max_tries; run_at; polled_at; _ } as job) =
     let has_tries_left = tries < max_tries in
-    let is_after_delay = Utils.Ptime.now () |> Ptime.is_later ~than:run_at in
+    let is_after_delay = Pool_core.Time.now () |> Ptime.is_later ~than:run_at in
     let is_pending = is_pending job in
     is_pending
     && has_tries_left
@@ -150,7 +150,7 @@ module Instance = struct
     ; tries
     ; max_tries
     ; status
-    ; persisted_at = PersistedAt.create_now ()
+    ; persisted_at = PersistedAt.now ()
     ; polled_at = None
     ; handled_at = None
     ; last_error
@@ -174,18 +174,15 @@ module Instance = struct
   let add_error error job =
     { job with
       last_error = Some (Pool_message.Error.show error)
-    ; last_error_at = Some (ErrorAt.create_now ())
+    ; last_error_at = Some (ErrorAt.now ())
     }
   ;;
 
   let cancelled job = { job with status = Cancelled }
   let failed job = { job with status = Failed }
   let succeeded job = { job with status = Succeeded }
-  let poll job = { job with polled_at = Some (PolledAt.create_now ()) }
-
-  let handle job =
-    increment_tries { job with handled_at = Some (HandledAt.create_now ()) }
-  ;;
+  let poll job = { job with polled_at = Some (PolledAt.now ()) }
+  let handle job = increment_tries { job with handled_at = Some (HandledAt.now ()) }
 
   let fail delay ({ tries; max_tries; _ } as job) error =
     job |> add_error error |> if tries >= max_tries then failed else retry delay

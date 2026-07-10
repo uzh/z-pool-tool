@@ -1,6 +1,5 @@
 let src = Logs.Src.create "user_import.service"
 let get_or_failwith = Pool_common.Utils.get_or_failwith
-let interval_s = 15 * 60
 let limit = 50 (* equals 4'800 emails a day *)
 
 let reminder_settings database_label =
@@ -57,7 +56,7 @@ let run_all () = Database.(Pool.Tenant.all ()) |> Lwt_list.iter_s run
 
 let start () =
   let open Schedule in
-  let interval = Ptime.Span.of_int_s interval_s in
+  let interval = Pool_core.Time.Span.minutes 15 in
   let periodic_fcn () =
     Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
     run_all ()

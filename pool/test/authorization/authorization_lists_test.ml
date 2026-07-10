@@ -171,7 +171,7 @@ module CalendarUtils = struct
   let start_time = Ptime_clock.now ()
 
   let end_time =
-    Ptime.add_span start_time Pool_core.Time.(duration_to_span OneWeek)
+    Ptime.add_span start_time (Pool_core.Time.Span.days 7)
     |> CCOption.get_exn_or "Invalid timespan"
   ;;
 

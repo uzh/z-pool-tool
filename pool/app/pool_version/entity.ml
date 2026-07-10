@@ -33,7 +33,7 @@ module Text = struct
 end
 
 module PublishedAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let field = Pool_message.Field.PublishedAt
   let equal = equal_ptime
@@ -55,8 +55,8 @@ let create ?(id = Id.create ()) tag text =
   ; tag
   ; text
   ; published_at = None
-  ; created_at = Pool_common.CreatedAt.create_now ()
-  ; updated_at = Pool_common.UpdatedAt.create_now ()
+  ; created_at = Pool_common.CreatedAt.now ()
+  ; updated_at = Pool_common.UpdatedAt.now ()
   }
 ;;
 

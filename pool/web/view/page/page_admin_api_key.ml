@@ -63,9 +63,9 @@ let list { Pool_context.language; csrf; _ } (api_keys, query) =
               [ Icon.(CloseCircle |> to_html) ]
           ]
     in
-    let format_time = Utils.Ptime.formatted_date_time in
+    let format_time = Pool_core.Time.formatted_date_time in
     [ Name.value name |> txt
-    ; ExpiresAt.value expires_at |> Utils.Ptime.formatted_date_time |> txt
+    ; ExpiresAt.value expires_at |> Pool_core.Time.formatted_date_time |> txt
     ; created_at |> Pool_common.CreatedAt.value |> format_time |> txt
     ; div
         ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "justify-end" ] ]
@@ -109,7 +109,7 @@ let form { Pool_context.csrf; language; flash_fetcher; _ } ~control ?api_key () 
       div
         ~a:[ a_class [ "form-group" ] ]
         [ label [ txt (field_to_string language Field.ExpiresAt) ]
-        ; p [ txt (expires_at |> ExpiresAt.value |> Utils.Ptime.formatted_date_time) ]
+        ; p [ txt (expires_at |> ExpiresAt.value |> Pool_core.Time.formatted_date_time) ]
         ]
   in
   form
@@ -187,7 +187,7 @@ let show
       granted_roles
   =
   let open Api_key in
-  let format_ptime = Utils.Ptime.formatted_date_time in
+  let format_ptime = Pool_core.Time.formatted_date_time in
   let details =
     let open Pool_common in
     [ Field.Token, Token.value token |> txt

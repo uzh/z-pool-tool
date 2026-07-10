@@ -45,21 +45,21 @@ module Version = struct
 end
 
 module CreatedAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let field = Pool_message.Field.CreatedAt
   let schema = schema field CCResult.return
 end
 
 module UpdatedAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let field = Pool_message.Field.UpdatedAt
   let schema = schema field CCResult.return
 end
 
 module ExpiresAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let field = Pool_message.Field.ExpiresAt
   let schema = schema field CCResult.return
@@ -210,7 +210,7 @@ module Reminder = struct
   end
 
   module SentAt = struct
-    include Pool_model.Base.Ptime
+    include Pool_model.Time
 
     let field = Pool_message.Field.SentAt
     let schema = schema field CCResult.return

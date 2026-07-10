@@ -104,7 +104,7 @@ end = struct
            |> CCList.head_opt
            |> CCOption.to_result Pool_message.Error.NoValue
            >>= Pool_model.Time.parse_time)
-        (fun date -> date |> Utils.Ptime.to_rfc3339 |> CCList.return)
+        (fun date -> date |> Pool_core.Time.to_rfc3339 |> CCList.return)
         name
     in
     Conformist.(

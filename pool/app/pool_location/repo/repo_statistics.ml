@@ -61,5 +61,5 @@ let find_statistics_starting_year pool =
   Database.find_opt pool find_statistics_starting_year_request ()
   ||> function
   | Some year -> year
-  | None -> Utils.Ptime.now () |> Ptime.to_year
+  | None -> Pool_core.Time.now () |> Ptime.to_year
 ;;

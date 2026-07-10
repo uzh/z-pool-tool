@@ -19,7 +19,7 @@ let schedule_to_json
   let label = Label.value label in
   let scheduled_time =
     match scheduled_time with
-    | Every span -> Format.asprintf "Every %s" (ScheduledTimeSpan.show span)
+    | Every span -> Format.asprintf "Every %s" (ScheduledTimeSpan.to_human span)
     | At time -> Format.asprintf "At %s" (ScheduledTime.show time)
   in
   let status = Status.show status in

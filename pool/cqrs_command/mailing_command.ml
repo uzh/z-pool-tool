@@ -176,7 +176,7 @@ end = struct
 
   let command id start_at start_now end_at limit random distribution : t =
     let start_at =
-      let default = StartAt.create_now () in
+      let default = StartAt.now () in
       if StartNow.value start_now then default else CCOption.value ~default start_at
     in
     let distribution =

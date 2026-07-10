@@ -4,8 +4,8 @@ open CCFun.Infix
 
 let model = Pool_message.Field.Session
 
-module Ptime = Pool_model.Base.Ptime
-module PtimeSpan = Pool_model.Base.PtimeSpan
+module Ptime = Pool_model.Time
+module PtimeSpan = Pool_model.Time.Span
 
 module Pool_location = struct
   include Pool_location
@@ -67,18 +67,19 @@ module ParticipantAmount = struct
 end
 
 module Start = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let create m = m
 
   let schema () =
     let decode str = CCResult.(Pool_model.Time.parse_time str >|= create) in
-    Pool_conformist.schema_decoder decode Utils.Ptime.to_rfc3339 Pool_message.Field.Start
+    let encode time = Pool_core.Time.to_rfc3339 time in
+    Pool_conformist.schema_decoder decode encode Pool_message.Field.Start
   ;;
 end
 
 module End = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let schema () = schema Pool_message.Field.End CCResult.return ()
 
@@ -132,7 +133,7 @@ module CancellationReason = struct
 end
 
 module CanceledAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let create m = Ok m
   let schema = schema Pool_message.Field.CanceledAt create
@@ -213,8 +214,8 @@ let create
   ; closed_at = None
   ; canceled_at = None
   ; experiment
-  ; created_at = Pool_common.CreatedAt.create_now ()
-  ; updated_at = Pool_common.UpdatedAt.create_now ()
+  ; created_at = Pool_common.CreatedAt.now ()
+  ; updated_at = Pool_common.UpdatedAt.now ()
   }
 ;;
 
@@ -254,11 +255,11 @@ let session_date_to_human (session : t) =
 ;;
 
 let start_end_with_duration_human ({ start; duration; _ } : t) =
-  Utils.Ptime.format_start_end_with_duration start duration
+  Pool_core.Time.format_start_end_with_duration start duration
 ;;
 
 let start_end_human ({ start; duration; _ } : t) =
-  Utils.Ptime.format_start_end start duration
+  Pool_core.Time.format_start_end start duration
 ;;
 
 let compare_start (s1 : t) (s2 : t) = Start.compare s1.start s2.start
@@ -317,7 +318,7 @@ module Public = struct
     if
       Ptime.is_later
         (session |> get_session_end |> Start.value)
-        ~than:(Utils.Ptime.now ())
+        ~than:(Pool_core.Time.now ())
     then Ok ()
     else Error Pool_message.Error.SessionInPast
   ;;
@@ -389,7 +390,7 @@ module Public = struct
   ;;
 
   let start_end_with_duration_human ({ start; duration; _ } : t) =
-    Utils.Ptime.format_start_end_with_duration start duration
+    Pool_core.Time.format_start_end_with_duration start duration
   ;;
 end
 
@@ -527,7 +528,7 @@ let email_text language start duration location =
   let duration =
     format
       Pool_message.Field.Duration
-      (Duration.value duration |> Pool_model.Time.formatted_timespan)
+      (Duration.value duration |> Pool_model.Time.Span.to_human)
   in
   let location =
     format Pool_message.Field.Location (Pool_location.to_string language location)
@@ -570,7 +571,10 @@ let not_closed session =
 ;;
 
 let not_past session =
-  if Ptime.is_later (session |> get_session_end |> Start.value) ~than:(Utils.Ptime.now ())
+  if
+    Ptime.is_later
+      (session |> get_session_end |> Start.value)
+      ~than:(Pool_core.Time.now ())
   then Ok ()
   else Error Pool_message.Error.SessionInPast
 ;;

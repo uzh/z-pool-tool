@@ -69,12 +69,14 @@ let extend_expiry_of_expired_token =
   @@ fun () ->
   let%lwt token =
     Pool_token.create
-      ~expires_in:Pool_core.Time.OneSecond
+      ~expires_in:(Pool_core.Time.Span.seconds 1)
       database_label
       [ "foo", "expired" ]
   in
   let%lwt () = Lwt_unix.sleep 1.1 in
-  let%lwt () = Pool_token.extend_expiry database_label token Pool_core.Time.OneYear in
+  let%lwt () =
+    Pool_token.extend_expiry database_label token (Pool_core.Time.Span.days 365)
+  in
   let%lwt is_valid = Pool_token.is_valid database_label token in
   Alcotest.(check bool "expired token is not extended" false is_valid);
   Lwt.return_ok ()

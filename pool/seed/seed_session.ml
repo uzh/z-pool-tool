@@ -1,18 +1,18 @@
 module Reminder = Pool_common.Reminder
 
-let halfhour, hour = CCPair.map_same Ptime.Span.of_int_s (30 * 60, 60 * 60)
+let halfhour, hour = Pool_core.Time.Span.(minutes 30, hours 1)
 
 let session_data =
-  [ ( Ptime.add_span (Utils.Ptime.now ()) hour |> CCOption.get_exn_or "Invalid time"
+  [ ( Ptime.add_span (Pool_core.Time.now ()) hour |> CCOption.get_exn_or "Invalid time"
     , hour
     , None
     , Some "Must be healthy"
     , 30
     , 4
     , 4
-    , Some 3600
-    , Some 1800 )
-  ; ( Ptime.add_span (Utils.Ptime.now ()) halfhour |> CCOption.get_exn_or "Invalid time"
+    , Some 1
+    , Some 30 )
+  ; ( Ptime.add_span (Pool_core.Time.now ()) halfhour |> CCOption.get_exn_or "Invalid time"
     , halfhour
     , Some "No metal allowed!"
     , None
@@ -21,14 +21,14 @@ let session_data =
     , 0
     , None
     , None )
-  ; ( Ptime.add_span (Utils.Ptime.now ()) hour |> CCOption.get_exn_or "Invalid time"
+  ; ( Ptime.add_span (Pool_core.Time.now ()) hour |> CCOption.get_exn_or "Invalid time"
     , halfhour
     , Some "No metal allowed!"
     , None
     , 30
     , 2
     , 5
-    , Some 7200
+    , Some 2
     , None )
   ]
 ;;
@@ -77,18 +77,16 @@ let create pool =
                     ParticipantAmount.create min |> get_or_failwith
                   in
                   let overbook = ParticipantAmount.create overbook |> get_or_failwith in
-                  let create_lead_time seconds decoder =
-                    seconds >|= Ptime.Span.of_int_s >|= decoder >|= get_or_failwith
-                  in
+                  let open Pool_core.Time.Span in
                   let email_reminder_lead_time =
-                    create_lead_time
+                    map
+                      (hours %> Reminder.EmailLeadTime.create %> get_or_failwith)
                       email_reminder_lead_time
-                      Reminder.EmailLeadTime.create
                   in
                   let text_message_reminder_lead_time =
-                    create_lead_time
+                    map
+                      (minutes %> Reminder.TextMessageLeadTime.create %> get_or_failwith)
                       text_message_reminder_lead_time
-                      Reminder.TextMessageLeadTime.create
                   in
                   let location = CCList.hd locations in
                   create

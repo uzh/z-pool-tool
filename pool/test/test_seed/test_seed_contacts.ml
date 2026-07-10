@@ -10,7 +10,7 @@ let create_contact i =
   let last_name = Format.asprintf "lastname%i" i |> Lastname.of_string in
   let email = Format.asprintf "contact-%i@econ.uzh.ch" i |> EmailAddress.of_string in
   let lang = Pool_common.Language.En in
-  let terms_accepted_at = TermsAccepted.create_now () in
+  let terms_accepted_at = TermsAccepted.now () in
   id, first_name, last_name, email, Some lang, Some terms_accepted_at
 ;;
 
@@ -52,9 +52,9 @@ let create ?(contact_data = data) db_pool =
            let contact =
              { contact with
                user
-             ; email_verified = Some (Pool_user.EmailVerified.create_now ())
-             ; terms_accepted_at = Some (User.TermsAccepted.create_now ())
-             ; verified = Some (Pool_user.Verified.create_now ())
+             ; email_verified = Some (Pool_user.EmailVerified.now ())
+             ; terms_accepted_at = Some (User.TermsAccepted.now ())
+             ; verified = Some (Pool_user.Verified.now ())
              }
            in
            Updated contact |> Contact.handle_event db_pool

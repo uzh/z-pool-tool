@@ -68,7 +68,7 @@ let create_contact verified contact_info =
       ; admin = Pool_user.IsAdmin.create false
       ; confirmed = Pool_user.Confirmed.create true
       }
-  ; terms_accepted_at = Pool_user.TermsAccepted.create_now () |> CCOption.pure
+  ; terms_accepted_at = Pool_user.TermsAccepted.now () |> CCOption.pure
   ; language
   ; experiment_type_preference = None
   ; cell_phone = None
@@ -91,8 +91,8 @@ let create_contact verified contact_info =
   ; language_version = Pool_common.Version.create ()
   ; experiment_type_preference_version = Pool_common.Version.create ()
   ; import_pending = Pool_user.ImportPending.create false
-  ; created_at = Pool_common.CreatedAt.create_now ()
-  ; updated_at = Pool_common.UpdatedAt.create_now ()
+  ; created_at = Pool_common.CreatedAt.now ()
+  ; updated_at = Pool_common.UpdatedAt.now ()
   }
 ;;
 
@@ -142,7 +142,7 @@ let sign_up_not_allowed_suffix () =
 
 let sign_up () =
   let user_id = Contact.Id.create () in
-  let terms_accepted_at = Pool_user.TermsAccepted.create_now () |> CCOption.pure in
+  let terms_accepted_at = Pool_user.TermsAccepted.now () |> CCOption.pure in
   let ((email_address, password, firstname, lastname, language) as contact_info) =
     contact_info "john@gmail.com"
   in
@@ -412,8 +412,8 @@ let update_email () =
       { Email.address = new_email |> Pool_user.EmailAddress.of_string
       ; user = contact.Contact.user
       ; token = Pool_token.of_string "testing"
-      ; created_at = Pool_common.CreatedAt.create_now ()
-      ; updated_at = Pool_common.UpdatedAt.create_now ()
+      ; created_at = Pool_common.CreatedAt.now ()
+      ; updated_at = Pool_common.UpdatedAt.now ()
       }
   in
   let events =
@@ -442,8 +442,8 @@ let verify_email () =
       { Email.address = email_address |> Pool_user.EmailAddress.of_string
       ; user = contact.Contact.user
       ; token = Pool_token.of_string "testing"
-      ; created_at = Pool_common.CreatedAt.create_now ()
-      ; updated_at = Pool_common.UpdatedAt.create_now ()
+      ; created_at = Pool_common.CreatedAt.now ()
+      ; updated_at = Pool_common.UpdatedAt.now ()
       }
   in
   let events =
@@ -461,7 +461,7 @@ let verify_email () =
 
 let toggle_verified () =
   let open Contact in
-  let create_verified = Pool_user.Verified.create_now in
+  let create_verified = Pool_user.Verified.now in
   let contact = "john@gmail.com" |> contact_info |> create_contact true in
   let run_test contact expected =
     let open Cqrs_command.Contact_command.ToggleVerified in

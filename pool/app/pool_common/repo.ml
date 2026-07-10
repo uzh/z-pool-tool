@@ -29,9 +29,9 @@ end
 module Language = Model.SelectorType (Language)
 
 module Ptime = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
-  let date = make_caqti_type Caqti_type.string date_of_string date_to_string
+  let date = make_caqti_type Caqti_type.string Date.of_string Date.to_string
 end
 
 module Version = struct

@@ -64,7 +64,7 @@ let handle_event pool : event -> unit Lwt.t =
     ; icon = update_t.icon <+> tenant.icon
     ; email_logo = update_t.email_logo <+> tenant.email_logo
     ; default_language = update_t.default_language
-    ; updated_at = Pool_common.UpdatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.now ()
     }
     |> Repo.update Database.Pool.Root.label
   | DatabaseEdited (tenant, database) ->

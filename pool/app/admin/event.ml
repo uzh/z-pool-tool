@@ -88,7 +88,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     Lwt.return_unit
   | EmailVerified admin ->
     let%lwt (_ : Pool_user.t) = User.confirm pool admin.user in
-    { admin with email_verified = Some (Pool_user.EmailVerified.create_now ()) }
+    { admin with email_verified = Some (Pool_user.EmailVerified.now ()) }
     |> Repo.update pool
   | ImportPendingDisabled admin ->
     Repo.update pool { admin with import_pending = Pool_user.ImportPending.create false }

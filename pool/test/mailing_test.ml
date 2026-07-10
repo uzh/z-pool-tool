@@ -1,3 +1,4 @@
+open CCFun.Infix
 module MailingCommand = Cqrs_command.Mailing_command
 module Conformist = Pool_conformist
 module Field = Pool_message.Field
@@ -6,16 +7,13 @@ module Model = Test_utils.Model
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 module Data = struct
-  let norm_ptime m =
-    m |> Ptime.to_rfc3339 |> Pool_model.Time.parse_time |> get_or_failwith
-  ;;
+  let norm_ptime = Ptime.to_rfc3339 %> Pool_model.Time.parse_time %> get_or_failwith
 
   module Mailing = struct
     let id = Mailing.Id.create ()
 
     let start_at =
-      Ptime_clock.now ()
-      |> CCFun.flip Ptime.add_span (Ptime.Span.of_int_s 1800)
+      Pool_core.Time.(now () |> CCFun.flip add_span (Span.minutes 30))
       |> CCOption.get_exn_or "Mailing Test: Could not create end_at timestamp."
       |> norm_ptime
       |> Mailing.StartAt.create
@@ -23,8 +21,7 @@ module Data = struct
     ;;
 
     let end_at =
-      Ptime_clock.now ()
-      |> CCFun.flip Ptime.add_span (Ptime.Span.of_int_s 3600)
+      Pool_core.Time.(now () |> CCFun.flip add_span (Span.hours 1))
       |> CCOption.get_exn_or "Mailing Test: Could not create end_at timestamp."
       |> norm_ptime
       |> Mailing.EndAt.create
@@ -70,8 +67,8 @@ let create_mailing () =
     ; end_at
     ; limit
     ; distribution = Some (distribution |> Distribution.create_sorted)
-    ; created_at = Pool_common.CreatedAt.create_now ()
-    ; updated_at = Pool_common.UpdatedAt.create_now ()
+    ; created_at = Pool_common.CreatedAt.now ()
+    ; updated_at = Pool_common.UpdatedAt.now ()
     }
 ;;
 

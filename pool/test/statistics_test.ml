@@ -79,7 +79,7 @@ let invitation_statistics _ () =
   let expected =
     let invitation_reset =
       InvitationReset.
-        { created_at = Pool_common.CreatedAt.create_now ()
+        { created_at = Pool_common.CreatedAt.now ()
         ; iteration = 1
         ; contacts_matching_filter = n_contacts
         ; invitations_sent = n_contacts
@@ -102,7 +102,7 @@ let invitation_statistics _ () =
   let expected =
     let invitation_reset =
       InvitationReset.
-        { created_at = Pool_common.CreatedAt.create_now ()
+        { created_at = Pool_common.CreatedAt.now ()
         ; iteration = 2
         ; contacts_matching_filter = n_contacts
         ; invitations_sent = 5

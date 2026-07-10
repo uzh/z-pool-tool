@@ -145,7 +145,7 @@ let run = Database.(Pool.Tenant.all) %> Lwt_list.iter_s send_tenant_reminder
 
 let start_handler () =
   let open Schedule in
-  let interval = Ptime.Span.of_int_s 60 in
+  let interval = Pool_core.Time.Span.minutes 1 in
   let periodic_fcn () =
     Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
     run ()

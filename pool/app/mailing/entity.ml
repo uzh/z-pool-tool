@@ -11,7 +11,7 @@ module Id = struct
 end
 
 module StartAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let field = Pool_message.Field.Start
   let create m = Ok m
@@ -35,10 +35,10 @@ module Start = struct
       match start with
       | StartAt start_at when allow_start_in_past -> Ok start_at
       | StartAt start_at ->
-        if Ptime.is_earlier ~than:(Utils.Ptime.now ()) start_at
+        if Ptime.is_earlier ~than:(Pool_core.Time.now ()) start_at
         then Error Pool_message.Error.TimeInPast
         else Ok start_at
-      | StartNow -> Ok (Utils.Ptime.now ())
+      | StartNow -> Ok (Pool_core.Time.now ())
     in
     let* () = Pool_model.Time.start_is_before_end ~start:start_at ~end_at in
     Ok start_at
@@ -53,7 +53,7 @@ module Start = struct
 end
 
 module EndAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let field = Pool_message.Field.End
   let create m = Ok m
@@ -220,13 +220,10 @@ let create ?allow_start_in_past ?(id = Id.create ()) start end_at limit distribu
     ; end_at
     ; limit
     ; distribution
-    ; created_at = Pool_common.CreatedAt.create_now ()
-    ; updated_at = Pool_common.UpdatedAt.create_now ()
+    ; created_at = Pool_common.CreatedAt.now ()
+    ; updated_at = Pool_common.UpdatedAt.now ()
     }
 ;;
-
-let seconds_per_minute = 60
-let seconds_per_hour = 60 * seconds_per_minute
 
 let per_interval interval { start_at; end_at; limit; _ } =
   let open Ptime in
@@ -238,7 +235,7 @@ let per_interval interval { start_at; end_at; limit; _ } =
   else limit / duration * Span.to_float_s interval |> max 0. |> min limit
 ;;
 
-let is_past { end_at; _ } = Ptime.is_later ~than:end_at (Utils.Ptime.now ())
+let is_past { end_at; _ } = Ptime.is_later ~than:end_at (Pool_core.Time.now ())
 
 open Pool_message
 open Query

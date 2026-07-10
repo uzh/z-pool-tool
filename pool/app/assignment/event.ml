@@ -23,7 +23,7 @@ let handle_event ?user_uuid pool : event -> unit Lwt.t =
     let canceleled =
       (* TODO: Check timestamps? Issue #126 *)
       (* TODO: Notification to user? *)
-      { assignment with canceled_at = Some (CanceledAt.create_now ()) }
+      { assignment with canceled_at = Some (CanceledAt.now ()) }
     in
     let%lwt () = create_changelog assignment canceleled in
     Repo.update pool canceleled

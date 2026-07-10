@@ -254,7 +254,7 @@ module Public = struct
           ~admin_override
           ~answer_value
           ~answer_admin_value
-          CCFun.(Entity.Ptime.date_of_string %> CCResult.to_opt)
+          CCFun.(Entity.Ptime.Date.of_string %> CCResult.to_opt)
       in
       Public.Date
         ( { Public.id

@@ -204,8 +204,7 @@ end
 
 module UserImportReminder = struct
   let validate m =
-    let open Ptime.Span in
-    let day = 60 * 60 * 24 |> of_int_s in
+    let day = Pool_core.Time.Span.days 1 in
     if m >= day then Ok m else Error Pool_message.Error.TooShort
   ;;
 

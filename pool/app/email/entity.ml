@@ -23,7 +23,7 @@ module Email_message = struct
   ;;
 end
 
-module VerifiedAt = Pool_model.Base.Ptime
+module VerifiedAt = Pool_model.Time
 
 type email_unverified =
   { address : User.EmailAddress.t
@@ -96,8 +96,8 @@ let create address user token =
     { address
     ; user
     ; token
-    ; created_at = Pool_common.CreatedAt.create_now ()
-    ; updated_at = Pool_common.UpdatedAt.create_now ()
+    ; created_at = Pool_common.CreatedAt.now ()
+    ; updated_at = Pool_common.UpdatedAt.now ()
     }
 ;;
 
@@ -105,9 +105,9 @@ let verify (Unverified email) =
   Verified
     { address = email.address
     ; user = email.user
-    ; verified_at = VerifiedAt.create_now ()
+    ; verified_at = VerifiedAt.now ()
     ; created_at = email.created_at
-    ; updated_at = Pool_common.UpdatedAt.create_now ()
+    ; updated_at = Pool_common.UpdatedAt.now ()
     }
 ;;
 

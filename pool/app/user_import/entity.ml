@@ -8,14 +8,14 @@ module Token = struct
 end
 
 module ConfirmedAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let create m = Ok m
   let schema = schema Field.ConfirmedAt create
 end
 
 module NotifiedAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let create m = Ok m
   let schema = schema Field.NotifiedAt create
@@ -32,7 +32,7 @@ module ReminderCount = struct
 end
 
 module LastRemindedAt = struct
-  include Pool_model.Base.Ptime
+  include Pool_model.Time
 
   let create m = Ok m
   let schema = schema Field.LastRemindedAt create

@@ -544,7 +544,7 @@ module SessionList = struct
          ; experiment_title |> txt
          ; session.duration
            |> Session.Duration.value
-           |> Pool_model.Time.formatted_timespan
+           |> Pool_model.Time.Span.to_human
            |> txt
          ; session.canceled_at
            |> CCOption.map_or ~default:"" (fun t -> Pool_model.Time.formatted_date_time t)

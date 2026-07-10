@@ -23,15 +23,15 @@ module Status : sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
-module LastRunAt : Pool_model.Base.PtimeSig
+module LastRunAt : Pool_model.Base.TimeSig
 
 module ScheduledTime : sig
-  include Pool_model.Base.PtimeSig
+  include Pool_model.Base.TimeSig
 
   val create : Ptime.t -> (t, Pool_message.Error.t) result
 end
 
-module ScheduledTimeSpan : Pool_model.Base.PtimeSpanSig
+module ScheduledTimeSpan : Pool_model.Base.TimeSpanSig
 
 type scheduled_time =
   | Every of ScheduledTimeSpan.t

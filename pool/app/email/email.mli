@@ -8,7 +8,7 @@ module VerifiedAt : sig
   val show : t -> string
   val value : t -> Ptime.t
   val create : Ptime.t -> t
-  val create_now : unit -> t
+  val now : unit -> t
 end
 
 type email_unverified =

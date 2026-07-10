@@ -292,7 +292,7 @@ let update_database pool (tenant, database) =
         Sql.update_request
         { tenant with
           Entity.Write.database_label = Database.label database
-        ; updated_at = Pool_common.UpdatedAt.create_now ()
+        ; updated_at = Pool_common.UpdatedAt.now ()
         }
     ]
 ;;
