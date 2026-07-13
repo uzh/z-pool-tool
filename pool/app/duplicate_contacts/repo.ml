@@ -150,17 +150,17 @@ let find_similars database_label ~user_uuid custom_fields =
   let user_columns =
     columns >|= fun col -> asprintf "%s as %s" (concat_sql col) col.Column.sql_column
   in
-  let dyn =
+  let (Dynparam.Pack (pt, pv)) =
     Dynparam.(
       empty
       |> add Pool_common.Repo.Id.t user_uuid
       |> add Caqti_type.float Entity.alert_threshold)
   in
-  (* Using placeholders like $2 or ? is not supported in colum names *)
+  (* Using placeholders like $2 or ? is not supported in column names *)
   let custom_field_ids =
     custom_fields
     >|= (fun field ->
-    Custom_field.(id field |> Id.value) |> asprintf "\"%s\"" |> id_value_fragment)
+    Custom_field.(id field |> Id.value) |> asprintf "'%s'" |> id_value_fragment)
     |> CCString.concat ","
   in
   let answers_join =
@@ -185,7 +185,7 @@ let find_similars database_label ~user_uuid custom_fields =
         THEN COALESCE(pool_custom_field_answers.admin_value, pool_custom_field_answers.value)
         END) AS %s
       |sql}
-      (id |> asprintf "\"%s\"" |> id_value_fragment)
+      (id |> asprintf "'%s'" |> id_value_fragment)
       (asprintf "`%s`" id)
   in
   let blocking_conditions =
@@ -250,7 +250,6 @@ let find_similars database_label ~user_uuid custom_fields =
     |> CCString.concat " + "
     |> fun average -> Format.asprintf "(%s) / %s" average division
   in
-  let (Dynparam.Pack (pt, pv)) = dyn in
   let request =
     similarity_request
       ~answers_join
