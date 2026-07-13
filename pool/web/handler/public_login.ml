@@ -97,7 +97,10 @@ let login_verify_get req =
        let _ =
          Pool_common.Utils.with_log_error
            ~tags
-           (Pool_message.Error.Authorization "Failed to authenticate user")
+           (Pool_message.Error.Authorization
+              (Format.asprintf
+                 "Failed to authenticate user: no valid authentication found for id %s"
+                 auth_id))
        in
        ())
     >|> function
@@ -121,7 +124,7 @@ let login_verify_post req =
   let open Response in
   let open HttpUtils in
   let tags = Pool_context.Logger.Tags.req req in
-  let handle_request ({ Pool_context.database_label; query_parameters; _ } as context) =
+  let handle_request (Pool_context.{ database_label; query_parameters; _ } as context) =
     let session_expired () =
       redirect_to_with_actions
         "/login"
@@ -199,7 +202,16 @@ let login_verify_post req =
         "/login/verify"
         [ Message.set ~error:[ Pool_message.(Error.Invalid Field.OTP) ] ]
       |> Lwt_result.ok
-    | Helpers_login.SessionExpired -> session_expired ()
+    | Helpers_login.SessionExpired auth_id ->
+      let%lwt () =
+        Pool_event.handle_event
+          ~tags
+          database_label
+          context.Pool_context.user
+          Pool_event.(Authentication (Authentication.Deleted auth_id))
+      in
+      session_expired ()
+    | Helpers_login.SessionMissing -> session_expired ()
   in
   Response.handle ~src req handle_request
 ;;

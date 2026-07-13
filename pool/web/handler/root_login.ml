@@ -85,7 +85,15 @@ let login_verify_get req =
 let login_verify_post req =
   let open Response in
   let tags = Pool_context.Logger.Tags.req req in
-  let result context =
+  let result (Pool_context.{ database_label; _ } as context) =
+    let handle_session_error () =
+      HttpUtils.redirect_to_with_actions
+        root_login_path
+        [ Message.set
+            ~warning:[ Warning.Warning "Your session has expired, please sign in again" ]
+        ]
+      |> Lwt_result.ok
+    in
     Helpers_login.verify_2fa_login ~tags context req
     >|> function
     | Helpers_login.Verified user ->
@@ -93,15 +101,18 @@ let login_verify_post req =
         root_entrypoint_path
         [ Sihl.Web.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ] ]
       |> Lwt_result.ok
-    | Helpers_login.SessionExpired ->
-      HttpUtils.redirect_to_with_actions
-        root_login_path
-        [ Message.set
-            ~warning:[ Warning.Warning "Your session has expired, please sign in again" ]
-        ]
-      |> Lwt_result.ok
     | Helpers_login.InvalidToken err ->
       Lwt_result.fail err |> bad_request_on_error login_verify_get
+    | Helpers_login.SessionExpired auth_id ->
+      let%lwt () =
+        Pool_event.handle_event
+          ~tags
+          database_label
+          context.Pool_context.user
+          Pool_event.(Authentication (Authentication.Deleted auth_id))
+      in
+      handle_session_error ()
+    | Helpers_login.SessionMissing -> handle_session_error ()
   in
   Response.handle ~src req result
 ;;

@@ -287,16 +287,18 @@ let increment_failed_login_attempt ~tags database_label email =
 type verify_outcome =
   | Verified of Pool_user.t
   | InvalidToken of Pool_message.Error.t
-  | SessionExpired
+  | SessionExpired of Authentication.Id.t
+  | SessionMissing
 
 let verify_2fa_login ~tags { Pool_context.database_label; user = context_user; _ } req =
   match Sihl.Web.Session.find "auth_id" req with
-  | None -> Lwt.return SessionExpired
-  | Some auth_id ->
-    Authentication.Id.of_string auth_id
+  | None -> Lwt.return SessionMissing
+  | Some id ->
+    let auth_id = Authentication.Id.of_string id in
+    auth_id
     |> Authentication.find_valid_by_id database_label
     >|> (function
-     | Error _ -> Lwt.return SessionExpired
+     | Error _ -> Lwt.return (SessionExpired auth_id)
      | Ok (auth, user) ->
        let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
        (match Cqrs_command.Login_command.Confirm2FaLogin.decode urlencoded with
@@ -327,6 +329,6 @@ let verify_2fa_login ~tags { Pool_context.database_label; user = context_user; _
                    database_label
                    (Pool_user.email user)
                in
-               Lwt.return SessionExpired)
+               Lwt.return (SessionExpired auth_id))
              else Lwt.return (InvalidToken err))))
 ;;

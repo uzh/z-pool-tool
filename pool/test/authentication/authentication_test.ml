@@ -172,7 +172,7 @@ let confirm_2fa_test _ () =
   (* Successful login *)
   let%lwt auth, user = find_valid_by_id pool auth_id ||> get_or_failwith in
   let events =
-    [ Deleted auth |> Pool_event.authentication
+    [ Deleted auth.id |> Pool_event.authentication
     ; ResetExpired |> Pool_event.authentication
     ]
   in

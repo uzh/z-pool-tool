@@ -2,7 +2,7 @@ open Entity
 
 type event =
   | Created of t
-  | Deleted of t
+  | Deleted of Id.t
   | IncreaseUsageCount of t
   | ResetExpired
 [@@deriving eq, show]

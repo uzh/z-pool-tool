@@ -89,7 +89,7 @@ let delete_request =
   |> Pool_common.Repo.Id.t ->. Caqti_type.unit
 ;;
 
-let delete pool { id; _ } = Database.exec pool delete_request id
+let delete pool id = Database.exec pool delete_request id
 
 let increase_usage_count_request =
   {sql|
