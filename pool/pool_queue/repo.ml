@@ -366,15 +366,15 @@ let find_last_login_token_sent_at_request =
   let auth_uuid_fragment = Pool_common.Id.sql_value_fragment "?" in
   [%string
     {sql|
-       SELECT J.persisted_at
+       SELECT jobs.persisted_at
        FROM (
          SELECT uuid, persisted_at FROM pool_queue_jobs
          UNION ALL
          SELECT uuid, persisted_at FROM pool_queue_jobs_history
-       ) AS J
-       JOIN pool_queue_job_authentication A ON A.queue_uuid = J.uuid
-       WHERE A.authentication_uuid = %{auth_uuid_fragment}
-       ORDER BY J.persisted_at DESC
+       ) AS jobs
+       JOIN pool_queue_job_authentication auth ON auth.queue_uuid = jobs.uuid
+       WHERE auth.authentication_uuid = %{auth_uuid_fragment}
+       ORDER BY jobs.persisted_at DESC
       LIMIT 1
     |sql}]
   |> Pool_common.Repo.Id.t ->? Caqti_type.ptime
