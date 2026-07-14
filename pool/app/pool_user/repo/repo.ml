@@ -4,10 +4,10 @@ open Repo_entity
 module Password = Repo_password_entity
 
 let make_sql_select_columns ~tablename =
-  let with_tablemame = Format.asprintf "%s.%s" tablename in
-  [ Pool_common.Id.sql_select_fragment ~field:(with_tablemame "uuid") ]
+  let with_tablename = Format.asprintf "%s.%s" tablename in
+  [ Pool_common.Id.sql_select_fragment ~field:(with_tablename "uuid") ]
   @ ([ "email"; "name"; "given_name"; "status"; "admin"; "confirmed" ]
-     |> CCList.map with_tablemame)
+     |> CCList.map with_tablename)
 ;;
 
 let sql_select_columns = make_sql_select_columns ~tablename:"user_users"

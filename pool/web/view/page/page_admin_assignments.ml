@@ -546,6 +546,11 @@ let data_table
     ]
   in
   let deletable = CCFun.(Assignment.is_deletable %> CCResult.is_ok) in
+  (* A promoted contact's profile/external-data-id pages no longer exist
+     ([pool_contacts] row moved to [pool_contacts_promoted]) *)
+  let has_profile { Assignment.contact; _ } =
+    contact |> Contact.user |> Pool_user.is_admin |> not
+  in
   let cancelable m =
     assignments_cancelable session && Assignment.is_cancellable m |> CCResult.is_ok
   in
@@ -746,15 +751,18 @@ let data_table
       match table_context with
       | `SessionDetail ->
         [ access_contact_profiles, edit
-        ; access_contact_profiles, profile_link
+        ; access_contact_profiles && has_profile assignment, profile_link
         ; create_reminder_modal assignment, ReminderModal.button context
-        ; Experiment.(show_external_data_id_links_value experiment), external_data_ids
+        ; ( Experiment.(show_external_data_id_links_value experiment)
+            && has_profile assignment
+          , external_data_ids )
         ; session_changeable assignment, session_change_toggle
         ; send_direct_message, direct_message_toggle
         ; cancelable assignment, cancel
         ; deletable assignment, mark_as_deleted
         ]
-      | `LocationSession -> [ access_contact_profiles, profile_link ]
+      | `LocationSession ->
+        [ access_contact_profiles && has_profile assignment, profile_link ]
     in
     let buttons =
       buttons
