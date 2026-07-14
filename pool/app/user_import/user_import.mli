@@ -3,13 +3,13 @@ module Token : Pool_model.Base.StringSig
 module ConfirmedAt : sig
   include Pool_model.Base.TimeSig
 
-  val create : Ptime.t -> (t, Pool_message.Error.t) result
+  val create : Pool_model.Time.t -> (t, Pool_message.Error.t) result
 end
 
 module NotifiedAt : sig
   include Pool_model.Base.TimeSig
 
-  val create : Ptime.t -> (t, Pool_message.Error.t) result
+  val create : Pool_model.Time.t -> (t, Pool_message.Error.t) result
 end
 
 module ReminderCount : sig
@@ -21,7 +21,7 @@ end
 module LastRemindedAt : sig
   include Pool_model.Base.TimeSig
 
-  val create : Ptime.t -> (t, Pool_message.Error.t) result
+  val create : Pool_model.Time.t -> (t, Pool_message.Error.t) result
 end
 
 module ActiveAfterImport : sig

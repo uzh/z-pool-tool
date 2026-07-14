@@ -176,7 +176,7 @@ let message_template_help
   | InactiveContactDeactivation ->
     InactiveContactDeactivation.email_params layout (create_contact ())
   | InactiveContactWarning ->
-    let open Ptime in
+    let open Pool_model.Time in
     let half_year = Pool_core.Time.Span.days (365 / 2) in
     let now = Pool_model.Time.now () in
     let last_login = sub_span now half_year |> CCOption.get_exn_or "Invalid ptime span" in
@@ -250,7 +250,7 @@ let message_template_help
   | SessionReschedule ->
     let open Session in
     let start =
-      Ptime.add_span (Pool_model.Time.now ()) hour
+      Pool_model.Time.add_span (Pool_model.Time.now ()) hour
       |> CCOption.get_exn_or "Invalid start"
       |> Start.create
     in

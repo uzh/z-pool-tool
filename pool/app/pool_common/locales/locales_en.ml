@@ -1,4 +1,3 @@
-module Ptime = Pool_core.Time
 open Pool_message
 
 let rec field_to_string =
@@ -446,7 +445,7 @@ let rec error_to_string =
   function
   | AccountTemporarilySuspended ptime ->
     ptime
-    |> Ptime.formatted_date_time
+    |> Pool_core.Time.formatted_date_time
     |> Format.asprintf
          "Too many failed login attempts. This email address is blocked until %s"
   | AccessDenied -> "Access denied"

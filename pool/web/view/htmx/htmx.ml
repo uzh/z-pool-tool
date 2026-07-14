@@ -84,7 +84,7 @@ type 'a selector =
 
 type 'a value =
   | Boolean of bool option
-  | Date of Ptime.date option
+  | Date of Pool_model.Time.Date.t option
   | MultiSelect of 'a Input.multi_select
   | Number of int option
   | Select of 'a selector

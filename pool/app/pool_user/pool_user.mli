@@ -295,9 +295,9 @@ module FailedLoginAttempt : sig
     val equal : t -> t -> bool
     val show : t -> string
     val pp : Format.formatter -> t -> unit
-    val value : t -> Ptime.t
-    val create : Ptime.t -> (t, Pool_message.Error.t) result
-    val of_ptime : Ptime.t -> t
+    val value : t -> Pool_model.Time.t
+    val create : Pool_model.Time.t -> (t, Pool_message.Error.t) result
+    val of_ptime : Pool_model.Time.t -> t
   end
 
   type t =

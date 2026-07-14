@@ -8,7 +8,6 @@
   i18n
   pool_common
   pool_database
-  ptime
   settings
   utils)
  (preprocess

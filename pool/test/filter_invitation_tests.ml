@@ -48,7 +48,7 @@ let contact ~prefix () =
   let* firstname = Pool_user.Firstname.create "firstname" in
   let* lastname = Pool_user.Lastname.create "lastname" in
   let terms_accepted_at =
-    Pool_user.TermsAccepted.create (Ptime_clock.now ()) |> CCOption.return
+    Pool_user.TermsAccepted.create (Pool_core.Time.now ()) |> CCOption.return
   in
   let language = Pool_common.Language.En |> CCOption.return in
   let contact_created =

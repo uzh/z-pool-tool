@@ -53,10 +53,12 @@ let check_session_time_zone_utc _ () =
   let check label =
     let name suffix = Format.asprintf "%s: %s" (Label.value label) suffix in
     let%lwt session_offset = Database.find label session_offset_request () in
-    let%lwt clock_drift = Database.find label clock_drift_request (Ptime_clock.now ()) in
+    let%lwt clock_drift =
+      Database.find label clock_drift_request (Pool_core.Time.now ())
+    in
     Alcotest.(check int (name "session time_zone is UTC") 0 session_offset);
     Alcotest.(
-      check bool (name "DB clock agrees with Ptime_clock") true (clock_drift <= 2))
+      check bool (name "DB clock agrees with Pool_core.Time.now") true (clock_drift <= 2))
     |> Lwt.return
   in
   let%lwt () = check Pool.Root.label in

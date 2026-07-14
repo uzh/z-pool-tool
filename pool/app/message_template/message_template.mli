@@ -329,7 +329,7 @@ module InactiveContactWarning : sig
   val email_params
     :  email_layout
     -> Contact.t
-    -> last_login:Ptime.t
+    -> last_login:Pool_model.Time.t
     -> (string * string) list
 
   val prepare

@@ -7,7 +7,9 @@ module Model = Test_utils.Model
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 module Data = struct
-  let norm_ptime = Ptime.to_rfc3339 %> Pool_model.Time.parse_time %> get_or_failwith
+  let norm_ptime =
+    Pool_core.Time.to_rfc3339 %> Pool_model.Time.parse_time %> get_or_failwith
+  ;;
 
   module Mailing = struct
     let id = Mailing.Id.create ()
@@ -39,8 +41,8 @@ module Data = struct
 
     let create =
       let open Mailing in
-      [ Field.(Start |> show), [ start_at |> StartAt.value |> Ptime.to_rfc3339 ]
-      ; Field.(End |> show), [ end_at |> EndAt.value |> Ptime.to_rfc3339 ]
+      [ Field.(Start |> show), [ start_at |> StartAt.value |> Pool_core.Time.to_rfc3339 ]
+      ; Field.(End |> show), [ end_at |> EndAt.value |> Pool_core.Time.to_rfc3339 ]
       ; Field.(Limit |> show), [ limit |> Limit.value |> CCInt.to_string ]
       ; ( Field.(Distribution |> show)
         , [ distribution |> Distribution.yojson_of_sorted |> Yojson.Safe.to_string ] )
@@ -49,8 +51,8 @@ module Data = struct
 
     let create_end_before_start =
       let open Mailing in
-      [ Field.(Start |> show), [ end_at |> EndAt.value |> Ptime.to_rfc3339 ]
-      ; Field.(End |> show), [ start_at |> StartAt.value |> Ptime.to_rfc3339 ]
+      [ Field.(Start |> show), [ end_at |> EndAt.value |> Pool_core.Time.to_rfc3339 ]
+      ; Field.(End |> show), [ start_at |> StartAt.value |> Pool_core.Time.to_rfc3339 ]
       ; Field.(Limit |> show), [ limit |> Limit.value |> CCInt.to_string ]
       ; ( Field.(Distribution |> show)
         , [ distribution |> Distribution.yojson_of_sorted |> Yojson.Safe.to_string ] )
@@ -106,8 +108,8 @@ let create_with_distribution () =
   let experiment = Model.create_experiment () in
   let show = Field.show in
   let urlencoded =
-    [ show Field.Start, mailing.start_at |> StartAt.value |> Ptime.to_rfc3339
-    ; show Field.End, mailing.end_at |> EndAt.value |> Ptime.to_rfc3339
+    [ show Field.Start, mailing.start_at |> StartAt.value |> Pool_core.Time.to_rfc3339
+    ; show Field.End, mailing.end_at |> EndAt.value |> Pool_core.Time.to_rfc3339
     ; show Field.Limit, mailing.limit |> Limit.value |> CCInt.to_string
     ]
   in
@@ -152,7 +154,7 @@ let create_with_start_now () =
   let urlencoded () =
     let show = Field.show in
     [ show Field.StartNow, "true"
-    ; show Field.End, mailing.end_at |> EndAt.value |> Ptime.to_rfc3339
+    ; show Field.End, mailing.end_at |> EndAt.value |> Pool_core.Time.to_rfc3339
     ; show Field.Limit, mailing.limit |> Limit.value |> CCInt.to_string
     ]
     |> CCList.map (fun (field, value) -> field, [ value ])
@@ -167,7 +169,7 @@ let create_with_start_now () =
     Mailing.create start_at end_at limit distribution)
     |> CCResult.is_ok
   in
-  (* Only testing if mailing is Ok, as comparison of timestampts with Ptime_clock.now ()
+  (* Only testing if mailing is Ok, as comparison of timestampts with Pool_core.Time.now ()
      fails *)
   Alcotest.(check bool "succeeds" true res)
 ;;

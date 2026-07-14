@@ -168,10 +168,10 @@ module CalendarUtils = struct
   let sort = CCList.sort Calendar.compare
   let session_ids = CCList.map (fun { id; _ } -> id)
   let calendar_session_ids = CCList.map (fun (t : Calendar.t) -> t.Calendar.id)
-  let start_time = Ptime_clock.now ()
+  let start_time = Pool_core.Time.now ()
 
   let end_time =
-    Ptime.add_span start_time (Pool_core.Time.Span.days 7)
+    Pool_core.Time.add_span start_time (Pool_core.Time.Span.days 7)
     |> CCOption.get_exn_or "Invalid timespan"
   ;;
 

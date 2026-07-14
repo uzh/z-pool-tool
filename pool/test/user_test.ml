@@ -54,11 +54,11 @@ let failed_login_attempts _ () =
   let%lwt result = Repo.find_current pool email in
   check testable "not blocked" None result;
   let failed_attempt =
-    let open CCOption.Infix in
-    let open Ptime in
     let get_exn = CCOption.get_exn_or "Invalid time" in
     let blocked_until =
-      add_span (Ptime_clock.now ()) Time.day
+      let open CCOption.Infix in
+      let open Pool_core.Time in
+      add_span (now ()) Time.day
       >|= to_date
       >>= of_date
       |> get_exn
@@ -77,7 +77,7 @@ let failed_login_attempts _ () =
   check testable "contact was unblocked" None result;
   let past_attempt =
     let blocked_until =
-      Ptime.sub_span (Ptime_clock.now ()) Time.day
+      Pool_core.Time.sub_span (Pool_core.Time.now ()) Time.day
       |> CCOption.get_exn_or "Invalid time"
       |> BlockedUntil.of_ptime
     in

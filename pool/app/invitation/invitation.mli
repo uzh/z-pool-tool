@@ -4,7 +4,7 @@ module ResentAt : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val create : unit -> t
-  val value : t -> Ptime.t
+  val value : t -> Pool_model.Time.t
 end
 
 module SendCount : sig

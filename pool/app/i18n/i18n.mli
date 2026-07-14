@@ -72,7 +72,7 @@ val find_by_key_opt
   -> t option Lwt.t
 
 val find_all : Database.Label.t -> unit -> t list Lwt.t
-val terms_and_conditions_last_updated : Database.Label.t -> Ptime.t Lwt.t
+val terms_and_conditions_last_updated : Database.Label.t -> Pool_model.Time.t Lwt.t
 
 (* Extract an i18n entry by its key from a list of i18n entries, raises [Not_found] *)
 val extract_by_key_exn : t list -> Key.t -> Pool_common.Language.t -> t

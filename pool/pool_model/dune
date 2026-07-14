@@ -1,7 +1,13 @@
 (library
  (name pool_model)
  (public_name pool.model)
- (libraries containers pool.conformist pool.message pool.utils uuidm)
+ (libraries
+  caqti.classic
+  containers
+  pool.conformist
+  pool.message
+  pool.utils
+  uuidm)
  (wrapped true)
  (preprocess
   (pps

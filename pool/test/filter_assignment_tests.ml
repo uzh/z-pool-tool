@@ -7,14 +7,15 @@ let current_user = Test_utils.Model.create_admin ()
 let session ~experiment =
   let open Session in
   let sid = Id.create () in
-  let now = Ptime_clock.now () in
+  let now = Pool_core.Time.now () in
   let session_start = Start.create now in
   let* session_duration =
-    let one_day = Ptime.Span.of_int_s 86_400 in
+    let one_day = Pool_core.Time.Span.of_int_s 86_400 in
     let tomorrow =
-      Ptime.add_span now one_day |> CCOption.get_exn_or "could not add one day to now"
+      Pool_core.Time.add_span now one_day
+      |> CCOption.get_exn_or "could not add one day to now"
     in
-    Duration.create (Ptime.diff tomorrow now)
+    Duration.create (Pool_core.Time.diff tomorrow now)
   in
   let pid = Pool_location.Id.create () in
   let pool_address = Pool_location.Address.virtual_ in
@@ -87,7 +88,7 @@ let contact ~prefix () =
   let* firstname = Pool_user.Firstname.create "firstname" in
   let* lastname = Pool_user.Lastname.create "lastname" in
   let terms_accepted_at =
-    Pool_user.TermsAccepted.create (Ptime_clock.now ()) |> CCOption.return
+    Pool_user.TermsAccepted.create (Pool_core.Time.now ()) |> CCOption.return
   in
   let language = Pool_common.Language.En |> CCOption.return in
   let contact_created =

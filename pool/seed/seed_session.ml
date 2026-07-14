@@ -3,7 +3,8 @@ module Reminder = Pool_common.Reminder
 let halfhour, hour = Pool_core.Time.Span.(minutes 30, hours 1)
 
 let session_data =
-  [ ( Ptime.add_span (Pool_core.Time.now ()) hour |> CCOption.get_exn_or "Invalid time"
+  [ ( Pool_core.Time.add_span (Pool_core.Time.now ()) hour
+      |> CCOption.get_exn_or "Invalid time"
     , hour
     , None
     , Some "Must be healthy"
@@ -12,7 +13,8 @@ let session_data =
     , 4
     , Some 1
     , Some 30 )
-  ; ( Ptime.add_span (Pool_core.Time.now ()) halfhour |> CCOption.get_exn_or "Invalid time"
+  ; ( Pool_core.Time.add_span (Pool_core.Time.now ()) halfhour
+      |> CCOption.get_exn_or "Invalid time"
     , halfhour
     , Some "No metal allowed!"
     , None
@@ -21,7 +23,8 @@ let session_data =
     , 0
     , None
     , None )
-  ; ( Ptime.add_span (Pool_core.Time.now ()) hour |> CCOption.get_exn_or "Invalid time"
+  ; ( Pool_core.Time.add_span (Pool_core.Time.now ()) hour
+      |> CCOption.get_exn_or "Invalid time"
     , halfhour
     , Some "No metal allowed!"
     , None
@@ -116,7 +119,7 @@ let create pool =
          let open CCOption in
          let open Session in
          let start =
-           Ptime.add_span (parent.start |> Session.Start.value) hour
+           Pool_core.Time.add_span (parent.start |> Session.Start.value) hour
            |> CCOption.get_exn_or "Invalid time"
            |> Start.create
          in

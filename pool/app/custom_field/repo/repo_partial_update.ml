@@ -128,7 +128,8 @@ let upsert_answer pool is_admin entity_uuid t =
   | Date (_, answer) ->
     answer
     |> value_to_store is_admin
-    |> map_or ~clear (fun (id, value) -> update_answer id (Ptime.Date.to_string value))
+    |> map_or ~clear (fun (id, value) ->
+      update_answer id (Pool_model.Time.Date.to_string value))
   | MultiSelect (_, _, answer) ->
     answer
     |> value_to_store is_admin

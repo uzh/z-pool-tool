@@ -42,23 +42,23 @@ let create
 ;;
 
 let ends_at ({ start; duration; _ } : t) =
-  Ptime.add_span (Start.value start) (Duration.value duration)
+  Pool_model.Time.add_span (Start.value start) (Duration.value duration)
   |> CCOption.to_result Pool_message.(Error.Invalid Field.Duration)
   |> Pool_common.Utils.get_or_failwith
 ;;
 
 let duration ~start ~end_at =
   let open CCResult.Infix in
-  let open Ptime in
-  to_float_s (End.value end_at) -. to_float_s (Start.value start)
-  |> Span.of_float_s
+  let to_s = Pool_model.Time.to_float_s in
+  to_s (End.value end_at) -. to_s (Start.value start)
+  |> Pool_model.Time.Span.of_float_s
   |> CCOption.to_result Pool_message.(Error.Invalid Field.End)
   >>= Duration.create
 ;;
 
 let has_assignments (m : t) = AssignmentCount.value m.assignment_count > 0
 let is_deletable (m : t) = m |> has_assignments |> not
-let is_closed m = ends_at m |> Ptime.is_earlier ~than:(Pool_core.Time.now ())
+let is_closed m = ends_at m |> Pool_model.Time.is_earlier ~than:(Pool_core.Time.now ())
 
 let start_end_with_duration_human ({ start; duration; _ } : t) =
   Pool_core.Time.format_start_end (Start.value start) (Duration.value duration)

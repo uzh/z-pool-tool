@@ -23,16 +23,16 @@ end
 module Start : sig
   include Pool_model.Base.BaseSig
 
-  val value : t -> Ptime.t
-  val create : Ptime.t -> t
+  val value : t -> Pool_model.Time.t
+  val create : Pool_model.Time.t -> t
 end
 
 module End : sig
   include Pool_model.Base.BaseSig
 
-  val value : t -> Ptime.t
-  val create : Ptime.t -> t
-  val build : Start.t -> Ptime.Span.t -> (t, Pool_message.Error.t) Result.t
+  val value : t -> Pool_model.Time.t
+  val create : Pool_model.Time.t -> t
+  val build : Start.t -> Pool_model.Time.Span.t -> (t, Pool_message.Error.t) Result.t
 end
 
 module Duration : sig
@@ -93,7 +93,7 @@ end
 module CanceledAt : sig
   include Pool_model.Base.TimeSig
 
-  val create : Ptime.t -> (t, Pool_message.Error.t) result
+  val create : Pool_model.Time.t -> (t, Pool_message.Error.t) result
 end
 
 type t =
@@ -115,8 +115,8 @@ type t =
   ; assignment_count : AssignmentCount.t
   ; no_show_count : NoShowCount.t
   ; participant_count : ParticipantCount.t
-  ; closed_at : Ptime.t option
-  ; canceled_at : Ptime.t option
+  ; closed_at : Pool_model.Time.t option
+  ; canceled_at : Pool_model.Time.t option
   ; experiment : Experiment.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -142,7 +142,7 @@ val create
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
-val is_canceled_error : Ptime.t -> ('a, Pool_message.Error.t) result
+val is_canceled_error : Pool_model.Time.t -> ('a, Pool_message.Error.t) result
 val is_fully_booked : t -> bool
 val available_spots : t -> int
 val has_assignments : t -> bool
@@ -179,8 +179,8 @@ module Public : sig
     ; min_participants : ParticipantAmount.t
     ; overbook : ParticipantAmount.t
     ; assignment_count : AssignmentCount.t
-    ; canceled_at : Ptime.t option
-    ; closed_at : Ptime.t option
+    ; canceled_at : Pool_model.Time.t option
+    ; closed_at : Pool_model.Time.t option
     }
 
   val equal : t -> t -> bool
@@ -189,7 +189,7 @@ module Public : sig
   val is_fully_booked : t -> bool
   val assignment_creatable : t -> (unit, Pool_message.Error.t) result
   val group_and_sort : t list -> (t * t list) list
-  val get_session_end : t -> Ptime.t
+  val get_session_end : t -> Pool_model.Time.t
   val start_end_with_duration_human : t -> string
   val is_past : t -> bool
   val column_experiment_title : Query.Column.t
@@ -320,8 +320,8 @@ val find_open_with_follow_ups
 val find_open : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val calendar_by_user
-  :  start_time:Ptime.t
-  -> end_time:Ptime.t
+  :  start_time:Pool_model.Time.t
+  -> end_time:Pool_model.Time.t
   -> Database.Label.t
   -> Guard.Persistence.actor
   -> Guard.PermissionOnTarget.t list
@@ -329,8 +329,8 @@ val calendar_by_user
 
 val calendar_by_location
   :  location_uuid:Pool_location.Id.t
-  -> start_time:Ptime.t
-  -> end_time:Ptime.t
+  -> start_time:Pool_model.Time.t
+  -> end_time:Pool_model.Time.t
   -> Database.Label.t
   -> Guard.Persistence.actor
   -> Guard.PermissionOnTarget.t list

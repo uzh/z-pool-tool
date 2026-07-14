@@ -28,7 +28,7 @@ module LastRunAt : Pool_model.Base.TimeSig
 module ScheduledTime : sig
   include Pool_model.Base.TimeSig
 
-  val create : Ptime.t -> (t, Pool_message.Error.t) result
+  val create : Pool_core.Time.t -> (t, Pool_message.Error.t) result
 end
 
 module ScheduledTimeSpan : Pool_model.Base.TimeSpanSig

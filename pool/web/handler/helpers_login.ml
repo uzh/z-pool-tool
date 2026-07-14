@@ -109,7 +109,8 @@ let validate_login req ~tags database_label ~email ~password =
       blocked_until
       |> CCOption.map BlockedUntil.value
       |> function
-      | Some blocked when Ptime.(is_earlier (Pool_model.Time.now ()) ~than:blocked) ->
+      | Some blocked
+        when Pool_model.Time.(is_earlier (Pool_model.Time.now ()) ~than:blocked) ->
         Lwt_result.fail (Error.AccountTemporarilySuspended blocked)
       | None | _ -> handler ()
     in

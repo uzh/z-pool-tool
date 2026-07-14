@@ -73,7 +73,9 @@ let pp_exec_header ?(tags = Tag.empty) src =
   let pp_h ppf style level =
     let now =
       let now = Pool_core.Time.now () in
-      Ptime.to_rfc3339 ~tz_offset_s:(Pool_core.Time.to_zurich_tz_offset_s now) now
+      Pool_core.Time.to_rfc3339
+        ~tz_offset_s:(Pool_core.Time.to_zurich_tz_offset_s now)
+        now
     in
     let pp_styled_values ppf values =
       CCList.iter

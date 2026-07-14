@@ -175,13 +175,13 @@ let canceled () =
 
 let canceled_with_closed_session () =
   let session = Model.create_session () in
-  let closed_at = Ptime_clock.now () in
+  let closed_at = Pool_core.Time.now () in
   let notification_email = Model.create_email_job () in
   let session =
     Session.
       { session with
         start =
-          Ptime.sub_span (Ptime_clock.now ()) Test_utils.Time.hour
+          Pool_core.Time.sub_span (Pool_core.Time.now ()) Test_utils.Time.hour
           |> CCOption.get_exn_or "Invalid start"
           |> Start.create
       ; closed_at = Some closed_at
@@ -445,7 +445,7 @@ let assign_to_canceled_session () =
   let { session; experiment; contact } = assignment_data () in
   let confirmation_email = confirmation_email experiment session in
   let already_assigned = false in
-  let canceled_at = Ptime_clock.now () in
+  let canceled_at = Pool_core.Time.now () in
   let session = Session.{ session with canceled_at = Some canceled_at } in
   let events =
     let command =

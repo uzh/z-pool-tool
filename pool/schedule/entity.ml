@@ -17,7 +17,7 @@ module ScheduledTimeSpan = struct
   include Pool_model.Time.Span
 
   let create m =
-    if Ptime.Span.abs m |> Ptime.Span.equal m
+    if Pool_core.Time.Span.abs m |> Pool_core.Time.Span.equal m
     then Ok m
     else Error Pool_message.Error.NegativeAmount
   ;;
@@ -74,8 +74,12 @@ let create label scheduled_time database_label fcn =
 ;;
 
 let run_in = function
-  | At time -> Ptime.diff time (Pool_core.Time.now ()) |> Ptime.Span.to_float_s |> max 1.
-  | Every duration -> duration |> ScheduledTimeSpan.value |> Ptime.Span.to_float_s
+  | At time ->
+    Pool_core.Time.diff time (Pool_core.Time.now ())
+    |> Pool_core.Time.Span.to_float_s
+    |> max 1.
+  | Every duration ->
+    duration |> ScheduledTimeSpan.value |> Pool_core.Time.Span.to_float_s
 ;;
 
 type public =
@@ -98,8 +102,12 @@ let is_ok ({ scheduled_time; status; last_run; _ } : public) =
     | At _, Some _ -> true
     | Every interval, Some last_run ->
       let minimum_interval = Pool_core.Time.Span.(max (minutes 1) interval) in
-      Ptime.add_span last_run (Ptime.Span.add minimum_interval minimum_interval)
-      |> CCOption.map_or ~default:false (Ptime.is_later ~than:(Pool_core.Time.now ()))
+      Pool_core.Time.add_span
+        last_run
+        (Pool_core.Time.Span.add minimum_interval minimum_interval)
+      |> CCOption.map_or
+           ~default:false
+           (Pool_core.Time.is_later ~than:(Pool_core.Time.now ()))
   in
   is_fine status || did_run ()
 ;;

@@ -30,7 +30,7 @@ end
 module CanceledAt : sig
   include Pool_model.Base.TimeSig
 
-  val create : Ptime.t -> (t, Pool_message.Error.t) result
+  val create : Pool_model.Time.t -> (t, Pool_message.Error.t) result
 end
 
 module MarkedAsDeleted : sig

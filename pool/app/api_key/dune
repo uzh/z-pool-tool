@@ -1,6 +1,6 @@
 (library
  (name api_key)
- (libraries guard pool_common pool_tenant ptime utils)
+ (libraries guard pool_common pool_tenant utils)
  (preprocess
   (pps
    lwt_ppx

@@ -19,7 +19,7 @@ module Partials = struct
     let check opt classname = if opt then Some classname else None in
     [ check
         (Time_window.ends_at time_window
-         |> Ptime.is_earlier ~than:(Pool_model.Time.now ()))
+         |> Pool_model.Time.is_earlier ~than:(Pool_model.Time.now ()))
         "bg-green-lighter"
     ]
     |> CCList.filter_map CCFun.id
@@ -73,7 +73,7 @@ let time_window_form
   in
   let is_past = function
     | None -> false
-    | Some value -> Ptime.is_earlier value ~than:(Pool_model.Time.now ())
+    | Some value -> Pool_model.Time.is_earlier value ~than:(Pool_model.Time.now ())
   in
   let date_input ?min_value ?read_only field value =
     date_time_picker_element
@@ -210,7 +210,7 @@ let data_table
     let int_to_txt i = CCInt.to_string i |> txt in
     let row_attrs = Partials.row_attrs time_window in
     let is_terminated =
-      ends_at time_window |> Ptime.is_earlier ~than:(Pool_model.Time.now ())
+      ends_at time_window |> Pool_model.Time.is_earlier ~than:(Pool_model.Time.now ())
     in
     let no_show_count =
       if is_terminated then no_show_count |> NoShowCount.value |> int_to_txt else txt ""

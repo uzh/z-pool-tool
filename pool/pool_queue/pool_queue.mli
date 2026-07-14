@@ -1,7 +1,7 @@
 module Guard = Entity_guard
 
 type run_at =
-  | Delay of Ptime.span
+  | Delay of Pool_core.Time.Span.t
   | Now
 
 module Id : sig
@@ -47,12 +47,12 @@ module Instance : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val last_error_at : t -> Ptime.t option
+  val last_error_at : t -> Pool_core.Time.t option
   val last_error : t -> string option
   val status : t -> Status.t
   val tries : t -> int
   val max_tries : t -> int
-  val run_at : t -> Ptime.t
+  val run_at : t -> Pool_core.Time.t
   val clone_of : t -> Id.t option
   val message_template : t -> Pool_common.MessageTemplateLabel.t option
   val input : t -> string
@@ -70,7 +70,7 @@ module Instance : sig
     -> ?max_tries:int
     -> ?status:Status.t
     -> ?last_error:string
-    -> ?last_error_at:Ptime.t
+    -> ?last_error_at:Pool_core.Time.t
     -> ?run_at:run_at
     -> ?clone_of:Id.t
     -> Database.Label.t
@@ -84,7 +84,7 @@ module Job : sig
 
   val pp : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
   val show : (Format.formatter -> 'a -> unit) -> 'a t -> string
-  val retry_delay : 'a t -> Ptime.span
+  val retry_delay : 'a t -> Pool_core.Time.Span.t
   val max_tries : 'a t -> int
 
   val failed
@@ -107,7 +107,7 @@ module Job : sig
 
   val create
     :  ?max_tries:int
-    -> ?retry_delay:Ptime.span
+    -> ?retry_delay:Pool_core.Time.Span.t
     -> ?failed:(Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t)
     -> (?id:Id.t -> Database.Label.t -> 'a -> (unit, Pool_message.Error.t) Lwt_result.t)
     -> ('a -> string)
@@ -131,7 +131,7 @@ module AnyJob : sig
 
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val retry_delay : t -> Ptime.span
+  val retry_delay : t -> Pool_core.Time.Span.t
   val max_tries : t -> int
   val failed : t -> Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
 

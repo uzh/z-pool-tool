@@ -4,9 +4,6 @@ open CCFun.Infix
 
 let model = Pool_message.Field.Session
 
-module Ptime = Pool_model.Time
-module PtimeSpan = Pool_model.Time.Span
-
 module Pool_location = struct
   include Pool_location
 
@@ -84,7 +81,8 @@ module End = struct
   let schema () = schema Pool_message.Field.End CCResult.return ()
 
   let build start =
-    Ptime.add_span start %> CCOption.to_result Pool_message.(Error.Invalid Field.Duration)
+    Pool_model.Time.add_span start
+    %> CCOption.to_result Pool_message.(Error.Invalid Field.Duration)
   ;;
 end
 
@@ -144,7 +142,7 @@ type t =
   ; follow_up_to : Id.t option
   ; has_follow_ups : bool
   ; start : Start.t
-  ; duration : PtimeSpan.t
+  ; duration : Pool_model.Time.Span.t
   ; internal_description : InternalDescription.t option
   ; public_description : PublicDescription.t option
   ; location : Pool_location.t
@@ -165,8 +163,8 @@ type t =
      * Could this model as the following, just flatten tail of linked list
      *  : ; follow_up : t *)
     (* TODO [aerben] make type for canceled_at? *)
-    closed_at : Ptime.t option
-  ; canceled_at : Ptime.t option
+    closed_at : Pool_model.Time.t option
+  ; canceled_at : Pool_model.Time.t option
   ; experiment : Experiment.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -297,26 +295,26 @@ module Public = struct
     ; experiment_title : Experiment.PublicTitle.t
     ; follow_up_to : Id.t option
     ; start : Start.t
-    ; duration : PtimeSpan.t
+    ; duration : Pool_model.Time.Span.t
     ; description : PublicDescription.t option
     ; location : Pool_location.t
     ; max_participants : ParticipantAmount.t
     ; min_participants : ParticipantAmount.t
     ; overbook : ParticipantAmount.t
     ; assignment_count : AssignmentCount.t
-    ; canceled_at : Ptime.t option
-    ; closed_at : Ptime.t option
+    ; canceled_at : Pool_model.Time.t option
+    ; closed_at : Pool_model.Time.t option
     }
   [@@deriving eq, show]
 
   let get_session_end (session : t) =
-    Ptime.add_span session.start session.duration
+    Pool_model.Time.add_span session.start session.duration
     |> CCOption.get_exn_or "Session end not in range"
   ;;
 
   let not_past session =
     if
-      Ptime.is_later
+      Pool_model.Time.is_later
         (session |> get_session_end |> Start.value)
         ~than:(Pool_core.Time.now ())
     then Ok ()
@@ -385,7 +383,7 @@ module Public = struct
   ;;
 
   let get_session_end (session : t) =
-    Ptime.add_span session.start session.duration
+    Pool_model.Time.add_span session.start session.duration
     |> CCOption.get_exn_or "Session end not in range"
   ;;
 
@@ -549,7 +547,7 @@ let public_to_email_text language (Public.{ start; duration; location; _ } : Pub
 ;;
 
 let get_session_end (session : t) =
-  Ptime.add_span session.start session.duration
+  Pool_model.Time.add_span session.start session.duration
   |> CCOption.get_exn_or "Session end not in range"
 ;;
 
@@ -572,7 +570,7 @@ let not_closed session =
 
 let not_past session =
   if
-    Ptime.is_later
+    Pool_model.Time.is_later
       (session |> get_session_end |> Start.value)
       ~than:(Pool_core.Time.now ())
   then Ok ()

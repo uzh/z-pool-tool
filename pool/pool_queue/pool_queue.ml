@@ -226,7 +226,7 @@ let work_queue (job : AnyJob.t) (database_label : Database.Label.t) =
 let create_schedule (database_label, (job : AnyJob.t)) : Schedule.t =
   let open Schedule in
   let tags = Database.Logger.Tags.create database_label in
-  let interval = Every (Ptime.Span.of_int_s 1 |> ScheduledTimeSpan.of_span) in
+  let interval = Every (Pool_core.Time.Span.of_int_s 1 |> ScheduledTimeSpan.of_span) in
   let periodic_fcn () =
     Logs.debug (fun m ->
       m

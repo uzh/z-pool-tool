@@ -78,7 +78,7 @@ let create_contact verified contact_info =
   ; verified = None
   ; email_verified =
       (if verified
-       then Some (Ptime_clock.now () |> Pool_user.EmailVerified.create)
+       then Some (Pool_core.Time.now () |> Pool_user.EmailVerified.create)
        else None)
   ; num_invitations = Contact.NumberOfInvitations.init
   ; num_assignments = Contact.NumberOfAssignments.init
@@ -683,7 +683,7 @@ let cell_phone_verified_at_set_on_verify () =
   let applied : Contact.t =
     { contact with
       Contact.cell_phone = Some cell_phone
-    ; cell_phone_verified_at = Some (Ptime_clock.now ())
+    ; cell_phone_verified_at = Some (Pool_core.Time.now ())
     }
   in
   Alcotest.(
@@ -706,7 +706,7 @@ let cell_phone_saved_clears_verified_at () =
   let verified_contact : Contact.t =
     { ("john@gmail.com" |> contact_info |> create_contact true) with
       Contact.cell_phone = Some cell_phone
-    ; cell_phone_verified_at = Some (Ptime_clock.now ())
+    ; cell_phone_verified_at = Some (Pool_core.Time.now ())
     }
   in
   Alcotest.(

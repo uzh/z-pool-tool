@@ -9,12 +9,12 @@ module Counter = struct
 end
 
 module BlockedUntil = struct
-  type t = Ptime.t [@@deriving eq, show]
+  type t = Pool_model.Time.t [@@deriving eq, show]
 
   let value m = m
 
   let create m =
-    if Ptime.is_earlier ~than:(Pool_core.Time.now ()) m
+    if Pool_model.Time.is_earlier ~than:(Pool_core.Time.now ()) m
     then Error Pool_message.Error.TimeInPast
     else Ok m
   ;;

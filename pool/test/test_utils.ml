@@ -103,8 +103,7 @@ let dummy_to_file (dummy : Seed.Assets.file) =
 ;;
 
 module Time = struct
-  open Ptime
-  open Ptime_clock
+  open Pool_core.Time
   open CCOption
 
   let hour = Pool_core.Time.Span.hours 1
@@ -184,7 +183,7 @@ module Model = struct
     ; disabled = Pool_user.Disabled.create false
     ; verified = None
     ; email_verified =
-        () |> Ptime_clock.now |> Pool_user.EmailVerified.create |> CCOption.return
+        () |> Pool_core.Time.now |> Pool_user.EmailVerified.create |> CCOption.return
     ; num_invitations = Contact.NumberOfInvitations.init
     ; num_assignments = Contact.NumberOfAssignments.init
     ; num_show_ups = Contact.NumberOfShowUps.init
@@ -312,7 +311,7 @@ module Model = struct
     let start =
       let default () =
         let start_at =
-          Ptime.add_span (Ptime_clock.now ()) (Pool_core.Time.Span.seconds 1)
+          Pool_core.Time.add_span (Pool_core.Time.now ()) (Pool_core.Time.Span.seconds 1)
           |> CCOption.get_exn_or "Time calculation failed!"
           |> StartAt.create
           |> get_or_failwith
@@ -322,7 +321,7 @@ module Model = struct
       CCOption.value ~default:(default ()) start
     in
     let deadline =
-      Ptime.add_span (Ptime_clock.now ()) duration
+      Pool_core.Time.add_span (Pool_core.Time.now ()) duration
       |> CCOption.get_exn_or "Time calculation failed!"
       |> EndAt.create
       |> get_or_failwith
@@ -360,7 +359,7 @@ module Model = struct
 
   let session_start_in timespan =
     timespan
-    |> Ptime.add_span (Ptime_clock.now ())
+    |> Pool_core.Time.add_span (Pool_core.Time.now ())
     |> CCOption.get_exn_or "Invalid start"
     |> Session.Start.create
   ;;

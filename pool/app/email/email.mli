@@ -6,8 +6,8 @@ module VerifiedAt : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val value : t -> Ptime.t
-  val create : Ptime.t -> t
+  val value : t -> Pool_model.Time.t
+  val create : Pool_model.Time.t -> t
   val now : unit -> t
 end
 

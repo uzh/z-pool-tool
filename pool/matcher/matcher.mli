@@ -17,10 +17,10 @@ val events_of_mailings
 
 val create_invitation_events
   :  ?invitation_ids:Pool_common.Id.t list
-  -> Ptime.Span.t
+  -> Pool_core.Time.Span.t
   -> Database.Label.t
   -> Pool_event.t list Lwt.t
 
-val match_invitations : Ptime.Span.t -> Database.Label.t -> unit Lwt.t
+val match_invitations : Pool_core.Time.Span.t -> Database.Label.t -> unit Lwt.t
 val lifecycle : Pool_core.Container.lifecycle
 val register : unit -> Pool_core.Container.Service.t

@@ -1,6 +1,6 @@
 (library
  (name pool_version)
- (libraries announcement guard pool_common pool_tenant ptime utils)
+ (libraries announcement guard pool_common pool_tenant utils)
  (preprocess
   (pps
    lwt_ppx

@@ -44,7 +44,7 @@ let text_from_urlencoded urlencoded =
 let validate_start_end ~start_at ~end_at =
   match start_at, end_at with
   | Some start_at, Some end_at
-    when Ptime.is_later (StartAt.value start_at) ~than:(EndAt.value end_at) ->
+    when Pool_model.Time.is_later (StartAt.value start_at) ~than:(EndAt.value end_at) ->
     Error Pool_message.Error.EndBeforeStart
   | _ -> Ok ()
 ;;

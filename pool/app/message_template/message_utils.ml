@@ -124,7 +124,7 @@ let combine_html ?optout_link language layout html_title =
   let opt_out_html =
     optout_link |> CCOption.map_or ~default:(txt "") (opt_out_html language layout)
   in
-  let current_year = () |> Pool_core.Time.now |> Ptime.to_year in
+  let current_year = () |> Pool_core.Time.now |> Pool_model.Time.to_year in
   let email_header =
     head
       (title (txt (CCOption.value ~default:"" html_title)))

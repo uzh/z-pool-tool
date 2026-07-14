@@ -10,7 +10,7 @@ let run identifier () =
 
 let start_handler identifier () =
   let open Schedule in
-  let interval = Ptime.Span.of_int_s 10 in
+  let interval = Pool_model.Time.Span.of_int_s 10 in
   let periodic_fcn () =
     Logs.debug ~src (fun m -> m ~tags:Database.(Logger.Tags.create Pool.Root.label) "Run");
     run identifier ()

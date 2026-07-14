@@ -35,7 +35,7 @@ module Start = struct
       match start with
       | StartAt start_at when allow_start_in_past -> Ok start_at
       | StartAt start_at ->
-        if Ptime.is_earlier ~than:(Pool_core.Time.now ()) start_at
+        if Pool_model.Time.is_earlier ~than:(Pool_core.Time.now ()) start_at
         then Error Pool_message.Error.TimeInPast
         else Ok start_at
       | StartNow -> Ok (Pool_core.Time.now ())
@@ -226,7 +226,7 @@ let create ?allow_start_in_past ?(id = Id.create ()) start end_at limit distribu
 ;;
 
 let per_interval interval { start_at; end_at; limit; _ } =
-  let open Ptime in
+  let open Pool_model.Time in
   let open CCFloat in
   let limit = of_int limit in
   let duration = diff end_at start_at |> Span.to_float_s |> max 0. in
@@ -235,7 +235,7 @@ let per_interval interval { start_at; end_at; limit; _ } =
   else limit / duration * Span.to_float_s interval |> max 0. |> min limit
 ;;
 
-let is_past { end_at; _ } = Ptime.is_later ~than:end_at (Pool_core.Time.now ())
+let is_past { end_at; _ } = Pool_model.Time.is_later ~than:end_at (Pool_core.Time.now ())
 
 open Pool_message
 open Query

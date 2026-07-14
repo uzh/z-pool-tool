@@ -13,8 +13,7 @@ module Data = struct
   let exn_opt = CCOption.get_exn_or "invalid timespan"
 
   module Time = struct
-    open Ptime
-    open Ptime_clock
+    open Pool_core.Time
     open Test_utils
 
     let in_an_hour = add_span (now ()) Time.hour |> exn_opt
@@ -32,8 +31,8 @@ module Data = struct
   let urlencoded =
     [ text_name Language.De, text_de
     ; text_name Language.En, text_en
-    ; Field.(show Start), start_at |> StartAt.value |> Ptime.to_rfc3339
-    ; Field.(show End), end_at |> EndAt.value |> Ptime.to_rfc3339
+    ; Field.(show Start), start_at |> StartAt.value |> Pool_core.Time.to_rfc3339
+    ; Field.(show End), end_at |> EndAt.value |> Pool_core.Time.to_rfc3339
     ; Field.(show ShowToAdmins), "true"
     ; Field.(show ShowToContacts), "true"
     ]
@@ -75,7 +74,7 @@ let create () =
   let () = run_test (urlencoded_remove updates) expected "create no start / no end" in
   (* CREATE START AFTER END *)
   let updates =
-    let open Ptime in
+    let open Pool_core.Time in
     [ ( CCString.equal Field.(show Start)
       , add_span (Data.start_at |> StartAt.value) Test_utils.Time.two_hours
         |> CCOption.get_exn_or "invalid time"

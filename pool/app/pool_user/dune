@@ -6,7 +6,6 @@
   pool_common
   pool_database
   pool_token
-  ptime
   settings
   utils
   pool_core

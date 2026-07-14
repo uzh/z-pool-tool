@@ -27,7 +27,7 @@ val create
   -> Experiment.t
   -> t
 
-val ends_at : t -> Ptime.t
+val ends_at : t -> Pool_model.Time.t
 
 val duration
   :  start:Session.Start.t

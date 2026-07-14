@@ -43,8 +43,8 @@ module Model = struct
     ; value : Token.t
     ; data : Data.t
     ; status : Status.t
-    ; expires_at : Ptime.t
-    ; created_at : Ptime.t
+    ; expires_at : Pool_core.Time.t
+    ; created_at : Pool_core.Time.t
     }
 
   let t =

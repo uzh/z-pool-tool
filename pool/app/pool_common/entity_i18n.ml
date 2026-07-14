@@ -1,13 +1,5 @@
 open Sexplib.Conv
 
-module Ptime = struct
-  include Pool_model.Time
-
-  module Span = struct
-    include Pool_model.Time.Span
-  end
-end
-
 type t =
   | ActivateAccountButton of string
   | ActivateAccountNote
@@ -47,10 +39,10 @@ type t =
   | ExperimentListPublicTitle
   | ExperimentOnlineListEmpty
   | ExperimentOnlineListPublicTitle
-  | ExperimentOnlineParticiated of Ptime.t
-  | ExperimentOnlineParticipationDeadline of Ptime.t
+  | ExperimentOnlineParticiated of Pool_model.Time.t
+  | ExperimentOnlineParticipationDeadline of Pool_model.Time.t
   | ExperimentOnlineParticipationNoUpcoming
-  | ExperimentOnlineParticipationUpcoming of Ptime.t
+  | ExperimentOnlineParticipationUpcoming of Pool_model.Time.t
   | ExperimentListTitle
   | ExperimentMessagingSubtitle
   | ExperimentNewTitle
@@ -83,7 +75,7 @@ type t =
   | LocationNoSessions
   | LocationStatistics
   | LoginTitle
-  | MailingDetailTitle of Ptime.t
+  | MailingDetailTitle of Pool_model.Time.t
   | MailingDistributionDescription
   | MailingExperimentNoUpcomingSession
   | MailingExperimentNoUpcomingTimewindow
@@ -116,7 +108,7 @@ type t =
   | SelectedTagsEmpty
   | SessionCloseScreen
   | SessionDetailScreen
-  | SessionDetailTitle of Ptime.t
+  | SessionDetailTitle of Pool_model.Time.t
   | SessionIndent
   | SessionRegistrationTitle
   | SessionReminder
@@ -127,7 +119,7 @@ type t =
   | SwitchChronological
   | SwitchGrouped
   | System
-  | TermsAndConditionsLastUpdated of Ptime.t
+  | TermsAndConditionsLastUpdated of Pool_model.Time.t
   | TermsAndConditionsTitle
   | TermsAndConditionsUpdated
   | TenantMaintenanceText
@@ -141,7 +133,7 @@ type t =
   | TotalSentInvitations
   | UpcomingSessionsListEmpty
   | UpcomingSessionsTitle
-  | UserLoginBlockedUntil of Ptime.t
+  | UserLoginBlockedUntil of Pool_model.Time.t
   | UserProfileDetailsSubtitle
   | UserProfileLoginSubtitle
   | UserProfilePausedNote
@@ -243,7 +235,7 @@ type hint =
   | CustomFieldTypeText
   | CustomHtmx of string
   | DashboardDuplicateContactsNotification of int
-  | DefaultReminderLeadTime of Ptime.Span.t
+  | DefaultReminderLeadTime of Pool_model.Time.Span.t
   | DeleteContact
   | DirectRegistrationDisbled
   | Distribution
@@ -333,14 +325,14 @@ type hint =
   | ResendRemindersChannel
   | ResendRemindersWarning
   | ResetInvitations
-  | ResetInvitationsLastReset of Ptime.t
+  | ResetInvitationsLastReset of Pool_model.Time.t
   | ReleaseNotesHint of string
   | RoleIntro of Pool_message.Field.t * Pool_message.Field.t
   | RolePermissionsModelList
   | RolePermissionsRoleList
-  | ScheduleAt of Ptime.t
+  | ScheduleAt of Pool_model.Time.t
   | ScheduledIntro
-  | ScheduleEvery of Ptime.Span.t
+  | ScheduleEvery of Pool_model.Time.Span.t
   | SearchByFields of Pool_message.Field.t list
   | SelectedDateIsPast
   | SelectedOptionsCountMax of int

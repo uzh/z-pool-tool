@@ -1,6 +1,6 @@
 (library
  (name tags)
- (libraries changelog guard pool_common ptime utils)
+ (libraries changelog guard pool_common utils)
  (preprocess
   (pps
    lwt_ppx

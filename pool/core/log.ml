@@ -58,7 +58,7 @@ let lwt_file_reporter () =
     Lwt.finalize write unblock |> Lwt.ignore_result;
     msgf
     @@ fun ?header:_ ?tags:_ fmt ->
-    let now = Ptime_clock.now () |> Ptime.to_rfc3339 in
+    let now = Time.now () |> Time.to_rfc3339 in
     match level with
     | Logs.Error ->
       let ppf = Format.formatter_of_buffer err in
@@ -125,7 +125,7 @@ let pp_source = Fmt.(styled source_style string)
 let pp_exec_header src =
   let pp_h ppf style h =
     let src = Logs.Src.name src in
-    let now = Ptime_clock.now () |> Ptime.to_rfc3339 in
+    let now = Time.now () |> Time.to_rfc3339 in
     Fmt.pf ppf "%s [%a] [%a]: " now Fmt.(styled style string) h pp_source src
   in
   pp_header ~pp_h

@@ -115,7 +115,7 @@ let publish () =
     let expected = Error Pool_message.(Error.AlreadyPublished Field.Version) in
     let version =
       Pool_version.
-        { version with published_at = Some (PublishedAt.create (Ptime_clock.now ())) }
+        { version with published_at = Some (PublishedAt.create (Pool_core.Time.now ())) }
     in
     run_test version expected "pushish published version fails"
   in

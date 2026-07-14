@@ -54,7 +54,7 @@ module HandledAt = struct
 end
 
 type run_at =
-  | Delay of Ptime.span
+  | Delay of Pool_core.Time.Span.t
   | Now
 
 module RunAt = struct
@@ -64,7 +64,8 @@ module RunAt = struct
     let now = Pool_core.Time.now () in
     function
     | Delay delay ->
-      Ptime.add_span now delay |> CCOption.get_exn_or "Could not add delay for job."
+      Pool_core.Time.add_span now delay
+      |> CCOption.get_exn_or "Could not add delay for job."
     | Now -> now
   ;;
 end
@@ -100,12 +101,13 @@ module Instance = struct
     match polled_at, handled_at with
     | None, _ -> false
     | Some _, None -> true
-    | Some polled_at, Some handled_at -> Ptime.is_later ~than:handled_at polled_at
+    | Some polled_at, Some handled_at ->
+      Pool_core.Time.is_later ~than:handled_at polled_at
   ;;
 
   let should_run ?(is_polled = false) ({ tries; max_tries; run_at; polled_at; _ } as job) =
     let has_tries_left = tries < max_tries in
-    let is_after_delay = Pool_core.Time.now () |> Ptime.is_later ~than:run_at in
+    let is_after_delay = Pool_core.Time.now () |> Pool_core.Time.is_later ~than:run_at in
     let is_pending = is_pending job in
     is_pending
     && has_tries_left
@@ -160,9 +162,9 @@ module Instance = struct
     }
   ;;
 
-  let retry (retry_delay : Ptime.Span.t) (job : t) =
+  let retry (retry_delay : Pool_core.Time.Span.t) (job : t) =
     let run_at =
-      match Ptime.add_span job.run_at retry_delay with
+      match Pool_core.Time.add_span job.run_at retry_delay with
       | Some date -> date
       | None -> failwith "Can not determine next run date of job"
     in
@@ -217,7 +219,7 @@ module Job = struct
         ?id:Id.t -> Database.Label.t -> 'a -> (unit, Pool_message.Error.t) Lwt_result.t
     ; failed : Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
     ; max_tries : int
-    ; retry_delay : Ptime.Span.t
+    ; retry_delay : Pool_core.Time.Span.t
     }
   [@@deriving fields, show]
 
@@ -321,7 +323,7 @@ module AnyJob = struct
         -> (unit, Pool_message.Error.t) Lwt_result.t
     ; failed : Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
     ; max_tries : int
-    ; retry_delay : Ptime.Span.t
+    ; retry_delay : Pool_core.Time.Span.t
     ; execute_on_root : bool
     }
   [@@deriving fields, show]

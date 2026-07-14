@@ -1,6 +1,6 @@
 (library
  (name changelog)
- (libraries pool_common pool_message ptime utils query pool_core)
+ (libraries pool_common pool_message utils query pool_core)
  (preprocess
   (pps
    lwt_ppx

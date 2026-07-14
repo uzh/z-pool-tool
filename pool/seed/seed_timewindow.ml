@@ -12,7 +12,8 @@ let timewindow pool =
   in
   let get_or_failwith = Pool_common.Utils.get_or_failwith in
   let from_now_ms offset =
-    Ptime.add_span (Pool_core.Time.now ()) offset |> CCOption.get_exn_or "Invalid time"
+    Pool_core.Time.add_span (Pool_core.Time.now ()) offset
+    |> CCOption.get_exn_or "Invalid time"
   in
   let now = Pool_core.Time.now () in
   let time_window_data =

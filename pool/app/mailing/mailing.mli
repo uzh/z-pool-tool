@@ -7,7 +7,7 @@ end
 module StartAt : sig
   include Pool_model.Base.TimeSig
 
-  val create : Ptime.t -> (t, Pool_message.Error.t) result
+  val create : Pool_model.Time.t -> (t, Pool_message.Error.t) result
 end
 
 module StartNow : sig
@@ -17,7 +17,7 @@ end
 module EndAt : sig
   include Pool_model.Base.TimeSig
 
-  val create : Ptime.t -> (t, Pool_message.Error.t) result
+  val create : Pool_model.Time.t -> (t, Pool_message.Error.t) result
 end
 
 module Start : sig
@@ -126,7 +126,7 @@ type t =
 val pp : Format.formatter -> t -> unit
 val show : t -> string
 val equal : t -> t -> bool
-val per_interval : Ptime.span -> t -> CCFloat.t
+val per_interval : Pool_model.Time.Span.t -> t -> CCFloat.t
 val is_past : t -> bool
 
 val create
@@ -204,7 +204,7 @@ module Status : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val find_current : Database.Label.t -> Ptime.span -> t list Lwt.t
+  val find_current : Database.Label.t -> Pool_model.Time.Span.t -> t list Lwt.t
 end
 
 module Repo : sig

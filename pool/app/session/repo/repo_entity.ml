@@ -164,7 +164,7 @@ module Write = struct
     { id : Id.t
     ; follow_up_to : Id.t option
     ; start : Start.t
-    ; duration : PtimeSpan.t
+    ; duration : Pool_model.Time.Span.t
     ; internal_description : InternalDescription.t option
     ; public_description : PublicDescription.t option
     ; location_id : Pool_location.Id.t
@@ -175,8 +175,8 @@ module Write = struct
     ; email_reminder_sent_at : Reminder.SentAt.t option
     ; text_message_reminder_lead_time : Reminder.TextMessageLeadTime.t option
     ; text_message_reminder_sent_at : Reminder.SentAt.t option
-    ; closed_at : Ptime.t option
-    ; canceled_at : Ptime.t option
+    ; closed_at : Pool_model.Time.t option
+    ; canceled_at : Pool_model.Time.t option
     }
 
   let entity_to_write

@@ -249,7 +249,7 @@ let timespan_picker
     flash_fetcher
     >>= (fun flash -> flash (Field.show name))
     >>= CCInt.of_string
-    >|= Ptime.Span.of_int_s
+    >|= Pool_model.Time.Span.of_int_s
     <+> value
     >|= TimeUnit.ptime_span_to_largest_unit
     |> function

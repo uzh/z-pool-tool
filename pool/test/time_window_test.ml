@@ -2,7 +2,11 @@ open Test_utils
 module Command = Cqrs_command.Session_command
 
 let database_label = Data.database_label
-let date_to_ptime date = date |> Ptime.of_date |> CCOption.get_exn_or "Invalid date"
+
+let date_to_ptime date =
+  date |> Pool_core.Time.of_date |> CCOption.get_exn_or "Invalid date"
+;;
+
 let create_start date = date |> date_to_ptime |> Session.Start.create
 let create_end date = date |> date_to_ptime |> Session.End.create
 
@@ -21,8 +25,8 @@ module Data = struct
   let public_description = PublicDescription.of_string "public"
 
   let urlencoded =
-    [ Field.Start, Start.value start |> Ptime.to_rfc3339
-    ; Field.End, End.value end_at |> Ptime.to_rfc3339
+    [ Field.Start, Start.value start |> Pool_core.Time.to_rfc3339
+    ; Field.End, End.value end_at |> Pool_core.Time.to_rfc3339
     ; Field.InternalDescription, InternalDescription.value internal_description
     ; Field.PublicDescription, PublicDescription.value public_description
     ]

@@ -24,7 +24,7 @@ let run_all () = Database.(Pool.Tenant.all ()) |> Lwt_list.iter_s run_by_tenant
 
 let start () =
   let open Schedule in
-  let interval = Ptime.Span.of_int_s interval_s in
+  let interval = Pool_model.Time.Span.of_int_s interval_s in
   create
     "possible_duplicates"
     (Every (interval |> ScheduledTimeSpan.of_span))

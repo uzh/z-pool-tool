@@ -16,7 +16,7 @@ module Data = struct
 
   let urlencoded =
     [ Field.(show Name), [ name ]
-    ; Field.(show ExpiresAt), [ Ptime.to_rfc3339 expires_at ]
+    ; Field.(show ExpiresAt), [ Pool_core.Time.to_rfc3339 expires_at ]
     ]
   ;;
 end
@@ -72,7 +72,7 @@ let get_current _ () =
   in
   let valid_token = Token.generate () in
   let expires_at =
-    Ptime.add_span (Ptime_clock.now ()) hour
+    Pool_core.Time.add_span (Pool_core.Time.now ()) hour
     |> CCOption.get_exn_or "Invalid ptime"
     |> ExpiresAt.create
   in
@@ -80,7 +80,7 @@ let get_current _ () =
   let%lwt res = find_by_token database_label (Token.value valid_token) in
   let () = Alcotest.check testable_key "found valid api key" (Some valid_api_key) res in
   let expires_at =
-    Ptime.sub_span (Ptime_clock.now ()) hour
+    Pool_core.Time.sub_span (Pool_core.Time.now ()) hour
     |> CCOption.get_exn_or "Invalid ptime"
     |> ExpiresAt.create
   in

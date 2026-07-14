@@ -114,7 +114,7 @@ let create_session experiment =
     ; follow_up_to = None
     ; has_follow_ups = false
     ; start =
-        Ptime.add_span (Pool_model.Time.now ()) hour
+        Pool_model.Time.add_span (Pool_model.Time.now ()) hour
         |> CCOption.get_exn_or "Invalid start"
         |> Start.create
     ; duration = Duration.create hour |> get_or_failwith

@@ -15,8 +15,8 @@ end
 module PublishedAt : sig
   include Pool_model.Base.BaseSig
 
-  val value : t -> Ptime.t
-  val create : Ptime.t -> t
+  val value : t -> Pool_model.Time.t
+  val create : Pool_model.Time.t -> t
 end
 
 type t =

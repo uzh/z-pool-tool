@@ -250,10 +250,8 @@ module Repo : sig
 
   module Id : Pool_model.Base.CaqtiSig with type t = Id.t
 
-  module Ptime : sig
-    type date = Ptime.date
-
-    val date : date Caqti_type.t
+  module Time : sig
+    val date : Pool_core.Time.Date.t Caqti_type.t
   end
 
   module Language : Pool_model.Base.CaqtiSig with type t = Language.t

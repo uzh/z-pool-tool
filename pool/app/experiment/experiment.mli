@@ -406,8 +406,8 @@ val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
 val title_value : t -> string
 val public_title_value : t -> string
-val email_session_reminder_lead_time_value : t -> Ptime.span option
-val text_message_session_reminder_lead_time_value : t -> Ptime.span option
+val email_session_reminder_lead_time_value : t -> Pool_model.Time.Span.t option
+val text_message_session_reminder_lead_time_value : t -> Pool_model.Time.Span.t option
 val assignment_without_session_value : t -> bool
 val survey_url_value : t -> string option
 val direct_registration_disabled_value : t -> bool

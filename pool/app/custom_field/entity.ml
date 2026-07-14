@@ -3,10 +3,6 @@ module Language = Pool_common.Language
 module Answer = Entity_answer
 module User = Pool_user
 
-module Ptime = struct
-  include Pool_model.Time
-end
-
 let printer = Utils.ppx_printer
 
 module Id = struct
@@ -440,7 +436,7 @@ module Public = struct
 
   type t =
     | Boolean of bool public * bool Answer.t option
-    | Date of Ptime.Date.t public * Ptime.Date.t Answer.t option
+    | Date of Pool_model.Time.Date.t public * Pool_model.Time.Date.t Answer.t option
     | MultiSelect of
         SelectOption.Public.t list public
         * SelectOption.Public.t list
@@ -684,7 +680,7 @@ type 'a custom_field =
 
 type t =
   | Boolean of bool custom_field
-  | Date of Ptime.Date.t custom_field
+  | Date of Pool_model.Time.Date.t custom_field
   | Number of int custom_field
   | MultiSelect of SelectOption.t list custom_field * SelectOption.t list
   | Select of SelectOption.t custom_field * SelectOption.t list

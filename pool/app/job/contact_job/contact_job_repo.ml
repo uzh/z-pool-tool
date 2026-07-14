@@ -59,7 +59,7 @@ let find_to_warn_about_inactivity pool warn_after =
     let open Caqti_request.Infix in
     let warn_after_s =
       CCList.map
-        (Ptime.Span.to_int_s %> CCOption.get_exn_or "Invalid time span")
+        (Pool_model.Time.Span.to_int_s %> CCOption.get_exn_or "Invalid time span")
         warn_after
     in
     let dyn =
@@ -120,7 +120,9 @@ let find_to_disable pool disable_after n_reminders =
   in
   let Pack (pt, pv), where =
     let disable_after =
-      disable_after |> Ptime.Span.to_int_s |> CCOption.get_exn_or "Invalid time span"
+      disable_after
+      |> Pool_model.Time.Span.to_int_s
+      |> CCOption.get_exn_or "Invalid time span"
     in
     let dyn = empty |> add Caqti_type.int disable_after in
     match n_reminders with

@@ -47,7 +47,8 @@ let find_contacts_to_remind _ () =
   let%lwt c1, c2 = init () in
   let n_days n = Pool_core.Time.Span.days n in
   let time_ago span =
-    Ptime.(sub_span (Ptime_clock.now ()) span) |> CCOption.get_exn_or "Invalid ptime"
+    Pool_core.Time.(sub_span (Pool_core.Time.now ()) span)
+    |> CCOption.get_exn_or "Invalid ptime"
   in
   let disable_after = Settings.InactiveUser.DisableAfter.create (n_days 10) |> get_exn in
   let warn_after = [ n_days 5 ] in

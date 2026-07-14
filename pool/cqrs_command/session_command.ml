@@ -98,7 +98,7 @@ let starts_after_parent parent_session start =
   CCOption.map_or
     ~default:false
     (fun (s : Session.t) ->
-       Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
+       Pool_model.Time.is_earlier ~than:(Start.value s.start) (Start.value start))
     parent_session
 ;;
 
@@ -108,7 +108,9 @@ let validate_start follow_up_sessions parent_session start =
   let starts_before_followups =
     CCList.exists
       (fun (follow_up : Session.t) ->
-         Ptime.is_earlier ~than:(Start.value start) (Start.value follow_up.start))
+         Pool_model.Time.is_earlier
+           ~than:(Start.value start)
+           (Start.value follow_up.start))
       follow_up_sessions
   in
   if starts_after_parent parent_session start || starts_before_followups
@@ -598,7 +600,10 @@ end = struct
     let* () = validate_start follow_up_sessions parent_session start in
     let* duration = Session.Duration.of_int duration duration_unit in
     let* () =
-      if Ptime.is_earlier ~than:(Pool_model.Time.now ()) (start |> Session.Start.value)
+      if
+        Pool_model.Time.is_earlier
+          ~than:(Pool_model.Time.now ())
+          (start |> Session.Start.value)
       then Error Pool_message.Error.TimeInPast
       else Ok ()
     in

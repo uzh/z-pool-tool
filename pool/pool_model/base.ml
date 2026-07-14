@@ -193,11 +193,11 @@ module type TimeSpanSig = sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
-  val value : t -> Ptime.Span.t
+  val value : t -> Time.Span.t
   val to_int_s : t -> int option
   val of_int_s : int -> t
   val abs : t -> t
-  val of_span : Ptime.Span.t -> t
+  val of_span : Time.Span.t -> t
   val to_human : t -> string
   val schema : unit -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 end
@@ -211,8 +211,8 @@ module type TimeSig = sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
-  val value : t -> Ptime.t
-  val create : Ptime.t -> t
+  val value : t -> Time.t
+  val create : Time.t -> t
   val now : unit -> t
   val formatted_date_time : t -> string
   val compare : t -> t -> int
@@ -335,8 +335,8 @@ module type DurationSig = sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
-  val value : t -> Ptime.Span.t
-  val create : Ptime.Span.t -> (t, Pool_message.Error.t) result
+  val value : t -> Time.Span.t
+  val create : Time.Span.t -> (t, Pool_message.Error.t) result
   val of_int_s : int -> (t, Pool_message.Error.t) result
   val of_int : int -> TimeUnit.t -> (t, Pool_message.Error.t) result
   val to_int_s : t -> int option
@@ -347,7 +347,7 @@ module type DurationSig = sig
     -> (t option, Pool_message.Error.t) result
 
   val to_human : t -> string
-  val to_ptime_span : int -> TimeUnit.t -> Ptime.Span.t
+  val to_ptime_span : int -> TimeUnit.t -> Time.Span.t
   val with_largest_unit : t -> TimeUnit.t * int
   val integer_schema : unit -> (Pool_message.Error.t, int) Pool_conformist.Field.t
 end
