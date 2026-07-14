@@ -18,7 +18,7 @@ module Channel = struct
   include Core
 end
 
-module UsageCount = struct
+module FailedAttempts = struct
   include Pool_model.Base.Integer
 
   let limit = of_int 3
@@ -53,7 +53,7 @@ type t =
   ; user_uuid : Pool_user.Id.t
   ; channel : Channel.t
   ; token : Token.t
-  ; usage_count : UsageCount.t
+  ; failed_attempts : FailedAttempts.t
   }
 [@@deriving eq, show { with_path = false }]
 

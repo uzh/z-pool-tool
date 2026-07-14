@@ -5,7 +5,12 @@ let label = "reset OTP (authentication codes)"
 let src = Logs.Src.create "authentication.service"
 
 let create ?(id = Id.create ()) ?(token = Token.generate ()) ~user ~channel () =
-  { id; user_uuid = Pool_user.id user; channel; token; usage_count = UsageCount.of_int 0 }
+  { id
+  ; user_uuid = Pool_user.id user
+  ; channel
+  ; token
+  ; failed_attempts = FailedAttempts.of_int 0
+  }
 ;;
 
 let find_valid_by_id = Repo.find_valid_by_id

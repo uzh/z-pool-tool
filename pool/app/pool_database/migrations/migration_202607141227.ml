@@ -27,12 +27,12 @@ let remove_automagic_timestamp_on_update_trigger =
     |sql}
 ;;
 
-let add_usage_count_to_authentication =
+let add_failed_attempts_to_authentication =
   Migration.Step.create
-    ~label:"add usage_count to pool_authentication"
+    ~label:"add failed_attempts column to pool_authentication"
     {sql|
       ALTER TABLE pool_authentication
-      ADD COLUMN usage_count TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER token
+      ADD COLUMN failed_attempts TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER token
     |sql}
 ;;
 
@@ -41,5 +41,5 @@ let migration () =
     empty "202607141227"
     |> add_step create_pool_queue_job_authentication_table
     |> add_step remove_automagic_timestamp_on_update_trigger
-    |> add_step add_usage_count_to_authentication)
+    |> add_step add_failed_attempts_to_authentication)
 ;;

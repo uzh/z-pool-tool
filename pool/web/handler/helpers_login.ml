@@ -320,11 +320,12 @@ let verify_2fa_login ~tags { Pool_context.database_label; user = context_user; _
                Pool_event.handle_events
                  database_label
                  context_user
-                 [ Authentication.IncreaseUsageCount auth |> Pool_event.authentication ]
+                 [ Authentication.IncreaseFailedAttempts auth |> Pool_event.authentication
+                 ]
              in
              let remaining =
-               Authentication.UsageCount.(
-                 value limit - value auth.Authentication.usage_count)
+               Authentication.FailedAttempts.(
+                 value limit - value auth.Authentication.failed_attempts)
                - 1
              in
              if remaining <= 0

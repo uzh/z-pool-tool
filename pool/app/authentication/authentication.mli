@@ -21,7 +21,7 @@ module Token : sig
   val schema : unit -> (Pool_conformist.error_msg, t) Pool_conformist.Field.t
 end
 
-module UsageCount : sig
+module FailedAttempts : sig
   type t
 
   val equal : t -> t -> bool
@@ -37,7 +37,7 @@ type t =
   ; user_uuid : Pool_user.Id.t
   ; channel : Channel.t
   ; token : Token.t
-  ; usage_count : UsageCount.t
+  ; failed_attempts : FailedAttempts.t
   }
 
 val resend_cooldown_seconds : int
@@ -56,7 +56,7 @@ val create
 type event =
   | Created of t
   | Deleted of Id.t
-  | IncreaseUsageCount of t
+  | IncreaseFailedAttempts of t
   | ResetExpired
 
 val equal_event : event -> event -> bool

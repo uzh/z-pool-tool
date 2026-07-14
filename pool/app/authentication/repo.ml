@@ -7,11 +7,24 @@ module Repo_entity = struct
   module Channel = Model.SelectorType (Channel)
 
   let t =
-    let decode (id, (user_uuid, (channel, (token, (usage_count, ()))))) =
-      Ok { id; user_uuid; channel; token; usage_count = UsageCount.of_int usage_count }
+    let decode (id, (user_uuid, (channel, (token, (failed_attempts, ()))))) =
+      Ok
+        { id
+        ; user_uuid
+        ; channel
+        ; token
+        ; failed_attempts = FailedAttempts.of_int failed_attempts
+        }
     in
     let encode m : ('a Data.t, string) result =
-      Ok Data.[ m.id; m.user_uuid; m.channel; m.token; UsageCount.value m.usage_count ]
+      Ok
+        Data.
+          [ m.id
+          ; m.user_uuid
+          ; m.channel
+          ; m.token
+          ; FailedAttempts.value m.failed_attempts
+          ]
     in
     let open Schema in
     custom
@@ -26,7 +39,7 @@ let sql_select_columns =
   ; Entity.Id.sql_select_fragment ~field:"pool_authentication.user_uuid"
   ; "pool_authentication.channel"
   ; "pool_authentication.token"
-  ; "pool_authentication.usage_count"
+  ; "pool_authentication.failed_attempts"
   ]
 ;;
 
@@ -37,7 +50,7 @@ let insert_request =
       user_uuid,
       channel,
       token,
-      usage_count,
+      failed_attempts,
       valid_until
     ) VALUES (
       UNHEX(REPLACE($1, '-', '')),
@@ -64,10 +77,10 @@ let find_valid_by_id_request =
       FROM pool_authentication
       WHERE uuid = UNHEX(REPLACE($1, '-', ''))
       AND valid_until > NOW()
-      AND usage_count < %d
+      AND failed_attempts < %d
     |sql}
     (CCString.concat ", " sql_select_columns)
-    UsageCount.(value limit)
+    FailedAttempts.(value limit)
   |> Pool_common.Repo.Id.t ->? Repo_entity.t
 ;;
 
@@ -107,17 +120,17 @@ let delete_request =
 
 let delete pool id = Database.exec pool delete_request id
 
-let increase_usage_count_request =
+let increase_failed_attempts_request =
   {sql|
     UPDATE pool_authentication
-    SET usage_count = usage_count + 1
+    SET failed_attempts = failed_attempts + 1
     WHERE uuid = UNHEX(REPLACE($1, '-', ''))
   |sql}
   |> Pool_common.Repo.Id.t ->. Caqti_type.unit
 ;;
 
-let increase_usage_count pool { id; _ } =
-  Database.exec pool increase_usage_count_request id
+let increase_failed_attempts pool { id; _ } =
+  Database.exec pool increase_failed_attempts_request id
 ;;
 
 let reset_expired_request =
