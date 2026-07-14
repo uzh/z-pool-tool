@@ -392,6 +392,7 @@ let login_verify_post ~verify_path ~handle_verified ~handle_invalid_session req 
           Pool_event.(Authentication (Authentication.Deleted auth_id))
       in
       handle_invalid_session ()
+      >|+ Sihl.Web.Session.update_or_set_value ~key:"auth_id" (fun _ -> None) req
     | SessionMissing -> handle_invalid_session ()
   in
   Response.handle ~src req handle_request
