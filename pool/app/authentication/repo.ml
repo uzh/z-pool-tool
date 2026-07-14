@@ -81,6 +81,22 @@ let find_valid_by_id pool id =
   Lwt_result.return (auth, user)
 ;;
 
+let find_id_by_user_request =
+  Format.asprintf
+    {sql|
+      SELECT
+        %s
+      FROM pool_authentication
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    (Entity.Id.sql_select_fragment ~field:"pool_authentication.uuid")
+  |> Pool_user.Repo.Id.t ->? Pool_common.Repo.Id.t
+;;
+
+let find_id_by_user pool user_uuid =
+  Database.find_opt pool find_id_by_user_request user_uuid
+;;
+
 let delete_request =
   {sql|
     DELETE FROM pool_authentication

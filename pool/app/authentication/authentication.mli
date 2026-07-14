@@ -40,6 +40,8 @@ type t =
   ; usage_count : UsageCount.t
   }
 
+val resend_cooldown_seconds : int
+
 val equal : t -> t -> bool
 val show : t -> string
 val pp : Format.formatter -> t -> unit
@@ -67,6 +69,8 @@ val find_valid_by_id
   :  Database.Label.t
   -> Id.t
   -> (t * Pool_user.t, Pool_message.Error.t) Lwt_result.t
+
+val find_id_by_user : Database.Label.t -> Pool_user.Id.t -> Id.t option Lwt.t
 
 val lifecycle : Sihl.Container.lifecycle
 val register : unit -> Sihl.Container.Service.t

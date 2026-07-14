@@ -9,6 +9,7 @@ let create ?(id = Id.create ()) ?(token = Token.generate ()) ~user ~channel () =
 ;;
 
 let find_valid_by_id = Repo.find_valid_by_id
+let find_id_by_user = Repo.find_id_by_user
 
 let start () =
   let open Schedule in

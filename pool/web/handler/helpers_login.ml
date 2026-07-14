@@ -147,6 +147,11 @@ let validate_login req ~tags database_label ~email ~password =
 (* Internal helper: create 2FA auth token and email job events for a validated user *)
 let create_2fa_auth ?id ?token ~tags req { Pool_context.database_label; language; _ } user
   =
+  let%lwt id =
+    match id with
+    | Some _ as id -> Lwt.return id
+    | None -> Authentication.find_id_by_user database_label (Pool_user.id user)
+  in
   let auth = Authentication.(create ?id ?token ~user ~channel:Channel.Email) () in
   let%lwt email_job =
     let open Message_template in
@@ -401,7 +406,6 @@ let login_verify_post ~verify_path ~handle_verified ~handle_invalid_session req 
 let resend_token_post ~verify_path req =
   let open HttpUtils in
   let tags = Pool_context.Logger.Tags.req req in
-  let cooldown_seconds = 60 in
   let handle_request (Pool_context.{ database_label; user; _ } as context) =
     let%lwt result =
       let* auth_id =
