@@ -4,6 +4,30 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+### Added
+
+- Maintenance mode
+- Ability to unblock blocked accounts
+- Contact recruiters when the email service fails (UI)
+- Bounce count for admins
+
+### Changed
+
+- Refactored duplicate contacts search
+- Updated operator creation process
+- Removed unused greetings text
+- Updated packages (including security fixes)
+
+### Fixed
+
+- Contacts activated after import no longer receive reminders
+- Explicit UTC handling for timestamps
+- Database connection no longer stays in a failed state
+- Root database schedule no longer dies
+- Release polled queue jobs after restart
+- Bounce handling
+- Display of promoted contacts in assignments
+
 ## [0.13.5](https://github.com/uzh/z-pool-tool/tree/0.13.5) - 2026-06-11
 
 ### Fixed
