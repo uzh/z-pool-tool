@@ -7,6 +7,8 @@ let find = Repo.find
 let all = Repo.all
 let find_by_contact = Repo.find_by_contact
 let count = Repo.count
+let find_to_check = Repo.find_to_check
+let mark_as_checked = Repo.mark_as_checked
 
 let merge pool ?user_uuid ({ contact; merged_contact; _ } as merge) =
   let formatted contact =

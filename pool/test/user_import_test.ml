@@ -537,8 +537,19 @@ module Repo = struct
     let token () = Pool_common.Id.(() |> create |> value) in
     let%lwt contact1 = create_contact ~id:contact_id_1 () in
     let%lwt contact2 = create_contact ~id:contact_id_2 () in
-    let import1 = create_user_import ~token:(token ()) (Pool_context.Contact contact1) in
-    let import2 = create_user_import ~token:(token ()) (Pool_context.Contact contact2) in
+    let active_after_import = User_import.ActiveAfterImport.create false in
+    let import1 =
+      create_user_import
+        ~token:(token ())
+        ~active_after_import
+        (Pool_context.Contact contact1)
+    in
+    let import2 =
+      create_user_import
+        ~token:(token ())
+        ~active_after_import
+        (Pool_context.Contact contact2)
+    in
     let%lwt () =
       [ contact_id_1; contact_id_2 ]
       |> Lwt_list.iter_s (set_contact_import_pending database_label)

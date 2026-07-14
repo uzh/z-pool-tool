@@ -5,33 +5,36 @@ module Dynparam = Database.Dynparam
 
 let src = Logs.Src.create "contact.repo"
 
+let contact_columns =
+  [ "terms_accepted_at"
+  ; "language"
+  ; "experiment_type_preference"
+  ; "cell_phone"
+  ; "cell_phone_verified_at"
+  ; "paused"
+  ; "disabled"
+  ; "verified"
+  ; "email_verified"
+  ; "num_invitations"
+  ; "num_assignments"
+  ; "num_show_ups"
+  ; "num_no_shows"
+  ; "num_participations"
+  ; "firstname_version"
+  ; "lastname_version"
+  ; "paused_version"
+  ; "language_version"
+  ; "experiment_type_preference_version"
+  ; "import_pending"
+  ; "created_at"
+  ; "updated_at"
+  ]
+;;
+
 let make_sql_select_columns ~user_table ~contact_table =
-  let with_tablemame = Format.asprintf "%s.%s" contact_table in
+  let with_tablename = Format.asprintf "%s.%s" contact_table in
   Pool_user.Repo.make_sql_select_columns ~tablename:user_table
-  @ ([ "terms_accepted_at"
-     ; "language"
-     ; "experiment_type_preference"
-     ; "cell_phone"
-     ; "cell_phone_verified_at"
-     ; "paused"
-     ; "disabled"
-     ; "verified"
-     ; "email_verified"
-     ; "num_invitations"
-     ; "num_assignments"
-     ; "num_show_ups"
-     ; "num_no_shows"
-     ; "num_participations"
-     ; "firstname_version"
-     ; "lastname_version"
-     ; "paused_version"
-     ; "language_version"
-     ; "experiment_type_preference_version"
-     ; "import_pending"
-     ; "created_at"
-     ; "updated_at"
-     ]
-     |> CCList.map with_tablemame)
+  @ (contact_columns |> CCList.map with_tablename)
 ;;
 
 let sql_select_columns =
@@ -42,6 +45,32 @@ let joins =
   {sql|
     INNER JOIN user_users
       ON pool_contacts.user_uuid = user_users.uuid
+  |sql}
+;;
+
+(* Contacts promoted to admin ([Admin.promote_contact]) have their row moved
+   from [pool_contacts] to [pool_contacts_promoted]; these variants read from
+   both so a contact's historical data (e.g. assignments) stays visible after
+   promotion. Requires [user_users] to already be joined on [contact_uuid] by
+   the caller. *)
+let sql_select_columns_with_promoted =
+  let coalesce_column col =
+    Format.asprintf
+      "COALESCE(pool_contacts.%s, pool_contacts_promoted.%s) AS %s"
+      col
+      col
+      col
+  in
+  Pool_user.Repo.make_sql_select_columns ~tablename:"user_users"
+  @ (contact_columns |> CCList.map coalesce_column)
+;;
+
+let joins_with_promoted =
+  {sql|
+    LEFT JOIN pool_contacts
+      ON pool_contacts.user_uuid = user_users.uuid
+    LEFT JOIN pool_contacts_promoted
+      ON pool_contacts_promoted.user_uuid = user_users.uuid
   |sql}
 ;;
 
@@ -377,6 +406,26 @@ let update_request =
 ;;
 
 let update pool = Entity.to_write %> Database.exec pool update_request
+
+(* Grace period between a profile change and the resulting duplicates check.
+   The due date is overwritten on every change, so consecutive edits within
+   the grace period coalesce into a single check. *)
+let duplicates_check_grace_period = 15 (* minutes *)
+
+let mark_duplicates_check_due_request =
+  let open Caqti_request.Infix in
+  [%string
+    {sql|
+      UPDATE pool_contacts
+      SET duplicates_check_due_at = DATE_ADD(NOW(), INTERVAL %{CCInt.to_string duplicates_check_grace_period} MINUTE)
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}]
+  |> Id.t ->. Caqti_type.unit
+;;
+
+let mark_duplicates_check_due pool id =
+  Database.exec pool mark_duplicates_check_due_request id
+;;
 
 let set_to_now_request field =
   let open Caqti_request.Infix in

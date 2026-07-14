@@ -29,7 +29,6 @@ module Key = struct
       [@printer print "experimenter_role_hint"]
       | ExperimentNavigationTitle [@name "experiment_navigation_title"]
       [@printer print "experiment_navigation_title"]
-      | GreetingsText [@name "greetings_text"] [@printer print "greetings_text"]
       | PasswordPolicyText [@name "password_policy_text"]
       [@printer print "password_policy_text"]
       | PrivacyPolicy [@name "privacy_policy"] [@printer print "privacy_policy"]
@@ -50,7 +49,6 @@ module Key = struct
     | CreditsText
     | DashboardIntro
     | ExperimenterRoleHint
-    | GreetingsText
     | PrivacyPolicy
     | SignUpCTA
     | TermsAndConditions

@@ -253,6 +253,10 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       | Some ({ n_retries; _ } as pool) ->
         (match connection pool with
          | Fail err when n_retries >= retries ->
+           (* Give up for this call, but reset the retry counter so subsequent
+              fetches attempt to reconnect again. Otherwise the pool stays in
+              [Fail] forever and never recovers once the database is back. *)
+           let () = reset_retry pool |> Cache.replace in
            raise_caqti_error (database_label pool) (Error err |> Lwt_result.lift)
          | Fail _ ->
            let () = connect_base pool |> increment_retry |> Cache.replace in

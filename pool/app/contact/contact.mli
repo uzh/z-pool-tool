@@ -136,6 +136,11 @@ val find_full_cell_phone_verification_by_contact
 val has_terms_accepted : Database.Label.t -> t -> bool Lwt.t
 val find_last_signin_at : Database.Label.t -> t -> Ptime.t Lwt.t
 
+(** Schedule a duplicates check for the contact after a grace period. Repeated
+    calls within the grace period overwrite the due date, coalescing multiple
+    profile changes into a single check. *)
+val mark_duplicates_check_due : Database.Label.t -> Id.t -> unit Lwt.t
+
 type create =
   { user_id : Id.t
   ; email : Pool_user.EmailAddress.t
@@ -222,6 +227,14 @@ module Repo : sig
   val joins : string
   val sql_select_columns : string list
   val make_sql_select_columns : user_table:string -> contact_table:string -> string list
+
+  (** Variants of [joins]/[sql_select_columns] that also surface contacts who
+      have since been promoted to admin (see [pool_contacts_promoted]).
+      Requires [user_users] to already be joined on the entity's
+      [contact_uuid]/[user_uuid]. *)
+  val joins_with_promoted : string
+
+  val sql_select_columns_with_promoted : string list
 
   val find_request_sql
     :  ?distinct:bool

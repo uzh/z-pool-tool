@@ -39,6 +39,9 @@ _opam/
 !.log/.gitkeep
 .parcel-cache
 *.ctf
+.auto-resolution/
+.conflict-*/
+.conflict-*
 
 # NPM
 node_modules

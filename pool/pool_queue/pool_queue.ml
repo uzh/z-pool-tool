@@ -220,7 +220,22 @@ let work_queue (job : AnyJob.t) (database_label : Database.Label.t) =
     let%lwt instances =
       Repo.poll_n_workable database_label config.batch_size job.AnyJob.name
     in
-    let () = Lwt.async (fun () -> Lwt_list.iter_s (work_job job) instances) in
+    (* Isolate failures per instance: a raising [work_job] (e.g. connection
+       drop while persisting the result) must not abort the remaining batch. *)
+    let work_job instance =
+      Lwt.catch
+        (fun () -> work_job job instance)
+        (fun exn ->
+           Logs.err (fun m ->
+             m
+               ~tags
+               "%s: Working instance '%s' failed: %s"
+               msg_prefix
+               (instance |> Instance.id |> Id.show)
+               (Printexc.to_string exn));
+           Lwt.return_unit)
+    in
+    let () = Lwt.async (fun () -> Lwt_list.iter_s work_job instances) in
     Lwt.return_unit
 ;;
 
@@ -254,13 +269,13 @@ let start () =
   in
   let handle fcn database_label =
     try%lwt fcn database_label with
-    | Caqti_error.(Exn #load_or_connect) ->
+    | exn ->
       Logs.warn (fun m ->
         m
-          "Could not archive and reset jobs for database: %s"
-          (Database.Label.show database_label));
+          "Could not archive and reset jobs for database %s: %s"
+          (Database.Label.show database_label)
+          (Printexc.to_string exn));
       Lwt.return_unit
-    | err -> raise err
   in
   match !registered_jobs with
   | [] ->
@@ -268,12 +283,20 @@ let start () =
     Lwt.return_unit
   | jobs ->
     let database_labels = Database.Pool.Tenant.all () in
+    let executes_on_root =
+      CCList.exists (fun { AnyJob.execute_on_root; _ } -> execute_on_root) jobs
+    in
+    let all_database_labels =
+      if executes_on_root
+      then Database.Pool.Root.label :: database_labels
+      else database_labels
+    in
     Logs.info (fun m ->
       m
         ~tags
         "Start queue for databases: %s"
-        ([%show: Database.Label.t list] database_labels));
-    let%lwt () = Lwt_list.iter_s (handle archive_and_reset) database_labels in
+        ([%show: Database.Label.t list] all_database_labels));
+    let%lwt () = Lwt_list.iter_s (handle archive_and_reset) all_database_labels in
     let jobs_per_database =
       let open CCList in
       fold_left
@@ -288,10 +311,26 @@ let start () =
         []
         jobs
     in
-    jobs_per_database
-    |> Lwt_list.iter_s (fun ((database_label, _) as job) ->
+    let%lwt () =
+      jobs_per_database
+      |> Lwt_list.iter_s (fun ((database_label, _) as job) ->
+        let tags = Database.Logger.Tags.create database_label in
+        create_schedule job |> Schedule.add_and_start ~tags)
+    in
+    (* Release jobs that were polled but never completed, e.g. because the
+       database connection dropped while they were being processed. *)
+    all_database_labels
+    |> Lwt_list.iter_s (fun database_label ->
       let tags = Database.Logger.Tags.create database_label in
-      create_schedule job |> Schedule.add_and_start ~tags)
+      let interval =
+        Schedule.(Every (Ptime.Span.of_int_s (5 * 60) |> ScheduledTimeSpan.of_span))
+      in
+      Schedule.create
+        [%string "queue [%{Database.Label.value database_label}]: reset stale jobs"]
+        interval
+        (Some database_label)
+        (fun () -> Repo.reset_stale_pending_jobs database_label)
+      |> Schedule.add_and_start ~tags)
 ;;
 
 let stop () =

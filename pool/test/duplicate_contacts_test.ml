@@ -462,3 +462,144 @@ let override_with_participations _ () =
   check (list Test_utils.tag) "contact_b has tag" [ tag ] tags;
   Lwt.return_unit
 ;;
+
+(* Scheduling of duplicate checks: contacts are eligible when their check is
+   due, when they were never checked or when the last check is older than a
+   week. Time arithmetic happens in SQL to stay independent of the pinned test
+   timezone. *)
+module CheckSchedule = struct
+  (* high enough to cover all eligible contacts in the test database *)
+  let find_all_to_check () = Duplicate_contacts.find_to_check ~limit:10_000 pool
+
+  let is_eligible contact =
+    find_all_to_check ()
+    ||> CCList.exists (fun c -> Contact.(Id.equal (id c) (id contact)))
+  ;;
+
+  let set_due_at_in_past contact =
+    let request =
+      let open Caqti_request.Infix in
+      {sql|
+        UPDATE pool_contacts
+        SET duplicates_check_due_at = NOW() - INTERVAL 1 MINUTE
+        WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+      |sql}
+      |> Contact.Repo.Id.t ->. Caqti_type.unit
+    in
+    Database.exec pool request (Contact.id contact)
+  ;;
+
+  let set_last_checked_days_ago contact days =
+    let request =
+      let open Caqti_request.Infix in
+      {sql|
+        UPDATE pool_contacts
+        SET duplicates_last_checked = DATE_SUB(NOW(), INTERVAL $2 DAY)
+        WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+      |sql}
+      |> Caqti_type.(t2 Contact.Repo.Id.t int ->. unit)
+    in
+    Database.exec pool request (Contact.id contact, days)
+  ;;
+
+  (* (last_checked set, due_at set, due_at in the future) *)
+  let check_timestamps contact =
+    let request =
+      let open Caqti_request.Infix in
+      {sql|
+        SELECT
+          duplicates_last_checked IS NOT NULL,
+          duplicates_check_due_at IS NOT NULL,
+          COALESCE(duplicates_check_due_at > NOW(), FALSE)
+        FROM pool_contacts
+        WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+      |sql}
+      |> Caqti_type.(Contact.Repo.Id.t ->! t3 bool bool bool)
+    in
+    Database.find pool request (Contact.id contact)
+  ;;
+end
+
+let mark_check_due_defers_check _ () =
+  let open CheckSchedule in
+  let open Alcotest in
+  let%lwt contact = ContactRepo.create () in
+  let%lwt eligible = is_eligible contact in
+  check bool "new contact is eligible for a check" true eligible;
+  let%lwt () = Duplicate_contacts.mark_as_checked pool contact in
+  let%lwt eligible = is_eligible contact in
+  check bool "recently checked contact is not eligible" false eligible;
+  let%lwt () = Contact.mark_duplicates_check_due pool (Contact.id contact) in
+  let%lwt _, due_set, due_in_future = check_timestamps contact in
+  check bool "due date is set" true due_set;
+  check bool "due date lies in the future (grace period)" true due_in_future;
+  let%lwt eligible = is_eligible contact in
+  check bool "contact is not eligible during the grace period" false eligible;
+  Lwt.return_unit
+;;
+
+let due_contacts_are_prioritized _ () =
+  let open CheckSchedule in
+  let open Alcotest in
+  let%lwt contact = ContactRepo.create () in
+  let%lwt () = Duplicate_contacts.mark_as_checked pool contact in
+  let%lwt () = Contact.mark_duplicates_check_due pool (Contact.id contact) in
+  let%lwt () = set_due_at_in_past contact in
+  let%lwt to_check = Duplicate_contacts.find_to_check pool in
+  let first_is_contact =
+    match to_check with
+    | first :: _ -> Contact.(Id.equal (id first) (id contact))
+    | [] -> false
+  in
+  check bool "due contact is returned before never checked contacts" true first_is_contact;
+  let%lwt () = Duplicate_contacts.mark_as_checked pool contact in
+  let%lwt _, due_set, _ = check_timestamps contact in
+  check bool "due date is reset when marked as checked" false due_set;
+  let%lwt eligible = is_eligible contact in
+  check bool "contact is no longer eligible" false eligible;
+  Lwt.return_unit
+;;
+
+let periodic_check_after_one_week _ () =
+  let open CheckSchedule in
+  let open Alcotest in
+  let%lwt contact = ContactRepo.create () in
+  let%lwt () = Duplicate_contacts.mark_as_checked pool contact in
+  let%lwt () = set_last_checked_days_ago contact 6 in
+  let%lwt eligible = is_eligible contact in
+  check bool "contact checked 6 days ago is not eligible" false eligible;
+  let%lwt () = set_last_checked_days_ago contact 8 in
+  let%lwt eligible = is_eligible contact in
+  check bool "contact checked 8 days ago is eligible again" true eligible;
+  Lwt.return_unit
+;;
+
+let service_processes_due_contact _ () =
+  let open CheckSchedule in
+  let open Alcotest in
+  let open Pool_user in
+  let create_contact () =
+    ContactRepo.create
+      ~firstname:(Firstname.of_string "Duplicheck")
+      ~lastname:(Lastname.of_string "Scheduling")
+      ()
+  in
+  let%lwt contact = create_contact () in
+  let%lwt duplicate = create_contact () in
+  let%lwt () = Duplicate_contacts.mark_as_checked pool contact in
+  let%lwt () = Duplicate_contacts.mark_as_checked pool duplicate in
+  let%lwt () = set_due_at_in_past contact in
+  let%lwt () = Duplicate_contacts.Service.run_by_tenant pool in
+  let%lwt found =
+    Duplicate_contacts.find_by_contact pool contact
+    ||> fst
+    ||> CCList.exists (fun { Duplicate_contacts.contact_a; contact_b; _ } ->
+      Contact.(
+        Id.equal (id contact_a) (id duplicate) || Id.equal (id contact_b) (id duplicate)))
+  in
+  check bool "duplicate of due contact was found" true found;
+  let%lwt last_checked_set, due_set, _ = check_timestamps contact in
+  check bool "last checked is set after the run" true last_checked_set;
+  check bool "due date is reset after the run" false due_set;
+  Lwt.return_unit
+;;

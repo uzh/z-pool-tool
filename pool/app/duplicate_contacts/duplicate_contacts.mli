@@ -37,6 +37,13 @@ val find_by_contact
 
 val count : Database.Label.t -> int Lwt.t
 
+(** Contacts eligible for a duplicates check: due (`duplicates_check_due_at` in
+    the past), never checked, or last checked more than a week ago. Due
+    contacts are returned first. *)
+val find_to_check : ?limit:int -> Database.Label.t -> Contact.t list Lwt.t
+
+val mark_as_checked : Database.Label.t -> Contact.t -> unit Lwt.t
+
 val merge
   :  Database.Label.t
   -> ?user_uuid:Pool_common.Id.t
@@ -71,7 +78,13 @@ val filterable_by : Query.Filter.Condition.Human.t list option
 val default_query : Query.t
 
 module Service : sig
-  val run : Database.Label.t -> Pool_common.Id.t -> unit Lwt.t
+  val run
+    :  ?fields:Custom_field.t list
+    -> Database.Label.t
+    -> Pool_common.Id.t
+    -> unit Lwt.t
+
+  val run_by_tenant : Database.Label.t -> unit Lwt.t
   val register : unit -> Sihl.Container.Service.t
 end
 
