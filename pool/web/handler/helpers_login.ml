@@ -323,8 +323,8 @@ let verify_2fa_login ~tags { Pool_context.database_label; user = context_user; _
                  [ Authentication.IncreaseUsageCount auth |> Pool_event.authentication ]
              in
              let remaining =
-               Authentication.UsageCount.(value limit)
-               - Authentication.UsageCount.value auth.Authentication.usage_count
+               Authentication.UsageCount.(
+                 value limit - value auth.Authentication.usage_count)
                - 1
              in
              if remaining <= 0
