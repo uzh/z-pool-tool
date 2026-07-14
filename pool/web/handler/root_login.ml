@@ -50,72 +50,38 @@ let login_post req =
 ;;
 
 let login_verify_get req =
-  let result (Pool_context.{ database_label; _ } as context) =
-    let handle_auth auth_id user =
+  Helpers_login.login_verify_get
+    ~login_path:root_login_path
+    ~render_confirmation:(fun context auth user ->
       Page.Root.Login.token_confirmation
-        ~authentication_id:auth_id
+        ~authentication_id:auth.Authentication.id
         ?intended:(HttpUtils.find_intended_opt req)
         ~email:(Pool_user.email user)
         context
       >|> General.create_root_layout ~active_navigation:"/root/login" context
       ||> Sihl.Web.Response.of_html
-      |> Lwt_result.ok
-    in
-    (match Sihl.Web.Session.find "auth_id" req with
-     | None -> Lwt_result.fail ()
-     | Some auth_id ->
-       Authentication.Id.of_string auth_id
-       |> Authentication.find_valid_by_id database_label
-       >|+ (fun (_, user) -> Authentication.Id.of_string auth_id, user)
-       >>= (fun (auth_id, user) -> handle_auth auth_id user)
-       >|- fun _ -> ())
-    >|> function
-    | Ok ok -> Lwt_result.return ok
-    | Error () ->
-      HttpUtils.redirect_to_with_actions
-        root_login_path
-        [ Message.set
-            ~warning:[ Warning.Warning "Your session has expired, please sign in again" ]
-        ]
-      |> Lwt_result.ok
-  in
-  Response.handle ~src req result
+      |> Lwt_result.ok)
+    req
 ;;
 
-let login_verify_post req =
-  let open Response in
-  let tags = Pool_context.Logger.Tags.req req in
-  let result (Pool_context.{ database_label; _ } as context) =
-    let handle_session_error () =
-      HttpUtils.redirect_to_with_actions
-        root_login_path
-        [ Message.set
-            ~warning:[ Warning.Warning "Your session has expired, please sign in again" ]
-        ]
-      |> Lwt_result.ok
-    in
-    Helpers_login.verify_2fa_login ~tags context req
-    >|> function
-    | Helpers_login.Verified user ->
+let login_verify_post =
+  Helpers_login.login_verify_post
+    ~verify_path:root_login_verify_path
+    ~handle_verified:(fun _ user ->
       HttpUtils.redirect_to_with_actions
         root_entrypoint_path
         [ Sihl.Web.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ] ]
-      |> Lwt_result.ok
-    | Helpers_login.InvalidToken err ->
-      Lwt_result.fail err |> bad_request_on_error login_verify_get
-    | Helpers_login.SessionExpired auth_id ->
-      let%lwt () =
-        Pool_event.handle_event
-          ~tags
-          database_label
-          context.Pool_context.user
-          Pool_event.(Authentication (Authentication.Deleted auth_id))
-      in
-      handle_session_error ()
-    | Helpers_login.SessionMissing -> handle_session_error ()
-  in
-  Response.handle ~src req result
+      |> Lwt_result.ok)
+    ~handle_invalid_session:(fun () ->
+      HttpUtils.redirect_to_with_actions
+        root_login_path
+        [ Message.set
+            ~warning:[ Warning.Warning "Your session has expired, please sign in again" ]
+        ]
+      |> Lwt_result.ok)
 ;;
+
+let resend_token = Helpers_login.resend_token_post ~verify_path:root_login_verify_path
 
 let request_reset_password_get req =
   let result context =

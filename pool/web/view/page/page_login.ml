@@ -42,7 +42,7 @@ let login_token_confirmation
     let resend_action =
       HttpUtils.externalize_path_with_params
         query_parameters
-        "/resend-login-confirmation-token"
+        (Format.asprintf "%s/resend-token" url)
     in
     let button_id = "resend-token-button" in
     let countdown_id = "resend-token-countdown" in

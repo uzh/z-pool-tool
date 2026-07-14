@@ -75,195 +75,102 @@ let login_post req =
 ;;
 
 let login_verify_get req =
-  let tags = Pool_context.Logger.Tags.req req in
-  let handle_request (Pool_context.{ database_label; _ } as context) =
-    let handle_auth auth_id user =
-      Page.Public.login_token_confirmation
-        ~authentication_id:auth_id
-        ?intended:(HttpUtils.find_intended_opt req)
-        ~email:(Pool_user.email user)
-        context
-      >|> create_layout req ~active_navigation:"/login" context
-      >|+ Sihl.Web.Response.of_html
-    in
-    (match Sihl.Web.Session.find "auth_id" req with
-     | None -> Lwt_result.fail ()
-     | Some auth_id ->
-       Authentication.Id.of_string auth_id
-       |> Authentication.find_valid_by_id database_label
-       >|+ (fun (_, user) -> Authentication.Id.of_string auth_id, user)
-       >>= (fun (auth_id, user) -> handle_auth auth_id user)
-       >|- fun _ ->
-       let _ =
-         Pool_common.Utils.with_log_error
-           ~tags
-           (Pool_message.Error.Authorization
-              (Format.asprintf
-                 "Failed to authenticate user: no valid authentication found for id %s"
-                 auth_id))
-       in
-       ())
-    >|> function
-    | Ok ok -> Lwt_result.return ok
-    | Error () ->
-      HttpUtils.redirect_to_with_actions
-        "/login"
-        [ Sihl.Web.Session.update_or_set_value ~key:"auth_id" (fun _ -> None) req
-        ; Message.set
-            ~warning:
-              [ Pool_message.Warning.Warning
-                  "Your session has expired, please sign in again"
-              ]
-        ]
-      |> Lwt_result.ok
-  in
-  Response.handle ~src req handle_request
+  Helpers_login.login_verify_get
+    ~login_path:"/login"
+    ~render_confirmation:(fun context auth user ->
+      Response.bad_request_render_error context
+      @@ (Page.Public.login_token_confirmation
+            ~authentication_id:auth.Authentication.id
+            ?intended:(HttpUtils.find_intended_opt req)
+            ~email:(Pool_user.email user)
+            context
+          >|> create_layout req ~active_navigation:"/login" context
+          >|+ Sihl.Web.Response.of_html))
+    req
 ;;
 
 let login_verify_post req =
   let open Response in
   let open HttpUtils in
   let tags = Pool_context.Logger.Tags.req req in
-  let handle_request (Pool_context.{ database_label; query_parameters; _ } as context) =
-    let session_expired () =
+  let login Pool_context.{ database_label; query_parameters; _ } user =
+    let success_and_redirect
+          ?(set_completion_cookie = false)
+          ?redirect
+          ?(actions = [])
+          context_user
+      =
+      let redirect =
+        let open CCOption in
+        redirect
+        <+> find_intended_opt req
+        |> value ~default:(Pool_context.dashboard_path context_user)
+        |> url_with_field_params query_parameters
+      in
+      let* () = increase_sign_in_count ~tags database_label context_user in
       redirect_to_with_actions
-        "/login"
-        [ Message.set
-            ~warning:
-              [ Pool_message.Warning.Warning
-                  "Your session has expired, please sign in again"
-              ]
-        ]
+        redirect
+        ([ Sihl.Web.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ] ]
+         @ actions)
+      ||> (fun res ->
+      if set_completion_cookie
+      then
+        Sihl.Web.Session.set_value ~key:Contact.profile_completion_cookie "true" req res
+      else res)
       |> Lwt_result.ok
     in
-    let login user =
-      let success_and_redirect
-            ?(set_completion_cookie = false)
-            ?redirect
-            ?(actions = [])
-            context_user
-        =
-        let redirect =
-          let open CCOption in
-          redirect
-          <+> find_intended_opt req
-          |> value ~default:(Pool_context.dashboard_path context_user)
-          |> url_with_field_params query_parameters
-        in
-        let* () = increase_sign_in_count ~tags database_label context_user in
-        redirect_to_with_actions
-          redirect
-          ([ Sihl.Web.Session.set [ "user_id", user.Pool_user.id |> Pool_user.Id.value ] ]
-           @ actions)
-        ||> (fun res ->
-        if set_completion_cookie
-        then
-          Sihl.Web.Session.set_value ~key:Contact.profile_completion_cookie "true" req res
-        else res)
-        |> Lwt_result.ok
+    let handle_admin_login user =
+      user.Pool_user.id
+      |> Admin.(Id.of_user %> find database_label)
+      >|+ Pool_context.admin
+      >>= success_and_redirect
+    in
+    let handle_contact_login user =
+      let* contact = user.Pool_user.id |> Contact.(Id.of_user %> find database_label) in
+      let%lwt required_answers_given =
+        Custom_field.all_required_answered database_label (Contact.id contact)
       in
-      let handle_admin_login user =
-        user.Pool_user.id
-        |> Admin.(Id.of_user %> find database_label)
-        >|+ Pool_context.admin
-        >>= success_and_redirect
-      in
-      let handle_contact_login user =
-        let* contact = user.Pool_user.id |> Contact.(Id.of_user %> find database_label) in
-        let%lwt required_answers_given =
-          Custom_field.all_required_answered database_label (Contact.id contact)
-        in
-        let contact = contact |> Pool_context.contact in
-        match required_answers_given with
-        | true -> success_and_redirect contact
-        | false ->
-          success_and_redirect
-            ~set_completion_cookie:true
-            ~redirect:"/user/completion"
-            ~actions:[ Message.set ~error:[ Pool_message.Error.RequiredFieldsMissing ] ]
-            contact
-      in
-      match user |> Pool_user.is_confirmed with
+      let contact = contact |> Pool_context.contact in
+      match required_answers_given with
+      | true -> success_and_redirect contact
       | false ->
-        redirect_to (url_with_field_params query_parameters "/email-confirmation")
-        |> Lwt_result.ok
-      | true ->
-        user
-        |> Admin.user_is_admin database_label
-        >|> (function
-         | true -> handle_admin_login user
-         | false -> handle_contact_login user)
+        success_and_redirect
+          ~set_completion_cookie:true
+          ~redirect:"/user/completion"
+          ~actions:[ Message.set ~error:[ Pool_message.Error.RequiredFieldsMissing ] ]
+          contact
     in
-    Helpers_login.verify_2fa_login ~tags context req
-    >|> function
-    | Helpers_login.Verified user -> bad_request_on_error login_verify_get @@ login user
-    | Helpers_login.InvalidToken _ ->
-      HttpUtils.redirect_to_with_actions
-        "/login/verify"
-        [ Message.set ~error:[ Pool_message.(Error.Invalid Field.OTP) ] ]
+    match user |> Pool_user.is_confirmed with
+    | false ->
+      redirect_to (url_with_field_params query_parameters "/email-confirmation")
       |> Lwt_result.ok
-    | Helpers_login.SessionExpired auth_id ->
-      let%lwt () =
-        Pool_event.handle_event
-          ~tags
-          database_label
-          context.Pool_context.user
-          Pool_event.(Authentication (Authentication.Deleted auth_id))
-      in
-      session_expired ()
-    | Helpers_login.SessionMissing -> session_expired ()
+    | true ->
+      user
+      |> Admin.user_is_admin database_label
+      >|> (function
+       | true -> handle_admin_login user
+       | false -> handle_contact_login user)
   in
-  Response.handle ~src req handle_request
-;;
-
-let resend_login_confirmation_token req =
-  let tags = Pool_context.Logger.Tags.req req in
-  let cooldown_seconds = 60 in
-  let handle_request ({ Pool_context.database_label; user; _ } as context) =
-    let%lwt result =
-      let* auth_id =
-        match Sihl.Web.Session.find "auth_id" req with
-        | None -> Lwt.return_error Pool_message.(Error.Invalid Field.Id)
-        | Some auth_id -> Authentication.Id.of_string auth_id |> Lwt.return_ok
-      in
-      let* (_ : Authentication.t), login_user =
-        Authentication.find_valid_by_id database_label auth_id
-      in
-      let* () =
-        let%lwt last_sent_at =
-          Pool_queue.find_last_login_token_sent_at
-            database_label
-            (Pool_common.Id.of_string (Authentication.Id.value auth_id))
-        in
-        (match last_sent_at with
-         | None -> Ok ()
-         | Some sent_at ->
-           let elapsed =
-             Ptime.diff (Ptime_clock.now ()) sent_at
-             |> Ptime.Span.to_float_s
-             |> int_of_float
-           in
-           if elapsed < cooldown_seconds
-           then Error Pool_message.Error.TokenAlreadySentRecently
-           else Ok ())
-        |> Lwt_result.lift
-      in
-      let* _, (_ : Authentication.t), events =
-        Helpers_login.create_2fa_auth ~id:auth_id ~tags req context login_user
-      in
-      let%lwt () = Pool_event.handle_events database_label user events in
-      Lwt.return_ok ()
-    in
-    Http_response.Htmx.redirect
-      "/login/verify"
-      ~actions:
-        (match result with
-         | Ok _ -> [ Message.set ~success:[ Pool_message.(Success.Resent Field.OTP) ] ]
-         | Error e -> [ Message.set ~error:[ e ] ])
+  let session_expired () =
+    redirect_to_with_actions
+      "/login"
+      [ Message.set
+          ~warning:
+            [ Pool_message.Warning.Warning
+                "Your session has expired, please sign in again"
+            ]
+      ]
     |> Lwt_result.ok
   in
-  Response.handle ~src req handle_request
+  Helpers_login.login_verify_post
+    ~verify_path:"/login/verify"
+    ~handle_verified:(fun context user ->
+      bad_request_on_error login_verify_get @@ login context user)
+    ~handle_invalid_session:session_expired
+    req
 ;;
+
+let resend_token = Helpers_login.resend_token_post ~verify_path:"/login/verify"
 
 let request_reset_password_get req =
   let result context =

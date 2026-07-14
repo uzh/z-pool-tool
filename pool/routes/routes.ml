@@ -111,9 +111,7 @@ module Public = struct
             ; post "/login" Login.login_post
             ; get "/login/verify" Login.login_verify_get
             ; post "/login/verify" Login.login_verify_post
-            ; post
-                "/resend-login-confirmation-token"
-                Login.resend_login_confirmation_token
+            ; post "/login/verify/resend-token" Login.resend_token
             ; get "/request-reset-password" Login.request_reset_password_get
             ; post "/request-reset-password" Login.request_reset_password_post
             ; get "/reset-password" Login.reset_password_get
@@ -998,6 +996,7 @@ module Root = struct
     ; post "/login" Login.login_post
     ; get "/login/verify" Login.login_verify_get
     ; post "/login/verify" Login.login_verify_post
+    ; post "/login/verify/resend-token" Login.resend_token
     ; get "/request-reset-password" Login.request_reset_password_get
     ; post "/request-reset-password" Login.request_reset_password_post
     ; get "/reset-password" Login.reset_password_get

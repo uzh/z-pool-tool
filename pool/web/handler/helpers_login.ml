@@ -1,9 +1,10 @@
 open CCFun.Infix
 open Utils.Lwt_result.Infix
 open Pool_message
-module Label = Database.Label
 module EmailAddress = Pool_user.EmailAddress
 module Password = Pool_user.Password
+module Response = Http_response
+module HttpUtils = Http_utils
 
 let src = Logs.Src.create "login helper"
 
@@ -331,4 +332,117 @@ let verify_2fa_login ~tags { Pool_context.database_label; user = context_user; _
                in
                Lwt.return (SessionExpired auth_id))
              else Lwt.return (InvalidToken err))))
+;;
+
+let login_verify_get ~render_confirmation ~login_path req =
+  let open HttpUtils in
+  let tags = Pool_context.Logger.Tags.req req in
+  let handle_request (Pool_context.{ database_label; _ } as context) =
+    let%lwt auth_data =
+      match Sihl.Web.Session.find "auth_id" req with
+      | Some auth_id ->
+        Authentication.Id.of_string auth_id
+        |> Authentication.find_valid_by_id database_label
+        >|- fun _ ->
+        let _ =
+          Pool_common.Utils.with_log_error
+            ~tags
+            (Pool_message.Error.Authorization
+               (Format.asprintf
+                  "Failed to authenticate user: no valid authentication found for id %s"
+                  auth_id))
+        in
+        ()
+      | None -> Lwt_result.fail ()
+    in
+    match auth_data with
+    | Ok (auth, user) -> render_confirmation context auth user
+    | Error () ->
+      Http_utils.redirect_to_with_actions
+        login_path
+        [ Sihl.Web.Session.update_or_set_value ~key:"auth_id" (fun _ -> None) req
+        ; Message.set
+            ~warning:
+              [ Pool_message.Warning.Warning
+                  "Your session has expired, please sign in again"
+              ]
+        ]
+      |> Lwt_result.ok
+  in
+  Http_response.handle ~src req handle_request
+;;
+
+let login_verify_post ~verify_path ~handle_verified ~handle_invalid_session req =
+  let open HttpUtils in
+  let tags = Pool_context.Logger.Tags.req req in
+  let handle_request (Pool_context.{ database_label; _ } as context) =
+    match%lwt verify_2fa_login ~tags context req with
+    | Verified user -> handle_verified context user
+    | InvalidToken _ ->
+      HttpUtils.redirect_to_with_actions
+        verify_path
+        [ Message.set ~error:[ Pool_message.(Error.Invalid Field.OTP) ] ]
+      |> Lwt_result.ok
+    | SessionExpired auth_id ->
+      let%lwt () =
+        Pool_event.handle_event
+          ~tags
+          database_label
+          context.Pool_context.user
+          Pool_event.(Authentication (Authentication.Deleted auth_id))
+      in
+      handle_invalid_session ()
+    | SessionMissing -> handle_invalid_session ()
+  in
+  Response.handle ~src req handle_request
+;;
+
+let resend_token_post ~verify_path req =
+  let open HttpUtils in
+  let tags = Pool_context.Logger.Tags.req req in
+  let cooldown_seconds = 60 in
+  let handle_request (Pool_context.{ database_label; user; _ } as context) =
+    let%lwt result =
+      let* auth_id =
+        match Sihl.Web.Session.find "auth_id" req with
+        | None -> Lwt.return_error Pool_message.(Error.Invalid Field.Id)
+        | Some auth_id -> Authentication.Id.of_string auth_id |> Lwt.return_ok
+      in
+      let* (_ : Authentication.t), login_user =
+        Authentication.find_valid_by_id database_label auth_id
+      in
+      let* () =
+        let%lwt last_sent_at =
+          Pool_queue.find_last_login_token_sent_at
+            database_label
+            (Pool_common.Id.of_string (Authentication.Id.value auth_id))
+        in
+        (match last_sent_at with
+         | None -> Ok ()
+         | Some sent_at ->
+           let elapsed =
+             Ptime.diff (Ptime_clock.now ()) sent_at
+             |> Ptime.Span.to_float_s
+             |> int_of_float
+           in
+           if elapsed < cooldown_seconds
+           then Error Pool_message.Error.TokenAlreadySentRecently
+           else Ok ())
+        |> Lwt_result.lift
+      in
+      let* _, (_ : Authentication.t), events =
+        create_2fa_auth ~id:auth_id ~tags req context login_user
+      in
+      let%lwt () = Pool_event.handle_events database_label user events in
+      Lwt.return_ok ()
+    in
+    Http_response.Htmx.redirect
+      verify_path
+      ~actions:
+        (match result with
+         | Ok _ -> [ Message.set ~success:[ Pool_message.(Success.Resent Field.OTP) ] ]
+         | Error e -> [ Message.set ~error:[ e ] ])
+    |> Lwt_result.ok
+  in
+  Response.handle ~src req handle_request
 ;;
