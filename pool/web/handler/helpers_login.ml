@@ -426,7 +426,7 @@ let resend_token_post ~verify_path req =
              |> Ptime.Span.to_float_s
              |> int_of_float
            in
-           if elapsed < cooldown_seconds
+           if elapsed < Authentication.resend_cooldown_seconds
            then Error Pool_message.Error.TokenAlreadySentRecently
            else Ok ())
         |> Lwt_result.lift

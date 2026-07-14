@@ -29,7 +29,6 @@ let login_token_confirmation
     | None -> txt ""
   in
   let resend_token sent_at =
-    let cooldown_seconds = 60 in
     let remaining_seconds =
       match sent_at with
       | None -> 0
@@ -37,7 +36,7 @@ let login_token_confirmation
         let elapsed =
           Ptime.diff (Ptime_clock.now ()) t |> Ptime.Span.to_float_s |> int_of_float
         in
-        max 0 (cooldown_seconds - elapsed)
+        max 0 (Authentication.resend_cooldown_seconds - elapsed)
     in
     let resend_action =
       HttpUtils.externalize_path_with_params

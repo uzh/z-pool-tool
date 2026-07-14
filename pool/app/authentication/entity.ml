@@ -56,3 +56,5 @@ type t =
   ; usage_count : UsageCount.t
   }
 [@@deriving eq, show { with_path = false }]
+
+let resend_cooldown_seconds = 60
