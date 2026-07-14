@@ -80,7 +80,8 @@ let login_token_confirmation
       ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
       ([ button
            ~a:
-             [ a_id button_id
+             [ a_button_type `Button
+             ; a_id button_id
              ; a_class [ "btn"; "primary"; "is-text" ]
              ; a_style "padding:0"
              ; Htmx.hx_post resend_action
