@@ -2,6 +2,7 @@
  (name database)
  (libraries
   containers
+  caqti.classic
   caqti-lwt.unix
   lwt
   guardian.backend

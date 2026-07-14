@@ -258,7 +258,8 @@ let find_admins_request ~where limit =
 
 let reminder_where_clause =
   {sql|
-    pool_user_imports.notification_sent_at IS NOT NULL
+    pool_user_imports.active_after_import = 0
+    AND pool_user_imports.notification_sent_at IS NOT NULL
     AND pool_user_imports.notification_sent_at < NOW() - INTERVAL $1 SECOND
     AND pool_user_imports.reminder_count < 2
     AND (

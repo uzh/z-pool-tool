@@ -12,7 +12,6 @@ module Key : sig
     | DashboardWaitingList
     | ExperimenterRoleHint
     | ExperimentNavigationTitle
-    | GreetingsText
     | PasswordPolicyText
     | PrivacyPolicy
     | SignUpCTA
