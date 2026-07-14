@@ -4,7 +4,7 @@ module Dynparam = Database.Dynparam
 
 let sql_select_columns =
   (Entity.Id.sql_select_fragment ~field:"pool_assignments.uuid"
-   :: Contact.Repo.sql_select_columns)
+   :: Contact.Repo.sql_select_columns_with_promoted)
   @ [ "pool_assignments.no_show"
     ; "pool_assignments.participated"
     ; "pool_assignments.matches_filter"
@@ -17,14 +17,18 @@ let sql_select_columns =
     ]
 ;;
 
+(* Assignments of contacts who have since been promoted to admin must stay
+   visible so the assignment lists remain consistent with the participation
+   counts, which are computed directly from [pool_assignments] and are
+   unaware of promotion (see [pool_contacts_promoted]). *)
 let joins =
   Format.asprintf
     {sql|
-      INNER JOIN pool_contacts
-        ON pool_contacts.user_uuid = pool_assignments.contact_uuid
+      INNER JOIN user_users
+        ON user_users.uuid = pool_assignments.contact_uuid
       %s
     |sql}
-    Contact.Repo.joins
+    Contact.Repo.joins_with_promoted
 ;;
 
 let joins_session =
@@ -261,7 +265,7 @@ module Sql = struct
     	  GROUP BY
 		      pool_assignments.contact_uuid
       |sql}
-      (Contact.Repo.sql_select_columns |> CCString.concat ",")
+      (Contact.Repo.sql_select_columns_with_promoted |> CCString.concat ",")
       joins
       joins_session
     |> Experiment.Repo.Entity.Id.t ->* Contact.Repo.t
