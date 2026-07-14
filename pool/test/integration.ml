@@ -481,6 +481,10 @@ let suite =
           ; test_case "override a with b" `Slow override_a_with_b
           ; test_case "override b with a" `Slow override_b_with_a
           ; test_case "override with participations" `Slow override_with_participations
+          ; test_case "mark check due defers check" `Slow mark_check_due_defers_check
+          ; test_case "due contacts are prioritized" `Slow due_contacts_are_prioritized
+          ; test_case "periodic check after one week" `Slow periodic_check_after_one_week
+          ; test_case "service processes due contact" `Slow service_processes_due_contact
           ] )
     ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]

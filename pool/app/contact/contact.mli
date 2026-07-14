@@ -136,6 +136,11 @@ val find_full_cell_phone_verification_by_contact
 val has_terms_accepted : Database.Label.t -> t -> bool Lwt.t
 val find_last_signin_at : Database.Label.t -> t -> Ptime.t Lwt.t
 
+(** Schedule a duplicates check for the contact after a grace period. Repeated
+    calls within the grace period overwrite the due date, coalescing multiple
+    profile changes into a single check. *)
+val mark_duplicates_check_due : Database.Label.t -> Id.t -> unit Lwt.t
+
 type create =
   { user_id : Id.t
   ; email : Pool_user.EmailAddress.t

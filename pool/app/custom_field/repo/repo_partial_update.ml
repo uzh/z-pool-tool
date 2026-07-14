@@ -166,18 +166,27 @@ let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
     let update_request = sql |> update_sql |> pt ->. Caqti_type.unit in
     Database.exec pool update_request pv
   in
+  let mark_duplicates_check_due () =
+    Contact.mark_duplicates_check_due pool (Contact.id contact)
+  in
   let open PartialUpdate in
   match field with
   | Firstname (version, firstname) ->
     let%lwt (_ : Pool_user.t) = update_user pool ~firstname contact in
-    ( dyn |> Dynparam.add Pool_common.Repo.Version.t version
-    , {sql| firstname_version = $3 |sql} )
-    |> update_user_table
+    let%lwt () =
+      ( dyn |> Dynparam.add Pool_common.Repo.Version.t version
+      , {sql| firstname_version = $3 |sql} )
+      |> update_user_table
+    in
+    mark_duplicates_check_due ()
   | Lastname (version, lastname) ->
     let%lwt (_ : Pool_user.t) = update_user pool ~lastname contact in
-    ( dyn |> Dynparam.add Pool_common.Repo.Version.t version
-    , {sql| lastname_version = $3 |sql} )
-    |> update_user_table
+    let%lwt () =
+      ( dyn |> Dynparam.add Pool_common.Repo.Version.t version
+      , {sql| lastname_version = $3 |sql} )
+      |> update_user_table
+    in
+    mark_duplicates_check_due ()
   | Language (version, value) ->
     ( dyn
       |> Dynparam.add Caqti_type.(option Pool_common.Repo.Language.t) value
@@ -189,5 +198,8 @@ let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
     )
     |> update_user_table
   | Custom field ->
-    (upsert_answer pool is_admin Contact.(id contact |> Id.to_common)) field
+    let%lwt () =
+      (upsert_answer pool is_admin Contact.(id contact |> Id.to_common)) field
+    in
+    mark_duplicates_check_due ()
 ;;
