@@ -348,7 +348,7 @@ let login_verify_get ~render_confirmation ~login_path req =
       | Some auth_id ->
         Authentication.Id.of_string auth_id
         |> Authentication.find_valid_by_id database_label
-        >|- fun _ ->
+        >|- fun (_ : Error.t) ->
         let _ =
           Pool_common.Utils.with_log_error
             ~tags
@@ -435,7 +435,7 @@ let resend_token_post ~verify_path req =
            else Ok ())
         |> Lwt_result.lift
       in
-      let* _, (_ : Authentication.t), events =
+      let* (_ : Pool_user.t), (_ : Authentication.t), events =
         create_2fa_auth ~id:auth_id ~tags req context login_user
       in
       let%lwt () = Pool_event.handle_events database_label user events in
