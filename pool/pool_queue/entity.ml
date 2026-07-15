@@ -266,6 +266,7 @@ module History = struct
     | Invitation
     | Session
     | User
+    | Authentication
   [@@deriving enum, eq, ord, show, yojson]
 
   let model_sql = function
@@ -274,6 +275,7 @@ module History = struct
     | Invitation -> "pool_queue_job_invitation", "invitation_uuid"
     | Session -> "pool_queue_job_session", "session_uuid"
     | User -> "pool_queue_job_user", "user_uuid"
+    | Authentication -> "pool_queue_job_authentication", "authentication_uuid"
   ;;
 
   let source_table = function
@@ -282,6 +284,7 @@ module History = struct
     | Invitation -> "pool_invitations"
     | Session -> "pool_sessions"
     | User -> "user_users"
+    | Authentication -> "pool_authentication"
   ;;
 
   let all_models : model list =

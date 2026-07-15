@@ -1,9 +1,10 @@
 open CCFun.Infix
 open Utils.Lwt_result.Infix
 open Pool_message
-module Label = Database.Label
 module EmailAddress = Pool_user.EmailAddress
 module Password = Pool_user.Password
+module Response = Http_response
+module HttpUtils = Http_utils
 
 let src = Logs.Src.create "login helper"
 
@@ -146,6 +147,11 @@ let validate_login req ~tags database_label ~email ~password =
 (* Internal helper: create 2FA auth token and email job events for a validated user *)
 let create_2fa_auth ?id ?token ~tags req { Pool_context.database_label; language; _ } user
   =
+  let%lwt id =
+    match id with
+    | Some _ as id -> Lwt.return id
+    | None -> Authentication.find_id_by_user database_label (Pool_user.id user)
+  in
   let auth = Authentication.(create ?id ?token ~user ~channel:Channel.Email) () in
   let%lwt email_job =
     let open Message_template in
@@ -260,4 +266,189 @@ let confirm_2fa_login ~tags user authentication token req =
     err
   in
   Lwt_result.return (user, events)
+;;
+
+(* Register a failed login attempt for [email], increasing the block duration and
+   notifying the user if the account gets (temporarily) suspended. Mirrors the
+   counter handling in [validate_login]. *)
+let increment_failed_login_attempt ~tags database_label email =
+  let open Pool_user.FailedLoginAttempt in
+  let%lwt login_attempts = Repo.find_opt database_label email in
+  let counter =
+    match login_attempts with
+    | Some { counter; _ } -> counter
+    | None -> Counter.init
+  in
+  let counter = Counter.increment counter in
+  let blocked_until = block_until counter in
+  let m =
+    match login_attempts with
+    | None -> create email counter blocked_until
+    | Some login_attempts -> { login_attempts with counter; blocked_until }
+  in
+  let%lwt () = Repo.insert database_label m in
+  notify_user database_label tags email blocked_until
+;;
+
+type verify_outcome =
+  | Verified of Pool_user.t
+  | InvalidToken of Pool_message.Error.t
+  | SessionExpired of Authentication.Id.t
+  | SessionMissing
+
+let verify_2fa_login ~tags { Pool_context.database_label; user = context_user; _ } req =
+  match Sihl.Web.Session.find "auth_id" req with
+  | None -> Lwt.return SessionMissing
+  | Some id ->
+    let auth_id = Authentication.Id.of_string id in
+    auth_id
+    |> Authentication.find_valid_by_id database_label
+    >|> (function
+     | Error _ -> Lwt.return (SessionExpired auth_id)
+     | Ok (auth, user) ->
+       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+       (match Cqrs_command.Login_command.Confirm2FaLogin.decode urlencoded with
+        | Error err -> Lwt.return (InvalidToken err)
+        | Ok (_, token) ->
+          confirm_2fa_login ~tags user auth token req
+          >|> (function
+           | Ok (user, events) ->
+             let%lwt () = Pool_event.handle_events database_label context_user events in
+             Lwt.return (Verified user)
+           | Error err ->
+             let%lwt () =
+               Pool_event.handle_events
+                 database_label
+                 context_user
+                 [ Authentication.IncreaseFailedAttempts auth |> Pool_event.authentication
+                 ]
+             in
+             let remaining =
+               Authentication.FailedAttempts.(
+                 value limit - value auth.Authentication.failed_attempts)
+               - 1
+             in
+             if remaining <= 0
+             then (
+               let%lwt () =
+                 increment_failed_login_attempt
+                   ~tags
+                   database_label
+                   (Pool_user.email user)
+               in
+               Lwt.return (SessionExpired auth_id))
+             else Lwt.return (InvalidToken err))))
+;;
+
+let login_verify_get ~render_confirmation ~login_path req =
+  let open HttpUtils in
+  let tags = Pool_context.Logger.Tags.req req in
+  let handle_request (Pool_context.{ database_label; _ } as context) =
+    let%lwt auth_data =
+      match Sihl.Web.Session.find "auth_id" req with
+      | Some auth_id ->
+        Authentication.Id.of_string auth_id
+        |> Authentication.find_valid_by_id database_label
+        >|- fun (_ : Error.t) ->
+        let _ =
+          Pool_common.Utils.with_log_error
+            ~tags
+            (Pool_message.Error.Authorization
+               (Format.asprintf
+                  "Failed to authenticate user: no valid authentication found for id %s"
+                  auth_id))
+        in
+        ()
+      | None -> Lwt_result.fail ()
+    in
+    match auth_data with
+    | Ok (auth, user) -> render_confirmation context auth user
+    | Error () ->
+      Http_utils.redirect_to_with_actions
+        login_path
+        [ Sihl.Web.Session.update_or_set_value ~key:"auth_id" (fun _ -> None) req
+        ; Message.set
+            ~warning:
+              [ Pool_message.Warning.Warning
+                  "Your session has expired, please sign in again"
+              ]
+        ]
+      |> Lwt_result.ok
+  in
+  Http_response.handle ~src req handle_request
+;;
+
+let login_verify_post ~verify_path ~handle_verified ~handle_invalid_session req =
+  let open HttpUtils in
+  let tags = Pool_context.Logger.Tags.req req in
+  let handle_request (Pool_context.{ database_label; _ } as context) =
+    match%lwt verify_2fa_login ~tags context req with
+    | Verified user -> handle_verified context user
+    | InvalidToken _ ->
+      HttpUtils.redirect_to_with_actions
+        verify_path
+        [ Message.set ~error:[ Pool_message.(Error.Invalid Field.OTP) ] ]
+      |> Lwt_result.ok
+    | SessionExpired auth_id ->
+      let%lwt () =
+        Pool_event.handle_event
+          ~tags
+          database_label
+          context.Pool_context.user
+          Pool_event.(Authentication (Authentication.Deleted auth_id))
+      in
+      handle_invalid_session ()
+      >|+ Sihl.Web.Session.update_or_set_value ~key:"auth_id" (fun _ -> None) req
+    | SessionMissing -> handle_invalid_session ()
+  in
+  Response.handle ~src req handle_request
+;;
+
+let resend_token_post ~verify_path req =
+  let open HttpUtils in
+  let tags = Pool_context.Logger.Tags.req req in
+  let handle_request (Pool_context.{ database_label; user; _ } as context) =
+    let%lwt result =
+      let* auth_id =
+        match Sihl.Web.Session.find "auth_id" req with
+        | None -> Lwt.return_error Pool_message.(Error.Invalid Field.Id)
+        | Some auth_id -> Authentication.Id.of_string auth_id |> Lwt.return_ok
+      in
+      let* (_ : Authentication.t), login_user =
+        Authentication.find_valid_by_id database_label auth_id
+      in
+      let* () =
+        let%lwt last_sent_at =
+          Pool_queue.find_last_login_token_sent_at
+            database_label
+            (Pool_common.Id.of_string (Authentication.Id.value auth_id))
+        in
+        (match last_sent_at with
+         | None -> Ok ()
+         | Some sent_at ->
+           let elapsed =
+             Ptime.diff (Ptime_clock.now ()) sent_at
+             |> Ptime.Span.to_float_s
+             |> int_of_float
+           in
+           if elapsed < Authentication.resend_cooldown_seconds
+           then Error Pool_message.Error.TokenAlreadySentRecently
+           else Ok ())
+        |> Lwt_result.lift
+      in
+      let* (_ : Pool_user.t), (_ : Authentication.t), events =
+        create_2fa_auth ~id:auth_id ~tags req context login_user
+      in
+      let%lwt () = Pool_event.handle_events database_label user events in
+      Lwt.return_ok ()
+    in
+    Http_response.Htmx.redirect
+      verify_path
+      ~actions:
+        (match result with
+         | Ok _ -> [ Message.set ~success:[ Pool_message.(Success.Resent Field.OTP) ] ]
+         | Error e -> [ Message.set ~error:[ e ] ])
+    |> Lwt_result.ok
+  in
+  Response.handle ~src req handle_request
 ;;

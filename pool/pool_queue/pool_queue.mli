@@ -152,6 +152,7 @@ module History : sig
     | Invitation
     | Session
     | User
+    | Authentication
 
   type item = model * Pool_common.Id.t
 
@@ -161,6 +162,11 @@ module History : sig
 end
 
 val find : Database.Label.t -> Id.t -> (Instance.t, Pool_message.Error.t) Lwt_result.t
+
+val find_last_login_token_sent_at
+  :  Database.Label.t
+  -> Pool_common.Id.t
+  -> Ptime.t option Lwt.t
 
 val find_by
   :  [< `Current | `History ]

@@ -45,7 +45,7 @@ let token_confirmation ?authentication_id ?intended ~email context =
     ?authentication_id
     ?intended
     ~email
-    "/root/login-confirmation"
+    "/root/login/verify"
 ;;
 
 let request_reset_password Pool_context.{ language; csrf; _ } =

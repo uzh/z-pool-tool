@@ -21,13 +21,26 @@ module Token : sig
   val schema : unit -> (Pool_conformist.error_msg, t) Pool_conformist.Field.t
 end
 
+module FailedAttempts : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val value : t -> int
+  val of_int : int -> t
+  val limit : t
+end
+
 type t =
   { id : Id.t
   ; user_uuid : Pool_user.Id.t
   ; channel : Channel.t
   ; token : Token.t
+  ; failed_attempts : FailedAttempts.t
   }
 
+val resend_cooldown_seconds : int
 val equal : t -> t -> bool
 val show : t -> string
 val pp : Format.formatter -> t -> unit
@@ -42,7 +55,8 @@ val create
 
 type event =
   | Created of t
-  | Deleted of t
+  | Deleted of Id.t
+  | IncreaseFailedAttempts of t
   | ResetExpired
 
 val equal_event : event -> event -> bool
@@ -55,5 +69,6 @@ val find_valid_by_id
   -> Id.t
   -> (t * Pool_user.t, Pool_message.Error.t) Lwt_result.t
 
+val find_id_by_user : Database.Label.t -> Pool_user.Id.t -> Id.t option Lwt.t
 val lifecycle : Sihl.Container.lifecycle
 val register : unit -> Sihl.Container.Service.t

@@ -18,6 +18,12 @@ module Channel = struct
   include Core
 end
 
+module FailedAttempts = struct
+  include Pool_model.Base.Integer
+
+  let limit = of_int 3
+end
+
 module Token = struct
   include Pool_model.Base.String
 
@@ -47,5 +53,8 @@ type t =
   ; user_uuid : Pool_user.Id.t
   ; channel : Channel.t
   ; token : Token.t
+  ; failed_attempts : FailedAttempts.t
   }
 [@@deriving eq, show { with_path = false }]
+
+let resend_cooldown_seconds = 60

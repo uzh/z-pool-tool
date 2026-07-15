@@ -52,7 +52,7 @@ end = struct
       else Error Pool_message.(Error.Invalid Field.OTP)
     in
     Ok
-      [ Deleted auth |> Pool_event.authentication
+      [ Deleted auth.id |> Pool_event.authentication
       ; ResetExpired |> Pool_event.authentication
       ]
   ;;

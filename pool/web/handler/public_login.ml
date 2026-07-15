@@ -32,46 +32,24 @@ let login_get req =
   Response.handle ~src req result
 ;;
 
-let login_token_confirmation req =
-  let tags = Pool_context.Logger.Tags.req req in
-  let open Response in
-  let result ({ Pool_context.database_label; _ } as context) =
-    let* user, auth, (_ : Authentication.Token.t) =
-      Helpers_login.decode_2fa_confirmation database_label req ~tags
-      |> bad_request_on_error login_get
-    in
-    Response.bad_request_render_error context
-    @@ (Page.Public.login_token_confirmation
-          ~authentication_id:auth.Authentication.id
-          ?intended:(HttpUtils.find_intended_opt req)
-          ~email:(Pool_user.email user)
-          context
-        |> create_layout req ~active_navigation:"/login" context
-        >|+ Sihl.Web.Response.of_html)
-  in
-  Response.handle ~src req result
-;;
-
 let login_post req =
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result ({ Pool_context.database_label; user; query_parameters; _ } as context) =
+  let result (Pool_context.{ database_label; user; query_parameters; _ } as context) =
     Response.bad_request_on_error ~urlencoded login_get
     @@
     let* login_step = Helpers_login.initiate_login ~tags req context urlencoded in
     match login_step with
-    | Helpers_login.MfaRequired (login_user, auth, events) ->
+    | Helpers_login.MfaRequired (_, auth, events) ->
       let handle_events = Pool_event.handle_events database_label user in
       let success () =
-        Page.Public.login_token_confirmation
-          ~authentication_id:auth.Authentication.id
-          ?intended:(HttpUtils.find_intended_opt req)
-          ~email:(Pool_user.email login_user)
-          context
-        |> create_layout req ~active_navigation:"/login" context
-        >|+ Sihl.Web.Response.of_html
+        HttpUtils.redirect_to_with_actions
+          (HttpUtils.retain_url_params req "/login/verify" |> Uri.to_string)
+          [ Sihl.Web.Session.set
+              [ "auth_id", auth.Authentication.id |> Authentication.Id.value ]
+          ]
       in
-      events |> handle_events >|> success
+      events |> handle_events >|> success |> Lwt_result.ok
     | Helpers_login.DirectLogin login_user ->
       let success_and_redirect context_user =
         let redirect =
@@ -96,18 +74,26 @@ let login_post req =
   Response.handle ~src req result
 ;;
 
-let login_cofirmation req =
+let login_verify_get req =
+  Helpers_login.login_verify_get
+    ~login_path:"/login"
+    ~render_confirmation:(fun context auth user ->
+      Response.bad_request_render_error context
+      @@ (Page.Public.login_token_confirmation
+            ~authentication_id:auth.Authentication.id
+            ?intended:(HttpUtils.find_intended_opt req)
+            ~email:(Pool_user.email user)
+            context
+          >|> create_layout req ~active_navigation:"/login" context
+          >|+ Sihl.Web.Response.of_html))
+    req
+;;
+
+let login_verify_post req =
   let open Response in
   let open HttpUtils in
   let tags = Pool_context.Logger.Tags.req req in
-  let result { Pool_context.database_label; query_parameters; _ } =
-    let* user, auth, token =
-      Helpers_login.decode_2fa_confirmation database_label req ~tags
-      |> bad_request_on_error login_get
-    in
-    bad_request_on_error login_token_confirmation
-    @@
-    let* user, events = Helpers_login.confirm_2fa_login ~tags user auth token req in
+  let login Pool_context.{ database_label; query_parameters; _ } user =
     let success_and_redirect
           ?(set_completion_cookie = false)
           ?redirect
@@ -121,8 +107,6 @@ let login_cofirmation req =
         |> value ~default:(Pool_context.dashboard_path context_user)
         |> url_with_field_params query_parameters
       in
-      let tags = Pool_context.Logger.Tags.req req in
-      let%lwt () = Pool_event.handle_events database_label context_user events in
       let* () = increase_sign_in_count ~tags database_label context_user in
       redirect_to_with_actions
         redirect
@@ -167,8 +151,26 @@ let login_cofirmation req =
        | true -> handle_admin_login user
        | false -> handle_contact_login user)
   in
-  Response.handle ~src req result
+  let session_expired () =
+    redirect_to_with_actions
+      "/login"
+      [ Message.set
+          ~warning:
+            [ Pool_message.Warning.Warning
+                "Your session has expired, please sign in again"
+            ]
+      ]
+    |> Lwt_result.ok
+  in
+  Helpers_login.login_verify_post
+    ~verify_path:"/login/verify"
+    ~handle_verified:(fun context user ->
+      bad_request_on_error login_verify_get @@ login context user)
+    ~handle_invalid_session:session_expired
+    req
 ;;
+
+let resend_token = Helpers_login.resend_token_post ~verify_path:"/login/verify"
 
 let request_reset_password_get req =
   let result context =

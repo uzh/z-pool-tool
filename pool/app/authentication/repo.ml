@@ -7,14 +7,30 @@ module Repo_entity = struct
   module Channel = Model.SelectorType (Channel)
 
   let t =
-    let decode (id, (user_uuid, (channel, (token, ())))) =
-      Ok { id; user_uuid; channel; token }
+    let decode (id, (user_uuid, (channel, (token, (failed_attempts, ()))))) =
+      Ok
+        { id
+        ; user_uuid
+        ; channel
+        ; token
+        ; failed_attempts = FailedAttempts.of_int failed_attempts
+        }
     in
     let encode m : ('a Data.t, string) result =
-      Ok Data.[ m.id; m.user_uuid; m.channel; m.token ]
+      Ok
+        Data.
+          [ m.id
+          ; m.user_uuid
+          ; m.channel
+          ; m.token
+          ; FailedAttempts.value m.failed_attempts
+          ]
     in
     let open Schema in
-    custom ~encode ~decode Caqti_type.[ Id.t; Pool_user.Repo.Id.t; Channel.t; string ]
+    custom
+      ~encode
+      ~decode
+      Caqti_type.[ Id.t; Pool_user.Repo.Id.t; Channel.t; string; int ]
   ;;
 end
 
@@ -23,6 +39,7 @@ let sql_select_columns =
   ; Entity.Id.sql_select_fragment ~field:"pool_authentication.user_uuid"
   ; "pool_authentication.channel"
   ; "pool_authentication.token"
+  ; "pool_authentication.failed_attempts"
   ]
 ;;
 
@@ -33,15 +50,16 @@ let insert_request =
       user_uuid,
       channel,
       token,
+      failed_attempts,
       valid_until
     ) VALUES (
       UNHEX(REPLACE($1, '-', '')),
       UNHEX(REPLACE($2, '-', '')),
       $3,
       $4,
+      $5,
       NOW() + INTERVAL 5 MINUTE
     ) ON DUPLICATE KEY UPDATE
-      uuid = UNHEX(REPLACE($1, '-', '')),
       channel = $3,
       token = $4,
       valid_until = NOW() + INTERVAL 5 MINUTE
@@ -59,8 +77,10 @@ let find_valid_by_id_request =
       FROM pool_authentication
       WHERE uuid = UNHEX(REPLACE($1, '-', ''))
       AND valid_until > NOW()
+      AND failed_attempts < %d
     |sql}
     (CCString.concat ", " sql_select_columns)
+    FailedAttempts.(value limit)
   |> Pool_common.Repo.Id.t ->? Repo_entity.t
 ;;
 
@@ -74,6 +94,22 @@ let find_valid_by_id pool id =
   Lwt_result.return (auth, user)
 ;;
 
+let find_id_by_user_request =
+  Format.asprintf
+    {sql|
+      SELECT
+        %s
+      FROM pool_authentication
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    (Entity.Id.sql_select_fragment ~field:"pool_authentication.uuid")
+  |> Pool_user.Repo.Id.t ->? Pool_common.Repo.Id.t
+;;
+
+let find_id_by_user pool user_uuid =
+  Database.find_opt pool find_id_by_user_request user_uuid
+;;
+
 let delete_request =
   {sql|
     DELETE FROM pool_authentication
@@ -82,7 +118,20 @@ let delete_request =
   |> Pool_common.Repo.Id.t ->. Caqti_type.unit
 ;;
 
-let delete pool { id; _ } = Database.exec pool delete_request id
+let delete pool id = Database.exec pool delete_request id
+
+let increase_failed_attempts_request =
+  {sql|
+    UPDATE pool_authentication
+    SET failed_attempts = failed_attempts + 1
+    WHERE uuid = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> Pool_common.Repo.Id.t ->. Caqti_type.unit
+;;
+
+let increase_failed_attempts pool { id; _ } =
+  Database.exec pool increase_failed_attempts_request id
+;;
 
 let reset_expired_request =
   {sql|
