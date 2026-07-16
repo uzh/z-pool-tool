@@ -47,7 +47,14 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       let pool_config = Caqti_pool_config.create ~max_size:Config.database_pool_size () in
       (* Ptime values are written as UTC wall-clock; pin the session so NOW()
          and CURRENT_TIMESTAMP defaults agree with them regardless of the
-         server's time_zone setting. *)
+         server's time_zone setting.
+
+         Note: caqti-driver-mariadb has itself pinned every connection to UTC
+         since its beginnings (Q.set_utc, "SET time_zone = '+00:00'"), so
+         database sessions were always UTC and all stored values (DATETIME
+         wall-clock and TIMESTAMP epochs) have always been UTC-consistent.
+         This explicit pin only guards against the driver changing that behaviour.
+         TIMESTAMP columns render in the inspecting session's time zone. *)
       let set_utc_request =
         let open Caqti_request.Infix in
         "SET time_zone = '+00:00'" |> Caqti_type.(unit ->. unit)
