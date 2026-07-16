@@ -57,3 +57,7 @@ let migration () =
     |> add_step drop_falsy_unique_constraints_session
     |> add_step drop_falsy_unique_constraints_user)
 ;;
+
+let migration_root () =
+  Database.Migration.(empty "202503061915" |> add_step drop_falsy_unique_constraints_user)
+;;
