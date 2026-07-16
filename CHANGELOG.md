@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Ability to unblock blocked accounts
 - Contact recruiters when the email service fails (UI)
 - Bounce count for admins
+- Resend mechanism for OTP (MFA)
 
 ### Changed
 
