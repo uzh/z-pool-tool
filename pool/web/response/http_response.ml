@@ -74,22 +74,38 @@ let set_flash_fetcher urlencoded context =
 ;;
 
 let handle_error context req =
-  let html_response status page =
+  let html_page status page =
     page
     |> Page.make_layout req context
     ||> Sihl.Web.Response.of_html
     ||> set_response_code status
   in
+  let html_flash req handler urlencoded err code =
+    let open CCFun.Infix in
+    set_context_error [ err ]
+    %> set_flash_fetcher urlencoded
+    %> Pool_context.set req
+    %> handler
+    %> Lwt.map (set_response_code code)
+  in
   function
-  | AccessDenied -> Page.access_denied_note context |> html_response `Unauthorized
+  | AccessDenied -> Page.access_denied_note context |> html_page `Forbidden
   | BadRequest (handler, urlencoded, err) ->
-    context
-    |> set_context_error [ err ]
-    |> set_flash_fetcher urlencoded
-    |> Pool_context.set req
-    |> handler
-    ||> set_response_code `Bad_request
-  | NotFound err -> Page.not_found_note context err |> html_response `Not_found
+    html_flash req handler urlencoded err `Bad_request context
+  | NotFound err -> Page.not_found_note context err |> html_page `Not_found
+  | Unauthorized urlencoded ->
+    let open Http_utils in
+    let login_path =
+      (if is_req_from_root_host req then "/root/login" else "/login")
+      |> intended_of_request req
+    in
+    redirect_to_with_actions
+      login_path
+      [ Message.set ~error:[ Error.LoginInvalidEmailPassword ]
+      ; Sihl.Web.Flash.set (CCOption.map_or ~default:[] flash_fetch_values urlencoded)
+        (* the redirect hides the 401 status, keep it detectable for clients/monitoring *)
+      ; Opium.Response.add_header ("X-Auth-Error", "unauthorized")
+      ]
 ;;
 
 let with_log_http_result_error ~src ~tags =
@@ -117,6 +133,9 @@ let handle ?(src = src) ?enable_cache req result =
   let tags = Pool_context.Logger.Tags.req req in
   match context with
   | Ok context ->
+    let context =
+      Pool_context.set_flash_fetcher context (CCFun.flip Sihl.Web.Flash.find req)
+    in
     let%lwt res = result context in
     res
     |> with_log_http_result_error ~src ~tags

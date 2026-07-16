@@ -9,11 +9,13 @@ type http_error =
   | AccessDenied
   | BadRequest of (Rock.Request.t -> Rock.Response.t Lwt.t) * url_encoded option * Error.t
   | NotFound of Error.t
+  | Unauthorized of url_encoded option
 
 let error_message = function
   | AccessDenied -> Error.AccessDenied
   | BadRequest (_, _, err) -> err
   | NotFound err -> err
+  | Unauthorized _ -> Error.Unauthorized
 ;;
 
 let access_denied = AccessDenied
@@ -25,3 +27,9 @@ let bad_request_on_error ?urlencoded fallback fnc =
 
 let not_found err = NotFound err
 let not_found_on_error fnc = map_error not_found fnc
+
+let unauthorized ?urlencoded () = Unauthorized urlencoded
+
+let unauthorized_on_error ?urlencoded =
+  map_error (fun (_ : Pool_message.Error.t) -> unauthorized ?urlencoded ())
+;;

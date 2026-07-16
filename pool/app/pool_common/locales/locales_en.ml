@@ -697,6 +697,7 @@ let rec error_to_string =
   | TokenAlreadyUsed -> "The token was already used."
   | TokenInvalidFormat -> "Invalid Token Format!"
   | TooShort -> "The duration specified is too short."
+  | Unauthorized -> "Unauthorized"
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
   | Uniqueness field -> field_message "" (field_to_string field) "must be unique."
   | Unsupported text -> [%string "'%{text}' is unsupported."]

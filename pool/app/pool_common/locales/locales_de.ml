@@ -598,7 +598,7 @@ let rec error_to_string =
       "wurde als gelöscht markiert."
   | JobCannotBeRetriggered -> "Dieser Auftrag kann nicht neu ausgelöst werden."
   | JobPending -> "Der Auftrag ist noch pendent."
-  | LoginInvalidEmailPassword -> "Ungültige E-Mail-Adresse oder Passwort."
+  | LoginInvalidEmailPassword -> "Falsche E-Mail-Adresse oder falsches Passwort."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
   | MaintenancePending -> "Es sind Wartungsarbeiten im Gange."
   | MaxLength max -> Format.asprintf "Darf nicht länger als %i Zeichen sein." max
@@ -727,6 +727,7 @@ let rec error_to_string =
   | TokenAlreadyUsed -> "Das Token wurde bereits verwendet."
   | TokenInvalidFormat -> "Ungültiges Token Format!"
   | TooShort -> "Die angegebene Dauer ist zu kurz."
+  | Unauthorized -> "Nicht autorisiert"
   | Undefined field -> field_message "" (field_to_string field) "ist undefiniert."
   | Uniqueness field -> field_message "" (field_to_string field) "muss einzigartig sein."
   | Unsupported text -> [%string "'%{text}' ist nicht supportet."]
