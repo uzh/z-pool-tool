@@ -80,7 +80,7 @@ depends: [
   "fpath" {= "0.7.3"}
   "fs-io" {= "3.21.1"}
   "gmap" {= "0.3.0"}
-  "guardian" {= "0.4.0"}
+  "guardian" {= "0.5.0"}
   "hmap" {= "0.8.1"}
   "http" {= "6.2.1"}
   "httpaf" {= "0.7.1"}
@@ -239,7 +239,7 @@ pin-depends: [
     "conformist.0.8.1-master+aa7b95d"
     "git+https://github.com/oxidizing/conformist.git#aa7b95d1f39215cdaab8cf96d765d63e41d5f8a6"
   ]
-  ["guardian.0.4.0" "git+https://github.com/uzh/guardian.git#0.4.0"]
+  ["guardian.0.5.0" "git+https://github.com/uzh/guardian.git#0.5.0"]
   [
     "letters.0.4.0-bug-connection-close-wait+HEAD"
     "git+https://github.com/mabiede/letters.git#bug/connection-close-wait"
