@@ -109,17 +109,6 @@ let tenant_form
         ?flash_fetcher
         ~hints:[ Pool_common.I18n.SettingsContactEmail ]
   in
-  let maintenance_checkbox =
-    match tenant with
-    | None -> txt ""
-    | Some tenant ->
-      checkbox_element
-        language
-        Field.TenantMaintenanceFlag
-        ~value:(Database.Status.equal Database.Status.Maintenance tenant.status)
-        ?flash_fetcher
-        ~hints:[ Pool_common.I18n.TenantMaintenanceFlag ]
-  in
   let database_fields =
     if CCOption.is_some tenant
     then txt ""
@@ -156,7 +145,6 @@ let tenant_form
         ?flash_fetcher
         ~required:true
     ; language_select
-    ; maintenance_checkbox
     ; contact_email
     ; database_fields
     ; file_uploads
@@ -166,11 +154,26 @@ let tenant_form
     ]
 ;;
 
+let status_chip status =
+  let open CCFun.Infix in
+  let open Database.Status in
+  let style =
+    match status with
+    | Active -> Some `Success
+    | ConnectionIssue | MigrationsConnectionIssue | MigrationsFailed -> Some `Error
+    | Disabled | Maintenance | MigrationsPending -> None
+  in
+  show status
+  |> CCString.(replace ~sub:"_" ~by:" " %> capitalize_ascii)
+  |> Component.Tag.create_chip ?style ~inline:true
+;;
+
 let list tenant_list (Pool_context.{ language; _ } as context) =
   let build_tenant_rows tenant_list =
     let thead =
       [ Field.Pool |> Table.field_to_txt language
       ; Field.Url |> Table.field_to_txt language
+      ; Field.Status |> Table.field_to_txt language
       ; Field.Icon |> Table.field_to_txt language
       ; Field.EmailLogo |> Table.field_to_txt language
       ; Field.Styles |> Table.field_to_txt language
@@ -183,6 +186,7 @@ let list tenant_list (Pool_context.{ language; _ } as context) =
         (fun (tenant : t) ->
            [ txt (tenant.title |> Title.value)
            ; txt (tenant.url |> Url.value)
+           ; status_chip tenant.status
            ; tenant.icon |> CCOption.is_some |> Component.Icon.bool_to_icon
            ; tenant.email_logo |> CCOption.is_some |> Component.Icon.bool_to_icon
            ; tenant.styles |> CCOption.is_some |> Component.Icon.bool_to_icon
@@ -378,6 +382,46 @@ let detail
   =
   let open Pool_tenant in
   let control_to_string = Pool_common.Utils.control_to_string language in
+  let maintenance_form =
+    div
+      ~a:[ a_class [ "card" ] ]
+      [ div
+          ~a:[ a_class [ "card-header" ] ]
+          [ h3
+              [ Pool_common.Utils.field_to_string_capitalized
+                  language
+                  Field.TenantMaintenanceFlag
+                |> txt
+              ]
+          ]
+      ; div
+          ~a:[ a_class [ "card-body" ] ]
+          [ form
+              ~a:
+                [ a_method `Post
+                ; a_action
+                    (pool_path ~id:tenant.id ~suffix:"update-maintenance" ()
+                     |> Sihl.Web.externalize_path)
+                ; a_class [ "stack" ]
+                ]
+              [ csrf_element csrf ()
+              ; checkbox_element
+                  language
+                  Field.TenantMaintenanceFlag
+                  ~value:(Database.Status.equal Database.Status.Maintenance tenant.status)
+                  ~hints:[ Pool_common.I18n.TenantMaintenanceFlag ]
+              ; div
+                  ~a:[ a_class [ "flexrow" ] ]
+                  [ submit_element
+                      ~classnames:[ "push" ]
+                      language
+                      Control.(Update (Some Field.TenantMaintenanceFlag))
+                      ()
+                  ]
+              ]
+          ]
+      ]
+  in
   let delete_img_form files =
     div
       ~a:[ a_class [ "flexrow" ] ]
@@ -450,7 +494,8 @@ let detail
         ]
     ; div
         ~a:[ a_class [ "stack-lg"; "gap" ] ]
-        [ tenant_form ~tenant context
+        [ maintenance_form
+        ; tenant_form ~tenant context
         ; delete_file_forms
         ; database_form
         ; p

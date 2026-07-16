@@ -107,6 +107,10 @@ let () =
         ; test_case "delete tenant smtp auth" `Quick Tenant_test.delete_smtp_auth
         ; test_case "create tenant" `Quick Tenant_test.create_tenant
         ; test_case "update tenant details" `Quick Tenant_test.update_tenant_details
+        ; test_case
+            "update tenant maintenance"
+            `Quick
+            Tenant_test.update_tenant_maintenance
         ; test_case "update tenant database" `Quick Tenant_test.update_tenant_database
         ; test_case "create operator" `Quick Tenant_test.create_operator
         ; test_case

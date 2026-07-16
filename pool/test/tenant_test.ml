@@ -444,10 +444,7 @@ let[@warning "-4"] update_tenant_details () =
     let events =
       let open CCResult.Infix in
       let open Pool_tenant_command.EditDetails in
-      Data.urlencoded
-      |> HttpUtils.format_request_boolean_values Field.[ TenantMaintenanceFlag |> show ]
-      |> decode
-      >>= handle ~system_event_id ~current_status:Database.Status.Active tenant
+      Data.urlencoded |> decode >>= handle ~system_event_id tenant
     in
     let expected =
       let open Pool_tenant in
@@ -464,7 +461,6 @@ let[@warning "-4"] update_tenant_details () =
         ; styles = Some styles
         ; icon = Some icon
         ; email_logo = None
-        ; status = None
         }
       in
       let logo_event =
@@ -485,6 +481,43 @@ let[@warning "-4"] update_tenant_details () =
     in
     Alcotest.(
       check (result (list Test_utils.event) Test_utils.error) "succeeds" expected events)
+;;
+
+let update_tenant_maintenance () =
+  let tenant = Data.full_tenant |> fail_with in
+  let system_event_id = System_event.Id.create () in
+  let run ~current_status maintenance =
+    let open CCResult.Infix in
+    let open Pool_tenant_command.UpdateMaintenance in
+    [ Field.(show TenantMaintenanceFlag), [ Utils.Bool.to_string maintenance ] ]
+    |> decode
+    >>= handle ~system_event_id { tenant with Pool_tenant.status = current_status }
+  in
+  let check_events msg expected events =
+    Alcotest.(check (result (list Test_utils.event) Test_utils.error) msg expected events)
+  in
+  let cache_cleared =
+    System_event.(Job.TenantCacheCleared |> create ~id:system_event_id |> created)
+    |> Pool_event.system_event
+  in
+  let open Database.Status in
+  check_events
+    "activate maintenance"
+    (Ok
+       [ Pool_tenant.ActivateMaintenance tenant |> Pool_event.pool_tenant; cache_cleared ])
+    (run ~current_status:Active true);
+  check_events
+    "deactivate maintenance"
+    (Ok
+       [ Pool_tenant.DeactivateMaintenance tenant |> Pool_event.pool_tenant
+       ; cache_cleared
+       ])
+    (run ~current_status:Maintenance false);
+  check_events "unchanged" (Ok []) (run ~current_status:Active false);
+  check_events
+    "system managed status is left untouched"
+    (Ok [])
+    (run ~current_status:ConnectionIssue true)
 ;;
 
 let update_tenant_database () =

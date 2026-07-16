@@ -7,7 +7,6 @@ type update =
   { title : Title.t
   ; description : Description.t option
   ; url : Url.t
-  ; status : Database.Status.t option
   ; default_language : Pool_common.Language.t
   ; styles : Styles.Write.t option
   ; icon : Icon.Write.t option
@@ -23,8 +22,8 @@ type event =
   | LogoDeleted of t * Id.t
   | DetailsEdited of Write.t * update
   | DatabaseEdited of Write.t * Database.t
-  | ActivateMaintenance of Write.t
-  | DeactivateMaintenance of Write.t
+  | ActivateMaintenance of t
+  | DeactivateMaintenance of t
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t =
@@ -52,10 +51,6 @@ let handle_event pool : event -> unit Lwt.t =
   | DetailsEdited (tenant, update_t) ->
     let open Entity.Write in
     let open CCOption.Infix in
-    let%lwt () =
-      update_t.status
-      |> CCOption.map_or ~default:Lwt.return_unit (status_updated tenant.database_label)
-    in
     { tenant with
       title = update_t.title
     ; description = update_t.description
@@ -70,8 +65,8 @@ let handle_event pool : event -> unit Lwt.t =
   | DatabaseEdited (tenant, database) ->
     let%lwt () = Repo.update_database Database.Pool.Root.label (tenant, database) in
     Lwt.return_unit
-  | ActivateMaintenance { Entity.Write.database_label; _ } ->
+  | ActivateMaintenance { Entity.database_label; _ } ->
     status_updated database_label Database.Status.Maintenance
-  | DeactivateMaintenance { Entity.Write.database_label; _ } ->
+  | DeactivateMaintenance { Entity.database_label; _ } ->
     StatusUpdated (database_label, Database.Status.Active) |> handle_event pool
 ;;

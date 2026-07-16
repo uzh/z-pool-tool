@@ -199,7 +199,9 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | TermsAndConditionsUpdated ->
     "Wir haben kürzlich unsere Allgemeinen Geschäftsbedingungen geändert. Bitte lesen \
      und akzeptieren Sie diese, um fortzufahren."
-  | TenantMaintenanceText -> "Bitte versuchen Sie es in Kürze erneut."
+  | TenantMaintenanceText ->
+    "Unsere Website befindet sich derzeit in Wartungsarbeiten. Bitte haben Sie Geduld; \
+     wir sind bald wieder da."
   | TenantMaintenanceTitle -> "Wartungsarbeiten"
   | TenantOperatorExistingAdminText ->
     "Ein Administrator mit dieser E-Mail-Adresse existiert bereits in diesem Pool. \

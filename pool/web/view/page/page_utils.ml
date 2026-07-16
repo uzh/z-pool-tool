@@ -12,6 +12,25 @@ let note page_title info =
     [ h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt page_title ]; p [ txt info ] ]
 ;;
 
+let maintenance page_title info =
+  div
+    ~a:[ a_class [ "trim"; "narrow"; "safety-margin"; "stack" ] ]
+    [ h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt page_title ]
+    ; div
+        ~a:[ a_class [ "stack-sm" ] ]
+        [ img
+            ~src:(Sihl.Web.externalize_path "/assets/images/maintenance.svg")
+            ~alt:""
+            ~a:[ a_class [ "full-width" ] ]
+            ()
+        ; div
+            ~a:[ a_class [ "color-grey"; "font-size-sm"; "flexrow"; "justify-end" ] ]
+            [ txt "Image by storyset on Freepik" ]
+        ]
+    ; p [ txt info ]
+    ]
+;;
+
 let error_page_not_found language () =
   let open Pool_common in
   note
