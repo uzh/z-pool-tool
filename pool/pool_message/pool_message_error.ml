@@ -151,7 +151,6 @@ type t =
   | TokenAlreadyUsed
   | TokenInvalidFormat
   | TooShort
-  | Unauthorized
   | Undefined of Field.t
   | Uniqueness of Field.t
   | Unsupported of string

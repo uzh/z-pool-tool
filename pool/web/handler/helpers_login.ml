@@ -135,7 +135,7 @@ let validate_login req ~tags database_label ~email ~password =
        | false ->
          User_import.find_pending_by_email_opt database_label email
          >|> (function
-          | Some _ -> Lwt.return_error Pool_message.(Error.Invalid Field.Password)
+          | Some _ -> Lwt.return_error Pool_message.Error.LoginInvalidEmailPassword
           | None -> create_session ()))
       >|> handle_result
     in

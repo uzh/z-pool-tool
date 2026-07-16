@@ -93,7 +93,7 @@ let handle_error context req =
   | BadRequest (handler, urlencoded, err) ->
     html_flash req handler urlencoded err `Bad_request context
   | NotFound err -> Page.not_found_note context err |> html_page `Not_found
-  | Unauthorized urlencoded ->
+  | Unauthorized (urlencoded, err) ->
     let open Http_utils in
     let login_path =
       (if is_req_from_root_host req then "/root/login" else "/login")
@@ -101,11 +101,65 @@ let handle_error context req =
     in
     redirect_to_with_actions
       login_path
-      [ Message.set ~error:[ Error.LoginInvalidEmailPassword ]
+      [ Message.set ~error:[ err ]
       ; Sihl.Web.Flash.set (CCOption.map_or ~default:[] flash_fetch_values urlencoded)
         (* the redirect hides the 401 status, keep it detectable for clients/monitoring *)
       ; Opium.Response.add_header ("X-Auth-Error", "unauthorized")
       ]
+;;
+
+let%test
+    "unauthorized redirects to login with intended url, auth header and filtered flash"
+  =
+  let error = Error.LoginInvalidEmailPassword in
+  let urlencoded = [ "email", [ "user@example.com" ]; "password", [ "Password1!" ] ] in
+  let req = Opium.Request.get "/admin/dashboard" in
+  let context =
+    Pool_context.create
+      ( []
+      , Pool_common.Language.En
+      , Database.Label.of_string "test"
+      , None
+      , "csrf"
+      , Pool_context.Guest
+      , []
+      , [] )
+  in
+  let response =
+    Lwt_main.run (handle_error context req (unauthorized ~urlencoded error))
+  in
+  let location =
+    Opium.Response.header "Location" response
+    |> CCOption.get_or ~default:""
+    |> Uri.of_string
+  in
+  (* flash values live in the response env; read them back the way the next request
+     would *)
+  let flash_req = Opium.Request.get ~env:response.Opium.Response.env "/login" in
+  let alert_errors =
+    let open CCOption in
+    Sihl.Web.Flash.find_alert flash_req
+    >>= Collection.of_string
+    >|= fun { Collection.error; _ } -> error
+  in
+  let open CCOption in
+  Opium.Status.to_code response.Opium.Response.status = 302
+  (* PREFIX_PATH dependent, e.g. when tests run with a loaded .env *)
+  && CCString.equal (Uri.path location) (Sihl.Web.externalize_path "/login")
+  && equal
+       CCString.equal
+       (Uri.get_query_param location "location")
+       (Some "/admin/dashboard")
+  && equal
+       CCString.equal
+       (Opium.Response.header "X-Auth-Error" response)
+       (Some "unauthorized")
+  && equal
+       CCString.equal
+       (Sihl.Web.Flash.find "email" flash_req)
+       (Some "user@example.com")
+  && is_none (Sihl.Web.Flash.find "password" flash_req)
+  && equal (CCList.equal Error.equal) alert_errors (Some [ error ])
 ;;
 
 let with_log_http_result_error ~src ~tags =
