@@ -409,6 +409,7 @@ let detail
                   language
                   Field.TenantMaintenanceFlag
                   ~value:(Database.Status.equal Database.Status.Maintenance tenant.status)
+                  ?flash_fetcher
                   ~hints:[ Pool_common.I18n.TenantMaintenanceFlag ]
               ; div
                   ~a:[ a_class [ "flexrow" ] ]

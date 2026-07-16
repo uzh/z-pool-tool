@@ -66,8 +66,12 @@ module CustomField : sig
 end
 
 module Error : sig
+  (** [create ?include_scripts children] renders a minimal layout without navigation.
+      [include_scripts] can be set to [false] for static pages (e.g. maintenance) that
+      don't need any JS assets. *)
   val create
-    :  [< Html_types.div_content_fun ] Tyxml_html.elt
+    :  ?include_scripts:bool
+    -> [< Html_types.div_content_fun ] Tyxml_html.elt
     -> [> Html_types.html ] Tyxml_html.elt
 end
 

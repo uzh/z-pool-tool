@@ -68,5 +68,5 @@ let handle_event pool : event -> unit Lwt.t =
   | ActivateMaintenance { Entity.database_label; _ } ->
     status_updated database_label Database.Status.Maintenance
   | DeactivateMaintenance { Entity.database_label; _ } ->
-    StatusUpdated (database_label, Database.Status.Active) |> handle_event pool
+    status_updated database_label Database.Status.Active
 ;;

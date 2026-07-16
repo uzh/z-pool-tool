@@ -509,7 +509,9 @@ let update_tenant_maintenance () =
   check_events
     "deactivate maintenance"
     (Ok
-       [ Pool_tenant.DeactivateMaintenance tenant |> Pool_event.pool_tenant
+       [ Pool_tenant.DeactivateMaintenance
+           { tenant with Pool_tenant.status = Maintenance }
+         |> Pool_event.pool_tenant
        ; cache_cleared
        ])
     (run ~current_status:Maintenance false);

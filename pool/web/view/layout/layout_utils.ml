@@ -23,7 +23,9 @@ let viewport =
   meta ~a:[ a_name "viewport"; a_content "width=device-width, initial-scale=1" ] ()
 ;;
 
-let favicon path = link ~rel:[ `Icon ] ~href:path ()
+let favicon path =
+  link ~rel:[ `Icon ] ~href:(Http_utils.externalized_path_with_version path) ()
+;;
 
 let js_script_tag (file : [ `IndexJs | `AdminJs ]) =
   let source_path = assets file |> Http_utils.externalized_path_with_version in

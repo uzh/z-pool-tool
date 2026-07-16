@@ -95,12 +95,12 @@ let update_maintenance req =
   in
   let redirect_path = Http_utils.Url.Root.pool_path ~id () in
   let result { Pool_context.user; _ } =
-    Response.bad_request_on_error Root_tenant.tenant_detail
-    @@
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
       ||> HttpUtils.format_request_boolean_values [ Field.(show TenantMaintenanceFlag) ]
     in
+    Response.bad_request_on_error ~urlencoded Root_tenant.tenant_detail
+    @@
     let* tenant = Pool_tenant.find id in
     let events =
       let open CCResult.Infix in

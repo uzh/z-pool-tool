@@ -67,7 +67,7 @@ let web_filter handler req =
     let title = I18n.TenantMaintenanceTitle |> to_string in
     let text = I18n.TenantMaintenanceText |> to_string in
     Page.Utils.maintenance title text
-    |> Layout.Error.create
+    |> Layout.Error.create ~include_scripts:false
     |> Sihl.Web.Response.of_html
     |> Lwt.return
   in
