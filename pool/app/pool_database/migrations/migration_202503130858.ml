@@ -16,7 +16,7 @@ let update_job_queue_mapping_fk_constraint
       ~label:(Format.asprintf "add updated fk_constraint to %s" table_name)
       [%string
         {sql|
-          ALTER TABLE %{table_name} 
+          ALTER TABLE %{table_name}
           ADD CONSTRAINT %{constraint_name}
           %{updated_constraint}
           ON DELETE CASCADE;
@@ -81,4 +81,9 @@ let migration () =
     (fun acc step -> add_step step acc)
     (empty "202503130858")
     migration_steps
+;;
+
+let migration_root () =
+  let open Database.Migration in
+  CCList.fold_left (CCFun.flip add_step) (empty "202503130858") update_user_fk
 ;;

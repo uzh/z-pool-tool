@@ -1026,6 +1026,10 @@ module Root = struct
             ~middlewares:[ Access.update ]
             Tenant_update.update_database
         ; post
+            "/update-maintenance"
+            ~middlewares:[ Access.update ]
+            Tenant_update.update_maintenance
+        ; post
             (Format.asprintf "/assets/%s/delete" (AssetId |> url_key))
             ~middlewares:[ Access.update ]
             Tenant_update.delete_asset

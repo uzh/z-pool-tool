@@ -27,14 +27,14 @@ let filter ~maintenance_handler ~connection_issue_handler ~error_handler handler
   let open Status in
   match%lwt tenant_of_request req with
   | Ok ({ Pool_tenant.database_label; status; _ } as tenant) ->
-    let handle_request =
+    let handle_request () =
       Settings.find_languages database_label
       ||> Tenant.create tenant
       ||> Tenant.set req
       >|> handler
     in
     (match status with
-     | Active -> handle_request
+     | Active -> handle_request ()
      | Maintenance | MigrationsConnectionIssue | MigrationsFailed | MigrationsPending ->
        maintenance_handler ()
      | Disabled -> connection_issue_handler ()
@@ -45,7 +45,7 @@ let filter ~maintenance_handler ~connection_issue_handler ~error_handler handler
             let open Pool_database in
             StatusUpdated (database_label, Status.Active) |> handle_event Pool.Root.label
           in
-          handle_request
+          handle_request ()
         | Error err -> error_handler err))
   | Error Pool_message.Error.SessionTenantNotFound ->
     Logs.err ~src (fun m ->
@@ -66,8 +66,8 @@ let web_filter handler req =
     let to_string = Utils.text_to_string language in
     let title = I18n.TenantMaintenanceTitle |> to_string in
     let text = I18n.TenantMaintenanceText |> to_string in
-    Page.Utils.note title text
-    |> Layout.Error.create
+    Page.Utils.maintenance title text
+    |> Layout.Error.create ~include_scripts:false
     |> Sihl.Web.Response.of_html
     |> Lwt.return
   in

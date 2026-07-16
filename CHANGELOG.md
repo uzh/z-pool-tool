@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Fixed
 
+- Maintenance mode toggle on the root tenant page (moved to a separate form)
 - Contacts activated after import no longer receive reminders
 - Explicit UTC handling for timestamps
 - Database connection no longer stays in a failed state

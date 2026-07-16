@@ -197,7 +197,8 @@ let to_string = function
   | TermsAndConditionsUpdated ->
     "We have recently changed our terms and conditions. Please read and accept them to \
      continue."
-  | TenantMaintenanceText -> "Please try again shortly."
+  | TenantMaintenanceText ->
+    "Our website is currently under maintenance. Please bear with us; we'll be back."
   | TenantMaintenanceTitle -> "Maintenance"
   | TenantOperatorExistingAdminText ->
     "An administrator with this email address already exists in this pool. Do you want \

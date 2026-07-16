@@ -60,3 +60,7 @@ let migration () =
     |> add_step drop_contacts_queue_jobs
     |> add_step drop_admins_queue_jobs)
 ;;
+
+let migration_root () =
+  Database.Migration.(empty "202502271318" |> add_step create_pool_queue_jobs_users_table)
+;;

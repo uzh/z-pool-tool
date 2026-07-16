@@ -171,7 +171,6 @@ type update =
   { title : Title.t
   ; description : Description.t option
   ; url : Url.t
-  ; status : Database.Status.t option
   ; default_language : Pool_common.Language.t
   ; styles : Styles.Write.t option
   ; icon : Icon.Write.t option
@@ -208,8 +207,8 @@ type event =
   | LogoDeleted of t * Pool_common.Id.t
   | DetailsEdited of Write.t * update
   | DatabaseEdited of Write.t * Database.t
-  | ActivateMaintenance of Write.t
-  | DeactivateMaintenance of Write.t
+  | ActivateMaintenance of t
+  | DeactivateMaintenance of t
 
 val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

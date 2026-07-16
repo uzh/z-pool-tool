@@ -83,9 +83,10 @@ module Tenant = struct
     let head_tags =
       let favicon =
         tenant.icon
-        |> CCOption.(map (Icon.value %> File.externalized_path %> favicon) %> to_list)
+        |> CCOption.map_or ~default:(assets `RootFavicon) (Icon.value %> File.path)
+        |> favicon
       in
-      [ charset; viewport ] @ stylesheets @ favicon @ head_script
+      [ charset; viewport ] @ stylesheets @ [ favicon ] @ head_script
     in
     let%lwt navbar_content =
       Navigation.create_main ?active_navigation context tenant_languages
@@ -147,20 +148,23 @@ module Root = struct
 end
 
 module Error = struct
-  let create children =
+  let create ?(include_scripts = true) children =
     let open Layout_utils in
     let title_text = App.app_name in
     let page_title = title (txt title_text) in
     let content = main_tag [ children ] in
+    let scripts = if include_scripts then [ js_script_tag `IndexJs ] else [] in
     html
       ~a:[ language_attribute Language.En ]
-      (head page_title ([ charset; viewport ] @ [ `GlobalStylesheet |> css_link_tag ]))
+      (head
+         page_title
+         [ charset
+         ; viewport
+         ; favicon (assets `RootFavicon)
+         ; css_link_tag `GlobalStylesheet
+         ])
       (body
          ~a:[ a_class body_tag_classnames ]
-         [ App.navbar [] title_text
-         ; content
-         ; App.create_footer ()
-         ; js_script_tag `IndexJs
-         ])
+         ([ App.navbar [] title_text; content; App.create_footer () ] @ scripts))
   ;;
 end

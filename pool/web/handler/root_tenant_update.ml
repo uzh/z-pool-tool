@@ -57,13 +57,7 @@ let update req command success_message =
         match command with
         | `EditDetail ->
           let open CCResult.Infix in
-          let current_status =
-            Pool_tenant.Write.database_label tenant_model
-            |> Database.Pool.Tenant.find_status_by_label
-            |> CCOption.get_or ~default:Database.Status.Active
-          in
-          EditDetails.(decode urlencoded >>= handle ~tags ~current_status tenant_model)
-          |> lift
+          EditDetails.(decode urlencoded >>= handle ~tags tenant_model) |> lift
         | `EditDatabase ->
           let open UpdateDatabase in
           let* { database_url; database_label } = decode urlencoded |> lift in
@@ -72,7 +66,6 @@ let update req command success_message =
       in
       let files = logo_files @ uploaded_files in
       (files |> File.multipart_form_data_to_urlencoded) @ urlencoded
-      |> HttpUtils.format_request_boolean_values [ TenantMaintenanceFlag |> show ]
       |> events_list
       >|> HttpUtils.File.cleanup_upload Database.Pool.Root.label files
     in
@@ -91,6 +84,38 @@ let update_detail req = update req `EditDetail Pool_message.Success.TenantUpdate
 
 let update_database req =
   update req `EditDatabase Pool_message.Success.TenantUpdateDatabase
+;;
+
+let update_maintenance req =
+  let open Utils.Lwt_result.Infix in
+  let open Pool_message in
+  let tags = Pool_context.Logger.Tags.req req in
+  let id =
+    HttpUtils.get_field_router_param req Field.Tenant |> Pool_tenant.Id.of_string
+  in
+  let redirect_path = Http_utils.Url.Root.pool_path ~id () in
+  let result { Pool_context.user; _ } =
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req
+      ||> HttpUtils.format_request_boolean_values [ Field.(show TenantMaintenanceFlag) ]
+    in
+    Response.bad_request_on_error ~urlencoded Root_tenant.tenant_detail
+    @@
+    let* tenant = Pool_tenant.find id in
+    let events =
+      let open CCResult.Infix in
+      let open Cqrs_command.Pool_tenant_command.UpdateMaintenance in
+      decode urlencoded >>= handle ~tags tenant |> Lwt_result.lift
+    in
+    let handle = Pool_event.handle_events ~tags Database.Pool.Root.label user in
+    let return_to_detail () =
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ Message.set ~success:[ Success.Updated Field.TenantMaintenanceFlag ] ]
+    in
+    events |>> handle |>> return_to_detail
+  in
+  Response.handle ~src req result
 ;;
 
 let delete_asset req =

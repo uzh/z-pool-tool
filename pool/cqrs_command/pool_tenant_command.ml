@@ -134,7 +134,6 @@ type edit_details =
   { title : Pool_tenant.Title.t
   ; description : Pool_tenant.Description.t option
   ; url : Pool_tenant.Url.t
-  ; maintenance : bool
   ; default_language : Pool_common.Language.t
   ; styles : Pool_tenant.Styles.Write.t option
   ; icon : Pool_tenant.Icon.Write.t option
@@ -149,7 +148,6 @@ module EditDetails : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?system_event_id:System_event.Id.t
-    -> current_status:Database.Status.t
     -> Pool_tenant.Write.t
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -163,7 +161,6 @@ end = struct
         title
         description
         url
-        maintenance
         default_language
         styles
         icon
@@ -174,7 +171,6 @@ end = struct
     { title
     ; description
     ; url
-    ; maintenance
     ; default_language
     ; styles
     ; icon
@@ -191,10 +187,6 @@ end = struct
           [ Pool_tenant.Title.schema ()
           ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
-          ; Pool_model.Base.Boolean.schema
-              ~default:false
-              Pool_message.Field.TenantMaintenanceFlag
-              ()
           ; Pool_common.Language.schema ()
           ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
           ; Conformist.optional @@ Pool_tenant.Icon.Write.schema ()
@@ -208,27 +200,15 @@ end = struct
   let handle
         ?(tags = Logs.Tag.empty)
         ?system_event_id
-        ~current_status
         (tenant : Pool_tenant.Write.t)
         (command : t)
     =
     Logs.info ~src (fun m -> m "Handle command EditDetails" ~tags);
-    (* The checkbox only toggles between [Maintenance] and [Active]; statuses
-       managed by the system (migrations, connection issues, ...) are left
-       untouched. *)
-    let status =
-      let open Database.Status in
-      match[@warning "-4"] current_status, command.maintenance with
-      | Active, true -> Some Maintenance
-      | Maintenance, false -> Some Active
-      | _, _ -> None
-    in
     let update =
       Pool_tenant.
         { title = command.title
         ; description = command.description
         ; url = command.url
-        ; status
         ; styles = command.styles
         ; icon = command.icon
         ; email_logo = command.email_logo
@@ -251,6 +231,62 @@ end = struct
       ; System_event.(Job.TenantCacheCleared |> create ?id:system_event_id |> created)
         |> Pool_event.system_event
       ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_message.to_conformist_error
+  ;;
+
+  let effects = Pool_tenant.Guard.Access.update
+end
+
+module UpdateMaintenance : sig
+  type t = bool
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> ?system_event_id:System_event.Id.t
+    -> Pool_tenant.t
+    -> t
+    -> (Pool_event.t list, Pool_message.Error.t) result
+
+  val decode : (string * string list) list -> (t, Pool_message.Error.t) result
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = bool
+
+  let schema =
+    Conformist.(
+      make
+        Field.
+          [ Pool_model.Base.Boolean.schema
+              ~default:false
+              Pool_message.Field.TenantMaintenanceFlag
+              ()
+          ]
+        CCFun.id)
+  ;;
+
+  let handle ?(tags = Logs.Tag.empty) ?system_event_id tenant maintenance =
+    Logs.info ~src (fun m -> m "Handle command UpdateMaintenance" ~tags);
+    (* The flag only toggles between [Maintenance] and [Active]; statuses
+       managed by the system (migrations, connection issues, ...) are left
+       untouched. *)
+    let event =
+      let open Database.Status in
+      match[@warning "-4"] tenant.Pool_tenant.status, maintenance with
+      | Active, true -> Some (Pool_tenant.ActivateMaintenance tenant)
+      | Maintenance, false -> Some (Pool_tenant.DeactivateMaintenance tenant)
+      | _, _ -> None
+    in
+    event
+    |> CCOption.map_or ~default:[] (fun event ->
+      [ event |> Pool_event.pool_tenant
+      ; System_event.(Job.TenantCacheCleared |> create ?id:system_event_id |> created)
+        |> Pool_event.system_event
+      ])
+    |> CCResult.return
   ;;
 
   let decode data =
