@@ -36,7 +36,7 @@ let login_post req =
   let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result (Pool_context.{ database_label; user; query_parameters; _ } as context) =
-    Response.bad_request_on_error ~urlencoded login_get
+    Response.redirect_unauthorized_on_error ~urlencoded
     @@
     let* login_step = Helpers_login.initiate_login ~tags req context urlencoded in
     match login_step with
