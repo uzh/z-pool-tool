@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.13.6](https://github.com/uzh/z-pool-tool/tree/HEAD) - 2026-07-17
+
 ### Added
 
 - Maintenance mode toggle in root UI
