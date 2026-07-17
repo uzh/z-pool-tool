@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Added
 
-- Maintenance mode
+- Maintenance mode toggle in root UI
 - Ability to unblock blocked accounts
 - Contact recruiters when the email service fails (UI)
 - Bounce count for admins
@@ -21,7 +21,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Fixed
 
-- Maintenance mode toggle on the root tenant page (moved to a separate form)
+- Login errors are no longer masked as "invalid email or password" (e.g. disabled logins, temporarily suspended accounts)
 - Contacts activated after import no longer receive reminders
 - Explicit UTC handling for timestamps
 - Database connection no longer stays in a failed state
