@@ -2,7 +2,7 @@
 
     Layered on the pool cache in {!Pools}: the [Make] functor, the cache, [fetch],
     [connect] and [disconnect] are unchanged and not duplicated here. Two things
-    differ from [Pools.raise_caqti_error]:
+    differ from [Pools.raise_caqti_error], whose name this module keeps:
 
     - a failure raises {!Database_error.Failed}, which carries the label, instead of
       [Caqti_error.Exn];
@@ -14,11 +14,11 @@
     here: they took a label and borrowed a connection per statement. Running
     statements is {!Database_new}'s job, against a context it already holds. *)
 
-val or_raise : Entity.Label.t -> ('a, Caqti_error.t) Lwt_result.t -> 'a Lwt.t
+val raise_caqti_error : Entity.Label.t -> ('a, Caqti_error.t) Lwt_result.t -> 'a Lwt.t
 
 (** [use label f] borrows a pooled connection for [f] and hands it back when [f]
     resolves, however it resolves. *)
-val use : Entity.Label.t -> ((module Caqti_lwt.CONNECTION) -> 'a Lwt.t) -> 'a Lwt.t
+val use : Entity.Label.t -> (Caqti_lwt.connection -> 'a Lwt.t) -> 'a Lwt.t
 
 (** Roll back, and leave the connection fit for reuse — which on MariaDB means
     undoing the [autocommit = 0] that [start] set and [rollback] does not.
@@ -28,5 +28,5 @@ val use : Entity.Label.t -> ((module Caqti_lwt.CONNECTION) -> 'a Lwt.t) -> 'a Lw
 val rollback
   :  ?tags:Logs.Tag.set
   -> Entity.Label.t
-  -> (module Caqti_lwt.CONNECTION)
+  -> Caqti_lwt.connection
   -> unit Lwt.t

@@ -11,12 +11,12 @@ module Request = struct
   module Infix = Caqti_request.Infix
 end
 
-type not_a_transaction
+type no_transaction
 type transaction
 
 type _ txn =
   | Yes : transaction txn
-  | No : not_a_transaction txn
+  | No : no_transaction txn
 
 (* Liveness cell. [parent] links a transaction scope to the connection scope it
    was derived from, so closing the connection invalidates both without anyone
@@ -34,26 +34,23 @@ let rec live { open_; parent } =
   | Some p -> live p
 ;;
 
-type 'txn t =
+type 'txn ctx =
   { label : Label.t
-  ; connection : (module Caqti_lwt.CONNECTION)
+  ; connection : Caqti_lwt.connection
   ; txn : 'txn txn
   ; tags : Logs.Tag.set option
   ; scope : scope
   }
 
-type txn_ctx = transaction t
-type direct_ctx = not_a_transaction t
+let label_of_ctx (ctx : _ ctx) = ctx.label
+let txn_of_ctx (ctx : _ ctx) = ctx.txn
 
-let label (ctx : _ t) = ctx.label
-let txn (ctx : _ t) = ctx.txn
-
-exception Expired_context of Label.t
+exception Expired_ctx of Label.t
 exception Nested_transaction of Label.t
 
 let () =
   Printexc.register_printer (function
-    | Expired_context l ->
+    | Expired_ctx l ->
       Some
         (Format.asprintf
            "Database: context for %s used after its scope closed"
@@ -88,30 +85,30 @@ let warn_ambient ?tags label =
 ;;
 
 (* Add scope guard and the failure routing *)
-let with_raw ctx f =
+let query ctx f =
   if not (live ctx.scope)
-  then Lwt.fail (Expired_context ctx.label)
-  else Pools_new.or_raise ctx.label (f ctx.connection)
+  then Lwt.fail (Expired_ctx ctx.label)
+  else Pools_new.raise_caqti_error ctx.label (f ctx.connection)
 ;;
 
 let exec ctx request input =
-  with_raw ctx (fun (module C : Caqti_lwt.CONNECTION) -> C.exec request input)
+  query ctx (fun (module C : Caqti_lwt.CONNECTION) -> C.exec request input)
 ;;
 
 let find ctx request input =
-  with_raw ctx (fun (module C : Caqti_lwt.CONNECTION) -> C.find request input)
+  query ctx (fun (module C : Caqti_lwt.CONNECTION) -> C.find request input)
 ;;
 
 let find_opt ctx request input =
-  with_raw ctx (fun (module C : Caqti_lwt.CONNECTION) -> C.find_opt request input)
+  query ctx (fun (module C : Caqti_lwt.CONNECTION) -> C.find_opt request input)
 ;;
 
 let collect ctx request input =
-  with_raw ctx (fun (module C : Caqti_lwt.CONNECTION) -> C.collect_list request input)
+  query ctx (fun (module C : Caqti_lwt.CONNECTION) -> C.collect_list request input)
 ;;
 
 let populate ctx table columns row_type rows =
-  with_raw ctx (fun (module C : Caqti_lwt.CONNECTION) ->
+  query ctx (fun (module C : Caqti_lwt.CONNECTION) ->
     C.populate ~table ~columns row_type (Caqti_lwt.Stream.of_list rows)
     |> Lwt.map Caqti_error.uncongested)
 ;;
@@ -128,7 +125,7 @@ let borrow ?tags label f =
          Lwt.return_unit))
 ;;
 
-let in_transaction (ctx : direct_ctx) f =
+let in_transaction (ctx : no_transaction ctx) f =
   let unwind exn =
     Log.err (fun m ->
       m
@@ -146,14 +143,12 @@ let in_transaction (ctx : direct_ctx) f =
     Lwt.finalize
       (fun () ->
          with_active ctx.label (fun () ->
-           let%lwt () =
-             with_raw txn (fun (module C : Caqti_lwt.CONNECTION) -> C.start ())
-           in
+           let%lwt () = query txn (fun (module C : Caqti_lwt.CONNECTION) -> C.start ()) in
            Lwt.catch
              (fun () ->
                 let%lwt result = f txn in
                 let%lwt () =
-                  with_raw txn (fun (module C : Caqti_lwt.CONNECTION) -> C.commit ())
+                  query txn (fun (module C : Caqti_lwt.CONNECTION) -> C.commit ())
                 in
                 Lwt.return result)
              unwind))
@@ -162,23 +157,23 @@ let in_transaction (ctx : direct_ctx) f =
          Lwt.return_unit)
   in
   if not (live ctx.scope)
-  then Lwt.fail (Expired_context ctx.label)
+  then Lwt.fail (Expired_ctx ctx.label)
   else if is_ambient ctx.label
   then Lwt.fail (Nested_transaction ctx.label)
   else run ()
 ;;
 
-let with_connection ?tags label f =
+let connection_ctx ?tags label f =
   warn_ambient ?tags label;
   borrow ?tags label f
 ;;
 
-let with_transaction ?tags label f =
+let transaction_ctx ?tags label f =
   warn_ambient ?tags label;
   borrow ?tags label (fun ctx -> in_transaction ctx f)
 ;;
 
-let join (ctx : _ t) label f =
+let join_ctx (ctx : _ ctx) label f =
   if not (Label.equal ctx.label label)
   then
     invalid_arg
@@ -186,40 +181,41 @@ let join (ctx : _ t) label f =
          "Database: context is %s but %s was requested"
          (Label.value ctx.label)
          (Label.value label));
-  if live ctx.scope then f ctx else Lwt.fail (Expired_context ctx.label)
+  if live ctx.scope then f ctx else Lwt.fail (Expired_ctx ctx.label)
 ;;
 
-(* Index erased. [join_or_connect] passes the caller's context when there is one
-   and a fresh [direct_ctx] when there is not, so a callback taking [_ t] directly
-   would be pinned to whichever branch was inferred first. Hiding the index behind
-   [Any] lets that callback be an ordinary closure — the statement helpers take
-   [_ t], so they accept the unpacked context unchanged. *)
-type any = Any : _ t -> any
+(* The callback, not the context, carries the polymorphism. [resolve_ctx] runs it
+   against either the caller's context or one it borrowed itself, and those have
+   different indices, so an ordinary closure would be pinned to whichever branch
+   was inferred first. A record with a universally quantified field keeps the
+   callback usable at both without wrapping the context in an existential — the
+   callback still receives a plain ['txn ctx], so every statement helper and any
+   ['txn ctx]-taking function accepts it unchanged. *)
+type 'r callback = { run : 'txn. 'txn ctx -> 'r Lwt.t }
 
-let join_or_connect ?tags ?db_ctx label f =
-  let f ctx = f (Any ctx) in
+let resolve_ctx ?tags ?db_ctx label (callback : _ callback) =
   match db_ctx with
-  | Some ctx -> join ctx label f
-  | None -> with_connection ?tags label f
+  | Some ctx -> join_ctx ctx label callback.run
+  | None -> connection_ctx ?tags label callback.run
 ;;
 
-let join_or_transaction ?tags ?db_ctx label f =
+let resolve_transaction_ctx ?tags ?db_ctx label f =
   match db_ctx with
-  | Some ctx -> join ctx label f
-  | None -> with_transaction ?tags label f
+  | Some ctx -> join_ctx ctx label f
+  | None -> transaction_ctx ?tags label f
 ;;
 
 type _ source =
-  | Direct : not_a_transaction source
+  | Direct : no_transaction source
   | Transaction : transaction source
-  | Join : txn_ctx -> transaction source
+  | Join : transaction ctx -> transaction source
 
-let resolve
-  : type x r. ?tags:Logs.Tag.set -> x source -> Label.t -> (x t -> r Lwt.t) -> r Lwt.t
+let source_ctx
+  : type x r. ?tags:Logs.Tag.set -> x source -> Label.t -> (x ctx -> r Lwt.t) -> r Lwt.t
   =
   fun ?tags source label f ->
   match source with
-  | Join ctx -> join ctx label f
-  | Direct -> with_connection ?tags label f
-  | Transaction -> with_transaction ?tags label f
+  | Join ctx -> join_ctx ctx label f
+  | Direct -> connection_ctx ?tags label f
+  | Transaction -> transaction_ctx ?tags label f
 ;;

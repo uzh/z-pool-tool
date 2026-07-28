@@ -1,7 +1,7 @@
 (* Log under the "database" source, like the rest of this library. *)
 module Log = Service.Logs
 
-let or_raise label m =
+let raise_caqti_error label m =
   match%lwt m with
   | Ok x -> Lwt.return x
   | Error error -> Lwt.fail (Database_error.Failed (Database_error.create label error))
@@ -10,7 +10,7 @@ let or_raise label m =
 let use label f =
   let%lwt pool = Service.Pool.fetch label in
   Caqti_lwt_unix.Pool.use (fun connection -> Lwt.map CCResult.return (f connection)) pool
-  |> or_raise label
+  |> raise_caqti_error label
 ;;
 
 (* caqti-driver-mariadb 2.3.0 clears autocommit in [start] and restores it in
@@ -27,7 +27,7 @@ let restore_autocommit_request =
   "SET autocommit = 1" |> Caqti_type.(unit ->. unit) ~oneshot:true
 ;;
 
-let rollback ?tags label (module C : Caqti_lwt.CONNECTION) =
+let rollback ?tags label ((module C : Caqti_lwt.CONNECTION) : Caqti_lwt.connection) =
   let tags = Logger.Tags.extend label tags in
   let complain step error =
     Log.err (fun m -> m ~tags "%s failed: %s" step (Caqti_error.show error))
