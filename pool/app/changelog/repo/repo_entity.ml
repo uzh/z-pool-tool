@@ -4,11 +4,35 @@ module RepoId = Pool_common.Repo.Id
 
 let make_type = Pool_common.Repo.make_caqti_type
 let option = Caqti_type.option
+let src = Logs.Src.create "changelog.repo_entity"
+
+module Logs = (val Logs.src_log src : Logs.LOG)
 
 module Changes = struct
+  (* Aliased explicitly: [Changes] resolves to [Entity.Changes] within this struct, but no
+     longer does so once the module is defined. *)
+  module EntityChanges = Entity.Changes
+
+  (* Unparsable changes must not break the whole changelog listing: fall back to an empty
+     changeset for rows that were truncated while the column was still a TEXT. The id is
+     logged to allow fixing the stored json manually. *)
+  let of_string ?id str =
+    match EntityChanges.of_string_opt str with
+    | Some changes -> changes
+    | None ->
+      Logs.warn (fun m ->
+        m
+          "Failed to parse changes of changelog %s (%i bytes)"
+          (id |> CCOption.map_or ~default:"<unknown id>" Id.value)
+          (CCString.length str));
+      EntityChanges.Assoc []
+  ;;
+
   let t =
-    let open Changes in
-    make_type Caqti_type.string (of_string %> CCResult.return) to_string
+    make_type
+      Caqti_type.string
+      (fun str -> of_string str |> CCResult.return)
+      EntityChanges.to_string
   ;;
 end
 
@@ -31,6 +55,7 @@ let t =
       | Some user_uuid, Some user_email -> Some { uuid = user_uuid; email = user_email }
       | _ -> None
     in
+    let changes = Changes.of_string ~id changes in
     Ok { id; model; entity_uuid; user; changes; created_at }
   in
   custom
@@ -42,7 +67,7 @@ let t =
       ; RepoId.t
       ; option RepoId.t
       ; option Caqti_type.string
-      ; Changes.t
+      ; Caqti_type.string
       ; Pool_common.Repo.CreatedAt.t
       ]
 ;;
