@@ -1,11 +1,11 @@
-(** A database context: a borrowed connection plus the label it came from, indexed
-    by whether a transaction is open on it.
+(** A database context: the label to run against, optionally a connection borrowed
+    from its pool, indexed by whether a transaction is open on that connection.
 
     In {!Database} every statement took an [Entity.Label.t] and borrowed its own
     connection, so a unit of work spanning several statements either paid a pool
     round-trip per statement or dropped down to [Database.transaction] and a raw
-    [Caqti_lwt.connection]. Passing the connection explicitly buys three things the
-    label could not:
+    [Caqti_lwt.connection]. A context can say which of those it wants, and passing
+    it explicitly buys three things the label could not:
 
     - nesting a transaction is a type error, because {!in_transaction} only
       accepts a [no_transaction ctx];
@@ -24,9 +24,12 @@ type no_transaction
 (** Phantom index signalling that a transaction is open on the context. *)
 type transaction
 
-(** ['txn ctx] is a connection borrowed from the pool for [label], where ['txn]
-    records whether a transaction was started on it. See {!connection_ctx},
-    {!transaction_ctx} and {!in_transaction}. *)
+(** ['txn ctx] is a label to run statements against, where ['txn] records whether
+    a transaction is open. A connection is a pooled resource, so holding one is
+    opt-in: {!label_ctx} holds none and borrows one per statement, while
+    {!connection_ctx} and {!transaction_ctx} hold one for the duration of their
+    callback. Since only a held connection can carry a transaction, there is no
+    connectionless context at [transaction ctx]. *)
 type 'txn ctx
 
 (** Runtime witness for the index. Matching on it refines the context:
@@ -40,10 +43,11 @@ type _ txn =
   | No : no_transaction txn
 
 val label_of_ctx : _ ctx -> Entity.Label.t
+val tags_of_ctx : _ ctx -> Logs.Tag.set option
 val txn_of_ctx : 'txn ctx -> 'txn txn
 
-(** Raised when a context is used after the scope that created it has closed —
-    i.e. someone let it escape its callback. *)
+(** Raised when a context that holds a connection is used after the scope that
+    created it has closed — i.e. someone let it escape its callback. *)
 exception Expired_ctx of Entity.Label.t
 
 (** Raised when a transaction is opened on a label that already has one open on
@@ -85,18 +89,35 @@ val populate
 
 (** Escape hatch for what the above cannot express — driver specifics,
     [SET FOREIGN_KEY_CHECKS] around a truncate. Scope-guarded and failure-routed
-    like the rest; reach for it only when nothing else fits. *)
+    like the rest; reach for it only when nothing else fits.
+
+    On a {!label_ctx} the connection is borrowed for this call only, so anything
+    that has to span calls — [SET], a temporary table — needs a context that
+    holds one. *)
 val query
   :  _ ctx
   -> (Caqti_lwt.connection -> ('r, Caqti_error.t) Lwt_result.t)
   -> 'r Lwt.t
 
-(** {1 Scopes}
+(** {1 Contexts without a connection} *)
 
-    The context passed to a callback is invalidated when that callback resolves.
-    Using it afterwards raises {!Expired_ctx}. *)
+(** A context that borrows a connection per statement and hands it straight back,
+    exactly as every {!Database} statement did. Costs nothing to build and holds
+    no pool slot, so this is the default for code that is only passing a label
+    around; reach for {!connection_ctx} when several statements should share one
+    connection.
 
-(** Borrow a pooled connection. No transaction: each statement autocommits. *)
+    Statements run on separate connections, so they see no common snapshot and no
+    uncommitted writes of a transaction open elsewhere. *)
+val label_ctx : ?tags:Logs.Tag.set -> Entity.Label.t -> no_transaction ctx
+
+(** {1 Contexts that hold a connection}
+
+    The context passed to these callbacks is invalidated when that callback
+    resolves. Using it afterwards raises {!Expired_ctx}. *)
+
+(** Borrow a pooled connection for the callback. No transaction: each statement
+    autocommits. *)
 val connection_ctx
   :  ?tags:Logs.Tag.set
   -> Entity.Label.t
@@ -104,7 +125,8 @@ val connection_ctx
   -> 'r Lwt.t
 
 (** Borrow a connection and wrap the callback in BEGIN/COMMIT. Rolls back and
-    reraises on failure. *)
+    reraises on failure. Raises {!Nested_transaction} — before taking a pool slot
+    — if a transaction is already open on this label in the current fibre. *)
 val transaction_ctx
   :  ?tags:Logs.Tag.set
   -> Entity.Label.t
@@ -113,15 +135,17 @@ val transaction_ctx
 
 (** Open a transaction on a connection you already hold, instead of borrowing a
     second one. Takes a [no_transaction ctx], so nesting is a type error; the
-    dynamic check catches the cases types can't see. *)
+    dynamic check catches the cases types can't see. Given a {!label_ctx} — which
+    holds nothing yet — this is {!transaction_ctx} on the label it carries. *)
 val in_transaction
   :  no_transaction ctx
   -> (transaction ctx -> 'r Lwt.t)
   -> 'r Lwt.t
 
 (** Run on an existing context after checking it belongs to the given label.
-    Raises [Invalid_argument] on mismatch. Index-preserving: joining a
-    transaction gives back a [transaction ctx]. *)
+    Raises [Invalid_argument] on mismatch — a context forwarded from one pool
+    into a call made against another would otherwise query the wrong database.
+    Index-preserving: joining a transaction gives back a [transaction ctx]. *)
 val join_ctx : 'txn ctx -> Entity.Label.t -> ('txn ctx -> 'r Lwt.t) -> 'r Lwt.t
 
 (** {1 Forwarding an optional context}
@@ -131,21 +155,26 @@ val join_ctx : 'txn ctx -> Entity.Label.t -> ('txn ctx -> 'r Lwt.t) -> 'r Lwt.t
 
 (** A callback that works on a context of either index. {!resolve_ctx} needs one
     because it cannot know which index it will run against — the caller's, or
-    that of a connection it borrowed itself — and an ordinary closure would be
+    that of the {!label_ctx} it falls back to — and an ordinary closure would be
     pinned to one of them. The polymorphic field carries that instead of an
     existential around the context, so [ctx] in the callback body is a plain
     ['txn ctx] and every helper above accepts it as is. *)
 type 'r callback = { run : 'txn. 'txn ctx -> 'r Lwt.t }
 
-(** Reuse [db_ctx] if given, otherwise borrow a connection. Takes a context of
-    either index, so a caller inside a transaction can forward it to a read-only
-    function without that function having to care:
+(** Reuse [db_ctx] if given, otherwise fall back to {!label_ctx}. Takes a context
+    of either index, so a caller inside a transaction can forward it to a
+    read-only function without that function having to care — and when nobody
+    forwards one, no connection is held for the duration of the callback:
     {[
     let create ?db_ctx pool language =
       resolve_ctx ?db_ctx pool { run = (fun ctx ->
         let%lwt template = find_template ctx language in
         …) }
-    ]} *)
+    ]}
+    Falling back while a transaction is open on [pool] logs an actionable message
+    naming [?db_ctx]: the statements will not see that transaction's writes, and
+    that combination almost always means the optional argument wasn't threaded
+    through. *)
 val resolve_ctx
   :  ?tags:Logs.Tag.set
   -> ?db_ctx:'txn ctx
@@ -156,28 +185,14 @@ val resolve_ctx
 (** Reuse [db_ctx] if given, otherwise open a transaction. Takes a
     [transaction ctx] rather than a context of either index: the caller asked for
     atomicity, and a [no_transaction ctx] cannot provide it. The index is fixed,
-    so this takes an ordinary closure rather than a {!callback}. *)
+    so this takes an ordinary closure rather than a {!callback}.
+
+    Where {!resolve_ctx} warns, this raises {!Nested_transaction}: splitting one
+    atomic unit of work across two transactions that cannot see each other is a
+    correctness bug, not something to proceed through. *)
 val resolve_transaction_ctx
   :  ?tags:Logs.Tag.set
   -> ?db_ctx:transaction ctx
   -> Entity.Label.t
   -> (transaction ctx -> 'r Lwt.t)
-  -> 'r Lwt.t
-
-(** {1 Value-level scope selection} *)
-
-type _ source =
-  | Direct : no_transaction source
-  | Transaction : transaction source
-  | Join : transaction ctx -> transaction source
-
-(** Dispatches to the scope helpers. When given a fresh source ([Direct] or
-    [Transaction]) while a transaction is already open on the label, this logs an
-    actionable message naming [?db_ctx] before proceeding — that combination
-    almost always means an optional context wasn't forwarded. *)
-val source_ctx
-  :  ?tags:Logs.Tag.set
-  -> 'txn source
-  -> Entity.Label.t
-  -> ('txn ctx -> 'r Lwt.t)
   -> 'r Lwt.t
