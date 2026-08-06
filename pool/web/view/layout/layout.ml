@@ -15,7 +15,7 @@ module Tenant = struct
   open Pool_tenant
   open Layout_utils
 
-  let make_footer { database_label; language; query_parameters; _ } title_text =
+  let make_footer { database_label; language; query_parameters; user; _ } title_text =
     let%lwt privacy_policy_is_set = I18n.privacy_policy_is_set database_label language in
     let open Pool_common in
     let of_nav = Utils.nav_link_to_string language in
@@ -24,11 +24,16 @@ module Tenant = struct
       Http_utils.url_with_field_params query_parameters %> Sihl.Web.externalize_path
     in
     let fragments =
+      let release_note_fragment =
+        match user with
+        | Admin _ -> [ Http_utils.Url.Admin.version_path (), of_nav I18n.Versions ]
+        | Contact _ | Guest -> []
+      in
       let links =
-        [ Http_utils.Url.Admin.version_path (), of_nav I18n.Versions
-        ; "/credits", of_nav I18n.Credits
-        ; "/terms-and-conditions", of_field Pool_message.Field.TermsAndConditions
-        ]
+        release_note_fragment
+        @ [ "/credits", of_nav I18n.Credits
+          ; "/terms-and-conditions", of_field Pool_message.Field.TermsAndConditions
+          ]
       in
       (if privacy_policy_is_set
        then links @ [ "/privacy-policy", of_nav I18n.PrivacyPolicy ]
