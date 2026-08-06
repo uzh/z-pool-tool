@@ -4,11 +4,31 @@ module RepoId = Pool_common.Repo.Id
 
 let make_type = Pool_common.Repo.make_caqti_type
 let option = Caqti_type.option
+let src = Logs.Src.create "changelog.repo_entity"
+
+module Logs = (val Logs.src_log src : Logs.LOG)
 
 module Changes = struct
-  let t =
-    let open Changes in
-    make_type Caqti_type.string (of_string %> CCResult.return) to_string
+  open Changes
+
+  (* Unparsable changes must not break the whole changelog listing: fall back to an empty
+     changeset for rows that were truncated while the column was still a TEXT. *)
+  let of_string str =
+    match of_string_opt str with
+    | Some changes -> changes
+    | None ->
+      Logs.warn (fun m -> m "Failed to parse changes (%i bytes)" (CCString.length str));
+      Assoc []
+  ;;
+
+  let t = make_type Caqti_type.string (of_string %> CCResult.return) to_string
+
+  (* An empty changeset is never stored, it can only stem from [of_string]s fallback. Log
+     the id to allow fixing the stored json manually. *)
+  let log_if_unparsable ~id = function
+    | Assoc [] ->
+      Logs.warn (fun m -> m "Changelog %s has unparsable changes" (Id.value id))
+    | Assoc _ | Change _ -> ()
   ;;
 end
 
@@ -31,6 +51,7 @@ let t =
       | Some user_uuid, Some user_email -> Some { uuid = user_uuid; email = user_email }
       | _ -> None
     in
+    let () = Changes.log_if_unparsable ~id changes in
     Ok { id; model; entity_uuid; user; changes; created_at }
   in
   custom

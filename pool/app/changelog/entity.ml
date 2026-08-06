@@ -27,6 +27,15 @@ module Changes = struct
   [@@deriving eq, show, yojson]
 
   let of_string str = str |> Yojson.Safe.from_string |> t_of_yojson
+
+  (* Changes were stored in a TEXT column (limited to 65535 bytes) until migration
+     202607311200. Larger changesets were truncated by the database and cannot be parsed
+     anymore. *)
+  let of_string_opt str =
+    try Some (of_string str) with
+    | Yojson.Json_error _ | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error _ -> None
+  ;;
+
   let to_string t = t |> yojson_of_t |> Yojson.Safe.to_string
 end
 
