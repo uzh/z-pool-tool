@@ -455,8 +455,8 @@ Once someone has registered for the session, it can no longer be deleted.
     {|All existing timewindows of this experiment.
 Once someone started the survey, it can no longer be deleted.|}
   | ExperimentSessionsCancelDelete ->
-    {|Canceling an assignment will inform the contact. The concat will be able to sign up for this experiment again.
-  Marking an assignment as deleted will not inform the contact. The contact will not be able to sign up for this experiment again.|}
+    {|Canceling an assignment will inform the contact. The contact will not be able to sign up for this experiment again.
+Marking an assignment as deleted will not inform the contact. The contact will be able to sign up for this experiment again.|}
   | ExperimentSessionsPublic ->
     "Please note: Sessions or completed experiments may no longer be displayed, although \
      listed in your email. Once all the available seats are assigned, a session is no \
