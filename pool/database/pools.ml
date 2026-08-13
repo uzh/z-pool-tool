@@ -149,11 +149,19 @@ module Make (Config : Pools_sig.ConfigSig) = struct
         Logs.debug ~src (fun m -> m ?tags "Pool usage: No connection found")
     ;;
 
-    let drain_opt =
-      connection
-      %> function
-      | Open pool -> Caqti_lwt_unix.Pool.drain pool
-      | Close | Fail _ -> Lwt.return_unit
+    let drain_opt pool =
+      Lwt.dont_wait
+        (fun () ->
+           connection pool
+           |> function
+           | Open pool -> Caqti_lwt_unix.Pool.drain pool
+           | Close | Fail _ -> Lwt.return_unit)
+        (fun exn ->
+           Logs.warn ~src (fun m ->
+             m
+               "Draining pool '%s' failed: %s"
+               (database_label pool)
+               (Printexc.to_string exn)))
     ;;
 
     let add ?required database =
@@ -175,8 +183,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
           [%string
             "Failed to drop pool: connection to '%{Label.value name}' doesn't exist"]
         in
-        Logs.info ~src (fun m -> m ~tags:(LogTag.create name) "%s" msg);
-        Lwt.return_unit
+        Logs.info ~src (fun m -> m ~tags:(LogTag.create name) "%s" msg)
       | Some pool ->
         let () = Cache.remove name in
         drain_opt pool
@@ -232,25 +239,15 @@ module Make (Config : Pools_sig.ConfigSig) = struct
           Cache.replace
             { pool with connection = CCOption.map_or ~default:Close fail error }
         in
-        let () =
-          Lwt.dont_wait
-            (fun () -> drain_opt pool)
-            (fun exn ->
-               Logs.warn ~src (fun m ->
-                 m
-                   "Draining pool '%s' failed: %s"
-                   (database_label pool)
-                   (Printexc.to_string exn)))
-        in
-        Lwt.return_unit
-      | None -> Lwt.return_unit
+        drain_opt pool
+      | None -> ()
     ;;
 
     let disconnect ?error = disconnect' ?error ?note:None
 
     let reset ?required database =
-      let%lwt () = disconnect' ~note:(`Info "DB reset") (label database) in
-      create ?required database |> Cache.replace |> Lwt.return
+      let () = disconnect' ~note:(`Info "DB reset") (label database) in
+      create ?required database |> Cache.replace
     ;;
 
     let raise_caqti_error (label : Entity.Label.t) input =
@@ -258,10 +255,10 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       match%lwt input with
       | Ok resp -> Lwt.return resp
       | Error `Unsupported ->
-        let%lwt () = disconnect' ~note:(`Error "Unsupported") label in
+        let () = disconnect' ~note:(`Error "Unsupported") label in
         raise Pool_message.Error.(Exn (Unsupported "Caqti error"))
       | Error (#t as err) ->
-        let%lwt () = disconnect' ~error:err label in
+        let () = disconnect' ~error:err label in
         let () = Cache.log_pools () in
         raise (Exn err)
     ;;
