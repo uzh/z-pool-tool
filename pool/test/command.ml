@@ -484,6 +484,10 @@ let () =
             `Quick
             Custom_field_test.ValidationTests.validate_multi_select_field
         ; test_case
+            "validate boolean custom field"
+            `Quick
+            Custom_field_test.ValidationTests.validate_boolean_field
+        ; test_case
             "update visibility settings"
             `Quick
             Custom_field_test.Settings.update_visibility

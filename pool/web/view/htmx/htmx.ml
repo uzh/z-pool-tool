@@ -146,19 +146,22 @@ let create
   in
   match value with
   | Boolean boolean ->
-    Input.checkbox_element
-      ~additional_attributes:(additional_attributes ())
+    Input.selector
+      ~add_empty:true
+      ~attributes:(additional_attributes ())
       ?append_html
-      ~as_switch:true
       ~classnames
-      ~hints
       ?error
+      ~hints
       ?label_field:label
+      ~option_formatter:(Pool_common.Utils.bool_to_string language)
       ?required
-      ?value:boolean
-      ~switcher_class:input_class
       language
       field
+      Utils.Bool.to_string
+      [ true; false ]
+      boolean
+      ()
   | Date date ->
     Input.date_picker_element
       ~additional_attributes:(additional_attributes ())

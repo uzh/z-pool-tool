@@ -1,3 +1,5 @@
+open CCFun.Infix
+
 let answer_and_validate_multiple
       req
       urlencoded
@@ -7,6 +9,8 @@ let answer_and_validate_multiple
   =
   let open Utils.Lwt_result.Infix in
   let open Custom_field in
+  (* Fields the contact is not allowed to fill out are never answered on their behalf *)
+  let custom_fields = CCList.filter (Public.is_disabled false %> not) custom_fields in
   Lwt_list.map_s
     (fun (field : Public.t) ->
        let id = field |> Public.id |> Id.value in

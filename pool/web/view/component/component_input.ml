@@ -944,12 +944,18 @@ let custom_field_to_static_input ?flash_fetcher language custom_field =
   in
   match custom_field with
   | Public.Boolean (_, answer) ->
-    checkbox_element
-      ~as_switch:true
-      ~orientation:`Horizontal
-      ?value:(answer >>= Answer.value)
+    selector
+      ~add_empty:true
+      ?flash_fetcher
+      ~hints
+      ~option_formatter:(Pool_common.Utils.bool_to_string language)
+      ~required
       language
       field
+      Utils.Bool.to_string
+      [ true; false ]
+      (answer >>= Answer.value)
+      ()
   | Public.Date (_, answer) ->
     date_picker_element
       ~disable_future:true
