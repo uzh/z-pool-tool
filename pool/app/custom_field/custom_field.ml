@@ -109,14 +109,17 @@ let validate_htmx ~is_admin ~entity_uuid value (m : Public.t) =
   let validate validation value = validation |> fst |> fun rule -> rule value in
   match m with
   | Boolean (public, answer) ->
-    (* Ignoring required, as false is default *)
-    let to_field a = Public.Boolean (public, a) |> CCResult.return in
-    let open CCOption.Infix in
-    single_value
-    >|= Utils.Bool.of_string
-    |> CCOption.value ~default:false
-    |> create_answer is_admin entity_uuid answer
-    |> to_field
+    (* An unanswered boolean is not the same as an answer of 'false' *)
+    let to_field a = Public.Boolean (public, a) in
+    (match single_value, required with
+     | Some value, _ ->
+       value
+       |> Utils.Bool.of_string_opt
+       |> CCOption.to_result (Error.Invalid Field.Value)
+       >|= create_answer is_admin entity_uuid answer
+       >|= to_field
+     | None, false -> Ok (to_field None)
+     | None, true -> no_value)
   | Date (public, answer) ->
     let to_field a = Public.Date (public, a) in
     (match single_value, required with

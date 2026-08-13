@@ -108,6 +108,11 @@ module Data = struct
   ;;
 
   let custom_number_field ?validation () = custom_field ?validation FieldType.Number
+
+  let custom_boolean_field ?required () =
+    custom_field ?required ~validation:[] FieldType.Boolean
+  ;;
+
   let answer_id = Answer.Id.create ()
 
   let to_public ?(field_options = []) entity_uuid (m : Custom_field.t) =
@@ -556,6 +561,49 @@ module ValidationTests = struct
     let () = validate_too_few () in
     let () = validate_too_many () in
     let () = validate_ok () in
+    ()
+  ;;
+
+  let validate_boolean_field () =
+    let custom_field = Data.custom_boolean_field () |> Data.to_public contact_id in
+    let[@warning "-4"] public, answer =
+      match custom_field with
+      | Public.Boolean (public, answer) -> public, answer
+      | _ -> failwith "Invalid custom field type"
+    in
+    let validate value =
+      validate_htmx ~is_admin:false ~entity_uuid:contact_id value custom_field
+    in
+    (* 'false' is an answer of its own, not a missing answer *)
+    let validate_false () =
+      let result = validate [ "false" ] in
+      let expected = Ok (Public.Boolean (public, Some (update_answer answer false))) in
+      check_result expected result
+    in
+    let validate_no_answer () =
+      let result = validate [] in
+      let expected = Ok (Public.Boolean (public, None)) in
+      check_result expected result
+    in
+    let validate_invalid_value () =
+      let result = validate [ "maybe" ] in
+      let expected = Error (Error.Invalid Field.Value) in
+      check_result expected result
+    in
+    let validate_required_without_answer () =
+      let custom_field =
+        Data.custom_boolean_field ~required:(Required.create true) ()
+        |> Data.to_public contact_id
+      in
+      let result =
+        validate_htmx ~is_admin:false ~entity_uuid:contact_id [] custom_field
+      in
+      check_result (Error Error.NoValue) result
+    in
+    let () = validate_false () in
+    let () = validate_no_answer () in
+    let () = validate_invalid_value () in
+    let () = validate_required_without_answer () in
     ()
   ;;
 end

@@ -182,3 +182,114 @@ let set_value_of_required_field_to_null _ () =
   let expected = Error Error.NoValue in
   partial_update_exec ~custom_field ~value expected ()
 ;;
+
+let boolean_custom_field ?(is_required = true) ?(is_admin_input_only = false) field_name =
+  let open Custom_field in
+  Custom_field_utils.create_custom_field field_name (fun field ->
+    Boolean
+      { field with
+        required = Required.create is_required
+      ; admin_input_only = AdminInputOnly.create is_admin_input_only
+      })
+;;
+
+let boolean_answer contact_id field value =
+  let open Custom_field in
+  Public.Boolean
+    ( { Public.id = id field
+      ; name = name field
+      ; hint = hint field
+      ; validation = Validation.pure
+      ; required = required field
+      ; admin_override = admin_override field
+      ; admin_input_only = admin_input_only field
+      ; prompt_on_registration = prompt_on_registration field
+      ; version = Pool_common.Version.of_int 0
+      }
+    , Some (Answer.create (Contact.Id.to_common contact_id) (Some value)) )
+;;
+
+(* Any valid answer, so that only the field under test stays unanswered *)
+let some_answer entity_uuid =
+  let open Custom_field in
+  let answer value = Some (Answer.create entity_uuid value) in
+  function
+  | Public.Boolean (public, _) -> Public.Boolean (public, answer (Some true))
+  | Public.Date (public, _) -> Public.Date (public, answer (Some (1990, 1, 1)))
+  | Public.Number (public, _) -> Public.Number (public, answer (Some 1))
+  | Public.Text (public, _) -> Public.Text (public, answer (Some "answer"))
+  | Public.Select (public, options, _) ->
+    Public.Select (public, options, answer (CCList.head_opt options))
+  | Public.MultiSelect (public, options, _) ->
+    let value = CCList.head_opt options |> CCOption.map CCList.return in
+    Public.MultiSelect (public, options, answer value)
+;;
+
+(* A boolean without an answer is an open question, an answer of 'false' is not *)
+let unanswered_boolean_is_an_open_question _ () =
+  let open Custom_field in
+  let%lwt current_user = current_user () in
+  let%lwt contact = Integration_utils.ContactRepo.create () in
+  let contact_id = Contact.id contact in
+  let entity_uuid = Contact.Id.to_common contact_id in
+  let user = Pool_context.Contact contact in
+  let field = boolean_custom_field "Owns a bicycle" in
+  let admin_only_field = boolean_custom_field ~is_admin_input_only:true "Admin only" in
+  let handle_events = Pool_event.handle_events database_label current_user in
+  let upsert answers =
+    answers
+    |> CCList.map (fun answer ->
+      AnswerUpserted (answer, contact_id, user) |> Pool_event.custom_field)
+    |> handle_events
+  in
+  let%lwt () =
+    [ field; admin_only_field ]
+    |> CCList.flat_map (fun field ->
+      Pool_event.[ custom_field (Created field); custom_field (Published field) ])
+    |> handle_events
+  in
+  let open_questions () =
+    find_unanswered_ungrouped_required_by_contact database_label user contact_id
+  in
+  let contains custom_field lst =
+    lst
+    |> CCList.map (fun m -> Public.id m |> Id.value)
+    |> CCList.mem ~eq:CCString.equal (id custom_field |> Id.value)
+  in
+  let%lwt unanswered = open_questions () in
+  let () =
+    Alcotest.(check bool)
+      "unanswered boolean is an open question"
+      true
+      (contains field unanswered)
+  in
+  let () =
+    Alcotest.(check bool)
+      "admin input only field is not an open question"
+      false
+      (contains admin_only_field unanswered)
+  in
+  (* Answer everything but the boolean, so that it is the only open question left *)
+  let%lwt () =
+    unanswered
+    |> CCList.filter (fun m -> Id.equal (Public.id m) (id field) |> not)
+    |> CCList.map (some_answer entity_uuid)
+    |> upsert
+  in
+  let%lwt all_answered = all_required_answered database_label contact_id in
+  let () =
+    Alcotest.(check bool) "the unanswered boolean is still an open question" false
+    @@ all_answered
+  in
+  (* 'false' is an answer, not a missing answer *)
+  let%lwt () = upsert [ boolean_answer contact_id field false ] in
+  let%lwt unanswered = open_questions () in
+  let () =
+    Alcotest.(check bool)
+      "an answer of 'false' closes the question"
+      false
+      (contains field unanswered)
+  in
+  let%lwt all_answered = all_required_answered database_label contact_id in
+  Alcotest.(check bool) "no open questions are left" true all_answered |> Lwt.return
+;;

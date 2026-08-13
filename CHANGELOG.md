@@ -4,6 +4,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+### Changed
+
+- Boolean custom fields are answered with a yes/no selector instead of a toggle, so that
+  "no" is stored as an answer and can be told apart from an unanswered question
+
+### Fixed
+
+- Unanswered boolean custom fields count as open questions again
+- Profile completion no longer lists questions only an admin is allowed to answer
+
 ## [0.13.6](https://github.com/uzh/z-pool-tool/tree/HEAD) - 2026-07-17
 
 ### Added

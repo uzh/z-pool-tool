@@ -122,6 +122,16 @@ module Sql = struct
     Database.collect pool request id >|> to_ungrouped_entities pool true
   ;;
 
+  (* Questions a contact is expected to answer themselves. Fields that are only
+     prompted during registration, or that only an admin can fill out, are never part
+     of the open questions of a contact. *)
+  let contact_answerable_conditions =
+    {sql|
+      AND pool_custom_fields.prompt_on_registration = 0
+      AND pool_custom_fields.admin_input_only = 0
+    |sql}
+  ;;
+
   let find_unanswered_required_by_model_request is_admin =
     let open Caqti_request.Infix in
     let where =
@@ -129,10 +139,12 @@ module Sql = struct
         {sql|
           WHERE pool_custom_fields.model = $2
           %s
+          %s
           AND pool_custom_fields.required = 1
           AND pool_custom_field_answers.value IS NULL
         |sql}
         (base_filter_conditions is_admin)
+        contact_answerable_conditions
     in
     let order = {sql| ORDER BY pool_custom_fields.position ASC |sql} in
     Format.asprintf "%s \n %s \n %s" select_sql where order
@@ -293,19 +305,17 @@ module Sql = struct
       %s
       WHERE pool_custom_fields.model = $2
       %s
-      AND pool_custom_fields.prompt_on_registration = 0
-      AND pool_custom_fields.field_type != $3
-      AND pool_custom_fields.admin_input_only = 0
+      %s
       AND pool_custom_field_answers.value IS NULL
       |sql}
         answers_left_join
         (base_filter_conditions false)
+        contact_answerable_conditions
     in
     (match required_only with
      | false -> base
      | true -> Format.asprintf "%s AND pool_custom_fields.required = 1" base)
-    |> Caqti_type.(
-         t3 Contact.Repo.Id.t Repo_entity.Model.t Repo_entity.FieldType.t ->! int)
+    |> Caqti_type.(t2 Contact.Repo.Id.t Repo_entity.Model.t ->! int)
   ;;
 
   let all_answered ~required_only pool contact_id =
@@ -313,7 +323,7 @@ module Sql = struct
     Database.find
       pool
       (all_answered_request ~required_only)
-      Entity.(contact_id, Model.Contact, FieldType.Boolean)
+      Entity.(contact_id, Model.Contact)
     ||> CCInt.equal 0
   ;;
 
@@ -324,6 +334,7 @@ module Sql = struct
         {sql|
           WHERE pool_custom_fields.prompt_on_registration = 1
           %s
+          AND pool_custom_fields.admin_input_only = 0
         |sql}
         (base_filter_conditions false)
     in

@@ -107,6 +107,10 @@ let suite =
               "set value of required field to null"
               `Slow
               set_value_of_required_field_to_null
+          ; test_case
+              "unanswered boolean is an open question"
+              `Slow
+              unanswered_boolean_is_an_open_question
           ] )
     ; ( "filter"
       , Filter_test.
