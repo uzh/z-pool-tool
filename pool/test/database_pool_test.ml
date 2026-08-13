@@ -5,6 +5,8 @@
 
 let concurrent_queries = 5
 let settle_timeout = 30.0
+let cleanup_timeout = 5.0
+let bounded ~seconds promise = Lwt.pick [ promise; Lwt_unix.sleep seconds ]
 
 (** A socket that accepts connections and closes them again after a short,
     staggered delay, so the MariaDB handshake of one connection fails while the
@@ -73,7 +75,7 @@ let unreachable_database_settles_every_query _ () =
   let pending =
     CCList.count (fun query -> Lwt.state query = Lwt.Sleep) queries |> CCInt.to_string
   in
-  let%lwt () = Pool.Tenant.drop label in
+  let%lwt () = bounded ~seconds:cleanup_timeout (Pool.Tenant.drop label) in
   let%lwt () = close_server () in
   Alcotest.(check string "no query is left pending" "0" pending);
   Alcotest.(check bool "every failing query settles" true settled) |> Lwt.return
