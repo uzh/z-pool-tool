@@ -178,8 +178,8 @@ module Make (Config : Pools_sig.ConfigSig) = struct
         Logs.info ~src (fun m -> m ~tags:(LogTag.create name) "%s" msg);
         Lwt.return_unit
       | Some pool ->
-        let%lwt () = drain_opt pool in
-        Cache.remove name |> Lwt.return
+        let () = Cache.remove name in
+        drain_opt pool
     ;;
 
     let initialize ?(additional_pools : Entity.t list = []) () : unit =
@@ -206,7 +206,6 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       Cache.find_opt
       %> function
       | Some pool ->
-        let%lwt () = drain_opt pool in
         let default =
           CCOption.map_or
             (function
@@ -229,8 +228,21 @@ module Make (Config : Pools_sig.ConfigSig) = struct
         in
         Logs.msg ~src level (fun m ->
           m "Disconnect pool '%s'%s" (database_label pool) message);
-        Cache.replace { pool with connection = CCOption.map_or ~default:Close fail error }
-        |> Lwt.return
+        let () =
+          Cache.replace
+            { pool with connection = CCOption.map_or ~default:Close fail error }
+        in
+        let () =
+          Lwt.dont_wait
+            (fun () -> drain_opt pool)
+            (fun exn ->
+               Logs.warn ~src (fun m ->
+                 m
+                   "Draining pool '%s' failed: %s"
+                   (database_label pool)
+                   (Printexc.to_string exn)))
+        in
+        Lwt.return_unit
       | None -> Lwt.return_unit
     ;;
 
