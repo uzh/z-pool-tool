@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.13.7](https://github.com/uzh/z-pool-tool/tree/0.13.7)
+
 ### Changed
 
 - Boolean custom fields are answered with a yes/no selector instead of a toggle, so that
@@ -13,6 +15,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - Unanswered boolean custom fields count as open questions again
 - Profile completion no longer lists questions only an admin is allowed to answer
+- Changlogs may sometimes be cut of
+- Changelog link was visible to contacts
+- Typos
+- Stability of database connection
 
 ## [0.13.6](https://github.com/uzh/z-pool-tool/tree/HEAD) - 2026-07-17
 
