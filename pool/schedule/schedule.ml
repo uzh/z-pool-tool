@@ -144,7 +144,7 @@ let run ({ database_label; label; scheduled_time; status; _ } as schedule : t) =
       in
       let retry_connection label =
         (* Reset database connection to "Close" before retry *)
-        let%lwt () = Pool.disconnect label in
+        let () = Pool.disconnect label in
         Pool.connect label
         >|> function
         | Ok () ->

@@ -10,8 +10,8 @@ module type Sig = sig
   module Pool : sig
     val initialize : ?additional_pools:Entity.t list -> unit -> unit
     val add : ?required:bool -> Entity.t -> unit
-    val reset : ?required:bool -> Entity.t -> unit Lwt.t
-    val drop : Entity.Label.t -> unit Lwt.t
+    val reset : ?required:bool -> Entity.t -> unit
+    val drop : Entity.Label.t -> unit
     val clear : unit -> unit
 
     val fetch
@@ -20,7 +20,7 @@ module type Sig = sig
       -> (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt_unix.Pool.t Lwt.t
 
     val connect : Entity.Label.t -> (unit, Pool_message.Error.t) result
-    val disconnect : ?error:Caqti_error.t -> Entity.Label.t -> unit Lwt.t
+    val disconnect : ?error:Caqti_error.t -> Entity.Label.t -> unit
     val find : Entity.Label.t -> (Entity.t, Pool_message.Error.t) result
     val find_by_status : ?exclude:string list -> Entity.Status.t list -> Entity.t list
 

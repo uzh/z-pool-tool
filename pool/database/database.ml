@@ -38,7 +38,7 @@ module Pool = struct
   ;;
 
   let drop label =
-    let%lwt () = drop label in
+    let () = drop label in
     let%lwt () = Guard.drop_pool (Entity.Label.value label) in
     Lwt.return_unit
   ;;
@@ -116,7 +116,7 @@ module Pool = struct
       Repo.find root database_label
       >|> function
       | Ok database ->
-        let%lwt () = Pool.reset ~required:false database in
+        let () = Pool.reset ~required:false database in
         let%lwt () = Guard.drop_pool (Entity.Label.value database_label) in
         add_guard_pool database |> Lwt.return
       | Error _ ->

@@ -1,3 +1,5 @@
+open CCFun.Infix
+
 module Make (Config : Pools_sig.ConfigSig) : Guardian_backend.Pools.Sig = struct
   include Pools.Make (Config)
 
@@ -19,13 +21,13 @@ module Make (Config : Pools_sig.ConfigSig) : Guardian_backend.Pools.Sig = struct
     Pool.connect %> CCResult.map_err Pool_message.Error.show
   ;;
 
-  let disconnect = Pool.disconnect
+  let disconnect ?error = Pool.disconnect ?error %> Lwt.return
 
   let add_pool ?required name database_url =
     Entity.create name database_url |> Pool.add ?required
   ;;
 
-  let drop_pool = Pool.drop
+  let drop_pool = Pool.drop %> Lwt.return
   let fetch_pool ?ctx ?retries () = Pool.fetch ?retries (of_ctx ctx)
   let find ?ctx = find (of_ctx ctx)
   let find_opt ?ctx = find_opt (of_ctx ctx)

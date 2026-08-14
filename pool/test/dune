@@ -1,6 +1,7 @@
 (tests
  (names
   command
+  database_pool
   integration
   filter_invitation_tests
   filter_assignment_tests
