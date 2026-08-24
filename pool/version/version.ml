@@ -1,2 +1,2 @@
-let to_string = "0.13.7"
+let to_string = "0.13.8"
 let changelog_url = "https://github.com/uzh/z-pool-tool/blob/main/CHANGELOG.md"
