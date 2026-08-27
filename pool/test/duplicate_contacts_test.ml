@@ -43,6 +43,15 @@ let check_similarity _ () =
     ~result:duplicate_score
     ~expected:None
     "do not find duplicate with different given name";
+  let%lwt contact_4 = create_contact ~firstname:"Doe" ~lastname:"John" in
+  let%lwt duplicate_score =
+    find_duplicate ~target:contact_1 ~comparison:contact_4
+    ||> CCOption.map (fun { score; _ } -> score)
+  in
+  check
+    ~result:duplicate_score
+    ~expected:(Some 1.0)
+    "found duplicate with swapped given name and last name";
   Lwt.return ()
 ;;
 

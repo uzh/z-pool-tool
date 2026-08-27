@@ -28,17 +28,22 @@ module Column = struct
     ; sql_column : string
     ; sql_table : string
     ; weight : int
+    ; (* Contacts are regularly registered with their given and last name
+         swapped. Columns naming such a counterpart (in the same table) count as
+         similar as well when the values of both columns are swapped
+         consistently. *)
+      swapped_with : string option
     }
   [@@deriving eq, show]
 end
 
 let columns =
-  [ Field.Name, SimilarityCriteria.Exact, "user_users", "name", 4
-  ; Field.Firstname, SimilarityCriteria.Exact, "user_users", "given_name", 5
-  ; Field.CellPhone, SimilarityCriteria.Exact, "pool_contacts", "cell_phone", 5
+  [ Field.Name, SimilarityCriteria.Exact, "user_users", "name", 4, Some "given_name"
+  ; Field.Firstname, SimilarityCriteria.Exact, "user_users", "given_name", 5, Some "name"
+  ; Field.CellPhone, SimilarityCriteria.Exact, "pool_contacts", "cell_phone", 5, None
   ]
-  |> CCList.map (fun (field, criteria, sql_table, sql_column, weight) ->
-    { Column.field; criteria; sql_table; sql_column; weight })
+  |> CCList.map (fun (field, criteria, sql_table, sql_column, weight, swapped_with) ->
+    { Column.field; criteria; sql_table; sql_column; weight; swapped_with })
 ;;
 
 type t =
