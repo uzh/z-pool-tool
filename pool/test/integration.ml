@@ -257,6 +257,10 @@ let suite =
               "assignment creation with sender"
               `Slow
               assignment_creation_with_sender
+          ; test_case
+              "opt out link in unsolicited emails"
+              `Slow
+              opt_out_link_in_unsolicited_emails
           ] )
     ; Message_mapping.(
         ( "message_mappings"

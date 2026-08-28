@@ -352,3 +352,82 @@ let assignment_creation_with_sender _ () =
   in
   Lwt.return_unit
 ;;
+
+(* Unsolicited emails have to carry an opt-out (unsubscribe) link. The senders
+   covered below are exactly those passing [?optout_link] to [prepare_email]. *)
+module OptOutLinkData = struct
+  let database_label = Test_utils.Data.database_label
+  let get_exn = Test_utils.get_or_failwith
+  let import_token = "opt-out-link-test-token"
+
+  let unsubscribe_url tenant =
+    let layout = Message_template.layout_from_tenant tenant in
+    Utils.Url.join_path layout.Message_template.link "/unsubscribe"
+  ;;
+
+  let check_link ~expected name url dispatch =
+    let email = dispatch |> Email.job |> Email.Service.Job.email in
+    let contains str = CCString.mem ~sub:url str in
+    let check part actual =
+      Alcotest.(check bool) (Format.asprintf "%s: %s" name part) expected actual
+    in
+    check "html" (email.Sihl_email.html |> CCOption.map_or ~default:false contains);
+    check "plain text" (contains email.Sihl_email.text)
+  ;;
+end
+
+let opt_out_link_in_unsolicited_emails _ () =
+  let open Utils.Lwt_result.Infix in
+  let open OptOutLinkData in
+  let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
+  let%lwt contact = Integration_utils.ContactRepo.create () in
+  let%lwt admin = Integration_utils.AdminRepo.create () in
+  let%lwt experiment = Integration_utils.ExperimentRepo.create () in
+  let url = unsubscribe_url tenant in
+  let invitation = Invitation.create contact in
+  let%lwt () =
+    let%lwt dispatch =
+      Message_template.ExperimentInvitation.create tenant experiment invitation
+    in
+    check_link ~expected:true "experiment invitation" url dispatch |> Lwt.return
+  in
+  let%lwt () =
+    let%lwt create_message =
+      Message_template.ExperimentInvitation.prepare_with_optout_link
+        database_label
+        tenant
+        experiment
+        [ contact ]
+    in
+    create_message invitation
+    |> get_exn
+    |> check_link ~expected:true "bulk experiment invitation" url
+    |> Lwt.return
+  in
+  let%lwt () =
+    let%lwt warning =
+      Message_template.InactiveContactWarning.prepare database_label ||> get_exn
+    in
+    let%lwt dispatch = warning contact ||> get_exn in
+    check_link ~expected:true "inactive contact warning" url dispatch |> Lwt.return
+  in
+  let%lwt () =
+    let%lwt profile_update =
+      Message_template.ProfileUpdateTrigger.prepare database_label tenant
+    in
+    let%lwt dispatch = profile_update contact ||> get_exn in
+    check_link ~expected:true "profile update trigger" url dispatch |> Lwt.return
+  in
+  let%lwt () =
+    let import_message = Message_template.UserImport.prepare database_label tenant in
+    let%lwt dispatch = import_message (`Contact contact) true import_token in
+    check_link ~expected:true "user import of a contact" url dispatch |> Lwt.return
+  in
+  let%lwt () =
+    (* Admins are not contacts, they cannot unsubscribe *)
+    let import_message = Message_template.UserImport.prepare database_label tenant in
+    let%lwt dispatch = import_message (`Admin admin) true import_token in
+    check_link ~expected:false "user import of an admin" url dispatch |> Lwt.return
+  in
+  Lwt.return_unit
+;;
