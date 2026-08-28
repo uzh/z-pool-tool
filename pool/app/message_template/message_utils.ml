@@ -26,6 +26,23 @@ let opt_out_link_url { link; _ } = function
       (Pool_token.value token)
 ;;
 
+let find_or_create_unsubscribe_token pool contact =
+  let user_id = Contact.id contact |> Contact.Id.value in
+  let data = [ "user_id", user_id; "type", "unsubscribe" ] in
+  match%lwt Pool_token.find_active_by_data pool data with
+  | Some token ->
+    let%lwt () = Pool_token.extend_expiry pool token Sihl.Time.OneYear in
+    Lwt.return token
+  | None ->
+    let%lwt token = Pool_token.create ~expires_in:Sihl.Time.OneYear pool data in
+    Lwt.return token
+;;
+
+let find_or_create_optout_link pool contact =
+  let%lwt token = find_or_create_unsubscribe_token pool contact in
+  Lwt.return (Unverified token)
+;;
+
 let create_public_url_with_params pool_url path =
   Pool_message.add_field_query_params path %> create_public_url pool_url
 ;;

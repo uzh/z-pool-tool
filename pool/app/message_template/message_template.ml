@@ -593,23 +593,6 @@ end
 module ExperimentInvitation = struct
   let label = ExperimentInvitation
 
-  let find_or_create_unsubscribe_token pool contact =
-    let user_id = Contact.id contact |> Contact.Id.value in
-    let data = [ "user_id", user_id; "type", "unsubscribe" ] in
-    match%lwt Pool_token.find_active_by_data pool data with
-    | Some token ->
-      let%lwt () = Pool_token.extend_expiry pool token Sihl.Time.OneYear in
-      Lwt.return token
-    | None ->
-      let%lwt token = Pool_token.create ~expires_in:Sihl.Time.OneYear pool data in
-      Lwt.return token
-  ;;
-
-  let find_or_create_optout_link pool { Invitation.contact; _ } =
-    let%lwt token = find_or_create_unsubscribe_token pool contact in
-    Lwt.return (Message_utils.Unverified token)
-  ;;
-
   let email_params layout experiment contact =
     global_params layout contact.Contact.user @ experiment_params layout experiment
   ;;
@@ -685,7 +668,7 @@ module ExperimentInvitation = struct
     let%lwt sender = sender_of_experiment database_label experiment in
     let layout = layout_from_tenant tenant in
     let params = email_params layout experiment contact in
-    let%lwt optout_link = find_or_create_optout_link database_label invitation in
+    let%lwt optout_link = find_or_create_optout_link database_label contact in
     let email =
       prepare_email
         ~optout_link
@@ -725,8 +708,16 @@ module InactiveContactWarning = struct
       in
       let%lwt last_login = Contact.find_last_signin_at pool contact in
       let params = email_params layout contact ~last_login in
+      let%lwt optout_link = find_or_create_optout_link pool contact in
       let email =
-        prepare_email lang template sender (Contact.email_address contact) layout params
+        prepare_email
+          ~optout_link
+          lang
+          template
+          sender
+          (Contact.email_address contact)
+          layout
+          params
       in
       let entity_uuids = user_message_uuids (Contact.user contact) in
       Lwt_result.return (create_email_job label entity_uuids email)
@@ -1031,10 +1022,15 @@ module ProfileUpdateTrigger = struct
     let layout = layout_from_tenant tenant in
     let fnc contact =
       let open CCResult in
+      let open Utils.Lwt_result.Infix in
       let message_langauge = contact_language sys_langs contact in
-      let* lang, template = find_template_by_language templates message_langauge in
+      let* lang, template =
+        Lwt.return (find_template_by_language templates message_langauge)
+      in
+      let%lwt optout_link = find_or_create_optout_link pool contact in
       let email =
         prepare_email
+          ~optout_link
           lang
           template
           sender
@@ -1043,7 +1039,7 @@ module ProfileUpdateTrigger = struct
           (email_params layout url contact)
       in
       let entity_uuids = user_message_uuids (Contact.user contact) in
-      Ok (create_email_job label entity_uuids email)
+      Lwt.return_ok (create_email_job label entity_uuids email)
     in
     Lwt.return fnc
   ;;
@@ -1398,8 +1394,16 @@ module UserImport = struct
         |> CCOption.value ~default:(Hashtbl.find templates language)
       else Hashtbl.find templates language
     in
+    let%lwt optout_link =
+      match user with
+      | `Contact contact ->
+        let%lwt link = find_or_create_optout_link pool contact in
+        Lwt.return_some link
+      | `Admin _ -> Lwt.return_none
+    in
     let email =
       prepare_email
+        ?optout_link
         language
         template
         sender
@@ -1408,7 +1412,7 @@ module UserImport = struct
         (email_params layout confirmation_url user)
     in
     let entity_uuids = user_message_uuids (to_user user) in
-    create_email_job template.label entity_uuids email
+    Lwt.return (create_email_job template.label entity_uuids email)
   ;;
 end
 
