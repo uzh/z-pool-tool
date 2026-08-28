@@ -462,7 +462,7 @@ module ProfileUpdateTrigger : sig
   val prepare
     :  Database.Label.t
     -> Pool_tenant.t
-    -> (Contact.t -> (Email.dispatch, Pool_message.Error.t) result) Lwt.t
+    -> (Contact.t -> (Email.dispatch, Pool_message.Error.t) Lwt_result.t) Lwt.t
 end
 
 module SessionCancellation : sig
@@ -595,11 +595,10 @@ module UserImport : sig
   val prepare
     :  Database.Label.t
     -> Pool_tenant.t
-    -> ([< `Admin of Admin.t | `Contact of Contact.t ]
-        -> bool
-        -> string
-        -> Email.dispatch)
-         Lwt.t
+    -> [< `Admin of Admin.t | `Contact of Contact.t ]
+    -> bool
+    -> string
+    -> Email.dispatch Lwt.t
 end
 
 module WaitingListConfirmation : sig

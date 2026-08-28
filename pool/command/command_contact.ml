@@ -80,9 +80,7 @@ let trigger_profile_update_by_tenant pool =
   | [] -> Lwt_result.return ()
   | contacts ->
     let%lwt create_message = Message_template.ProfileUpdateTrigger.prepare pool tenant in
-    let* emails =
-      CCList.map create_message contacts |> CCResult.flatten_l |> Lwt_result.lift
-    in
+    let* emails = Lwt_list.map_s create_message contacts ||> CCResult.flatten_l in
     Cqrs_command.Contact_command.SendProfileUpdateTrigger.(
       { contacts; emails }
       |> handle
