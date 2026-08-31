@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - The duplicate check also finds contacts whose given name and last name were entered
   the other way round
+- Add unsubscribe link to all unsolicited e-mails
 
 ## [0.13.8](https://github.com/uzh/z-pool-tool/tree/0.13.8)
 
