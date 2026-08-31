@@ -405,6 +405,9 @@ let opt_out_link_in_unsolicited_emails _ () =
     |> Lwt.return
   in
   let%lwt () =
+    let%lwt () =
+      Contact.SignInCounterUpdated contact |> Contact.handle_event database_label
+    in
     let%lwt warning =
       Message_template.InactiveContactWarning.prepare database_label ||> get_exn
     in
