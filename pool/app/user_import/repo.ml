@@ -333,7 +333,6 @@ let find_contacts_to_remind reminder_settings pool limit () =
         (Format.asprintf
            {sql| pool_contacts.import_pending = 1
          AND pool_contacts.disabled = 0
-         AND pool_contacts.paused = 0
          AND %s |sql}
            reminder_where_clause)
       limit

@@ -23,13 +23,14 @@ let mock_request
       ?(body = Rock.Body.empty)
       ?(context = mock_context ())
       ?context_tenant
+      ?(target = "http://localhost:8080/login")
       ()
   =
   let open Rock.Request in
   let headers = Httpaf.Headers.of_list headers in
   let req =
     { version = Httpaf.Version.of_string "HTTP/1.1"
-    ; target = "http://localhost:8080/login"
+    ; target
     ; headers
     ; meth
     ; body
@@ -49,7 +50,7 @@ let data_to_urlencoded data =
   data >|= CCPair.map_snd return
 ;;
 
-let mock_post_request ?context_tenant form =
+let mock_post_request ?context_tenant ?target form =
   let url_encode_form data =
     data
     |> CCList.map (fun (k, v) ->
@@ -59,5 +60,5 @@ let mock_post_request ?context_tenant form =
   in
   let headers = [ "Content-Type", "application/x-www-form-urlencoded" ] in
   let body = form |> url_encode_form |> Rock.Body.of_string in
-  mock_request ~headers ~body ~meth:`POST ?context_tenant ()
+  mock_request ~headers ~body ~meth:`POST ?context_tenant ?target ()
 ;;

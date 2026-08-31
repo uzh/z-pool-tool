@@ -468,6 +468,14 @@ let suite =
               "notification: active_after_import=false falls back to UserImport"
               `Slow
               NotificationTemplate.inactive_fallback
+          ; test_case
+              "unsubscribe closes a pending import"
+              `Slow
+              Unsubscribe.with_pending_import
+          ; test_case
+              "unsubscribe without a pending import only pauses"
+              `Slow
+              Unsubscribe.without_pending_import
           ] )
     ; ( "user"
       , User_test.
