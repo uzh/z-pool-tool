@@ -4,6 +4,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+### Changed
+
+- The duplicate check also finds contacts whose given name and last name were entered
+  the other way round
+
 ## [0.13.8](https://github.com/uzh/z-pool-tool/tree/0.13.8)
 
 ### Fixed

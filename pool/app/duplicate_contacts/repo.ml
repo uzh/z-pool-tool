@@ -136,7 +136,22 @@ let find_similars database_label ~user_uuid custom_fields =
     in
     let target_col = asprintf "t.%s" column.sql_column in
     let user_col = concat_sql ~table:"contacts" column in
-    make_comparison (user_col, target_col) column.criteria |> with_name
+    let compare (left, right) = make_comparison (left, right) column.criteria in
+    let direct = compare (user_col, target_col) in
+    (match column.swapped_with with
+     | None -> direct
+     | Some swapped_column ->
+       (* Both directions have to match, otherwise a contact named "Doe Doe"
+          would be similar to every contact with the last name "Doe". COALESCE
+          keeps a NULL of the swapped comparison from turning a non-matching
+          direct comparison into NULL, which would drop the column out of the
+          weighted average. *)
+       asprintf
+         "((%s) OR COALESCE((%s) AND (%s), FALSE))"
+         direct
+         (compare (user_col, asprintf "t.%s" swapped_column))
+         (compare (asprintf "contacts.%s" swapped_column, target_col)))
+    |> with_name
   in
   let field_similarities field =
     let id = Custom_field.(id field |> Id.value) in
@@ -189,11 +204,8 @@ let find_similars database_label ~user_uuid custom_fields =
       (asprintf "`%s`" id)
   in
   let blocking_conditions =
-    let user_blocks =
-      columns
-      >|= fun ({ Column.sql_column; criteria; _ } as col) ->
-      let target_value = asprintf "(SELECT %s FROM target_contact)" sql_column in
-      let comparison = make_comparison (concat_sql col, target_value) criteria in
+    let target_value = asprintf "(SELECT %s FROM target_contact)" in
+    let candidate_block comparison =
       [%string
         {sql|
           SELECT pool_contacts.user_uuid AS uuid
@@ -201,6 +213,34 @@ let find_similars database_label ~user_uuid custom_fields =
           INNER JOIN user_users ON pool_contacts.user_uuid = user_users.uuid
           WHERE %{comparison}
         |sql}]
+    in
+    let user_blocks =
+      columns
+      >|= fun ({ Column.sql_column; criteria; _ } as col) ->
+      make_comparison (concat_sql col, target_value sql_column) criteria
+      |> candidate_block
+    in
+    (* Contacts with swapped names match on none of the blocks above, therefore
+       the swap is prefiltered as well. Requiring both directions keeps the
+       block as selective as an exact match. *)
+    let swapped_name_blocks =
+      let swap_condition { Column.sql_column; sql_table; criteria; swapped_with; _ } =
+        swapped_with
+        |> CCOption.map (fun swapped_column ->
+          let comparison (column, target_column) =
+            make_comparison
+              (asprintf "%s.%s" sql_table column, target_value target_column)
+              criteria
+          in
+          (* A swap is symmetric: sorting makes both columns of a pair build the
+             same condition, of which only one is kept *)
+          [ comparison (sql_column, swapped_column)
+          ; comparison (swapped_column, sql_column)
+          ]
+          |> sort CCString.compare
+          |> CCString.concat " AND ")
+      in
+      columns |> filter_map swap_condition |> uniq ~eq:CCString.equal >|= candidate_block
     in
     let custom_field_blocks =
       match custom_fields with
@@ -219,7 +259,7 @@ let find_similars database_label ~user_uuid custom_fields =
               AND answers.custom_field_uuid IN (%{custom_field_ids})
           |sql}]
     in
-    user_blocks @ custom_field_blocks
+    user_blocks @ swapped_name_blocks @ custom_field_blocks
   in
   let similarities =
     map user_similarities columns @ map field_similarities custom_fields
