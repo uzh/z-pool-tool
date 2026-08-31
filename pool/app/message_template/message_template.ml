@@ -1350,7 +1350,7 @@ module UserImport = struct
     global_params layout user @ [ "confirmationUrl", confirmation_url ]
   ;;
 
-  let prepare pool tenant user active_after_import token =
+  let prepare pool tenant =
     let languages = Pool_common.Language.all in
     let templates = Hashtbl.create (CCList.length languages) in
     let inactive_templates = Hashtbl.create (CCList.length languages) in
@@ -1373,6 +1373,8 @@ module UserImport = struct
     let%lwt default_language = Settings.default_language pool in
     let%lwt sender = default_sender_of_pool pool in
     let layout = layout_from_tenant tenant in
+    Lwt.return
+    @@ fun user active_after_import token ->
     let language = language default_language user in
     let confirmation_url =
       Pool_common.

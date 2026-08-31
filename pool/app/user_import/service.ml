@@ -14,7 +14,7 @@ let run database_label =
   let open Utils.Lwt_result.Infix in
   let%lwt import_message =
     let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_or_failwith in
-    Lwt.return (Message_template.UserImport.prepare database_label tenant)
+    Message_template.UserImport.prepare database_label tenant
   in
   let to_admin = CCList.map (fun (admin, import) -> `Admin admin, import) in
   let to_contact = CCList.map (fun (contact, import) -> `Contact contact, import) in

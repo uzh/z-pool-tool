@@ -422,13 +422,13 @@ let opt_out_link_in_unsolicited_emails _ () =
     check_link ~expected:true "profile update trigger" url dispatch |> Lwt.return
   in
   let%lwt () =
-    let import_message = Message_template.UserImport.prepare database_label tenant in
+    let%lwt import_message = Message_template.UserImport.prepare database_label tenant in
     let%lwt dispatch = import_message (`Contact contact) true import_token in
     check_link ~expected:true "user import of a contact" url dispatch |> Lwt.return
   in
   let%lwt () =
     (* Admins are not contacts, they cannot unsubscribe *)
-    let import_message = Message_template.UserImport.prepare database_label tenant in
+    let%lwt import_message = Message_template.UserImport.prepare database_label tenant in
     let%lwt dispatch = import_message (`Admin admin) true import_token in
     check_link ~expected:false "user import of an admin" url dispatch |> Lwt.return
   in

@@ -413,7 +413,7 @@ module NotificationTemplate = struct
     let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:true () in
     let user = `Contact contact in
     let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
-    let import_message = Message_template.UserImport.prepare database_label tenant in
+    let%lwt import_message = Message_template.UserImport.prepare database_label tenant in
     import_message user active_after_import Data.token
   ;;
 
@@ -464,7 +464,9 @@ module NotificationTemplate = struct
     in
     Lwt.finalize
       (fun () ->
-         let import_message = Message_template.UserImport.prepare database_label tenant in
+         let%lwt import_message =
+           Message_template.UserImport.prepare database_label tenant
+         in
          let%lwt dispatch = import_message user false Data.token in
          let actual_label = Email.message_template dispatch in
          Alcotest.(
