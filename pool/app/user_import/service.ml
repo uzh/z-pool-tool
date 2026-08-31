@@ -28,11 +28,6 @@ let run database_label =
       , Event.reminded )
     ]
   in
-  let make_events (jobs, events) (user, import) event_fnc =
-    let job = import_message user import.Entity.active_after_import import.Entity.token in
-    let event = event_fnc import in
-    job :: jobs, event :: events
-  in
   let rec folder limit tasks events =
     if limit <= 0
     then Lwt.return events
@@ -42,6 +37,13 @@ let run database_label =
       | (repo_fnc, event_fnc) :: tl ->
         let%lwt users = repo_fnc limit in
         let new_limit = limit - CCList.length users in
+        let make_events (jobs, events) (user, import) event_fnc =
+          let job =
+            import_message user import.Entity.active_after_import import.Entity.token
+          in
+          let event = event_fnc import in
+          job :: jobs, event :: events
+        in
         CCList.fold_left
           (fun events data -> make_events events data event_fnc)
           events
@@ -49,7 +51,10 @@ let run database_label =
         |> folder new_limit tl)
   in
   let%lwt emails, import_events = folder limit tasks ([], []) in
-  let%lwt () = Email.(BulkSent emails |> handle_event database_label) in
+  let%lwt () =
+    let%lwt emails = Lwt.all emails in
+    Email.(BulkSent emails |> handle_event database_label)
+  in
   import_events |> Lwt_list.iter_s (Event.handle_event database_label)
 ;;
 

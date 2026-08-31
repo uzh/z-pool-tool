@@ -209,12 +209,32 @@ let unsubscribe_post req =
     >|> function
     | Error (_ : Error.t) -> Lwt_result.fail Response.generic_not_found
     | Ok (token, contact) ->
-      let paused = Pool_user.Paused.(create true) in
-      Cqrs_command.Contact_command.TogglePaused.handle ~tags contact paused
-      |> Lwt_result.lift
-      |> Response.bad_request_on_error unsubscribe
-      |>> fun events ->
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      let* import_events =
+        User_import.find_pending_by_user_id_opt
+          database_label
+          (Contact.id contact |> Contact.Id.to_user)
+        >|> (function
+         | None -> Lwt_result.return []
+         | Some import ->
+           Cqrs_command.User_import_command.DisableImport.handle
+             ~tags
+             (Pool_context.contact contact, import)
+           |> Lwt_result.lift)
+        |> Response.bad_request_on_error unsubscribe
+      in
+      let* pause_contact_events =
+        let paused = Pool_user.Paused.(create true) in
+        Cqrs_command.Contact_command.TogglePaused.handle ~tags contact paused
+        |> Lwt_result.lift
+        |> Response.bad_request_on_error unsubscribe
+      in
+      let%lwt () =
+        Pool_event.handle_events
+          ~tags
+          database_label
+          user
+          (pause_contact_events @ import_events)
+      in
       let%lwt () =
         CCOption.map_or
           ~default:Lwt.return_unit
@@ -225,6 +245,7 @@ let unsubscribe_post req =
         redirect_to_with_actions
           (url_with_field_params query_parameters "/index")
           [ Message.set ~success:[ Success.PausedToggled true ] ])
+      |> Lwt_result.ok
   in
   Response.handle ~src req result
 ;;

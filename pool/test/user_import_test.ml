@@ -414,7 +414,7 @@ module NotificationTemplate = struct
     let user = `Contact contact in
     let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
     let%lwt import_message = Message_template.UserImport.prepare database_label tenant in
-    Lwt.return (import_message user active_after_import Data.token)
+    import_message user active_after_import Data.token
   ;;
 
   let active _ () =
@@ -467,7 +467,7 @@ module NotificationTemplate = struct
          let%lwt import_message =
            Message_template.UserImport.prepare database_label tenant
          in
-         let dispatch = import_message user false Data.token in
+         let%lwt dispatch = import_message user false Data.token in
          let actual_label = Email.message_template dispatch in
          Alcotest.(
            check
@@ -623,6 +623,106 @@ module Repo = struct
         ()
     in
     let () = Alcotest.(check (list user_import) "succeeds" [] contacts_to_remind) in
+    Lwt.return_unit
+  ;;
+end
+
+(* Unsubscribing an imported contact has to both pause the contact and close the
+   pending import. The event order matters: [TogglePaused] writes the whole
+   contact row from the in-memory value, so it has to run before
+   [DisableImport] clears [import_pending] – otherwise the contact is left
+   paused with a confirmed import but [import_pending = 1], which locks it out
+   via the import-pending middleware. Defined down here to reuse
+   [Repo.set_contact_import_pending]. *)
+module Unsubscribe = struct
+  open Utils.Lwt_result.Infix
+
+  let database_label = Test_utils.Data.database_label
+
+  let unsubscribe_token contact =
+    let user_id = Contact.id contact |> Contact.Id.value in
+    Pool_token.create database_label [ "user_id", user_id; "type", "unsubscribe" ]
+  ;;
+
+  let post_unsubscribe token =
+    let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
+    Test_request.mock_post_request
+      ~context_tenant:tenant
+      ~target:
+        (Format.asprintf "/unsubscribe?%s=%s" Field.(show Token) (Pool_token.value token))
+      []
+    |> Handler.Public.Import.unsubscribe_post
+  ;;
+
+  let check_redirected name (res : Rock.Response.t) =
+    let code = Httpaf.Status.to_code res.Rock.Response.status in
+    Alcotest.(check bool)
+      (Format.asprintf "%s: handler redirects instead of rendering an error" name)
+      true
+      (code >= 300 && code < 400)
+  ;;
+
+  let with_pending_import _ () =
+    let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:true () in
+    let contact_id = Contact.id contact in
+    let%lwt () = Repo.set_contact_import_pending database_label contact_id in
+    let import =
+      create_user_import
+        ~token:Pool_common.Id.(create () |> value)
+        (Pool_context.Contact contact)
+    in
+    let%lwt () = User_import.insert database_label import in
+    let%lwt token = unsubscribe_token contact in
+    let%lwt res = post_unsubscribe token in
+    let () = check_redirected "with pending import" res in
+    let%lwt contact = Contact.find database_label contact_id ||> get_exn in
+    let () =
+      Alcotest.(check bool)
+        "contact is paused"
+        true
+        (Pool_user.Paused.value contact.Contact.paused)
+    in
+    let () =
+      Alcotest.(check bool)
+        "import_pending is cleared and not reverted by the paused update"
+        false
+        (Pool_user.ImportPending.value contact.Contact.import_pending)
+    in
+    let%lwt pending_import =
+      User_import.find_pending_by_user_id_opt
+        database_label
+        (contact_id |> Contact.Id.to_user)
+    in
+    let () =
+      Alcotest.(check bool)
+        "import is no longer pending"
+        true
+        (CCOption.is_none pending_import)
+    in
+    let%lwt token_valid = Pool_token.is_valid database_label token in
+    let () = Alcotest.(check bool) "unsubscribe token is deactivated" false token_valid in
+    Lwt.return_unit
+  ;;
+
+  let without_pending_import _ () =
+    let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:true () in
+    let contact_id = Contact.id contact in
+    let%lwt token = unsubscribe_token contact in
+    let%lwt res = post_unsubscribe token in
+    let () = check_redirected "without pending import" res in
+    let%lwt contact = Contact.find database_label contact_id ||> get_exn in
+    let () =
+      Alcotest.(check bool)
+        "contact is paused"
+        true
+        (Pool_user.Paused.value contact.Contact.paused)
+    in
+    let () =
+      Alcotest.(check bool)
+        "import_pending stays cleared"
+        false
+        (Pool_user.ImportPending.value contact.Contact.import_pending)
+    in
     Lwt.return_unit
   ;;
 end
