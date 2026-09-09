@@ -33,6 +33,16 @@ module Label = struct
   let schema () = schema field ()
   let of_string m = m
   let hash = CCString.hash
+
+  let to_ctx (pool : t) = [ "pool", value pool ]
+
+  let of_ctx_opt : (string * string) list -> t option =
+    CCList.assoc_opt ~eq:( = ) "pool" %> CCOption.map of_string
+  
+  let of_ctx_exn =
+    of_ctx_opt
+    %> CCOption.get_exn_or Pool_message.(Error.Undefined Field.DatabaseLabel |> Error.show)
+
 end
 
 module Status = struct
@@ -110,13 +120,28 @@ let pool_size () =
   (Sihl.Configuration.read schema).pool_size |> CCOption.value ~default:10
 ;;
 
-let to_ctx (pool : Label.t) = [ "pool", Label.value pool ]
+type no_transaction = [ `no_transaction ]
+type transaction = [ `transaction ]
 
-let of_ctx_opt : (string * string) list -> Label.t option =
-  CCList.assoc_opt ~eq:( = ) "pool" %> CCOption.map Label.of_string
-;;
+(*
+   let find db_ctx =  Database.find db_ctx do_the_find
+ *)
 
-let of_ctx_exn =
-  of_ctx_opt
-  %> CCOption.get_exn_or Pool_message.(Error.Undefined Field.DatabaseLabel |> Error.show)
-;;
+type !_ ctx =
+  | Label : { label : Label.t; tags : Logs.Tag.set } -> no_transaction ctx
+  | Connection : { connection : Caqti_lwt.connection; label : Label.t; tags : Logs.Tag.set } -> no_transaction ctx
+  | TransactionalConnection : { connection : Caqti_lwt.connection; label : Label.t; tags : Logs.Tag.set } -> transaction ctx
+
+type _ txn =
+  | Yes : transaction txn
+  | No : no_transaction txn
+
+let label_of_ctx (type maybe_transaction) : maybe_transaction ctx -> Label.t = function
+  | Label { label; _ } | Connection { label; _ } | TransactionalConnection { label; _ } -> label
+
+let to_ctx db_ctx = Label.to_ctx (label_of_ctx db_ctx)
+
+let txn_of_ctx (type maybe_transaction) : maybe_transaction ctx -> maybe_transaction txn = function
+  | Label _ -> No
+  | Connection _ -> No
+  | TransactionalConnection _ -> Yes

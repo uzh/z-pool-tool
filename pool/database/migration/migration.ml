@@ -81,9 +81,9 @@ let with_disabled_fk_check database_label f =
          |> Pool.raise_caqti_error database_label))
 ;;
 
-let execute_steps database_label state steps =
+let execute_steps db_ctx state steps =
   let open Caqti_request.Infix in
-  let tags = Logger.Tags.create database_label in
+  let tags = Logger.Tags.of_db_ctx db_ctx in
   let namespace = Migration_repo.Migration.namespace state in
   let rec run steps state =
     match steps with
@@ -94,13 +94,13 @@ let execute_steps database_label state steps =
         let req = statement |> Caqti_type.(unit ->. unit) ~oneshot:true in
         Connection.exec req ()
       in
-      let%lwt () = Service.query database_label query in
+      let%lwt () = Service.query db_ctx query in
       Logs.debug (fun m -> m ~tags "Ran %s" label);
-      let%lwt state = increment database_label state in
+      let%lwt state = increment db_ctx state in
       run steps state
     | { Step.label; statement; check_fk = false } :: steps ->
       let%lwt () =
-        with_disabled_fk_check database_label (fun connection ->
+        with_disabled_fk_check db_ctx (fun connection ->
           Logs.debug (fun m -> m ~tags "Running %s without fk checks" label);
           let query (module Connection : Caqti_lwt.CONNECTION) =
             let req = statement |> Caqti_type.(unit ->. unit) ~oneshot:true in
@@ -109,7 +109,7 @@ let execute_steps database_label state steps =
           query connection)
       in
       Logs.debug (fun m -> m ~tags "Ran %s" label);
-      let%lwt state = increment database_label state in
+      let%lwt state = increment db_ctx state in
       run steps state
   in
   let () =
@@ -120,13 +120,13 @@ let execute_steps database_label state steps =
   run steps state
 ;;
 
-let execute_migration database_label migration =
+let execute_migration db_ctx migration =
   let open Utils.Lwt_result.Infix in
-  let tags = Logger.Tags.create database_label in
+  let tags = Logger.Tags.of_db_ctx db_ctx in
   let namespace, steps = migration in
-  let%lwt () = setup database_label () in
-  let upsert_state = upsert database_label in
-  let%lwt existing_state = get_opt database_label namespace in
+  let%lwt () = setup db_ctx () in
+  let upsert_state = upsert db_ctx in
+  let%lwt existing_state = get_opt db_ctx namespace in
   let%lwt state, steps_to_apply =
     match existing_state with
     | Some state ->
@@ -182,7 +182,7 @@ let execute_migration database_label migration =
     let%lwt state = mark_dirty state in
     Lwt.catch
       (fun () ->
-         execute_steps database_label state steps_to_apply
+         execute_steps db_ctx state steps_to_apply
          >|> mark_clean
          ||> CCFun.const (CCResult.return ()))
       (fun exn ->
@@ -194,9 +194,10 @@ let execute_migration database_label migration =
          Lwt_result.fail (Pool_message.Error.MigrationFailed error_message))
 ;;
 
-let execute database_label migrations =
+let execute label migrations =
   let open Utils.Lwt_result.Infix in
-  let tags = Logger.Tags.create database_label in
+  Service.transaction_ctx label @@ fun db_ctx ->
+  let tags = Logger.Tags.of_db_ctx db_ctx in
   let n = CCList.length migrations in
   if n > 0
   then Logs.info (fun m -> m ~tags "Looking at %i migrations" (CCList.length migrations))
@@ -205,23 +206,23 @@ let execute database_label migrations =
     match migrations with
     | [] -> Lwt_result.return ()
     | migration :: migrations ->
-      execute_migration database_label migration >>= fun () -> run migrations
+      execute_migration db_ctx migration >>= fun () -> run migrations
   in
   run migrations
 ;;
 
-let run_all database_label () =
+let run_all db_ctx () =
   let steps = !registered_migrations |> Map.to_seq |> CCList.of_seq in
-  execute database_label steps
+  execute db_ctx steps
 ;;
 
-let migrations_status ?migrations database_label () =
+let migrations_status ?migrations db_ctx () =
   let migrations_to_check =
     match migrations with
     | Some migrations -> migrations |> CCList.to_seq |> Map.of_seq
     | None -> !registered_migrations
   in
-  let%lwt migrations_states = Migration_repo.get_all database_label (table ()) in
+  let%lwt migrations_states = Migration_repo.get_all db_ctx (table ()) in
   let migration_states_namespaces =
     migrations_states |> CCList.map Migration_repo.Migration.namespace
   in
@@ -254,8 +255,8 @@ let migrations_status ?migrations database_label () =
        namespaces_to_check
 ;;
 
-let pending_migrations ?migrations database_label () =
-  let%lwt unapplied = migrations_status ?migrations database_label () in
+let pending_migrations ?migrations db_ctx () =
+  let%lwt unapplied = migrations_status ?migrations db_ctx () in
   let rec find_pending result = function
     | (namespace, Some n) :: xs ->
       if n > 0
@@ -269,9 +270,9 @@ let pending_migrations ?migrations database_label () =
   Lwt.return @@ find_pending [] unapplied
 ;;
 
-let check_migrations_status ?migrations database_label () =
-  let tags = Logger.Tags.create database_label in
-  let%lwt unapplied = migrations_status database_label ?migrations () in
+let check_migrations_status ?migrations db_ctx () =
+  let tags = Logger.Tags.of_db_ctx db_ctx in
+  let%lwt unapplied = migrations_status db_ctx ?migrations () in
   CCList.iter
     (fun (namespace, count) ->
        match count with
@@ -310,9 +311,9 @@ let check_migrations_status ?migrations database_label () =
   Lwt.return ()
 ;;
 
-let start database_label () =
+let start db_ctx () =
   Sihl.Configuration.require schema;
-  let%lwt () = setup database_label () in
+  let%lwt () = setup db_ctx () in
   let skip_default_pool_creation =
     CCOption.value
       ~default:false
@@ -320,7 +321,7 @@ let start database_label () =
   in
   if Sihl.Configuration.is_test () || skip_default_pool_creation
   then Lwt.return ()
-  else check_migrations_status database_label ()
+  else check_migrations_status db_ctx ()
 ;;
 
 let extend_migrations additional_steps () =

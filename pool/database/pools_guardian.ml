@@ -3,11 +3,14 @@ open CCFun.Infix
 module Make (Config : Pools_sig.ConfigSig) : Guardian_backend.Pools.Sig = struct
   include Pools.Make (Config)
 
-  let of_ctx ctx =
+  let label_of_ctx ctx =
     CCOption.bind ctx (CCList.assoc_opt ~eq:CCString.equal "pool")
     |> CCOption.get_exn_or "Invalid ctx"
     |> Entity.Label.of_string
   ;;
+
+  let db_ctx_of_ctx ctx =
+    label_ctx (label_of_ctx ctx)
 
   let initialize ?additional_pools =
     let additional_pools =
@@ -28,12 +31,14 @@ module Make (Config : Pools_sig.ConfigSig) : Guardian_backend.Pools.Sig = struct
   ;;
 
   let drop_pool = Pool.drop %> Lwt.return
-  let fetch_pool ?ctx ?retries () = Pool.fetch ?retries (of_ctx ctx)
-  let find ?ctx = find (of_ctx ctx)
-  let find_opt ?ctx = find_opt (of_ctx ctx)
-  let collect ?ctx = collect (of_ctx ctx)
-  let exec ?ctx = exec (of_ctx ctx)
-  let populate ?ctx = populate (of_ctx ctx)
-  let transaction ?ctx ?setup ?cleanup = transaction ?setup ?cleanup (of_ctx ctx)
-  let transaction_iter ?ctx = transaction_iter (of_ctx ctx)
+  let fetch_pool ?ctx ?retries () = Pool.fetch ?retries (label_of_ctx ctx)
+  let find ?ctx = find (db_ctx_of_ctx ctx)
+  let find_opt ?ctx = find_opt (db_ctx_of_ctx ctx)
+  let collect ?ctx = collect (db_ctx_of_ctx ctx)
+  let exec ?ctx = exec (db_ctx_of_ctx ctx)
+  let populate ?ctx = populate (db_ctx_of_ctx ctx)
+  let transaction ?ctx ?setup ?cleanup f =
+    transaction (db_ctx_of_ctx ctx) ?setup ?cleanup f
+  let transaction_iter ?ctx fs =
+    transaction_iter (db_ctx_of_ctx ctx) fs
 end
