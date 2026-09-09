@@ -60,7 +60,7 @@
     (or :with-dev-setup :with-test)))
   (ppx_deriving
    (>= 5.2.1))
-  (ppx_inline_test :with-test)
+  (ppx_inline_test)
   (ppx_string
    (= v0.17.0))
   (ppx_variants_conv
