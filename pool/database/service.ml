@@ -40,9 +40,9 @@ let set_fk_check_request =
   "SET FOREIGN_KEY_CHECKS = ?" |> Caqti_type.(bool ->. unit)
 ;;
 
-let with_disabled_fk_check database_label f =
+let with_disabled_fk_check db_ctx f =
   let open Lwt_result.Syntax in
-  query database_label (fun connection ->
+  query db_ctx (fun connection ->
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
     let* () = Connection.exec set_fk_check_request false in
     (f connection)
@@ -81,16 +81,16 @@ let truncate_table_names_request =
   |> Caqti_type.(unit ->* string) ~oneshot:true
 ;;
 
-let clean_requests database_label =
+let clean_requests db_ctx =
   let open Caqti_request.Infix in
-  let tags = Logger.Tags.create database_label in
+  let tags = Logger.Tags.of_db_ctx db_ctx in
   let truncate_table table =
     Logs.debug (fun m -> m ~tags "Truncate table '%s'" table);
     CCFormat.asprintf "TRUNCATE TABLE %s" table |> Caqti_type.(unit ->. unit)
   in
   let%lwt truncate_reqs =
     ()
-    |> collect database_label truncate_table_names_request
+    |> collect db_ctx truncate_table_names_request
     |> Lwt.map (CCList.map truncate_table)
   in
   let manual_cleanups = [ message_templates_cleanup_requeset ] in
@@ -110,16 +110,26 @@ let clean_root_requests () =
   CCList.map truncate_table tables
 ;;
 
-let clean_all database_label =
-  let%lwt clean_reqs = clean_requests database_label in
+let clean_all db_ctx =
+  let%lwt clean_reqs = clean_requests db_ctx in
   let clean_root_reqs = clean_root_requests () in
-  let exec_clean_req (requests, database_label) =
-    with_disabled_fk_check database_label (fun connection ->
+  let exec_clean_req (requests, db_ctx) =
+    with_disabled_fk_check db_ctx (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Lwt_list.map_s (fun request -> Connection.exec request ()) requests
       |> Lwt.map CCResult.flatten_l
       |> Lwt_result.map Utils.flat_unit)
   in
-  let%lwt () = exec_clean_req (clean_reqs, database_label) in
-  exec_clean_req (clean_root_reqs, Entity.root)
+  let%lwt () = exec_clean_req (clean_reqs, db_ctx) in
+  let root = label_ctx Entity.root in
+  exec_clean_req (clean_root_reqs, root)
 ;;
+
+type any_ctx = Any : 'maybe_txn Entity.ctx -> any_ctx [@@ocaml.unboxed]
+
+let resolve_ctx (type maybe_txn) ?(db_ctx : maybe_txn Entity.ctx option) label =
+  match db_ctx with
+  | None -> Any (label_ctx label)
+  | Some db_ctx ->
+    assert (String.equal (Entity.label_of_ctx db_ctx) label);
+    Any db_ctx

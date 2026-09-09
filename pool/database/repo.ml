@@ -36,13 +36,13 @@ let find_request =
   {sql| WHERE pool_tenant_databases.label = ? |sql} |> find_request_sql |> Label.t ->! t
 ;;
 
-let find pool label =
-  Service.find_opt pool find_request label
+let find pool db_ctx =
+  Service.find_opt pool find_request db_ctx
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Label)
 ;;
 
 let find_all_request = find_request_sql "" |> Caqti_type.unit ->* t
-let find_all label = Service.collect label find_all_request ()
+let find_all db_ctx = Service.collect db_ctx find_all_request ()
 
 let find_all_by_status_request ?(status = []) pt =
   let states =
@@ -55,13 +55,13 @@ let find_all_by_status_request ?(status = []) pt =
 
 let find_all_by_status
       ?(status = Status.[ Active; ConnectionIssue; MigrationsPending ])
-      label
+      db_ctx
   =
   let open Dynparam in
   let (Pack (pt, pv)) =
     CCList.fold_left (fun dyn status -> dyn |> add Status.t status) empty status
   in
-  Service.collect label (find_all_by_status_request ~status pt) pv
+  Service.collect db_ctx (find_all_by_status_request ~status pt) pv
 ;;
 
 let find_label_by_url_request ?(allowed_status = []) pt =
@@ -77,13 +77,13 @@ let find_label_by_url_request ?(allowed_status = []) pt =
   |> pt ->? Label.t
 ;;
 
-let find_label_by_url ?(allowed_status = Status.[ Active ]) label url =
+let find_label_by_url ?(allowed_status = Status.[ Active ]) db_ctx url =
   let open Dynparam in
   let init = empty |> add Url.t url in
   let (Pack (pt, pv)) =
     CCList.fold_left (fun dyn status -> dyn |> add Status.t status) init allowed_status
   in
-  Service.find_opt label (find_label_by_url_request ~allowed_status pt) pv
+  Service.find_opt db_ctx (find_label_by_url_request ~allowed_status pt) pv
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Url)
 ;;
 
@@ -102,7 +102,7 @@ let insert_request =
   |> t ->. Caqti_type.unit
 ;;
 
-let insert = flip Service.exec insert_request
+let insert db_ctx = Service.exec db_ctx insert_request
 
 let update_request =
   {sql|
@@ -154,7 +154,8 @@ let set_migration_pending db_labels =
          |> CCString.concat ",")
       |> pt ->. Caqti_type.unit
     in
-    Service.exec root request pv
+    let db_ctx = Service.label_ctx root in
+    Service.exec db_ctx request pv
 ;;
 
 let database_status_by_label_request =
@@ -165,5 +166,6 @@ let database_status_by_label_request =
 ;;
 
 let database_status_by_label db_label =
-  Service.find_opt root database_status_by_label_request db_label
+    let db_ctx = Service.label_ctx db_label in
+  Service.find_opt db_ctx database_status_by_label_request db_label
 ;;

@@ -36,7 +36,7 @@ module type Sig = sig
       -> Entity.t list
 
     val raise_caqti_error
-      :  Entity.Label.t
+      :  _ Entity.ctx
       -> ( 'a
            , [< `Connect_failed of Caqti_error.connection_error
              | `Connect_rejected of Caqti_error.connection_error
@@ -56,27 +56,27 @@ module type Sig = sig
   end
 
   val query
-    :  Entity.Label.t
+    :  _ Entity.ctx
     -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
     -> 'a Lwt.t
 
   val collect
-    :  Entity.Label.t
+    :  _ Entity.ctx
     -> ('a, 'b, [< `Many | `One | `Zero ]) Caqti_request.t
     -> 'a
     -> 'b list Lwt.t
 
-  val exec : Entity.Label.t -> ('a, unit, [< `Zero ]) Caqti_request.t -> 'a -> unit Lwt.t
-  val find : Entity.Label.t -> ('a, 'b, [< `One ]) Caqti_request.t -> 'a -> 'b Lwt.t
+  val exec : _ Entity.ctx -> ('a, unit, [< `Zero ]) Caqti_request.t -> 'a -> unit Lwt.t
+  val find : _ Entity.ctx -> ('a, 'b, [< `One ]) Caqti_request.t -> 'a -> 'b Lwt.t
 
   val find_opt
-    :  Entity.Label.t
+    :  _ Entity.ctx
     -> ('a, 'b, [< `One | `Zero ]) Caqti_request.t
     -> 'a
     -> 'b option Lwt.t
 
   val populate
-    :  Entity.Label.t
+    :  _ Entity.ctx
     -> string
     -> string list
     -> 'a Caqti_type.t
@@ -84,14 +84,21 @@ module type Sig = sig
     -> unit Lwt.t
 
   val transaction
-    :  ?setup:(Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list
+    :  _ Entity.ctx
+    -> ?setup:(Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list
     -> ?cleanup:(Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list
-    -> Entity.Label.t
     -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
     -> 'a Lwt.t
 
   val transaction_iter
-    :  Entity.Label.t
+    :  _ Entity.ctx
+    -> ?setup:(Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list
+    -> ?cleanup:(Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list
     -> (Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list
     -> unit Lwt.t
+
+  (**/**)
+  val label_ctx : ?tags: Logs.Tag.set -> Entity.Label.t -> Entity.no_transaction Entity.ctx
+  val connection_ctx : ?tags: Logs.Tag.set -> Entity.Label.t -> (Entity.no_transaction Entity.ctx -> 'a Lwt.t) -> 'a Lwt.t
+  val transaction_ctx : ?tags: Logs.Tag.set -> Entity.Label.t -> (Entity.transaction Entity.ctx -> 'a Lwt.t) -> 'a Lwt.t
 end
