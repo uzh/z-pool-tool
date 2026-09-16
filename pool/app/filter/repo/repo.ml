@@ -474,9 +474,9 @@ module Sql = struct
     ||> CCResult.return
   ;;
 
-  let contact_matches_filter ?(default = false) pool query (contact : Contact.t) =
+  let contact_matches_filter ?(default = false) db_ctx query (contact : Contact.t) =
     let open Utils.Lwt_result.Infix in
-    let tags = Database.Logger.Tags.create pool in
+    let tags = Database.Logger.Tags.of_db_ctx db_ctx in
     let find_sql where_fragment =
       Format.asprintf
         {sql|
@@ -490,7 +490,7 @@ module Sql = struct
         |sql}
         where_fragment
     in
-    let%lwt template_list = find_templates_of_query pool query in
+    let%lwt template_list = find_templates_of_query db_ctx query in
     filtered_params MatchesFilter template_list (Some query)
     |> CCResult.map_err (Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags)
     |> CCResult.get_or ~default:(Dynparam.empty, if default then "TRUE" else "FALSE")
@@ -505,7 +505,7 @@ module Sql = struct
       Connection.find_opt request pv
     in
     Database.transaction
-      pool
+      db_ctx
       ~setup:(drop_temp_table :: create_temp_tables template_list (Some query))
       ~cleanup:[ drop_temp_table ]
       matches_filter_request

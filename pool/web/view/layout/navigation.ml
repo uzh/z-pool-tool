@@ -10,9 +10,10 @@ module NavElements = struct
   ;;
 
   let contact_experiment_title context =
+    Pool_context.connection context @@ fun db_ctx ->
     let%lwt experiments_title =
       Translations.find_by_key
-        context.Pool_context.database_label
+        db_ctx
         Translations.Key.ExperimentNavigationTitle
         context.Pool_context.language
       |> Lwt.map Translations.content_to_string
@@ -136,10 +137,11 @@ module NavElements = struct
     [ NavElement.login ?prefix () ] |> NavUtils.create_nav_with_language_switch context
   ;;
 
-  let contact ({ Pool_context.database_label; _ } as context) =
+  let contact context =
+    let db_ctx = Pool_context.on_demand context in
     let%lwt experiments_title = contact_experiment_title context in
-    let%lwt profile = Profile.nav database_label ~contact:true () in
-    let%lwt is_profile_only = Settings.find_profile_only database_label in
+    let%lwt profile = Profile.nav db_ctx ~contact:true () in
+    let%lwt is_profile_only = Settings.find_profile_only db_ctx in
     let links =
       (if Settings.ProfileOnly.value is_profile_only
        then []
@@ -154,8 +156,8 @@ module NavElements = struct
     |> Lwt.return
   ;;
 
-  let admin ({ Pool_context.database_label; _ } as context) =
-    AdminTenantItems.all database_label
+  let admin context =
+    AdminTenantItems.all (Pool_context.on_demand context)
     ||> NavUtils.create_nav ~any_id:true ~validate:true context
   ;;
 
@@ -188,7 +190,7 @@ module NavElements = struct
       |> NavElement.create
     in
     let%lwt profile =
-      Profile.nav context.Pool_context.database_label ~prefix:"/root" ()
+      Profile.nav (Pool_context.on_demand context) ~prefix:"/root" ()
     in
     [ tenants
     ; users
@@ -222,10 +224,10 @@ end
 let create_main
       ?(kind : [ `Tenant | `Root ] = `Tenant)
       ?active_navigation
-      ({ Pool_context.database_label; user; _ } as context)
+      ({ Pool_context.user; _ } as context)
       tenant_languages
   =
-  let%lwt actor = Pool_context.Utils.find_authorizable_opt database_label user in
+  let%lwt actor = Pool_context.Utils.find_authorizable_opt (Pool_context.on_demand context) user in
   let%lwt nav_links =
     let make_links =
       match kind with

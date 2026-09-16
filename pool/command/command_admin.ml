@@ -69,20 +69,23 @@ Example: admin.create econ-uzh example@mail.com securePassword Max Muster Recrui
   Sihl.Command.make ~name:"admin.create" ~description:"New admin" ~help (function
     | [ db_pool; email; password; given_name; name; role ] ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
+      Database.transaction_ctx pool @@ fun db_ctx ->
       (role_of_string role, None)
-      |> create_and_grant_role_exn pool email password given_name name
+      |> create_and_grant_role_exn db_ctx email password given_name name
     | [ db_pool; email; password; given_name; name; role; uuid ] ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
+      Database.transaction_ctx pool @@ fun db_ctx ->
       let target_uuid = Guard.Uuid.Target.of_string_exn uuid in
       (role_of_string role, Some target_uuid)
-      |> create_and_grant_role_exn pool email password given_name name
+      |> create_and_grant_role_exn db_ctx email password given_name name
     | _ -> Command_utils.failwith_missmatch help)
 ;;
 
 let create_root_admin =
   let create_exn email password given_name name =
     let email = email |> Pool_user.EmailAddress.of_string in
-    match%lwt Pool_user.find_by_email_opt Database.Pool.Root.label email with
+    Database.transaction_ctx Database.Pool.Root.label @@ fun db_ctx ->
+    match%lwt Pool_user.find_by_email_opt db_ctx email with
     | None ->
       let%lwt () =
         let open Admin in
@@ -97,8 +100,8 @@ let create_root_admin =
           }
         |> Pool_event.admin
         |> Pool_event.handle_system_event
-             ~tags:Database.(Logger.Tags.create Database.Pool.Root.label)
-             Database.Pool.Root.label
+             ~tags:Database.(Logger.Tags.of_db_ctx db_ctx)
+             db_ctx
       in
       Lwt.return_some ()
     | Some _ -> failwith "The user already exists."
@@ -157,11 +160,13 @@ Example: admin.grant_role econ-uzh example@mail.com RecruiterAll
     (function
     | [ db_pool; email; role ] ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
-      (role |> role_of_string, None) |> grant_if_admin pool email
+      Database.transaction_ctx pool @@ fun db_ctx ->
+      (role |> role_of_string, None) |> grant_if_admin db_ctx email
     | [ db_pool; email; role; uuid ] ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
+      Database.transaction_ctx pool @@ fun db_ctx ->
       let target_uuid = Guard.Uuid.Target.of_string_exn uuid in
-      (role_of_string role, Some target_uuid) |> grant_if_admin pool email
+      (role_of_string role, Some target_uuid) |> grant_if_admin db_ctx email
     | _ -> Command_utils.failwith_missmatch help)
 ;;
 

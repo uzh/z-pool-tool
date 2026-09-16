@@ -31,29 +31,29 @@ let set_flash_fetcher context flash_fetcher =
 ;;
 
 module Utils = struct
-  let find_authorizable_opt ?(admin_only = false) database_label user =
+  let find_authorizable_opt ?(admin_only = false) db_ctx user =
     match user with
-    | Contact _ when Database.Pool.is_root database_label -> Lwt.return_none
+    | Contact _ when Database.Pool.is_root (Database.label_of_ctx db_ctx) -> Lwt.return_none
     | Contact contact when not admin_only ->
       Contact.id contact
       |> Guard.Uuid.actor_of Contact.Id.value
-      |> Guard.Persistence.Actor.find database_label
+      |> Guard.Persistence.Actor.find db_ctx
       ||> CCOption.of_result
     | Guest | Contact _ -> Lwt.return_none
     | Admin admin ->
       Admin.id admin
       |> Guard.Uuid.actor_of Admin.Id.value
-      |> Guard.Persistence.Actor.find database_label
+      |> Guard.Persistence.Actor.find db_ctx
       ||> CCOption.of_result
   ;;
 
-  let find_authorizable ?admin_only database_label =
+  let find_authorizable ?admin_only db_ctx =
     let open CCFun in
     let open Pool_message in
     let field =
       if CCOption.value ~default:false admin_only then Field.Admin else Field.User
     in
-    find_authorizable_opt ?admin_only database_label
+    find_authorizable_opt ?admin_only db_ctx
     %> Lwt.map (CCOption.to_result (Error.NotFound field))
   ;;
 
@@ -92,7 +92,7 @@ module Utils = struct
       let open Api_key in
       api_key.id
       |> Guard.Uuid.actor_of Id.value
-      |> Guard.Persistence.Actor.find database_label
+      |> Guard.Persistence.Actor.find (Database.label_ctx database_label)
       >|- CCFun.const Pool_message.(Error.NotFound Field.Actor)
     ;;
   end

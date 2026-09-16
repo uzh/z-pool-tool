@@ -523,14 +523,15 @@ module Sql = struct
   ;;
 
   let find_sessions_to_remind { Pool_tenant.database_label; _ } =
-    let%lwt text_messages_enabled = Gtx_config.text_messages_enabled database_label in
+    Database.connection_ctx database_label @@ fun db_ctx ->
+    let%lwt text_messages_enabled = Gtx_config.text_messages_enabled db_ctx in
     let email_default_lead_time =
       Settings.default_email_session_reminder_lead_time_key_yojson
     in
     let text_message_default_lead_time =
       Settings.default_text_message_session_reminder_lead_time_key_yojson
     in
-    let collect = Database.collect database_label in
+    let collect = Database.collect db_ctx in
     let%lwt email_reminders =
       collect
         (find_sessions_to_remind_request `Email)
@@ -729,27 +730,27 @@ module Sql = struct
     CCOption.to_list guardian |> CCString.concat " AND " |> Lwt.return
   ;;
 
-  let query_by_admin where ?query actor pool =
-    let%lwt guardian_conditions = find_by_user_params pool actor in
+  let query_by_admin ?query actor db_ctx where =
+    let%lwt guardian_conditions = find_by_user_params db_ctx actor in
     let where = Format.asprintf "%s AND %s" guardian_conditions where in
-    Query.collect_and_count pool query ~select:find_request_sql ~where Repo_entity.t
+    Query.collect_and_count db_ctx query ~select:find_request_sql ~where Repo_entity.t
   ;;
 
-  let find_incomplete_by_admin =
+  let find_incomplete_by_admin ?query actor db_ctx =
     {sql|
       pool_sessions.closed_at IS NULL
       AND pool_sessions.canceled_at IS NULL
       AND (pool_sessions.start + INTERVAL duration SECOND) < NOW()
     |sql}
-    |> query_by_admin
+    |> query_by_admin ?query actor db_ctx
   ;;
 
-  let find_upcoming_by_admin =
+  let find_upcoming_by_admin ?query actor db_ctx =
     {sql|
       (pool_sessions.start + INTERVAL duration SECOND) > NOW()
       AND pool_sessions.closed_at IS NULL
     |sql}
-    |> query_by_admin
+    |> query_by_admin ?query actor db_ctx
   ;;
 
   let calendar_query ?location_uuid ~start_time ~end_time pool actor guardian =

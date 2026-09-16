@@ -130,7 +130,7 @@ let intercept_send sender email =
 let default_sender_of_pool database_label =
   let open Settings in
   let open Utils.Lwt_result.Infix in
-  if Database.Pool.is_root database_label
+  if Database.Pool.is_root (Database.label_of_ctx database_label)
   then
     Sihl.Configuration.read_string "SMTP_SENDER"
     |> CCOption.get_exn_or "Undefined 'SMTP_SENDER'"
@@ -212,32 +212,32 @@ module Smtp = struct
     Lwt.return { sender; reply_to; recipients; subject; body; config }
   ;;
 
-  let prepare database_label ?smtp_auth_id email =
+  let prepare db_ctx ?smtp_auth_id email =
     let open Utils.Lwt_result.Infix in
     let%lwt { SmtpAuth.Write.server; port; username; password; mechanism; protocol; _ } =
       let open Pool_common.Utils in
       let cached =
         match smtp_auth_id with
-        | Some id -> Cache.find_by_id database_label id
-        | None -> Cache.find_default database_label
+        | Some id -> Cache.find_by_id (Database.label_of_ctx db_ctx) id
+        | None -> Cache.find_default (Database.label_of_ctx db_ctx)
       in
       match cached with
       | None ->
         let open Repo.Smtp in
         let%lwt auth =
-          let tags = Database.Logger.Tags.create database_label in
+          let tags = Database.Logger.Tags.of_db_ctx db_ctx in
           smtp_auth_id
           |> CCOption.map_or
-               ~default:(find_full_default database_label)
-               (find_full database_label)
+               ~default:(find_full_default db_ctx)
+               (find_full db_ctx)
           >|- with_log_error ~src ~tags
           ||> get_or_failwith
         in
-        let () = Cache.add database_label auth in
+        let () = Cache.add (Database.label_of_ctx db_ctx) auth in
         Lwt.return auth
       | Some auth -> Lwt.return auth
     in
-    let%lwt default_sender_of_pool = default_sender_of_pool database_label in
+    let%lwt default_sender_of_pool = default_sender_of_pool db_ctx in
     email_from_smtp_auth
       username
       password
@@ -250,17 +250,17 @@ module Smtp = struct
   ;;
 
   let prepare_test_email
-        database_label
+        db_ctx
         { SmtpAuth.Write.server; port; username; password; mechanism; protocol; _ }
         test_email
     =
-    let%lwt default_sender_of_pool = default_sender_of_pool database_label in
+    let%lwt default_sender_of_pool = default_sender_of_pool db_ctx in
     let%lwt test_email =
       let%lwt sender =
-        match Database.Pool.is_root database_label with
+        match Database.Pool.is_root (Database.label_of_ctx db_ctx) with
         | true -> default_sender_of_pool |> Pool_user.EmailAddress.value |> Lwt.return
         | false ->
-          Settings.(find_contact_email database_label |> Lwt.map ContactEmail.value)
+          Settings.(find_contact_email db_ctx |> Lwt.map ContactEmail.value)
       in
       let recipient = test_email |> Pool_user.EmailAddress.value in
       let subject = "Test email" in
@@ -280,16 +280,16 @@ module Smtp = struct
       test_email
   ;;
 
-  let send ?smtp_auth_id database_label email =
+  let send ?smtp_auth_id db_ctx email =
     let%lwt { sender; reply_to; recipients; subject; body; config } =
-      prepare ?smtp_auth_id database_label email
+      prepare ?smtp_auth_id db_ctx email
     in
     Letters.create_email ~reply_to ~from:sender ~recipients ~subject ~body ()
     |> function
     | Ok message ->
       Logs.debug ~src (fun m ->
         m
-          ~tags:(Database.Logger.Tags.create database_label)
+          ~tags:(Database.Logger.Tags.of_db_ctx db_ctx)
           "Send email as %s to %s"
           sender
           email.Sihl_email.recipient);
@@ -298,11 +298,11 @@ module Smtp = struct
   ;;
 end
 
-let test_smtp_config database_label config test_email_address =
+let test_smtp_config db_ctx config test_email_address =
   let open Utils.Lwt_result.Infix in
   let open Smtp in
   let%lwt { sender; reply_to; recipients; subject; body; config } =
-    prepare_test_email database_label config test_email_address
+    prepare_test_email db_ctx config test_email_address
   in
   let send_mail () =
     let message =
@@ -315,8 +315,8 @@ let test_smtp_config database_label config test_email_address =
   >|- fun exn -> Pool_message.Error.SmtpException (Printexc.to_string exn)
 ;;
 
-let send ?smtp_auth_id database_label =
-  intercept_send (Smtp.send ?smtp_auth_id database_label)
+let send ?smtp_auth_id db_ctx =
+  intercept_send (Smtp.send ?smtp_auth_id db_ctx)
 ;;
 
 let start () = Lwt.return_unit
@@ -339,20 +339,20 @@ module Job = struct
   include Entity.Job
 
   let is_system_email_template
-        (database_label : Database.Label.t)
+        (db_ctx : _ Database.ctx)
         (template : Pool_common.MessageTemplateLabel.t)
     : bool Lwt.t
     =
-    if Database.Pool.is_root database_label
+    if Database.Pool.is_root (Database.label_of_ctx db_ctx)
     then Lwt.return_false
     else
       let open Utils.Lwt_result.Infix in
-      Settings.find_system_email_templates database_label
+      Settings.find_system_email_templates db_ctx
       ||> (CCList.mem ~eq:Pool_common.MessageTemplateLabel.equal) template
   ;;
 
-  let resolve_system_smtp_auth_id database_label =
-    let%lwt auth = Repo_sql.Smtp.find_full_system_or_default_opt database_label in
+  let resolve_system_smtp_auth_id db_ctx =
+    let%lwt auth = Repo_sql.Smtp.find_full_system_or_default_opt db_ctx in
     auth |> CCOption.map SmtpAuth.Write.(fun { id; _ } -> id) |> Lwt.return
   ;;
 
@@ -360,7 +360,7 @@ module Job = struct
     Lwt_main.run
       (let%lwt result =
          is_system_email_template
-           Database.Pool.Root.label
+           Database.(label_ctx Pool.Root.label)
            Pool_common.MessageTemplateLabel.Login2FAToken
        in
        assert (not result);
@@ -399,17 +399,18 @@ module Job = struct
       CCString.find ~sub:"550" msg >= 0
       && CCString.find ~sub:"RESOLVER.ADR.RecipientNotFound" msg >= 0
     in
-    let handle ?id:_ label (job : t) =
+    let handle ?id:_ (Database.Any db_ctx) (job : t) =
+      (* TODO(reynir): we want transaction here? *)
       let email_data = email job in
       let smtp_auth_id = smtp_auth_id job in
       Lwt.catch
         (fun () ->
            let%lwt result =
-             Smtp.send ?smtp_auth_id label email_data ||> CCResult.return
+             Smtp.send ?smtp_auth_id db_ctx email_data ||> CCResult.return
            in
            let%lwt () =
              Pool_user.reset_smtp_bounce
-               label
+               db_ctx
                (Pool_user.EmailAddress.of_string email_data.Sihl_email.recipient)
            in
            Lwt.return result)
@@ -419,12 +420,12 @@ module Job = struct
              let recipient = email_data.Sihl_email.recipient in
              Logs.info ~src (fun m ->
                m
-                 ~tags:(Database.Logger.Tags.create label)
+                 ~tags:(Database.Logger.Tags.of_db_ctx db_ctx)
                  "SMTP 550 bounce for %s — incrementing smtp_bounces_count"
                  recipient);
              let%lwt () =
                Pool_user.increment_smtp_bounce
-                 label
+                 db_ctx
                  (Pool_user.EmailAddress.of_string recipient)
              in
              Lwt.return_error (Pool_message.Error.SmtpRecipientNotFound recipient)
@@ -450,7 +451,7 @@ let dispatch
       database_label
       ({ Entity.Job.email; _ } as job)
   =
-  let tags = Database.Logger.Tags.create database_label in
+  let tags = Database.Logger.Tags.of_db_ctx database_label in
   Logs.debug ~src (fun m -> m ~tags "Dispatch email to %s" email.Sihl_email.recipient);
   let%lwt resolved =
     match new_smtp_auth_id, Job.smtp_auth_id job, message_template with
@@ -506,7 +507,7 @@ let dispatch_all database_label jobs =
   in
   Logs.debug ~src (fun m ->
     m
-      ~tags:(Database.Logger.Tags.create database_label)
+      ~tags:(Database.Logger.Tags.of_db_ctx database_label)
       "Dispatch email to %s"
       ([%show: string list] recipients));
   Pool_queue.dispatch_all database_label jobs Job.send

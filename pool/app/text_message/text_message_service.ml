@@ -8,7 +8,7 @@ type message =
   | EmailJob of Email.Service.Job.t
 
 let src = Logs.Src.create "pool_tenant.service.text_message"
-let tags database_label = Database.(Logger.Tags.create database_label)
+let tags db_ctx = Database.(Logger.Tags.of_db_ctx db_ctx)
 let start () = Lwt.return_unit
 let stop () = Lwt.return_unit
 
@@ -47,7 +47,7 @@ end
 let get_api_key_and_url database_label =
   let%lwt { Gtx_config.api_key; _ } = Gtx_config.find_exn database_label in
   let%lwt { Pool_tenant.url; _ } =
-    Pool_tenant.find_by_label database_label ||> Pool_common.Utils.get_or_failwith
+    Pool_tenant.find_by_db_ctx database_label ||> Pool_common.Utils.get_or_failwith
   in
   Lwt.return (api_key, url)
 ;;
@@ -95,8 +95,8 @@ let print_message ~tags ?(log_level = Logs.Info) msg =
   Logs.msg ~src log_level (fun m -> m ~tags "%s" text_message)
 ;;
 
-let intercept_prepare database_label message =
-  let tags = tags database_label in
+let intercept_prepare db_ctx message =
+  let tags = tags db_ctx in
   let () =
     if Sihl.Configuration.is_development ()
     then print_message ~tags ~log_level:Logs.Info message
@@ -113,7 +113,7 @@ let intercept_prepare database_label message =
         "Sending text message intercepted. Sending message as email to ('%s')"
         new_recipient);
     let%lwt sender =
-      Email.Service.default_sender_of_pool database_label
+      Email.Service.default_sender_of_pool db_ctx
       |> Lwt.map Pool_user.EmailAddress.value
     in
     let subject =
@@ -221,10 +221,10 @@ module Job = struct
       Pool_user.CellPhone.show recipient)
   ;;
 
-  let handle ?id database_label message =
+  let handle ?id (Database.Any db_ctx) message =
     let open Sihl.Configuration in
-    let%lwt api_key, tenant_url = get_api_key_and_url database_label in
-    let tags = tags database_label in
+    let%lwt api_key, tenant_url = get_api_key_and_url db_ctx in
+    let tags = tags db_ctx in
     match is_production () || bypass () with
     | true ->
       let open Cohttp in
@@ -280,20 +280,20 @@ let dispatch
       ?new_recipient
       ?message_template
       ?(job_ctx = Pool_queue.job_ctx_create [])
-      database_label
+      db_ctx
       message
   =
-  let tags = Database.Logger.Tags.create database_label in
+  let tags = tags db_ctx in
   Logs.debug ~src (fun m ->
     let open Pool_user.CellPhone in
     m ~tags "Dispatch text message to %s" (value message.recipient));
   message
   |> update ?new_recipient
-  |> intercept_prepare database_label
+  |> intercept_prepare db_ctx
   ||> Pool_common.Utils.get_or_failwith
   >|> function
   | TextMessageJob job ->
-    Pool_queue.dispatch ?id ?message_template ~job_ctx database_label job Job.send
+    Pool_queue.dispatch ?id ?message_template ~job_ctx db_ctx job Job.send
   | EmailJob job ->
-    Email.Service.dispatch ?id ?message_template ~job_ctx database_label job
+    Email.Service.dispatch ?id ?message_template ~job_ctx db_ctx job
 ;;

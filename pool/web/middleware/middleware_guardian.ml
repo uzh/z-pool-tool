@@ -35,13 +35,13 @@ let debug_log ?tags auth effects =
       ([%show: Guard.ValidationSet.t] effects))
 ;;
 
-let access_denied database_label =
+let access_denied db_ctx =
   let open Pool_message.Error in
   fun err ->
     let (_ : t) =
       Pool_common.Utils.with_log_error
         ~src
-        ~tags:(Database.Logger.Tags.create database_label)
+        ~tags:(Database.Logger.Tags.of_db_ctx db_ctx)
         err
     in
     AccessDenied
@@ -50,32 +50,34 @@ let access_denied database_label =
 let validate_web_access_request_dependent ?any_id effects req =
   let open Utils.Lwt_result.Infix in
   let open Pool_context in
-  let* ({ user; database_label; _ } as context) = req |> find |> Lwt_result.lift in
-  Lwt_result.map_error (access_denied database_label)
+  let* ({ user; _ } as context) = req |> find |> Lwt_result.lift in
+  connection context @@ fun db_ctx ->
+  Lwt_result.map_error (access_denied db_ctx)
   @@
   match user with
   | Guest | Contact _ -> Lwt.return_error access_denied_err
   | Admin admin ->
-    let ctx = Database.to_ctx database_label in
+    let ctx = Database.to_ctx db_ctx in
     let* auth = Admin.Guard.Actor.to_authorizable ~ctx admin in
     let* effects = effects req in
     let tags = Logger.Tags.context context in
     let () = debug_log ~tags auth effects in
-    Guard.Persistence.validate ?any_id database_label effects auth
+    Guard.Persistence.validate ?any_id db_ctx effects auth
 ;;
 
 let validate_api_access_request_dependent ?any_id effects req =
   let open Utils.Lwt_result.Infix in
   let open Pool_context.Api in
   let* ({ api_key; database_label; _ } as context) = req |> find |> Lwt_result.lift in
-  Lwt_result.map_error (access_denied database_label)
+  Database.connection_ctx database_label @@ fun db_ctx ->
+  Lwt_result.map_error (access_denied db_ctx)
   @@
-  let ctx = Database.to_ctx database_label in
+  let ctx = Database.to_ctx db_ctx in
   let* auth = Api_key.Actor.to_authorizable ~ctx api_key in
   let* effects = effects req in
   let tags = Pool_context.Logger.Api.Tags.context context in
   let () = debug_log ~tags auth effects in
-  Guard.Persistence.validate ?any_id database_label effects auth
+  Guard.Persistence.validate ?any_id db_ctx effects auth
 ;;
 
 let validate_admin_entity_base validate =

@@ -353,7 +353,8 @@ let archive_insert_request =
 
 let archive { Entity.Instance.id; database_label; _ } =
   let open Lwt_result.Syntax in
-  Database.query database_label (fun connection ->
+  let db_ctx = Database.label_ctx database_label in
+  Database.query db_ctx (fun connection ->
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     let* () = Connection.start () in
     Lwt.catch

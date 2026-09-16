@@ -20,7 +20,8 @@ Example: test.mail admin@mail.com contact@mail.com
       let subject = "Test subject" in
       let email = Sihl_email.create ~sender ~recipient ~subject message in
       let job = Email.Service.Job.create email in
-      let%lwt () = Email.Service.dispatch Database.Pool.Root.label job in
+      Database.(transaction_ctx Pool.Root.label) @@ fun db_ctx ->
+      let%lwt () = Email.Service.dispatch db_ctx job in
       Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)
 ;;

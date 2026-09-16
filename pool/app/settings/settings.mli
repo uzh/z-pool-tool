@@ -129,8 +129,8 @@ module PageScript : sig
     -> unit
     -> (Pool_message.Error.t, t) Pool_conformist.Field.t
 
-  val find : Database.Label.t -> page_scripts Lwt.t
-  val find_id : Database.Label.t -> location -> Pool_common.Id.t Lwt.t
+  val find : _ Database.ctx -> page_scripts Lwt.t
+  val find_id : _ Database.ctx -> location -> Pool_common.Id.t Lwt.t
   val clear_cache : unit -> unit
   val read_location : string -> location
   val show_location : location -> string
@@ -196,51 +196,51 @@ type event =
   | PhoneVerificationEnabledUpdated of PhoneVerification.t
   | ProfileOnlyUpdated of ProfileOnly.t
 
-val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
+val handle_event : ?user_uuid:Pool_common.Id.t -> _ Database.ctx -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val find_languages : Database.Label.t -> Pool_common.Language.t list Lwt.t
-val find_email_suffixes : Database.Label.t -> EmailSuffix.t list Lwt.t
-val find_system_email_templates : Database.Label.t -> SystemEmailTemplates.t Lwt.t
-val find_contact_email : Database.Label.t -> ContactEmail.t Lwt.t
-val find_profile_only : Database.Label.t -> ProfileOnly.t Lwt.t
+val find_languages : _ Database.ctx -> Pool_common.Language.t list Lwt.t
+val find_email_suffixes : _ Database.ctx -> EmailSuffix.t list Lwt.t
+val find_system_email_templates : _ Database.ctx -> SystemEmailTemplates.t Lwt.t
+val find_contact_email : _ Database.ctx -> ContactEmail.t Lwt.t
+val find_profile_only : _ Database.ctx -> ProfileOnly.t Lwt.t
 
 val find_inactive_user_disable_after
-  :  Database.Label.t
+  :  _ Database.ctx
   -> InactiveUser.DisableAfter.t Lwt.t
 
-val find_inactive_user_warning : Database.Label.t -> InactiveUser.Warning.t Lwt.t
+val find_inactive_user_warning : _ Database.ctx -> InactiveUser.Warning.t Lwt.t
 
 val find_inactive_user_service_disabled
-  :  Database.Label.t
+  :  _ Database.ctx
   -> InactiveUser.ServiceDisabled.t Lwt.t
 
 val find_trigger_profile_update_after
-  :  Database.Label.t
+  :  _ Database.ctx
   -> TriggerProfileUpdateAfter.t Lwt.t
 
 val default_language_of_list : Pool_common.Language.t list -> Pool_common.Language.t
-val default_language : Database.Label.t -> Pool_common.Language.t Lwt.t
+val default_language : _ Database.ctx -> Pool_common.Language.t Lwt.t
 
 val find_default_reminder_lead_time
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Pool_common.Reminder.EmailLeadTime.t Lwt.t
 
 val find_default_text_msg_reminder_lead_time
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Pool_common.Reminder.TextMessageLeadTime.t Lwt.t
 
 val find_user_import_first_reminder_after
-  :  Database.Label.t
+  :  _ Database.ctx
   -> UserImportReminder.FirstReminderAfter.t Lwt.t
 
 val find_user_import_second_reminder_after
-  :  Database.Label.t
+  :  _ Database.ctx
   -> UserImportReminder.SecondReminderAfter.t Lwt.t
 
-val find_phone_verification_enabled : Database.Label.t -> PhoneVerification.t Lwt.t
-val id_by_key : Database.Label.t -> Key.t -> Pool_common.Id.t Lwt.t
+val find_phone_verification_enabled : _ Database.ctx -> PhoneVerification.t Lwt.t
+val id_by_key : _ Database.ctx -> Key.t -> Pool_common.Id.t Lwt.t
 val default_email_session_reminder_lead_time_key_yojson : Yojson.Safe.t
 val default_text_message_session_reminder_lead_time_key_yojson : Yojson.Safe.t
 val trigger_profile_update_after_key_yojson : Yojson.Safe.t

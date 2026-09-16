@@ -62,13 +62,13 @@ type event =
 val equal_event : event -> event -> bool
 val show_event : event -> string
 val pp_event : Format.formatter -> event -> unit
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val handle_event : _ Database.ctx -> event -> unit Lwt.t
 
 val find_valid_by_id
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Id.t
   -> (t * Pool_user.t, Pool_message.Error.t) Lwt_result.t
 
-val find_id_by_user : Database.Label.t -> Pool_user.Id.t -> Id.t option Lwt.t
+val find_id_by_user : _ Database.ctx -> Pool_user.Id.t -> Id.t option Lwt.t
 val lifecycle : Sihl.Container.lifecycle
 val register : unit -> Sihl.Container.Service.t

@@ -156,7 +156,7 @@ let find_request =
 
 let find id =
   let open Utils.Lwt_result.Infix in
-  find_opt Pool.Root.label find_request id
+  find_opt (label_ctx Pool.Root.label) find_request id
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Announcement)
 ;;
 
@@ -166,9 +166,9 @@ let all ?query pool =
 
 let find_admin id =
   let open Utils.Lwt_result.Infix in
-  let pool = Pool.Root.label in
+  let db_ctx = label_ctx Pool.Root.label in
   let* announcement = find id in
-  let* tenants = TenantMapping.find_tenants_by_announcement pool id in
+  let* tenants = TenantMapping.find_tenants_by_announcement db_ctx id in
   Lwt_result.return (announcement, tenants)
 ;;
 
@@ -188,7 +188,7 @@ let find_on_tenant_request =
 
 let find_of_tenant database_label id =
   let open Utils.Lwt_result.Infix in
-  find_opt Pool.Root.label find_on_tenant_request (database_label, id)
+  find_opt (label_ctx Pool.Root.label) find_on_tenant_request (database_label, id)
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Announcement)
 ;;
 
@@ -222,7 +222,7 @@ let find_by_user_request context =
 ;;
 
 let find_by_user database_label (context, user_id) =
-  find_opt Pool.Root.label (find_by_user_request context) (database_label, user_id)
+  find_opt (label_ctx Pool.Root.label) (find_by_user_request context) (database_label, user_id)
 ;;
 
 let hide_requeset =
@@ -241,5 +241,5 @@ let hide_requeset =
 ;;
 
 let hide user_id annoucement =
-  exec Pool.Root.label hide_requeset (annoucement.Entity.id, user_id)
+  exec (label_ctx Pool.Root.label) hide_requeset (annoucement.Entity.id, user_id)
 ;;

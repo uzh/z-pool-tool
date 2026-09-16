@@ -22,11 +22,11 @@ let start () =
   let periodic_fcn () =
     Database.Pool.Tenant.all ()
     |> Lwt_list.iter_s (fun pool ->
+      Database.connection_ctx pool @@ fun db_ctx ->
+      let tags = Database.Logger.Tags.of_db_ctx db_ctx in
       Logs.debug ~src (fun m ->
-        m
-          ~tags:Database.(Logger.Tags.create pool)
-          "Reset expired authentication tokens in pool");
-      Repo.reset_expired pool ())
+        m ~tags "Reset expired authentication tokens in pool");
+      Repo.reset_expired db_ctx ())
   in
   let schedule =
     create label (Every (interval |> ScheduledTimeSpan.of_span)) None periodic_fcn

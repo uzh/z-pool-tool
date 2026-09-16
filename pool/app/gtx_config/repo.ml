@@ -114,15 +114,15 @@ let destroy_request =
   |> Caqti_type.(unit ->. unit)
 ;;
 
-let find_opt pool =
+let find_opt db_ctx =
   let open Utils.Lwt_result.Infix in
-  Cache.find pool
+  Cache.find (Database.label_of_ctx db_ctx)
   |> function
   | Some config -> Lwt.return_some config
   | None ->
-    Database.find_opt pool find_opt_request ()
+    Database.find_opt db_ctx find_opt_request ()
     ||> CCOption.map (fun config ->
-      Cache.add pool config;
+      Cache.add (Database.label_of_ctx db_ctx) config;
       config)
 ;;
 

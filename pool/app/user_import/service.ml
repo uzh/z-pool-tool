@@ -12,14 +12,15 @@ let reminder_settings database_label =
 
 let run database_label =
   let open Utils.Lwt_result.Infix in
+  Database.connection_ctx database_label @@ fun db_ctx ->
   let%lwt import_message =
     let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_or_failwith in
-    Message_template.UserImport.prepare database_label tenant
+    Message_template.UserImport.prepare db_ctx tenant
   in
   let to_admin = CCList.map (fun (admin, import) -> `Admin admin, import) in
   let to_contact = CCList.map (fun (contact, import) -> `Contact contact, import) in
-  let run_limit fcn decode limit = fcn database_label limit () ||> decode in
-  let%lwt reminder_settings = reminder_settings database_label in
+  let run_limit fcn decode limit = fcn db_ctx limit () ||> decode in
+  let%lwt reminder_settings = reminder_settings db_ctx in
   let tasks =
     [ run_limit Repo.find_admins_to_notify to_admin, Event.notified
     ; run_limit Repo.find_contacts_to_notify to_contact, Event.notified
@@ -53,9 +54,9 @@ let run database_label =
   let%lwt emails, import_events = folder limit tasks ([], []) in
   let%lwt () =
     let%lwt emails = Lwt.all emails in
-    Email.(BulkSent emails |> handle_event database_label)
+    Email.(BulkSent emails |> handle_event db_ctx)
   in
-  import_events |> Lwt_list.iter_s (Event.handle_event database_label)
+  import_events |> Lwt_list.iter_s (Event.handle_event db_ctx)
 ;;
 
 let run_all () = Database.(Pool.Tenant.all ()) |> Lwt_list.iter_s run

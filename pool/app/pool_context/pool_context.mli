@@ -53,13 +53,17 @@ type t =
   ; flash_fetcher : (string -> string option) option
   }
 
+val on_demand : t -> Database.no_transaction Database.ctx
+val connection : t -> (Database.no_transaction Database.ctx -> 'a Lwt.t) -> 'a Lwt.t
+val transaction : t -> (Database.transaction Database.ctx -> 'a Lwt.t) -> 'a Lwt.t
+
 val show : t -> string
 val pp : Format.formatter -> t -> unit
 val find : Rock.Request.t -> (t, Pool_message.Error.t) result
 val find_exn : Rock.Request.t -> t
 val set : Rock.Request.t -> t -> Rock.Request.t
 val find_contact : t -> (Contact.t, Pool_message.Error.t) result
-val context_user_of_user : Database.Label.t -> Pool_user.t -> user Lwt.t
+val context_user_of_user : _ Database.ctx -> Pool_user.t -> user Lwt.t
 val dashboard_path : ?guest:string -> user -> string
 
 val create
@@ -119,13 +123,13 @@ val set_flash_fetcher : t -> (string -> string option) -> t
 module Utils : sig
   val find_authorizable_opt
     :  ?admin_only:bool
-    -> Database.Label.t
+    -> _ Database.ctx
     -> user
     -> Guard.Actor.t option Lwt.t
 
   val find_authorizable
     :  ?admin_only:bool
-    -> Database.Label.t
+    -> _ Database.ctx
     -> user
     -> (Guard.Actor.t, Pool_message.Error.t) Lwt_result.t
 

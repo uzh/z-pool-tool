@@ -3,11 +3,11 @@ module Repo = Contact_job_repo
 
 let src = Logs.Src.create "contacts.service"
 
-let handle_disable_contacts pool disable_after warn_after =
-  let* make_message = Message_template.InactiveContactDeactivation.prepare pool in
+let handle_disable_contacts db_ctx disable_after warn_after =
+  let* make_message = Message_template.InactiveContactDeactivation.prepare db_ctx in
   let%lwt contacts =
     Repo.find_to_disable
-      pool
+      db_ctx
       (Settings.InactiveUser.DisableAfter.value disable_after)
       (CCList.length warn_after)
   in
@@ -32,12 +32,12 @@ let handle_disable_contacts pool disable_after warn_after =
   Lwt_result.return (messages, events)
 ;;
 
-let warning_notification_events pool = function
+let warning_notification_events db_ctx = function
   | [] ->
     Logs.info ~src (fun m -> m "No 'warning after' timestamp defined.");
     Lwt_result.return ([], [])
   | contacts ->
-    let* make_message = Message_template.InactiveContactWarning.prepare pool in
+    let* make_message = Message_template.InactiveContactWarning.prepare db_ctx in
     let* messages, events =
       let rec make_events (messages, events) = function
         | [] -> Lwt_result.return (messages, events)
@@ -53,13 +53,13 @@ let warning_notification_events pool = function
     Lwt_result.return (messages, events)
 ;;
 
-let handle_contact_warnings pool warn_after =
-  let%lwt contacts_to_warn = warn_after |> Repo.find_to_warn_about_inactivity pool in
-  warning_notification_events pool contacts_to_warn
+let handle_contact_warnings db_ctx warn_after =
+  let%lwt contacts_to_warn = warn_after |> Repo.find_to_warn_about_inactivity db_ctx in
+  warning_notification_events db_ctx contacts_to_warn
 ;;
 
-let handle_events pool message =
-  let tags = Database.(Logger.Tags.create pool) in
+let handle_events db_ctx message =
+  let tags = Database.(Logger.Tags.of_db_ctx db_ctx) in
   function
   | Error err ->
     let open Pool_common in
@@ -77,14 +77,15 @@ let handle_events pool message =
         "%s: Found %i contacts to notify due to inactivity"
         message
         (CCList.length events));
-    let%lwt () = Email.handle_event pool (Email.BulkSent emails) in
-    events |> Lwt_list.iter_s (Contact.handle_event pool)
+    let%lwt () = Email.handle_event db_ctx (Email.BulkSent emails) in
+    events |> Lwt_list.iter_s (Contact.handle_event db_ctx)
 ;;
 
 let run_by_tenant pool =
+  Database.connection_ctx pool @@ fun db_ctx ->
   let open Settings in
   let%lwt service_disabled =
-    find_inactive_user_service_disabled pool ||> InactiveUser.ServiceDisabled.value
+    find_inactive_user_service_disabled db_ctx ||> InactiveUser.ServiceDisabled.value
   in
   match service_disabled with
   | true ->
@@ -92,17 +93,17 @@ let run_by_tenant pool =
       m ~tags:Database.(Logger.Tags.create pool) "%s" "Inactive user service is disabled");
     Lwt.return_unit
   | false ->
-    let%lwt disable_after = find_inactive_user_disable_after pool in
+    let%lwt disable_after = find_inactive_user_disable_after db_ctx in
     let%lwt warn_after =
-      find_inactive_user_warning pool ||> CCList.map InactiveUser.Warning.TimeSpan.value
+      find_inactive_user_warning db_ctx ||> CCList.map InactiveUser.Warning.TimeSpan.value
     in
     let%lwt () =
-      handle_disable_contacts pool disable_after warn_after
-      >|> handle_events pool "Pausing inactive users"
+      handle_disable_contacts db_ctx disable_after warn_after
+      >|> handle_events db_ctx "Pausing inactive users"
     in
     let%lwt () =
-      handle_contact_warnings pool warn_after
-      >|> handle_events pool "Notify inactive users"
+      handle_contact_warnings db_ctx warn_after
+      >|> handle_events db_ctx "Notify inactive users"
     in
     Lwt.return_unit
 ;;

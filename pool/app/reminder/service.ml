@@ -70,15 +70,16 @@ let create_reminder_events
       text_message_reminders
   =
   let open Utils.Lwt_result.Infix in
-  let%lwt sys_languages = Settings.find_languages database_label in
+  Database.connection_ctx database_label @@ fun db_ctx ->
+  let%lwt sys_languages = Settings.find_languages db_ctx in
   let* email_events =
     Lwt_list.map_s
       (fun session ->
          Experiment.find_of_session
-           database_label
+           db_ctx
            (Session.Id.to_common session.Session.id)
          >>= fun experiment ->
-         create_reminder_emails database_label tenant sys_languages session experiment
+         create_reminder_emails db_ctx tenant sys_languages session experiment
          >|+ fun emails -> session, emails)
       email_reminders
     ||> CCResult.flatten_l
@@ -88,11 +89,11 @@ let create_reminder_events
     Lwt_list.map_s
       (fun session ->
          Experiment.find_of_session
-           database_label
+           db_ctx
            (Session.Id.to_common session.Session.id)
          >>= fun experiment ->
          create_reminder_text_messages
-           database_label
+           db_ctx
            tenant
            sys_languages
            session
@@ -108,12 +109,13 @@ let create_reminder_events
 let send_tenant_reminder database_label =
   let open Utils.Lwt_result.Infix in
   let run () =
+    Database.connection_ctx database_label @@ fun db_ctx ->
     let* tenant = Pool_tenant.find_by_label database_label in
     let* email_reminders, text_message_reminders =
       Session.find_sessions_to_remind tenant
     in
     let* events = create_reminder_events tenant email_reminders text_message_reminders in
-    let%lwt () = Pool_event.handle_system_events database_label events in
+    let%lwt () = Pool_event.handle_system_events db_ctx events in
     Lwt_result.return (email_reminders, text_message_reminders)
   in
   ()

@@ -46,10 +46,10 @@ let create_persons_from_file () =
   |> persons_of_yojson
 ;;
 
-let admins db_label =
+let admins db_ctx =
   let open Utils.Lwt_result.Infix in
   let%lwt experimenter_roles =
-    Experiment.all db_label
+    Experiment.all db_ctx
     ||> CCList.map (fun { Experiment.id; _ } ->
       `Experimenter, Some (Guard.Uuid.target_of Experiment.Id.value id))
   in
@@ -60,8 +60,8 @@ let admins db_label =
     ; "Winnie", "Pooh", "experimenter@econ.uzh.ch", [ `Recruiter, None ]
     ]
   in
-  let ctx = Database.to_ctx db_label in
-  let tags = Database.Logger.Tags.create db_label in
+  let ctx = Database.to_ctx db_ctx in
+  let tags = Database.Logger.Tags.of_db_ctx db_ctx in
   let password =
     Sys.getenv_opt "POOL_ADMIN_DEFAULT_PASSWORD" |> CCOption.value ~default:"Password1!"
   in
@@ -71,7 +71,7 @@ let admins db_label =
          , email
          , (roles : (Role.Role.t * Guard.Uuid.Target.t option) list) ) ->
        let email = Pool_user.EmailAddress.of_string email in
-       let%lwt user = User.find_by_email_opt db_label email in
+       let%lwt user = User.find_by_email_opt db_ctx email in
        match user with
        | None ->
          let%lwt admin =
@@ -85,8 +85,8 @@ let admins db_label =
              ; roles = []
              }
            in
-           let%lwt () = Admin.Created create |> Admin.handle_event ~tags db_label in
-           Admin.find db_label id |> Lwt.map CCResult.get_exn
+           let%lwt () = Admin.Created create |> Admin.handle_event ~tags db_ctx in
+           Admin.find db_ctx id |> Lwt.map CCResult.get_exn
          in
          let%lwt (_ : Guard.Target.t) =
            admin |> Admin.Guard.Target.to_authorizable ~ctx ||> get_or_failwith
@@ -105,14 +105,14 @@ let admins db_label =
          Lwt.return_unit
        | Some _ ->
          Logs.debug ~src (fun m ->
-           m ~tags:(Database.Logger.Tags.create db_label) "%s" "Admin user already exists");
+           m ~tags:(Database.Logger.Tags.of_db_ctx db_ctx) "%s" "Admin user already exists");
          Lwt.return_unit)
     data
 ;;
 
-let contacts db_label =
+let contacts db_ctx =
   let open Utils.Lwt_result.Infix in
-  let tags = Database.Logger.Tags.create db_label in
+  let tags = Database.Logger.Tags.of_db_ctx db_ctx in
   let n_contacts = 200 in
   let combinations =
     let open CCList in
@@ -189,7 +189,7 @@ let contacts db_label =
          (fun
              (user_id, firstname, lastname, email, language, terms_accepted_at, _, _, _, _)
             ->
-            match%lwt Pool_user.find_by_email_opt db_label email with
+            match%lwt Pool_user.find_by_email_opt db_ctx email with
             | None ->
               [ Contact.Created
                   { Contact.user_id
@@ -201,13 +201,13 @@ let contacts db_label =
                   ; language
                   }
               ]
-              |> Lwt_list.iter_s (Contact.handle_event db_label)
+              |> Lwt_list.iter_s (Contact.handle_event db_ctx)
             | Some { Pool_user.id; _ } ->
               Logs.debug ~src (fun m ->
                 m
                   ~tags
                   "Contact already exists (%s): %a"
-                  (db_label |> Database.Label.value)
+                  (db_ctx |> Database.label_of_ctx |> Database.Label.value)
                   Pool_user.Id.pp
                   id);
               Lwt.return_unit)
@@ -217,10 +217,10 @@ let contacts db_label =
     Lwt_list.fold_left_s
       (fun (contacts, fields)
         (user_id, _, _, _, _, _, paused, disabled, verified, active_after_import_opt) ->
-         let%lwt contact = Contact.find db_label user_id in
+         let%lwt contact = Contact.find db_ctx user_id in
          let custom_fields contact =
            let open Custom_field in
-           find_all_by_contact db_label (Pool_context.Contact contact) user_id
+           find_all_by_contact db_ctx (Pool_context.Contact contact) user_id
            ||> fun (grouped, ungrouped) ->
            ungrouped @ CCList.flat_map (fun { Group.Public.fields; _ } -> fields) grouped
          in
@@ -232,7 +232,7 @@ let contacts db_label =
              | Some active_after_import ->
                let user_uuid = Contact.(id contact |> Id.to_user) in
                let%lwt pending_import =
-                 User_import.find_pending_by_user_id_opt db_label user_uuid
+                 User_import.find_pending_by_user_id_opt db_ctx user_uuid
                in
                let%lwt () =
                  match pending_import with
@@ -254,7 +254,7 @@ let contacts db_label =
                      ; created_at = Pool_common.CreatedAt.create_now ()
                      ; updated_at = Pool_common.UpdatedAt.create_now ()
                      }
-                   |> User_import.insert db_label
+                   |> User_import.insert db_ctx
                in
                Lwt.return
                  [ Contact.(
@@ -290,6 +290,6 @@ let contacts db_label =
       ([], [])
       users
   in
-  let%lwt () = contact_events |> Lwt_list.iter_s (Contact.handle_event db_label) in
-  field_events |> Lwt_list.iter_s (Custom_field.handle_event db_label)
+  let%lwt () = contact_events |> Lwt_list.iter_s (Contact.handle_event db_ctx) in
+  field_events |> Lwt_list.iter_s (Custom_field.handle_event db_ctx)
 ;;

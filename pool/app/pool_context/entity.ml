@@ -70,6 +70,10 @@ let create
   }
 ;;
 
+let connection { database_label; _ } = Database.connection_ctx database_label
+let transaction { database_label; _ } = Database.transaction_ctx database_label
+let on_demand { database_label; _ } = Database.label_ctx database_label
+
 let find_context key req =
   Opium.Context.find key req.Opium.Request.env
   |> CCOption.to_result Pool_message.Error.PoolContextNotFound
@@ -97,18 +101,18 @@ let find_contact { user; _ } =
   | Admin _ | Guest -> Error Pool_message.(Error.NotFound Field.Contact)
 ;;
 
-let context_user_of_user database_label user =
+let context_user_of_user db_ctx user =
   let open Utils.Lwt_result.Infix in
   if Pool_user.is_admin user
   then
     user.Pool_user.id
     |> Admin.Id.of_user
-    |> Admin.find database_label
+    |> Admin.find db_ctx
     ||> function
     | Ok user -> user |> admin
     | Error _ -> Guest
   else
-    Contact.find_by_user database_label user
+    Contact.find_by_user db_ctx user
     ||> CCResult.to_opt
     ||> CCOption.map_or ~default:Guest contact
 ;;
@@ -141,7 +145,8 @@ module Tenant = struct
 
   let text_messages_enabled =
     find_key_exn (fun c ->
-      Gtx_config.text_messages_enabled c.tenant.Pool_tenant.database_label)
+      Database.connection_ctx c.tenant.Pool_tenant.database_label
+        Gtx_config.text_messages_enabled)
   ;;
 end
 

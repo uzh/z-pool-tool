@@ -31,19 +31,19 @@ val yojson_of_t : t -> Yojson.Safe.t
 val create : ?id:Id.t -> ?token:Token.t -> Name.t -> Pool_common.ExpiresAt.t -> t
 
 val find
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Id.t
   -> (t, Pool_message__Pool_message_error.t) result Lwt.t
 
-val find_by_token : Database.Label.t -> string -> t option Lwt.t
-val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+val find_by_token : _ Database.ctx -> string -> t option Lwt.t
+val all : ?query:Query.t -> _ Database.ctx -> (t list * Query.t) Lwt.t
 
 type event =
   | Created of t
   | Updated of (t * t)
   | Disabled of t
 
-val handle_event : ?tags:Logs.Tag.set -> Database.Label.t -> event -> unit Lwt.t
+val handle_event : ?tags:Logs.Tag.set -> _ Database.ctx -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val filterable_by : 'a option

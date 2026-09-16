@@ -87,59 +87,59 @@ val set_firstname : t -> Pool_user.Firstname.t -> t
 val set_lastname : t -> Pool_user.Lastname.t -> t
 val set_language : t -> Pool_common.Language.t option -> t
 val set_cellphone : t -> Pool_user.CellPhone.t option -> t
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
-val find_admin_comment : Database.Label.t -> Id.t -> AdminComment.t option Lwt.t
-val find_multiple : Database.Label.t -> Id.t list -> t list Lwt.t
+val find : _ Database.ctx -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find_admin_comment : _ Database.ctx -> Id.t -> AdminComment.t option Lwt.t
+val find_multiple : _ Database.ctx -> Id.t list -> t list Lwt.t
 
 (** [find_multiple_invitable pool ids] returns the contacts matching [ids] that
     satisfy all invitability constraints: confirmed account, not paused, not
     disabled, email address verified, and either no pending import or an
     active-after-import pending import. *)
-val find_multiple_invitable : Database.Label.t -> Id.t list -> t list Lwt.t
+val find_multiple_invitable : _ Database.ctx -> Id.t list -> t list Lwt.t
 
 val list_by_user
   :  ?query:Query.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Guard.Actor.t
   -> (t list * Query.t) Lwt.t
 
 val find_by_email
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Pool_user.EmailAddress.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_by_user
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Pool_user.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
-val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
-val find_to_trigger_profile_update : Database.Label.t -> (t list, 'a) Lwt_result.t
-val should_send_registration_attempt_notification : Database.Label.t -> t -> bool Lwt.t
+val all : ?query:Query.t -> _ Database.ctx -> (t list * Query.t) Lwt.t
+val find_to_trigger_profile_update : _ Database.ctx -> (t list, 'a) Lwt_result.t
+val should_send_registration_attempt_notification : _ Database.ctx -> t -> bool Lwt.t
 
 val find_cell_phone_verification_by_contact
-  :  Database.Label.t
+  :  _ Database.ctx
   -> t
   -> Pool_user.UnverifiedCellPhone.t option Lwt.t
 
 val find_cell_phone_verification_by_contact_and_code
-  :  Database.Label.t
+  :  _ Database.ctx
   -> t
   -> Pool_common.VerificationCode.t
   -> (Pool_user.UnverifiedCellPhone.t, Pool_message.Error.t) Lwt_result.t
 
 val find_full_cell_phone_verification_by_contact
-  :  Database.Label.t
+  :  _ Database.ctx
   -> t
   -> (Pool_user.UnverifiedCellPhone.full, Pool_message.Error.t) Lwt_result.t
 
-val has_terms_accepted : Database.Label.t -> t -> bool Lwt.t
-val find_last_signin_at : Database.Label.t -> t -> Ptime.t Lwt.t
+val has_terms_accepted : _ Database.ctx -> t -> bool Lwt.t
+val find_last_signin_at : _ Database.ctx -> t -> Ptime.t Lwt.t
 
 (** Schedule a duplicates check for the contact after a grace period. Repeated
     calls within the grace period overwrite the due date, coalescing multiple
     profile changes into a single check. *)
-val mark_duplicates_check_due : Database.Label.t -> Id.t -> unit Lwt.t
+val mark_duplicates_check_due : _ Database.ctx -> Id.t -> unit Lwt.t
 
 type create =
   { user_id : Id.t
@@ -177,7 +177,7 @@ type event =
 
 val created : create -> event
 val updated : t -> event
-val handle_event : ?tags:Logs.Tag.set -> Database.Label.t -> event -> unit Lwt.t
+val handle_event : ?tags:Logs.Tag.set -> _ Database.ctx -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string

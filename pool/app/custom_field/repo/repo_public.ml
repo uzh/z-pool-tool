@@ -350,18 +350,20 @@ module Sql = struct
   ;;
 end
 
-let find_all_by_contact = Sql.find_all_by_model Entity.Model.Contact
+let find_all_by_contact ~required ~is_admin db_ctx =
+  Sql.find_all_by_model Entity.Model.Contact db_ctx ~required ~is_admin
 
-let find_unanswered_required_by_contact =
-  Sql.find_unanswered_required_by_model Entity.Model.Contact
+let find_unanswered_required_by_contact ~is_admin db_ctx =
+  Sql.find_unanswered_required_by_model Entity.Model.Contact ~is_admin db_ctx
 ;;
 
-let find_unanswered_ungrouped_required_by_contact =
+let find_unanswered_ungrouped_required_by_contact ~is_admin db_ctx =
   Sql.find_unanswered_ungrouped_required_by_model Entity.Model.Contact
+    ~is_admin db_ctx
 ;;
 
 let find_multiple_by_contact = Sql.find_multiple_by_contact
 let find_by_contact = Sql.find_by_contact
-let all_required_answered = Sql.all_answered ~required_only:true
-let all_answered = Sql.all_answered ~required_only:false
+let all_required_answered db_ctx = Sql.all_answered ~required_only:true db_ctx
+let all_answered db_ctx = Sql.all_answered ~required_only:false db_ctx
 let all_prompted_on_registration = Sql.all_prompted_on_registration

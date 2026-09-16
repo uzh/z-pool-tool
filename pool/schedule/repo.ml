@@ -167,7 +167,7 @@ module Sql = struct
   ;;
 end
 
-let find_all = Sql.find_all Database.Pool.Root.label
-let find_by_db_label = Sql.find_by_db_label Database.Pool.Root.label
-let upsert = Sql.upsert Database.Pool.Root.label
-let stop_all_active () = Sql.stop_all_active Database.Pool.Root.label
+let find_all = Sql.find_all Database.(label_ctx Pool.Root.label)
+let find_by_db_label = Sql.find_by_db_label Database.(label_ctx Pool.Root.label)
+let upsert = Sql.upsert Database.(label_ctx Pool.Root.label)
+let stop_all_active () = Sql.stop_all_active Database.(label_ctx Pool.Root.label)

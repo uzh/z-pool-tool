@@ -141,7 +141,7 @@ module PageScripts = struct
     let clear () = clear tbl
   end
 
-  let create_changelog ?user_uuid pool location after =
+  let create_changelog ?user_uuid db_ctx location after =
     let current_request =
       let open Caqti_request.Infix in
       [%string
@@ -155,13 +155,13 @@ module PageScripts = struct
         |sql}]
       |> Caqti_type.(string ->! t2 Pool_common.Repo.Id.t (option string))
     in
-    let%lwt current = Database.find_opt pool current_request (show_location location) in
+    let%lwt current = Database.find_opt db_ctx current_request (show_location location) in
     match current with
     | None -> Lwt.return ()
     | Some (entity_uuid, before) ->
       let default = CCOption.value ~default:"" in
       Entity.PageScriptChangelog.insert
-        pool
+        db_ctx
         ?user_uuid
         ~entity_uuid
         ~before:(default before)
@@ -196,16 +196,16 @@ module PageScripts = struct
     |> Caqti_type.(string ->. unit)
   ;;
 
-  let update ?user_uuid pool (script, location) =
+  let update ?user_uuid db_ctx (script, location) =
     let open Utils.Lwt_result.Infix in
-    let%lwt () = create_changelog ?user_uuid pool location script in
+    let%lwt () = create_changelog ?user_uuid db_ctx location script in
     (match script with
-     | None -> Database.exec pool clear_request (show_location location)
-     | Some script -> Database.exec pool update_request (show_location location, script))
-    ||> fun _ -> Cache.update_script pool location script
+     | None -> Database.exec db_ctx clear_request (show_location location)
+     | Some script -> Database.exec db_ctx update_request (show_location location, script))
+    ||> fun _ -> Cache.update_script (Database.label_of_ctx db_ctx) location script
   ;;
 
-  let find_id pool location =
+  let find_id db_ctx location =
     let open Caqti_request.Infix in
     let request =
       [%string
@@ -218,7 +218,7 @@ module PageScripts = struct
         |sql}]
       |> Caqti_type.(string ->! Pool_common.Repo.Id.t)
     in
-    Database.find pool request (show_location location)
+    Database.find db_ctx request (show_location location)
   ;;
 
   let find_request =
@@ -234,16 +234,16 @@ module PageScripts = struct
     |> Caqti_type.(string ->? string)
   ;;
 
-  let find pool location = Database.find_opt pool find_request (show_location location)
+  let find db_ctx location = Database.find_opt db_ctx find_request (show_location location)
 
-  let find pool =
-    match Cache.find pool with
+  let find db_ctx =
+    match Cache.find (Database.label_of_ctx db_ctx) with
     | Some scripts -> Lwt.return scripts
     | None ->
-      let%lwt head = find pool Head in
-      let%lwt body = find pool Body in
+      let%lwt head = find db_ctx Head in
+      let%lwt body = find db_ctx Body in
       let scripts = { head; body } in
-      Cache.add pool scripts;
+      Cache.add (Database.label_of_ctx db_ctx) scripts;
       Lwt.return scripts
   ;;
 end

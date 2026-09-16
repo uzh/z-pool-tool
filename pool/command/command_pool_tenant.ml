@@ -40,7 +40,7 @@ Provide all fields to create a new tenant:
           ]
         >>= Cqrs_command.Pool_tenant_command.Create.handle database
         |> Pool_common.Utils.get_or_failwith
-        |> Pool_event.handle_system_events Database.Pool.Root.label
+        |> Pool_event.handle_system_events Database.(label_ctx Pool.Root.label)
       in
       Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)
@@ -80,7 +80,7 @@ Example: %s econ-uzh mariadb://user:pw@localhost:3306/dev_econ
       in
       (match%lwt result with
        | Ok events ->
-         let%lwt () = Pool_event.handle_system_events Database.Pool.Root.label events in
+         let%lwt () = Pool_event.handle_system_events Database.(label_ctx Pool.Root.label) events in
          Lwt.return_some ()
        | Error err ->
          let open Pool_common in

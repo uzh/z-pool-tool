@@ -54,7 +54,8 @@ let steps =
 let start () =
   let open Database in
   let migrations = steps () in
-  let%lwt () = Migration.check_migrations_status Pool.Root.label ~migrations () in
+  transaction_ctx Pool.Root.label @@ fun db_ctx ->
+  let%lwt () = Migration.check_migrations_status db_ctx ~migrations () in
   Lwt.return_unit
 ;;
 
