@@ -26,17 +26,17 @@ type event =
   | DeactivateMaintenance of t
 [@@deriving eq, show]
 
-let handle_event pool : event -> unit Lwt.t =
+let handle_event db_ctx : event -> unit Lwt.t =
   let open Pool_database in
-  let status_updated label status = StatusUpdated (label, status) |> handle_event pool in
+  let status_updated label status = StatusUpdated (label, status) |> handle_event db_ctx in
   function
   | Created (({ Write.id; _ } as tenant), database) ->
     let open Utils.Lwt_result.Infix in
     let open Guard in
-    let ctx = Database.to_ctx pool in
-    let%lwt () = Repo.insert Database.Pool.Root.label (tenant, database) in
+    let ctx = Database.to_ctx db_ctx in
+    let%lwt () = Repo.insert Database.(label_ctx Pool.Root.label) (tenant, database) in
     let%lwt () =
-      Repo.find pool id
+      Repo.find db_ctx id
       >>= Entity_guard.Target.to_authorizable ~ctx
       ||> get_or_failwith
       ||> fun (_ : Target.t) -> ()
@@ -61,9 +61,9 @@ let handle_event pool : event -> unit Lwt.t =
     ; default_language = update_t.default_language
     ; updated_at = Pool_common.UpdatedAt.create_now ()
     }
-    |> Repo.update Database.Pool.Root.label
+    |> Repo.update Database.(label_ctx Pool.Root.label)
   | DatabaseEdited (tenant, database) ->
-    let%lwt () = Repo.update_database Database.Pool.Root.label (tenant, database) in
+    let%lwt () = Repo.update_database Database.(label_ctx Pool.Root.label) (tenant, database) in
     Lwt.return_unit
   | ActivateMaintenance { Entity.database_label; _ } ->
     status_updated database_label Database.Status.Maintenance

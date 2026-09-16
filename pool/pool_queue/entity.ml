@@ -203,8 +203,8 @@ module Instance = struct
       job.input
   ;;
 
-  let default_error_handler label msg instance =
-    let tags = Database.Logger.Tags.create label in
+  let default_error_handler (Database.Any db_ctx) msg instance =
+    let tags = Database.Logger.Tags.of_db_ctx db_ctx in
     let job = instance |> add_error msg |> failed in
     Logs.err (fun m -> m ~tags "Job failed: %s" ([%show: t] job));
     Lwt.return_unit
@@ -217,8 +217,8 @@ module Job = struct
     ; encode : 'a -> string
     ; decode : string -> ('a, Pool_message.Error.t) result
     ; handle :
-        ?id:Id.t -> Database.Label.t -> 'a -> (unit, Pool_message.Error.t) Lwt_result.t
-    ; failed : Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
+        ?id:Id.t -> Database.any_ctx -> 'a -> (unit, Pool_message.Error.t) Lwt_result.t
+    ; failed : Database.any_ctx -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
     ; max_tries : int
     ; retry_delay : Ptime.Span.t
     }
@@ -322,10 +322,10 @@ module AnyJob = struct
     { name : JobName.t
     ; handle :
         ?id:Id.t
-        -> Database.Label.t
+        -> Database.any_ctx
         -> string
         -> (unit, Pool_message.Error.t) Lwt_result.t
-    ; failed : Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
+    ; failed : Database.any_ctx -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
     ; max_tries : int
     ; retry_delay : Ptime.Span.t
     ; execute_on_root : bool

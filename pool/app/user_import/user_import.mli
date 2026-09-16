@@ -47,14 +47,14 @@ val show : t -> string
 val equal : t -> t -> bool
 
 val find_pending_by_token
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Token.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
-val find_pending_by_user_id_opt : Database.Label.t -> Pool_user.Id.t -> t option Lwt.t
+val find_pending_by_user_id_opt : _ Database.ctx -> Pool_user.Id.t -> t option Lwt.t
 
 val find_pending_by_email_opt
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Pool_user.EmailAddress.t
   -> t option Lwt.t
 
@@ -66,12 +66,12 @@ type event =
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Database.Label.t -> event -> unit Lwt.t
-val insert : Database.Label.t -> t -> unit Lwt.t
-val update : Database.Label.t -> t -> unit Lwt.t
+val handle_event : _ Database.ctx -> event -> unit Lwt.t
+val insert : _ Database.ctx -> t -> unit Lwt.t
+val update : _ Database.ctx -> t -> unit Lwt.t
 
 val find_contacts_to_notify
-  :  Database.Label.t
+  :  _ Database.ctx
   -> int
   -> unit
   -> (Contact.t * t) list Lwt.t
@@ -79,7 +79,7 @@ val find_contacts_to_notify
 val find_contacts_to_remind
   :  Settings.UserImportReminder.FirstReminderAfter.t
      * Settings.UserImportReminder.SecondReminderAfter.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> int
   -> unit
   -> (Contact.t * t) list Lwt.t

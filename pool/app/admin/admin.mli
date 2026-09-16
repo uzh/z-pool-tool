@@ -57,47 +57,47 @@ type event =
   | PromotedContact of Pool_user.Id.t
   | SignInCounterUpdated of t
 
-val handle_event : tags:Logs.Tag.set -> Database.Label.t -> event -> unit Lwt.t
+val handle_event : tags:Logs.Tag.set -> _ Database.ctx -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val user_is_admin : Database.Label.t -> Pool_user.t -> bool Lwt.t
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val user_is_admin : _ Database.ctx -> Pool_user.t -> bool Lwt.t
+val find : _ Database.ctx -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_by_email
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Pool_user.EmailAddress.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
-val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+val all : ?query:Query.t -> _ Database.ctx -> (t list * Query.t) Lwt.t
 
 val list_by_user
   :  ?query:Query.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Guard.Actor.t
   -> (t list * Query.t) Lwt.t
 
 val query_by_role
   :  ?query:Query.t
   -> ?exclude:(Role.Role.t * Guard.Uuid.Target.t option) list
-  -> Database.Label.t
+  -> _ Database.ctx
   -> (Role.Role.t * Guard.Uuid.Target.t option) list option
   -> (t list * Query.t) Lwt.t
 
 val find_all_with_role
   :  ?exclude:(Role.Role.t * Guard.Uuid.Target.t option) list
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Role.Role.t * Guard.Uuid.Target.t option
   -> t list Lwt.t
 
 val find_all_with_roles
   :  ?exclude:(Role.Role.t * Guard.Uuid.Target.t option) list
-  -> Database.Label.t
+  -> _ Database.ctx
   -> (Role.Role.t * Guard.Uuid.Target.t option) list
   -> t list Lwt.t
 
 val find_all_with_permissions_on_target
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Guard.Persistence.target_model
   -> Pool_common.Id.t
   -> Guard.Permission.t list
@@ -107,7 +107,7 @@ val search_by_name_and_email
   :  ?dyn:Database.Dynparam.t
   -> ?exclude:Id.t list
   -> ?limit:int
-  -> Database.Label.t
+  -> _ Database.ctx
   -> string
   -> t list Lwt.t
 

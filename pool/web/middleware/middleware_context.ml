@@ -10,7 +10,7 @@ let database_label_of_request is_root req =
   if is_root then Ok Database.Pool.Root.label else tenant_database_label_of_request req
 ;;
 
-let context_notification database_label user is_root =
+let context_notification db_ctx user is_root =
   let open Utils.Lwt_result.Infix in
   let open Pool_context in
   let open Notitification in
@@ -27,7 +27,7 @@ let context_notification database_label user is_root =
       context
       |> CCOption.map_or
            ~default:Lwt.return_none
-           (Announcement.find_by_user database_label)
+           (Announcement.find_by_user (Database.label_of_ctx db_ctx))
       ||> CCOption.map (fun a -> Root a)
   in
   let%lwt tenant_announcements =
@@ -39,13 +39,13 @@ let context_notification database_label user is_root =
         ; link = Some (Http_utils.Url.Admin.smtp_settings_path (), I18n.Smtp)
         }
       in
-      Email.SmtpAuth.defalut_is_set database_label
+      Email.SmtpAuth.defalut_is_set db_ctx
       >|> function
       | true -> Lwt.return_none
       | false -> Lwt.return_some (Tenant hint)
     in
     let email_service_failing () =
-      Pool_queue.(count_recently_failed JobName.SendEmail) database_label
+      Pool_queue.(count_recently_failed JobName.SendEmail) db_ctx
       ||> function
       | 0 -> None
       | count ->
@@ -125,16 +125,17 @@ let context () =
     in
     let%lwt context =
       let* database_label = database_label_of_request is_root req |> Lwt_result.lift in
-      let%lwt user = find_user database_label in
+      Database.connection_ctx database_label @@ fun db_ctx ->
+      let%lwt user = find_user db_ctx in
       let url_parameters = Utils.url_parameters_by_user req user in
       let%lwt language, guardian =
         let to_actor = Admin.id %> Guard.Uuid.actor_of Admin.Id.value in
         let combine roles = Lwt.return (Pool_common.Language.En, roles) in
-        let request_language = request_language url_parameters database_label in
+        let request_language = request_language url_parameters db_ctx in
         match user with
         | Admin admin ->
           to_actor admin
-          |> Guard.Persistence.ActorRole.permissions_of_actor database_label
+          |> Guard.Persistence.ActorRole.permissions_of_actor db_ctx
           >|> combine
         | (Guest | Contact _) when is_root -> combine []
         | Contact contact ->
@@ -144,7 +145,7 @@ let context () =
           let%lwt language = request_language None in
           Lwt.return (language, [])
       in
-      let%lwt notifications = context_notification database_label user is_root in
+      let%lwt notifications = context_notification db_ctx user is_root in
       create
         ( url_parameters
         , language

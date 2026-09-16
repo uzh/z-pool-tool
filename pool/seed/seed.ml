@@ -2,43 +2,44 @@ module Assets = Seed_assets
 
 module Root = struct
   let create () =
-    let%lwt () = Seed_tenant.create () in
-    let%lwt () = Seed_guard.create Database.Pool.Root.label in
-    let%lwt () = Seed_smtp.create Database.Pool.Root.label in
+    Database.transaction_ctx Database.Pool.Root.label @@ fun db_ctx ->
+    let%lwt () = Seed_tenant.create db_ctx in
+    let%lwt () = Seed_guard.create db_ctx in
+    let%lwt () = Seed_smtp.create db_ctx in
     Lwt.return_unit
   ;;
 end
 
 module Tenant = struct
-  let create ?(is_test = false) db_pools =
-    Lwt_list.iter_s
-      (fun pool ->
-         let seeds =
-           (if is_test
-            then []
-            else
-              [ Seed_user.contacts; Seed_guard.create_role_assignments; Seed_smtp.create ])
-           @ [ Seed_experiment.experiments
-             ; Seed_custom_fields.create
-             ; Seed_user.admins
-             ; Seed_location.create
-             ; Seed_session.create
-             ; Seed_timewindow.timewindow
-             ; Seed_invitation.invitations
-             ; Seed_waiting_list.waiting_list
-             ; Seed_assignment.assignment
-             ; Seed_mailings.create
-             ; Seed_filter.filter
-             ; Seed_organisational_units.create
-             ; Seed_guard.create
-             ; Seed_gtx_api_key.create
-             ]
-         in
-         seeds |> Lwt_list.iter_s (fun fnc -> fnc pool))
-      db_pools
+  let create_one ?(is_test = false) db_ctx =
+    let seeds =
+      (if is_test
+       then []
+       else
+         [ Seed_user.contacts; Seed_guard.create_role_assignments; Seed_smtp.create ])
+      @ [ Seed_experiment.experiments
+        ; Seed_custom_fields.create
+        ; Seed_user.admins
+        ; Seed_location.create
+        ; Seed_session.create
+        ; Seed_timewindow.timewindow
+        ; Seed_invitation.invitations
+        ; Seed_waiting_list.waiting_list
+        ; Seed_assignment.assignment
+        ; Seed_mailings.create
+        ; Seed_filter.filter
+        ; Seed_organisational_units.create
+        ; Seed_guard.create
+        ; Seed_gtx_api_key.create
+        ]
+    in
+    seeds |> Lwt_list.iter_s ((|>) db_ctx)
+
+  let create ?is_test db_pools =
+    Lwt_list.iter_s (CCFun.flip Database.transaction_ctx (create_one ?is_test)) db_pools
   ;;
 
-  let create_contacts db_label () = Seed_user.contacts db_label
+  let create_contacts db_label = Seed_user.contacts db_label
 end
 
 module DemoInstance = struct
@@ -282,13 +283,13 @@ module DemoInstance = struct
   end
 
   let remove_all_permissions pool =
-    let tags = Database.Logger.Tags.create pool in
+    let tags = Database.Logger.Tags.of_db_ctx pool in
     Logs.info ~src (fun m -> m ~tags "Removing all default role permissions");
     Guard.RolePermissionsCleared |> Guard.handle_event pool
   ;;
 
   let restore_allowed_permissions pool =
-    let tags = Database.Logger.Tags.create pool in
+    let tags = Database.Logger.Tags.of_db_ctx pool in
     Logs.info ~src (fun m -> m ~tags "Restoring demo allow-listed permissions");
     Guard.DefaultRestored AllowedPermissions.all |> Guard.handle_event pool
   ;;
@@ -296,7 +297,7 @@ module DemoInstance = struct
   let add_notification pool =
     let open Utils.Lwt_result.Infix in
     let open CCResult.Infix in
-    let tags = Database.Logger.Tags.create pool in
+    let tags = Database.Logger.Tags.of_db_ctx pool in
     let new_announcement =
       let open Announcement in
       let* text =
@@ -328,7 +329,7 @@ module DemoInstance = struct
     | Ok ann ->
       Logs.info ~src (fun m -> m ~tags "Adding notification to demo instance");
       Announcement.Created (ann, tenant_ids)
-      |> Announcement.handle_event Database.Pool.Root.label
+      |> Announcement.handle_event Database.(label_ctx Pool.Root.label)
     | Error e ->
       Logs.warn ~src (fun m ->
         m ~tags "Failed to create Announcement: %s" (Pool_message.Error.show e));
@@ -336,7 +337,7 @@ module DemoInstance = struct
   ;;
 
   let create pool =
-    let tags = Database.Logger.Tags.create pool in
+    let tags = Database.Logger.Tags.of_db_ctx pool in
     Logs.info ~src (fun m -> m ~tags "Initializing demo instance");
     let%lwt () = remove_all_permissions pool in
     let%lwt () = restore_allowed_permissions pool in

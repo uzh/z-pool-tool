@@ -75,18 +75,18 @@ val user_uuid : Pool_context.user -> Pool_common.Id.t option
 
 val handle_event
   :  ?tags:Logs.Tag.set
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Pool_context.user
   -> t
   -> unit Lwt.t
 
 val handle_events
   :  ?tags:Logs.Tag.set
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Pool_context.user
   -> t list
   -> unit Lwt.t
 
-val handle_system_event : ?tags:Logs.Tag.set -> Database.Label.t -> t -> unit Lwt.t
-val handle_system_events : ?tags:Logs.Tag.set -> Database.Label.t -> t list -> unit Lwt.t
+val handle_system_event : ?tags:Logs.Tag.set -> _ Database.ctx -> t -> unit Lwt.t
+val handle_system_events : ?tags:Logs.Tag.set -> _ Database.ctx -> t list -> unit Lwt.t
 val map : ('a -> t) -> 'a list -> t list

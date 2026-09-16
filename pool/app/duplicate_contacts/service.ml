@@ -2,31 +2,32 @@ let src = Logs.Src.create "user_import.service"
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 let interval_s = 5
 
-let run ?fields database_label user_uuid =
+let run ?fields db_ctx user_uuid =
   let open Utils.Lwt_result.Infix in
-  let tags = Database.(Logger.Tags.create database_label) in
+  let tags = Database.(Logger.Tags.of_db_ctx db_ctx) in
   Logs.info ~src (fun m ->
     m ~tags "Find possible duplicates of Contact '%s'" (Pool_common.Id.value user_uuid));
   let%lwt fields =
     match fields with
     | Some fields -> Lwt.return fields
-    | None -> Custom_field.find_for_duplicate_check database_label
+    | None -> Custom_field.find_for_duplicate_check db_ctx
   in
-  Repo.find_similars database_label ~user_uuid fields >|> Repo.insert database_label
+  Repo.find_similars db_ctx ~user_uuid fields >|> Repo.insert db_ctx
 ;;
 
 let run_by_tenant database_label =
-  let%lwt contacts = Repo.find_to_check database_label in
+  Database.connection_ctx database_label @@ fun db_ctx ->
+  let%lwt contacts = Repo.find_to_check db_ctx in
   match contacts with
   | [] -> Lwt.return_unit
   | contacts ->
-    let%lwt fields = Custom_field.find_for_duplicate_check database_label in
+    let%lwt fields = Custom_field.find_for_duplicate_check db_ctx in
     Lwt_list.iter_s
       (fun contact ->
          let%lwt () =
-           Contact.id contact |> Contact.Id.to_common |> run ~fields database_label
+           Contact.id contact |> Contact.Id.to_common |> run ~fields db_ctx
          in
-         Repo.mark_as_checked database_label contact)
+         Repo.mark_as_checked db_ctx contact)
       contacts
 ;;
 

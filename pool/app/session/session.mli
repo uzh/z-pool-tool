@@ -160,7 +160,7 @@ type event =
   | TextMsgReminderSent of t
   | Rescheduled of (t * reschedule)
 
-val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
+val handle_event : ?user_uuid:Pool_common.Id.t -> _ Database.ctx -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
@@ -246,63 +246,63 @@ val assignments_session_changeable : t -> (unit, Pool_message.Error.t) result
 val assignment_creatable : t -> (unit, Pool_message.Error.t) result
 val can_be_assigned_to_existing_assignment : t -> (unit, Pool_message.Error.t) result
 val reminder_resendable : t -> (unit, Pool_message.Error.t) result
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
-val find_multiple : Database.Label.t -> Id.t list -> t list Lwt.t
+val find : _ Database.ctx -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find_multiple : _ Database.ctx -> Id.t list -> t list Lwt.t
 
 val find_contact_is_assigned_by_experiment
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Contact.Id.t
   -> Experiment.Id.t
   -> t list Lwt.t
 
 val find_public
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Id.t
   -> (Public.t, Pool_message.Error.t) Lwt_result.t
 
-val find_all_for_experiment : Database.Label.t -> Experiment.Id.t -> t list Lwt.t
-val find_upcoming_for_experiment : Database.Label.t -> Experiment.Id.t -> t list Lwt.t
+val find_all_for_experiment : _ Database.ctx -> Experiment.Id.t -> t list Lwt.t
+val find_upcoming_for_experiment : _ Database.ctx -> Experiment.Id.t -> t list Lwt.t
 
 val find_all_to_assign_from_waitinglist
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Experiment.Id.t
   -> t list Lwt.t
 
 val find_all_public_for_experiment
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Contact.t
   -> Experiment.Id.t
   -> (Public.t list, Pool_message.Error.t) Lwt_result.t
 
-val find_all_ids_of_contact_id : Database.Label.t -> Contact.Id.t -> Id.t list Lwt.t
+val find_all_ids_of_contact_id : _ Database.ctx -> Contact.Id.t -> Id.t list Lwt.t
 
 val find_public_by_assignment
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Pool_common.Id.t
   -> (Public.t, Pool_message.Error.t) Lwt_result.t
 
 val query_by_contact
   :  ?query:Query.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Contact.t
   -> (Public.t list * Query.t) Lwt.t
 
 val find_by_contact_and_experiment
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Contact.t
   -> Experiment.Id.t
   -> [< `Canceled | `Past | `Upcoming ]
   -> Public.t list Lwt.t
 
-val has_upcoming_sessions : Database.Label.t -> Contact.Id.t -> bool Lwt.t
+val has_upcoming_sessions : _ Database.ctx -> Contact.Id.t -> bool Lwt.t
 
 val find_by_assignment
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Id.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_experiment_id_and_title
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Id.t
   -> (Experiment.Id.t * string, Pool_message.Error.t) Lwt_result.t
 
@@ -310,19 +310,19 @@ val find_sessions_to_remind
   :  Pool_tenant.t
   -> (t list * t list, Pool_message.Error.t) Lwt_result.t
 
-val find_follow_ups : Database.Label.t -> Id.t -> t list Lwt.t
+val find_follow_ups : _ Database.ctx -> Id.t -> t list Lwt.t
 
 val find_open_with_follow_ups
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Id.t
   -> (t list, Pool_message.Error.t) Lwt_result.t
 
-val find_open : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find_open : _ Database.ctx -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val calendar_by_user
   :  start_time:Ptime.t
   -> end_time:Ptime.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Guard.Persistence.actor
   -> Guard.PermissionOnTarget.t list
   -> Calendar.t list Lwt.t
@@ -331,44 +331,44 @@ val calendar_by_location
   :  location_uuid:Pool_location.Id.t
   -> start_time:Ptime.t
   -> end_time:Ptime.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Guard.Persistence.actor
   -> Guard.PermissionOnTarget.t list
   -> Calendar.t list Lwt.t
 
 val query_grouped_by_experiment
   :  ?query:Query.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Experiment.Id.t
   -> ((t * t list) list * Query.t) Lwt.t
 
 val query_by_experiment
   :  ?query:Query.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Experiment.Id.t
   -> (t list * Query.t) Lwt.t
 
 val find_sessions_to_update_matcher
-  :  Database.Label.t
+  :  _ Database.ctx
   -> [< `Experiment of Experiment.Id.t | `Upcoming ]
   -> t list Lwt.t
 
 val find_incomplete_by_admin
   :  ?query:Query.t
   -> Guard.Actor.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> (t list * Query.t) Lwt.t
 
 val find_upcoming_by_admin
   :  ?query:Query.t
   -> Guard.Actor.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> (t list * Query.t) Lwt.t
 
 val to_email_text : Pool_common.Language.t -> t -> string
 val follow_up_sessions_to_email_list : t list -> string
 val public_to_email_text : Pool_common.Language.t -> Public.t -> string
-val find_all_to_swap_by_experiment : Database.Label.t -> Experiment.Id.t -> t list Lwt.t
+val find_all_to_swap_by_experiment : _ Database.ctx -> Experiment.Id.t -> t list Lwt.t
 val column_date : Query.Column.t
 val column_no_assignments : Query.Column.t
 val column_noshow_count : Query.Column.t

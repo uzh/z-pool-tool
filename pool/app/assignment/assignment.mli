@@ -110,9 +110,9 @@ type session_counters =
   ; num_participations : int
   }
 
-val counters_of_session : Database.Label.t -> Session.Id.t -> session_counters Lwt.t
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
-val find_closed : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val counters_of_session : _ Database.ctx -> Session.Id.t -> session_counters Lwt.t
+val find : _ Database.ctx -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find_closed : _ Database.ctx -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 module Public : sig
   type t =
@@ -126,92 +126,92 @@ module Public : sig
   val participated : t -> Participated.t option
 
   val find_all_by_experiment
-    :  Database.Label.t
+    :  _ Database.ctx
     -> Experiment.Id.t
     -> Contact.t
     -> t list Lwt.t
 end
 
 val assignment_to_experiment_exists
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Experiment.Id.t
   -> Contact.t
   -> bool Lwt.t
 
 val find_by_contact_and_experiment
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Experiment.Id.t
   -> Contact.t
   -> (Session.t * t) list Lwt.t
 
-val find_by_contact : Database.Label.t -> Contact.Id.t -> t list Lwt.t
-val find_not_deleted_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
-val find_all_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
+val find_by_contact : _ Database.ctx -> Contact.Id.t -> t list Lwt.t
+val find_not_deleted_by_session : _ Database.ctx -> Session.Id.t -> t list Lwt.t
+val find_all_by_session : _ Database.ctx -> Session.Id.t -> t list Lwt.t
 
 val find_multiple_by_session
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Session.Id.t
   -> Id.t list
   -> t list Lwt.t
 
 val find_by_contact_to_merge
-  :  Database.Label.t
+  :  _ Database.ctx
   -> contact:Contact.t
   -> merged_contact:Contact.t
   -> t list Lwt.t
 
 val query_by_session
   :  ?query:Query.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Session.Id.t
   -> (t list * Query.t) Lwt.t
 
-val find_uncanceled_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
+val find_uncanceled_by_session : _ Database.ctx -> Session.Id.t -> t list Lwt.t
 
 val find_for_session_close_screen
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Session.Id.t
   -> (t list * Custom_field.t list) Lwt.t
 
 val find_for_session_detail_screen
   :  query:Query.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Session.Id.t
   -> ((t list * Custom_field.t list) * Query.t) Lwt.t
 
-val find_deleted_by_session : Database.Label.t -> Session.Id.t -> t list Lwt.t
+val find_deleted_by_session : _ Database.ctx -> Session.Id.t -> t list Lwt.t
 
 val count_unsuitable_by
-  :  Database.Label.t
+  :  _ Database.ctx
   -> [ `Experiment of Experiment.Id.t | `Session of Session.Id.t ]
   -> int Lwt.t
 
-val find_with_follow_ups : Database.Label.t -> Id.t -> t list Lwt.t
-val find_follow_ups : Database.Label.t -> t -> t list Lwt.t
+val find_with_follow_ups : _ Database.ctx -> Id.t -> t list Lwt.t
+val find_follow_ups : _ Database.ctx -> t -> t list Lwt.t
 
 val find_upcoming_by_experiment
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Experiment.Id.t
   -> (Experiment.t * (Session.t * t list) list, Pool_message.Error.t) Lwt_result.t
 
 val find_assigned_contacts_by_experiment
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Experiment.Id.t
   -> Contact.t list Lwt.t
 
 val find_upcoming
-  :  Database.Label.t
+  :  _ Database.ctx
   -> (Experiment.t * (Session.t * t list) list) list Lwt.t
 
 val contact_participation_in_other_assignments
-  :  Database.Label.t
+  :  _ Database.ctx
   -> exclude_assignments:t list
   -> Experiment.Id.t
   -> Contact.Id.t
   -> (bool, Pool_message.Error.t) Lwt_result.t
 
 val find_external_data_identifiers_by_contact
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Contact.Id.t
   -> ExternalDataIdentifier.t list Lwt.t
 
@@ -240,14 +240,14 @@ val created : t * Session.Id.t -> event
 val markedasdeleted : t -> event
 val matchesfilterupdated : t * MatchesFilter.t -> event
 val updated : t -> t -> event
-val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
+val handle_event : ?user_uuid:Pool_common.Id.t -> _ Database.ctx -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 
 val create_changelog
   :  ?user_uuid:Pool_common.Id.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> t
   -> t
   -> unit Lwt.t

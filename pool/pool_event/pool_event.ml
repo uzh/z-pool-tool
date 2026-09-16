@@ -75,7 +75,7 @@ let waiting_list events = WaitingList events
 
 let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
   let info model pp event =
-    let tags = tags |> Database.Logger.Tags.add pool in
+    let tags = tags |> Database.Logger.Tags.merge pool in
     let src = Logs.Src.create [%string "%{model}.events"] in
     Logs.info ~src (fun m -> m ~tags "Handle event %a" pp event)
   in

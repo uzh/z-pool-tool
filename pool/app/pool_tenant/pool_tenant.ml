@@ -13,11 +13,12 @@ module Url = struct
   let of_pool = Repo_entity.Url.of_pool
 end
 
-let find = Repo.find Database.Pool.Root.label
-let find_full = Repo.find_full Database.Pool.Root.label
-let find_by_label = Repo.find_by_label Database.Pool.Root.label
-let find_by_url ?should_cache = Repo.find_by_url ?should_cache Database.Pool.Root.label
-let find_all = Repo.find_all Database.Pool.Root.label
+let find = Repo.find Database.(label_ctx Pool.Root.label)
+let find_full = Repo.find_full Database.(label_ctx Pool.Root.label)
+let find_by_label = Repo.find_by_label Database.(label_ctx Pool.Root.label)
+let find_by_db_ctx db_ctx = Repo.find_by_label Database.(label_ctx Pool.Root.label) (Database.label_of_ctx db_ctx)
+let find_by_url ?should_cache = Repo.find_by_url ?should_cache Database.(label_ctx Pool.Root.label)
+let find_all = Repo.find_all Database.(label_ctx Pool.Root.label)
 
 let public_scheme () =
   let is_localhost =

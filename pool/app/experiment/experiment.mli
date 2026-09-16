@@ -224,7 +224,7 @@ module Public : sig
   val online_experiment : t -> OnlineExperiment.t option
   val is_sessionless : t -> bool
   val update_direct_registration_disabled : t -> DirectRegistrationDisabled.t -> t
-  val contact_matches_filter : Database.Label.t -> t -> Contact.t -> bool Lwt.t
+  val contact_matches_filter : _ Database.ctx -> t -> Contact.t -> bool Lwt.t
   val column_public_title : Query.Column.t
   val filterable_by : Query.Filter.human option
   val searchable_by : Query.Column.t list
@@ -261,7 +261,7 @@ module DirectEnrollment : sig
 end
 
 module InvitationReset : sig
-  val insert : Database.Label.t -> t -> unit Lwt.t
+  val insert : _ Database.ctx -> t -> unit Lwt.t
 
   type t =
     { created_at : Pool_common.CreatedAt.t
@@ -273,9 +273,9 @@ module InvitationReset : sig
   val show : t -> string
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
-  val find_by_experiment : Database.Label.t -> Id.t -> t list Lwt.t
-  val find_latest_by_experiment : Database.Label.t -> Id.t -> t option Lwt.t
-  val invitations_sent_since_last_reset : Database.Label.t -> Id.t -> int Lwt.t
+  val find_by_experiment : _ Database.ctx -> Id.t -> t list Lwt.t
+  val find_latest_by_experiment : _ Database.ctx -> Id.t -> t option Lwt.t
+  val invitations_sent_since_last_reset : _ Database.ctx -> Id.t -> int Lwt.t
 end
 
 type event =
@@ -284,7 +284,7 @@ type event =
   | ResetInvitations of t
   | Deleted of Id.t
 
-val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
+val handle_event : ?user_uuid:Pool_common.Id.t -> _ Database.ctx -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
@@ -292,60 +292,60 @@ val created : t -> event
 val updated : t -> t -> event
 val deleted : Pool_common.Id.t -> event
 val boolean_fields : Pool_message.Field.t list
-val contact_meets_criteria : Database.Label.t -> t -> Contact.t -> bool Lwt.t
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
-val all : Database.Label.t -> t list Lwt.t
+val contact_meets_criteria : _ Database.ctx -> t -> Contact.t -> bool Lwt.t
+val find : _ Database.ctx -> Id.t -> (t, Pool_message.Error.t) result Lwt.t
+val all : _ Database.ctx -> t list Lwt.t
 
 val list_by_user
   :  ?query:Query.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Guard.Actor.t
   -> (t list * Query.t) Lwt.t
 
-val find_all_ids_of_contact_id : Database.Label.t -> Contact.Id.t -> Id.t list Lwt.t
+val find_all_ids_of_contact_id : _ Database.ctx -> Contact.Id.t -> Id.t list Lwt.t
 
 val find_public
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Id.t
   -> Contact.t
   -> (Public.t, Pool_message.Error.t) Lwt_result.t
 
 val find_full_by_contact
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Id.t
   -> Contact.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_of_session
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Pool_common.Id.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_of_mailing
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Pool_common.Id.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_upcoming_to_register
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Contact.t
   -> [ `OnSite | `Online ]
   -> Public.t list Lwt.t
 
 val find_upcoming
-  :  Database.Label.t
+  :  _ Database.ctx
   -> [< `Dashboard of int | `Query of Query.t ]
   -> Contact.t
   -> [ `OnSite | `Online ]
   -> (Public.t list * Query.t) Lwt.t
 
 val find_pending_waitinglists_by_contact
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Contact.t
   -> Public.t list Lwt.t
 
-val invitation_count : Database.Label.t -> Id.t -> int Lwt.t
-val session_count : Database.Label.t -> Id.t -> int Lwt.t
+val invitation_count : _ Database.ctx -> Id.t -> int Lwt.t
+val session_count : _ Database.ctx -> Id.t -> int Lwt.t
 
 val search
   :  ?conditions:string
@@ -353,55 +353,55 @@ val search
   -> ?exclude:Id.t list
   -> ?joins:string
   -> ?limit:int
-  -> Database.Label.t
+  -> _ Database.ctx
   -> string
   -> (Id.t * Title.t) list Lwt.t
 
 val search_multiple_by_id
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Pool_common.Id.t list
   -> (Id.t * Title.t) list Lwt.t
 
 val find_to_enroll_directly
   :  ?actor:Guard.Actor.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Contact.t
   -> query:string
   -> DirectEnrollment.t list Lwt.t
 
-val contact_is_enrolled : Database.Label.t -> Id.t -> Contact.Id.t -> bool Lwt.t
+val contact_is_enrolled : _ Database.ctx -> Id.t -> Contact.Id.t -> bool Lwt.t
 
 val find_targets_grantable_by_target
   :  ?exclude:Id.t list
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Guard.Uuid.Target.t
   -> Role.Role.t
   -> string
   -> (Id.t * Title.t) list Lwt.t
 
-val get_default_public_title : Database.Label.t -> PublicTitle.t Lwt.t
+val get_default_public_title : _ Database.ctx -> PublicTitle.t Lwt.t
 
 val query_participation_history_by_contact
   :  ?query:Query.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Contact.t
   -> ((t * bool) list * Query.t) Lwt.t
 
-val registration_possible : Database.Label.t -> Id.t -> bool Lwt.t
+val registration_possible : _ Database.ctx -> Id.t -> bool Lwt.t
 
 val sending_invitations
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Id.t
   -> (SendingInvitations.t, Pool_message.Error.t) Lwt_result.t
 
-val assignment_counts : Database.Label.t -> Id.t -> assignment_counts Lwt.t
+val assignment_counts : _ Database.ctx -> Id.t -> assignment_counts Lwt.t
 
 val find_admins_to_notify_about_invitations
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Id.t
   -> Admin.t list Lwt.t
 
-val invited_contacts_count : Database.Label.t -> Id.t -> int Lwt.t
+val invited_contacts_count : _ Database.ctx -> Id.t -> int Lwt.t
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
 val title_value : t -> string
@@ -417,7 +417,7 @@ val external_data_required_value : t -> bool
 val show_external_data_id_links_value : t -> bool
 
 val smtp_auth
-  :  Database.Label.t
+  :  _ Database.ctx
   -> t
   -> (Email.SmtpAuth.t option, Pool_message.Error.t) Lwt_result.t
 

@@ -15,8 +15,8 @@ module Tenant = struct
   open Pool_tenant
   open Layout_utils
 
-  let make_footer { database_label; language; query_parameters; user; _ } title_text =
-    let%lwt privacy_policy_is_set = I18n.privacy_policy_is_set database_label language in
+  let make_footer ({ language; query_parameters; user; _ } as context) title_text =
+    let%lwt privacy_policy_is_set = I18n.privacy_policy_is_set (Pool_context.on_demand context) language in
     let open Pool_common in
     let of_nav = Utils.nav_link_to_string language in
     let of_field = Utils.field_to_string_capitalized language in
@@ -51,7 +51,6 @@ module Tenant = struct
          ; message
          ; user
          ; notifications
-         ; database_label
          ; _
          } as context)
         Tenant.{ tenant_languages; tenant }
@@ -67,7 +66,7 @@ module Tenant = struct
     in
     let%lwt head_script, body_script =
       let open Settings.PageScript in
-      let%lwt page_scripts = find database_label in
+      let%lwt page_scripts = find (Pool_context.on_demand context) in
       let make_script =
         CCOption.map_or ~default:[] (value %> Unsafe.data %> CCList.return)
       in

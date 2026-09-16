@@ -22,14 +22,14 @@ let nav_elements =
 let create
       ?buttons
       ?hint
-      ({ Pool_context.database_label; language; user; _ } as context)
+      ({ Pool_context.language; user; _ } as context)
       model
       content
   =
   let open Utils.Lwt_result.Infix in
   let open Tab_navigation in
   let%lwt actor =
-    Pool_context.Utils.find_authorizable database_label user
+    Pool_context.Utils.find_authorizable (Pool_context.on_demand context) user
     ||> Pool_common.Utils.get_or_failwith
   in
   let title =

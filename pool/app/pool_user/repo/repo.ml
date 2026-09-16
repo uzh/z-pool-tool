@@ -171,10 +171,10 @@ let increment_smtp_bounce_root_request =
   |> EmailAddress.t ->. Caqti_type.unit
 ;;
 
-let increment_smtp_bounce label email =
+let increment_smtp_bounce db_ctx email =
   Database.exec
-    label
-    (if Database.Pool.is_root label
+    db_ctx
+    (if Database.Pool.is_root (Database.label_of_ctx db_ctx)
      then increment_smtp_bounce_root_request
      else increment_smtp_bounce_request)
     email
@@ -207,10 +207,10 @@ let reset_smtp_bounce_root_request =
   |> EmailAddress.t ->. Caqti_type.unit
 ;;
 
-let reset_smtp_bounce label email =
+let reset_smtp_bounce db_ctx email =
   Database.exec
-    label
-    (if Database.Pool.is_root label
+    db_ctx
+    (if Database.Pool.is_root (Database.label_of_ctx db_ctx)
      then reset_smtp_bounce_root_request
      else reset_smtp_bounce_request)
     email

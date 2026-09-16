@@ -74,7 +74,7 @@ let lifecycles = [ Pool_database.lifecycle ]
 
 let label =
   let open CCFun.Infix in
-  CCOption.(map Database.of_ctx_exn %> get_exn_or "Database: Invalid context")
+  CCOption.(map Database.Label.of_ctx_exn %> get_exn_or "Database: Invalid context")
 ;;
 
 let sql_select_columns =
@@ -266,7 +266,7 @@ end
 let register_migration () = Database.Migration.register_migration (Migration.migration ())
 
 let register_cleaner () =
-  Sihl.Cleaner.register_cleaner (fun ?(ctx = []) -> Sql.clean (Database.of_ctx_exn ctx))
+  Sihl.Cleaner.register_cleaner (fun ?(ctx = []) -> Sql.clean (Database.(label_ctx (Label.of_ctx_exn ctx))))
 ;;
 
 let find = Sql.find

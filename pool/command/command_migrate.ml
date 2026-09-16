@@ -81,7 +81,7 @@ Please take the necessary actions.|}
       ; bcc = []
       }
     in
-    let%lwt prepared = Email.Service.Smtp.prepare Pool.Root.label email in
+    let%lwt prepared = Email.Service.Smtp.prepare (label_ctx Pool.Root.label) email in
     Outbox.add (sender, prepared) |> Lwt.return
   | _ -> Lwt.return_unit
 ;;

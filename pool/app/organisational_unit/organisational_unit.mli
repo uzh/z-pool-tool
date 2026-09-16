@@ -26,7 +26,7 @@ type event =
   | Created of t
   | Updated of (t * Name.t)
 
-val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
+val handle_event : ?user_uuid:Pool_common.Id.t -> _ Database.ctx -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
@@ -53,9 +53,9 @@ module Guard : sig
   end
 end
 
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
-val find_by : Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
-val all : Database.Label.t -> unit -> t list Lwt.t
+val find : _ Database.ctx -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find_by : Query.t -> _ Database.ctx -> (t list * Query.t) Lwt.t
+val all : _ Database.ctx -> unit -> t list Lwt.t
 
 module Repo : sig
   val sql_select_columns : string list

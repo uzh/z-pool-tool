@@ -2,7 +2,7 @@ open CCFun
 module BaseRole = Role
 module Dynparam = Database.Dynparam
 
-let create_tag = Database.Logger.Tags.create
+let tags_of_db_ctx = Database.Logger.Tags.of_db_ctx
 
 include
   Guardian_backend.MariaDb.Make (Role.Actor) (Role.Role) (Role.Target) (Database.Guard)
@@ -388,17 +388,17 @@ end
 module Actor = struct
   include Actor
 
-  let find database_label id =
+  let find db_ctx id =
     let cb ~in_cache _ _ =
       if in_cache
       then (
-        let tags = create_tag database_label in
+        let tags = tags_of_db_ctx db_ctx in
         Logs.debug ~src (fun m ->
           m ~tags "Found in cache: Actor %s" (id |> Core.Uuid.Actor.to_string)))
       else Cache.log_cache_size Cache.lru_find_actor "lru_find_actor"
     in
-    let find' (label, id) = find ~ctx:(Database.to_ctx label) id in
-    (database_label, id) |> CCCache.(with_cache ~cb Cache.lru_find_actor find')
+    let find' (label, id) = find ~ctx:(Database.Label.to_ctx label) id in
+    (Database.label_of_ctx db_ctx, id) |> CCCache.(with_cache ~cb Cache.lru_find_actor find')
   ;;
 
   let can_assign_roles database_label actor =
@@ -479,19 +479,20 @@ module ActorRole = struct
          ->* Caqti_type.(t3 ActorRole.t (option TargetModel.t) (option string)))
   ;;
 
-  let find_by_actor database_label actor =
+  let find_by_actor db_ctx actor =
     let cb ~in_cache _ _ =
       if in_cache
       then (
-        let tags = create_tag database_label in
+        let tags = tags_of_db_ctx db_ctx in
         Logs.debug ~src (fun m ->
           m ~tags "Found in cache: Actor %s" (actor |> Core.Uuid.Actor.to_string)))
       else Cache.log_cache_size Cache.lru_find_by_actor "lru_find_by_actor"
     in
     let find_by_actor' (label, actor) =
-      Database.collect label find_by_actor_request actor
+      let db_ctx = Database.label_ctx label in
+      Database.collect db_ctx find_by_actor_request actor
     in
-    (database_label, actor)
+    (Database.label_of_ctx db_ctx, actor)
     |> CCCache.(with_cache ~cb Cache.lru_find_by_actor find_by_actor')
   ;;
 
@@ -502,7 +503,7 @@ end
 
 let validate
       ?(any_id = false)
-      database_label
+      db_ctx
       validation_set
       ({ Core.Actor.uuid; _ } as actor)
   =
@@ -511,7 +512,7 @@ let validate
     then
       Logs.debug ~src (fun m ->
         m
-          ~tags:(create_tag database_label)
+          ~tags:(tags_of_db_ctx db_ctx)
           "Found in cache: Actor %s\nValidation set %s"
           (uuid |> Core.Uuid.Actor.to_string)
           ([%show: Core.ValidationSet.t] validation_set))
@@ -519,13 +520,13 @@ let validate
   in
   let validate' (label, set, any_id, actor) =
     validate
-      ~ctx:(Database.to_ctx label)
+      ~ctx:(Database.Label.to_ctx label)
       ~any_id
       Pool_message.Error.authorization
       set
       actor
   in
-  (database_label, validation_set, any_id, actor)
+  (Database.label_of_ctx db_ctx, validation_set, any_id, actor)
   |> CCCache.(with_cache ~cb Cache.lru_validation validate')
 ;;
 
