@@ -10,6 +10,8 @@ end
 module Data = struct
   let database_label = "econ-test" |> Label.create |> get_exn
 
+  let db_ctx = label_ctx database_label
+
   let database =
     let url =
       Sihl.Configuration.read_string "DATABASE_URL_TENANT_ONE"
@@ -35,7 +37,7 @@ let check_find_tenant_database _ () =
 ;;
 
 let check_tenant_database _ () =
-  let ctx = Data.database_label |> Database.to_ctx in
+  let ctx = Data.db_ctx |> Database.to_ctx in
   let _ = Sihl.Database.fetch_pool ~ctx () in
   Lwt.return_unit
 ;;
@@ -51,7 +53,7 @@ let check_session_time_zone_utc _ () =
     "SELECT ABS(TIMESTAMPDIFF(SECOND, NOW(), ?))" |> Caqti_type.(ptime ->! int)
   in
   let check label =
-    let name suffix = Format.asprintf "%s: %s" (Label.value label) suffix in
+    let name suffix = Format.asprintf "%s: %s" (Label.value (label_of_ctx label)) suffix in
     let%lwt session_offset = Database.find label session_offset_request () in
     let%lwt clock_drift = Database.find label clock_drift_request (Ptime_clock.now ()) in
     Alcotest.(check int (name "session time_zone is UTC") 0 session_offset);
@@ -59,6 +61,6 @@ let check_session_time_zone_utc _ () =
       check bool (name "DB clock agrees with Ptime_clock") true (clock_drift <= 2))
     |> Lwt.return
   in
-  let%lwt () = check Pool.Root.label in
-  check Data.database_label
+  let%lwt () = check (label_ctx Pool.Root.label) in
+  check Data.db_ctx
 ;;

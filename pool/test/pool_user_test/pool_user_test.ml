@@ -5,7 +5,7 @@ module PasswordReset = Password_reset_test
 let testable_plain_password = Pool_user.Password.Plain.(Alcotest.testable pp equal)
 let testable_email = Pool_user.EmailAddress.(Alcotest.testable pp equal)
 let alcotest = Pool_user.(Alcotest.testable pp equal)
-let database_label = Test_utils.Data.database_label
+let db_ctx = Test_utils.Data.db_ctx
 let created_password = Pool_user.Password.Plain.create "CD&*BA8txf3mRuGF"
 let created_password_confirmation = Pool_user.Password.to_confirmed created_password
 
@@ -61,7 +61,7 @@ let json_serialization =
   let%lwt user =
     let open Pool_user in
     create_user
-      database_label
+      db_ctx
       (EmailAddress.of_string "foobar@example.com")
       (Lastname.of_string "Doe")
       (Firstname.of_string "Jane")
@@ -82,7 +82,7 @@ let update_details =
   let open Pool_user in
   let%lwt user =
     create_user
-      database_label
+      db_ctx
       (EmailAddress.of_string "foobar2@example.com")
       (Lastname.of_string "Star")
       (Firstname.of_string "Jane")
@@ -91,7 +91,7 @@ let update_details =
     ||> Pool_common.Utils.get_or_failwith
   in
   let%lwt updated_user =
-    update database_label user ~email:(EmailAddress.of_string "new@example.com")
+    update db_ctx user ~email:(EmailAddress.of_string "new@example.com")
   in
   let actual_email = updated_user |> Pool_user.email |> EmailAddress.value in
   let actual_name = updated_user |> Pool_user.lastname |> Lastname.value in
@@ -108,7 +108,7 @@ let update_password =
   let new_password = Password.Plain.create "Password1!" in
   let%lwt user =
     create_user
-      database_label
+      db_ctx
       email_address
       (Lastname.of_string "Star")
       (Firstname.of_string "Jane")
@@ -118,7 +118,7 @@ let update_password =
   in
   let%lwt _ =
     Pool_user.Password.update
-      database_label
+      db_ctx
       user.id
       ~old_password:created_password
       ~new_password
@@ -126,7 +126,7 @@ let update_password =
     |> Lwt.map CCResult.get_exn
   in
   let%lwt user =
-    Pool_user.login database_label email_address new_password |> Lwt.map CCResult.get_exn
+    Pool_user.login db_ctx email_address new_password |> Lwt.map CCResult.get_exn
   in
   let actual_email = user.Pool_user.email in
   Alcotest.(
@@ -142,7 +142,7 @@ let update_password_fails =
   let new_password = Password.Plain.create "Password1!" in
   let%lwt user =
     create_user
-      database_label
+      db_ctx
       email_address
       (Lastname.of_string "Star")
       (Firstname.of_string "Jane")
@@ -152,7 +152,7 @@ let update_password_fails =
   in
   let%lwt change_result =
     Password.update
-      database_label
+      db_ctx
       user.id
       ~old_password:(Password.Plain.create "wrong_old_password")
       ~new_password
@@ -178,7 +178,7 @@ let find_by_email_is_case_insensitive =
     Lwt_list.map_s
       (fun email ->
          create_user
-           database_label
+           db_ctx
            email
            (Lastname.of_string "Star")
            (Firstname.of_string "Jane")
@@ -189,7 +189,7 @@ let find_by_email_is_case_insensitive =
   in
   let%lwt user =
     EmailAddress.of_string "User1@Example.com"
-    |> Pool_user.find_by_email_opt database_label
+    |> Pool_user.find_by_email_opt db_ctx
   in
   match user with
   | Some _ -> Lwt.return_ok ()
@@ -208,7 +208,7 @@ let filter_users_by_email_returns_single_user =
     Lwt_list.map_s
       (fun email ->
          create_user
-           database_label
+           db_ctx
            email
            (Lastname.of_string "Star")
            (Firstname.of_string "Jane")
@@ -219,7 +219,7 @@ let filter_users_by_email_returns_single_user =
   in
   let%lwt actual_user =
     EmailAddress.of_string "fooz@example.com"
-    |> Pool_user.find_by_email_exn database_label
+    |> Pool_user.find_by_email_exn db_ctx
   in
   Alcotest.(
     check
@@ -233,7 +233,7 @@ let filter_users_by_email_returns_single_user =
 module Web = struct
   let fake_token = "faketoken"
 
-  let read_token (user_id : Pool_user.Id.t) (_ : Database.Label.t) token ~k =
+  let read_token (user_id : Pool_user.Id.t) (_ : _ Database.ctx) token ~k =
     if CCString.equal k "user_id" && CCString.equal token fake_token
     then Lwt.return_some user_id
     else Lwt.return_none
@@ -246,7 +246,7 @@ module Web = struct
     let email_address = EmailAddress.of_string "foo2@example.com" in
     let%lwt user =
       create_user
-        database_label
+        db_ctx
         email_address
         (Lastname.of_string "Star")
         (Firstname.of_string "Jane")
@@ -261,7 +261,7 @@ module Web = struct
       |> Opium.Request.add_header ("authorization", token_header)
     in
     let handler req =
-      let%lwt user = Pool_user.Web.user_from_token database_label read_token req in
+      let%lwt user = Pool_user.Web.user_from_token db_ctx read_token req in
       let email = CCOption.map (fun user -> user.Pool_user.email) user in
       Alcotest.(
         check
@@ -282,7 +282,7 @@ module Web = struct
     let email_address = EmailAddress.of_string "foo3@example.com" in
     let%lwt user =
       create_user
-        database_label
+        db_ctx
         email_address
         (Lastname.of_string "Star")
         (Firstname.of_string "Jane")
@@ -301,7 +301,7 @@ module Web = struct
       |> Opium.Request.add_cookie cookie.Sihl.Web.Cookie.value
     in
     let handler req =
-      let%lwt user = Pool_user.Web.user_from_session database_label req in
+      let%lwt user = Pool_user.Web.user_from_session db_ctx req in
       let email = CCOption.map (fun user -> user.Pool_user.email) user in
       Alcotest.(
         check

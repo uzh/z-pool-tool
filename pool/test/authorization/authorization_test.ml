@@ -3,30 +3,30 @@ let update_language_as actor =
   let subject =
     "john@gmail.com" |> Contact_test.contact_info |> Contact_test.create_contact true
   in
-  let* tenant = Pool_tenant.find_by_label Test_utils.Data.database_label in
-  let ctx = Database.to_ctx Test_utils.Data.database_label in
+  let* tenant = Pool_tenant.find_by_db_ctx Test_utils.Data.db_ctx in
+  let ctx = Database.to_ctx Test_utils.Data.db_ctx in
   let effects = Cqrs_command.Contact_command.Update.effects (Contact.id subject) in
   let* (_ : Guard.Target.t) = Pool_tenant.Guard.Target.to_authorizable ~ctx tenant in
   let* (_ : Guard.Target.t) = Contact.Guard.Target.to_authorizable ~ctx subject in
   let* (_ : Guard.Actor.t) = Pool_tenant.Guard.Actor.to_authorizable ~ctx tenant in
   let* (_ : Guard.Actor.t) = Contact.Guard.Actor.to_authorizable ~ctx subject in
-  let* () = Guard.Persistence.validate Test_utils.Data.database_label effects actor in
+  let* () = Guard.Persistence.validate Test_utils.Data.db_ctx effects actor in
   Lwt.return_ok ()
 ;;
 
 let recruiter_can_update_contact_language =
-  let database_label = Test_utils.Data.database_label in
+  let db_ctx = Test_utils.Data.db_ctx in
   Test_utils.case
   @@ fun () ->
   let open Utils.Lwt_result.Infix in
-  let ctx = Database.to_ctx database_label in
+  let ctx = Database.to_ctx db_ctx in
   let%lwt actor =
     let open Guard.Persistence in
     ActorRole.find_actors_by_role ~ctx (`Recruiter, None)
     ||> (function
      | [] -> failwith "No actors with role `Recruiter found."
      | hd :: _ -> hd)
-    >|> Actor.find database_label
+    >|> Actor.find db_ctx
     ||> CCResult.get_or_failwith
   in
   let%lwt actual = update_language_as actor in
@@ -47,7 +47,7 @@ let guest_cannot_update_language _ () =
 ;;
 
 let operator_works _ () =
-  let ctx = Database.to_ctx Test_utils.Data.database_label in
+  let ctx = Database.to_ctx Test_utils.Data.db_ctx in
   let%lwt actual =
     let open Utils.Lwt_result.Infix in
     let open Guard in
@@ -69,12 +69,12 @@ let operator_works _ () =
     let* () =
       let open Guard in
       RolePermission.create `Operator Permission.Manage `Contact
-      |> Persistence.RolePermission.insert Test_utils.Data.database_label
+      |> Persistence.RolePermission.insert Test_utils.Data.db_ctx
       >|- to_error
       ||> CCFun.tap (fun _ -> Persistence.Cache.clear ())
     in
     let effects = ValidationSet.one_of_tuple (Permission.Manage, `Contact, None) in
-    let* () = Persistence.validate Test_utils.Data.database_label effects actor in
+    let* () = Persistence.validate Test_utils.Data.db_ctx effects actor in
     Lwt_result.return ()
   in
   Alcotest.(check (result unit Test_utils.error)) "Parametric roles work." (Ok ()) actual

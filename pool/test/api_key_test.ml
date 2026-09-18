@@ -4,7 +4,7 @@ module Command = Cqrs_command.Api_key_command
 module ExpiresAt = Pool_common.ExpiresAt
 
 let get_exn = Test_utils.get_or_failwith
-let database_label = Test_utils.Data.database_label
+let db_ctx = Test_utils.Data.db_ctx
 
 module Data = struct
   let name = "API Key Name"
@@ -68,7 +68,7 @@ let get_current _ () =
   let hour = Test_utils.Time.hour in
   let create_api_key token expires_at =
     let api_key = Model.create_api_key ~id:(Id.create ()) ~token ~expires_at () in
-    let%lwt () = Created api_key |> handle_event database_label in
+    let%lwt () = Created api_key |> handle_event db_ctx in
     Lwt.return api_key
   in
   let valid_token = Token.generate () in
@@ -78,7 +78,7 @@ let get_current _ () =
     |> ExpiresAt.create
   in
   let%lwt valid_api_key = create_api_key valid_token expires_at in
-  let%lwt res = find_by_token database_label (Token.value valid_token) in
+  let%lwt res = find_by_token db_ctx (Token.value valid_token) in
   let () = Alcotest.check testable_key "found valid api key" (Some valid_api_key) res in
   let expires_at =
     Ptime.sub_span (Ptime_clock.now ()) hour
@@ -87,7 +87,7 @@ let get_current _ () =
   in
   let invalid_token = Token.generate () in
   let%lwt (_ : Api_key.t) = create_api_key invalid_token expires_at in
-  let%lwt res = find_by_token database_label (Token.value invalid_token) in
+  let%lwt res = find_by_token db_ctx (Token.value invalid_token) in
   let () = Alcotest.check testable_key "did not find expired api key" None res in
   Lwt.return ()
 ;;

@@ -484,11 +484,11 @@ let accept_terms_and_conditions () =
 ;;
 
 let should_not_send_registration_notification _ () =
-  let database_label = Test_utils.Data.database_label in
+  let db_ctx = Test_utils.Data.db_ctx in
   let%lwt () =
     let contact_data = Test_seed.Contacts.create_contact 12 |> CCList.pure in
-    let%lwt () = Test_seed.Contacts.create ~contact_data Test_utils.Data.database_label in
-    let%lwt contact = Test_seed.Contacts.find_contact_by_id database_label 12 in
+    let%lwt () = Test_seed.Contacts.create ~contact_data Test_utils.Data.db_ctx in
+    let%lwt contact = Test_seed.Contacts.find_contact_by_id db_ctx 12 in
     let%lwt () =
       Sihl_email.
         { sender = "test@econ.uzh.ch"
@@ -502,10 +502,10 @@ let should_not_send_registration_notification _ () =
       |> Email.(Service.Job.create %> create_dispatch)
       |> Cqrs_command.Contact_command.SendRegistrationAttemptNotifitacion.handle contact
       |> Test_utils.get_or_failwith
-      |> Pool_event.handle_events database_label current_user
+      |> Pool_event.handle_events db_ctx current_user
     in
     let%lwt res =
-      Contact.should_send_registration_attempt_notification database_label contact
+      Contact.should_send_registration_attempt_notification db_ctx contact
     in
     let expected = false in
     Alcotest.(check bool "succeeds" expected res) |> Lwt.return
@@ -514,18 +514,18 @@ let should_not_send_registration_notification _ () =
 ;;
 
 let save_cell_phone_persists_without_verified_at _ () =
-  let database_label = Test_utils.Data.database_label in
+  let db_ctx = Test_utils.Data.db_ctx in
   let contact_data = Test_seed.Contacts.create_contact 13 |> CCList.pure in
-  let%lwt () = Test_seed.Contacts.create ~contact_data database_label in
-  let%lwt contact = Test_seed.Contacts.find_contact_by_id database_label 13 in
+  let%lwt () = Test_seed.Contacts.create ~contact_data db_ctx in
+  let%lwt contact = Test_seed.Contacts.find_contact_by_id db_ctx 13 in
   let new_phone = "+41791234567" |> Pool_user.CellPhone.of_string in
   let%lwt () =
     Contact_command.SaveCellPhone.handle (contact, new_phone)
     |> Test_utils.get_or_failwith
-    |> Pool_event.handle_events database_label current_user
+    |> Pool_event.handle_events db_ctx current_user
   in
   let%lwt updated =
-    Contact.find database_label (Contact.id contact) |> Lwt.map CCResult.get_exn
+    Contact.find db_ctx (Contact.id contact) |> Lwt.map CCResult.get_exn
   in
   Alcotest.(
     check
@@ -543,26 +543,26 @@ let save_cell_phone_persists_without_verified_at _ () =
 ;;
 
 let verify_cell_phone_sets_verified_at _ () =
-  let database_label = Test_utils.Data.database_label in
+  let db_ctx = Test_utils.Data.db_ctx in
   let contact_data = Test_seed.Contacts.create_contact 14 |> CCList.pure in
-  let%lwt () = Test_seed.Contacts.create ~contact_data database_label in
-  let%lwt contact = Test_seed.Contacts.find_contact_by_id database_label 14 in
+  let%lwt () = Test_seed.Contacts.create ~contact_data db_ctx in
+  let%lwt contact = Test_seed.Contacts.find_contact_by_id db_ctx 14 in
   let new_phone = "+41791234568" |> Pool_user.CellPhone.of_string in
   (* First add the phone for verification (stores unverified entry) *)
   let token = Pool_common.VerificationCode.create () in
   let%lwt () =
     Contact_command.AddCellPhone.handle (contact, new_phone, token)
     |> Test_utils.get_or_failwith
-    |> Pool_event.handle_events database_label current_user
+    |> Pool_event.handle_events db_ctx current_user
   in
   (* Then verify it *)
   let%lwt () =
     Contact_command.VerifyCellPhone.handle (contact, new_phone)
     |> Test_utils.get_or_failwith
-    |> Pool_event.handle_events database_label current_user
+    |> Pool_event.handle_events db_ctx current_user
   in
   let%lwt updated =
-    Contact.find database_label (Contact.id contact) |> Lwt.map CCResult.get_exn
+    Contact.find db_ctx (Contact.id contact) |> Lwt.map CCResult.get_exn
   in
   Alcotest.(
     check
@@ -580,25 +580,25 @@ let verify_cell_phone_sets_verified_at _ () =
 ;;
 
 let save_cell_phone_clears_verified_at _ () =
-  let database_label = Test_utils.Data.database_label in
+  let db_ctx = Test_utils.Data.db_ctx in
   let contact_data = Test_seed.Contacts.create_contact 15 |> CCList.pure in
-  let%lwt () = Test_seed.Contacts.create ~contact_data database_label in
-  let%lwt contact = Test_seed.Contacts.find_contact_by_id database_label 15 in
+  let%lwt () = Test_seed.Contacts.create ~contact_data db_ctx in
+  let%lwt contact = Test_seed.Contacts.find_contact_by_id db_ctx 15 in
   let phone = "+41791234569" |> Pool_user.CellPhone.of_string in
   (* Verify a phone first *)
   let token = Pool_common.VerificationCode.create () in
   let%lwt () =
     Contact_command.AddCellPhone.handle (contact, phone, token)
     |> Test_utils.get_or_failwith
-    |> Pool_event.handle_events database_label current_user
+    |> Pool_event.handle_events db_ctx current_user
   in
   let%lwt () =
     Contact_command.VerifyCellPhone.handle (contact, phone)
     |> Test_utils.get_or_failwith
-    |> Pool_event.handle_events database_label current_user
+    |> Pool_event.handle_events db_ctx current_user
   in
   let%lwt verified =
-    Contact.find database_label (Contact.id contact) |> Lwt.map CCResult.get_exn
+    Contact.find db_ctx (Contact.id contact) |> Lwt.map CCResult.get_exn
   in
   Alcotest.(
     check
@@ -611,10 +611,10 @@ let save_cell_phone_clears_verified_at _ () =
   let%lwt () =
     Contact_command.SaveCellPhone.handle (verified, new_phone)
     |> Test_utils.get_or_failwith
-    |> Pool_event.handle_events database_label current_user
+    |> Pool_event.handle_events db_ctx current_user
   in
   let%lwt updated =
-    Contact.find database_label (Contact.id contact) |> Lwt.map CCResult.get_exn
+    Contact.find db_ctx (Contact.id contact) |> Lwt.map CCResult.get_exn
   in
   Alcotest.(
     check

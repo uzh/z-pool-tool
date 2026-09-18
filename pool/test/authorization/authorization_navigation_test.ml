@@ -3,7 +3,7 @@ open Alcotest
 open Layout.Navigation
 module NavLinks = NavElements.AdminTenantItems
 
-let pool = Test_utils.Data.database_label
+let pool = Test_utils.Data.db_ctx
 let testable = NavElement.(testable pp equal)
 let filter = NavUtils.filter_items ~validate:true
 

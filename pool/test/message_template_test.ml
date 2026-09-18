@@ -84,24 +84,24 @@ let delete_without_entity () =
 (* Integration tests *)
 
 let create_experiment () =
-  let database_label = Test_utils.Data.database_label in
+  let db_ctx = Test_utils.Data.db_ctx in
   let experiment = Test_utils.Model.create_experiment () in
   let%lwt () =
     [ Experiment.Created experiment |> Pool_event.experiment ]
-    |> Pool_event.handle_events database_label current_user
+    |> Pool_event.handle_events db_ctx current_user
   in
   Lwt.return experiment
 ;;
 
 let create_invitation language ?entity_uuid () =
-  let database_label = Test_utils.Data.database_label in
+  let db_ctx = Test_utils.Data.db_ctx in
   let label = Data.label in
   let template =
     Test_utils.Model.create_message_template ~label ~language ?entity_uuid ()
   in
   let%lwt () =
     [ Message_template.Created template |> Pool_event.message_template ]
-    |> Pool_event.handle_events database_label current_user
+    |> Pool_event.handle_events db_ctx current_user
   in
   Lwt.return template
 ;;
@@ -110,7 +110,7 @@ module LanguageTestsData = struct
   open Pool_common
   open Message_template
 
-  let database_label = Test_utils.Data.database_label
+  let db_ctx = Test_utils.Data.db_ctx
   let invitation_label = Data.label
 
   let create_experiment ?language () =
@@ -124,7 +124,7 @@ module LanguageTestsData = struct
 
   let find_message_template experiment language label =
     find_by_label_and_language_to_send
-      database_label
+      db_ctx
       ~entity_uuids:Experiment.[ experiment.Experiment.id |> Id.to_common ]
       language
       label
@@ -133,7 +133,7 @@ module LanguageTestsData = struct
   let experiment_message_language = experiment_message_language Pool_common.Language.all
 
   let find_default_by_label_and_language lang label =
-    find_default_by_label_and_language database_label lang label
+    find_default_by_label_and_language db_ctx lang label
   ;;
 
   let create_experiment_message_template experiment label language =
@@ -141,7 +141,7 @@ module LanguageTestsData = struct
       let entity_uuid = Experiment.(experiment.Experiment.id |> Id.to_common) in
       Test_utils.Model.create_message_template ~label ~language ~entity_uuid ()
     in
-    let%lwt () = Created message_template |> handle_event database_label in
+    let%lwt () = Created message_template |> handle_event db_ctx in
     Lwt.return message_template
   ;;
 
@@ -214,7 +214,7 @@ let get_template_with_experiment_language_and_template _ () =
 
 let get_template_with_language_missing _ () =
   let%lwt () =
-    let database_label = Test_utils.Data.database_label in
+    let db_ctx = Test_utils.Data.db_ctx in
     let%lwt experiment = create_experiment () in
     let template_language = Pool_common.Language.En in
     let%lwt template =
@@ -227,7 +227,7 @@ let get_template_with_language_missing _ () =
       Pool_common.Language.[ De; En ]
       |> Lwt_list.map_s
            (Message_template.find_by_label_and_language_to_send
-              database_label
+              db_ctx
               ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
               Data.label)
     in
@@ -241,7 +241,7 @@ let get_template_with_language_missing _ () =
 
 let get_templates_in_multile_languages _ () =
   let%lwt () =
-    let database_label = Test_utils.Data.database_label in
+    let db_ctx = Test_utils.Data.db_ctx in
     let%lwt experiment = create_experiment () in
     let languages = Pool_common.Language.[ De; En ] in
     let%lwt templates =
@@ -253,7 +253,7 @@ let get_templates_in_multile_languages _ () =
       languages
       |> Lwt_list.map_s
            (Message_template.find_by_label_and_language_to_send
-              database_label
+              db_ctx
               ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
               Data.label)
     in
@@ -269,7 +269,7 @@ module ExperimentSenderData = struct
   let admin_id = Admin.Id.create ()
   let contact_id = Contact.Id.create ()
   let session_id = Session.Id.create ()
-  let database_label = Test_utils.Data.database_label
+  let db_ctx = Test_utils.Data.db_ctx
 
   let admin_email =
     Format.asprintf "admin+%s@econ.uzh.ch" Pool_common.Id.(create () |> value)
@@ -287,7 +287,7 @@ module ExperimentSenderData = struct
       , { experiment with
           contact_email = Some (Pool_user.EmailAddress.of_string admin_email)
         } )
-    |> handle_event database_label
+    |> handle_event db_ctx
   ;;
 end
 
@@ -300,12 +300,12 @@ let experiment_invitation_with_sender _ () =
   let open ExperimentSenderData in
   let%lwt () =
     let%lwt () = initialize () in
-    let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
-    let%lwt experiment = Experiment.find database_label experiment_id ||> get_exn in
-    let%lwt contact = Contact.find database_label contact_id ||> get_exn in
+    let%lwt tenant = Pool_tenant.find_by_db_ctx db_ctx ||> get_exn in
+    let%lwt experiment = Experiment.find db_ctx experiment_id ||> get_exn in
+    let%lwt contact = Contact.find db_ctx contact_id ||> get_exn in
     let%lwt create_message =
       Message_template.ExperimentInvitation.prepare_with_optout_link
-        database_label
+        db_ctx
         tenant
         experiment
         [ contact ]
@@ -330,7 +330,7 @@ let experiment_invitation_with_sender _ () =
       | _ -> failwith "Event missmatch"
     in
     Alcotest.(check string "succeeds" admin_email res);
-    Pool_event.handle_events database_label current_user events
+    Pool_event.handle_events db_ctx current_user events
   in
   Lwt.return_unit
 ;;
@@ -339,9 +339,9 @@ let assignment_creation_with_sender _ () =
   let open Utils.Lwt_result.Infix in
   let open ExperimentSenderData in
   let%lwt () =
-    let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
-    let%lwt contact = Contact.find database_label contact_id ||> get_exn in
-    let%lwt experiment = Experiment.find database_label experiment_id ||> get_exn in
+    let%lwt tenant = Pool_tenant.find_by_db_ctx db_ctx ||> get_exn in
+    let%lwt contact = Contact.find db_ctx contact_id ||> get_exn in
+    let%lwt experiment = Experiment.find db_ctx experiment_id ||> get_exn in
     let%lwt session = Integration_utils.SessionRepo.create ~id:session_id experiment () in
     let%lwt confirmation_email =
       Message_template.AssignmentConfirmation.prepare tenant contact experiment session
@@ -356,7 +356,7 @@ let assignment_creation_with_sender _ () =
 (* Unsolicited emails have to carry an opt-out (unsubscribe) link. The senders
    covered below are exactly those passing [?optout_link] to [prepare_email]. *)
 module OptOutLinkData = struct
-  let database_label = Test_utils.Data.database_label
+  let db_ctx = Test_utils.Data.db_ctx
   let get_exn = Test_utils.get_or_failwith
   let import_token = "opt-out-link-test-token"
 
@@ -379,7 +379,7 @@ end
 let opt_out_link_in_unsolicited_emails _ () =
   let open Utils.Lwt_result.Infix in
   let open OptOutLinkData in
-  let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
+  let%lwt tenant = Pool_tenant.find_by_db_ctx db_ctx ||> get_exn in
   let%lwt contact = Integration_utils.ContactRepo.create () in
   let%lwt admin = Integration_utils.AdminRepo.create () in
   let%lwt experiment = Integration_utils.ExperimentRepo.create () in
@@ -394,7 +394,7 @@ let opt_out_link_in_unsolicited_emails _ () =
   let%lwt () =
     let%lwt create_message =
       Message_template.ExperimentInvitation.prepare_with_optout_link
-        database_label
+        db_ctx
         tenant
         experiment
         [ contact ]
@@ -406,29 +406,29 @@ let opt_out_link_in_unsolicited_emails _ () =
   in
   let%lwt () =
     let%lwt () =
-      Contact.SignInCounterUpdated contact |> Contact.handle_event database_label
+      Contact.SignInCounterUpdated contact |> Contact.handle_event db_ctx
     in
     let%lwt warning =
-      Message_template.InactiveContactWarning.prepare database_label ||> get_exn
+      Message_template.InactiveContactWarning.prepare db_ctx ||> get_exn
     in
     let%lwt dispatch = warning contact ||> get_exn in
     check_link ~expected:true "inactive contact warning" url dispatch |> Lwt.return
   in
   let%lwt () =
     let%lwt profile_update =
-      Message_template.ProfileUpdateTrigger.prepare database_label tenant
+      Message_template.ProfileUpdateTrigger.prepare db_ctx tenant
     in
     let%lwt dispatch = profile_update contact ||> get_exn in
     check_link ~expected:true "profile update trigger" url dispatch |> Lwt.return
   in
   let%lwt () =
-    let%lwt import_message = Message_template.UserImport.prepare database_label tenant in
+    let%lwt import_message = Message_template.UserImport.prepare db_ctx tenant in
     let%lwt dispatch = import_message (`Contact contact) true import_token in
     check_link ~expected:true "user import of a contact" url dispatch |> Lwt.return
   in
   let%lwt () =
     (* Admins are not contacts, they cannot unsubscribe *)
-    let%lwt import_message = Message_template.UserImport.prepare database_label tenant in
+    let%lwt import_message = Message_template.UserImport.prepare db_ctx tenant in
     let%lwt dispatch = import_message (`Admin admin) true import_token in
     check_link ~expected:false "user import of an admin" url dispatch |> Lwt.return
   in

@@ -2,7 +2,7 @@ module ContactRepo = Integration_utils.ContactRepo
 module Command = Cqrs_command.Duplicate_contacts_command
 open Utils.Lwt_result.Infix
 
-let pool = Test_utils.Data.database_label
+let pool = Test_utils.Data.db_ctx
 let get_exn = Test_utils.get_or_failwith
 let testable_score = Alcotest.(testable CCFloat.pp CCFloat.equal)
 
@@ -205,7 +205,7 @@ module MergeData = struct
   let setup_merge_contacts () =
     let open Integration_utils in
     let open Pool_user in
-    let pool = Test_utils.Data.database_label in
+    let pool = Test_utils.Data.db_ctx in
     let%lwt current_user = Integration_utils.create_admin_user () in
     let make_field name = CustomFieldRepo.create name (fun a -> Custom_field.Text a) in
     let%lwt field_1 = make_field "F1" in
@@ -598,7 +598,7 @@ let service_processes_due_contact _ () =
   let%lwt () = Duplicate_contacts.mark_as_checked pool contact in
   let%lwt () = Duplicate_contacts.mark_as_checked pool duplicate in
   let%lwt () = set_due_at_in_past contact in
-  let%lwt () = Duplicate_contacts.Service.run_by_tenant pool in
+  let%lwt () = Duplicate_contacts.Service.run_by_tenant (Database.label_of_ctx pool) in
   let%lwt found =
     Duplicate_contacts.find_by_contact pool contact
     ||> fst

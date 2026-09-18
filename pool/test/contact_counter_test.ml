@@ -3,14 +3,14 @@ open Cqrs_command
 open Utils.Lwt_result.Infix
 open Pool_message
 
-let database_label = Data.database_label
+let db_ctx = Data.db_ctx
 let current_user = Integration_utils.create_admin_user
 let get_exn = get_or_failwith
-let get_contact contact_id = contact_id |> Contact.find database_label |> Lwt.map get_exn
-let get_session session_id = session_id |> Session.find database_label |> Lwt.map get_exn
+let get_contact contact_id = contact_id |> Contact.find db_ctx |> Lwt.map get_exn
+let get_session session_id = session_id |> Session.find db_ctx |> Lwt.map get_exn
 
 let get_experiment experiment_id =
-  experiment_id |> Experiment.find database_label |> Lwt.map get_exn
+  experiment_id |> Experiment.find db_ctx |> Lwt.map get_exn
 ;;
 
 let confirmation_mail (_ : Assignment.t) =
@@ -26,7 +26,7 @@ let invitation_mail (_ : Invitation.t) =
 
 let find_assignment_by_contact_and_session contact_id session_id =
   let open Assignment in
-  find_uncanceled_by_session database_label session_id
+  find_uncanceled_by_session db_ctx session_id
   ||> CCList.find (fun ({ contact; _ } : Assignment.t) ->
     Contact.(Id.equal (id contact) contact_id))
 ;;
@@ -35,24 +35,24 @@ let set_sessions_to_past session_ids =
   let open Session in
   let%lwt current_user = current_user () in
   session_ids
-  |> Lwt_list.map_s (fun id -> find database_label id)
+  |> Lwt_list.map_s (fun id -> find db_ctx id)
   ||> CCResult.flatten_l
   >|+ CCList.map (fun (session : t) ->
     let updated = { session with start = Model.an_hour_ago () } in
     Updated (session, updated) |> Pool_event.session)
-  |>> Pool_event.handle_events database_label current_user
+  |>> Pool_event.handle_events db_ctx current_user
   ||> get_exn
 ;;
 
 let sign_up_for_session experiment contact session_id =
   let%lwt current_user = current_user () in
-  let%lwt session = Session.find_open database_label session_id ||> get_exn in
-  let%lwt follow_up_sessions = Session.find_follow_ups database_label session_id in
+  let%lwt session = Session.find_open db_ctx session_id ||> get_exn in
+  let%lwt follow_up_sessions = Session.find_follow_ups db_ctx session_id in
   Assignment_command.Create.(handle { contact; session; follow_up_sessions; experiment })
     confirmation_mail
     false
   |> get_exn
-  |> Pool_event.handle_events database_label current_user
+  |> Pool_event.handle_events db_ctx current_user
 ;;
 
 let close_session ?(no_show = false) ?(participated = true) session contact_id experiment =
@@ -70,7 +70,7 @@ let close_session ?(no_show = false) ?(participated = true) session contact_id e
   in
   let%lwt increment_num_participations =
     contact_participation_in_other_assignments
-      database_label
+      db_ctx
       ~exclude_assignments:[ assignment ]
       experiment.Experiment.id
       contact_id
@@ -82,7 +82,7 @@ let close_session ?(no_show = false) ?(participated = true) session contact_id e
   |> CCList.pure
   |> Close.handle experiment session []
   |> get_exn
-  |> Pool_event.handle_events database_label current_user
+  |> Pool_event.handle_events db_ctx current_user
 ;;
 
 let delete_assignment experiment_id contact assignments =
@@ -91,7 +91,7 @@ let delete_assignment experiment_id contact assignments =
   let%lwt decrement_num_participations =
     Assignment.(
       contact_participation_in_other_assignments
-        database_label
+        db_ctx
         ~exclude_assignments:assignments
         experiment_id
         (Contact.id contact)
@@ -102,7 +102,7 @@ let delete_assignment experiment_id contact assignments =
   (contact, assignments, decrement_num_participations)
   |> MarkAsDeleted.handle
   |> get_exn
-  |> Pool_event.handle_events database_label current_user
+  |> Pool_event.handle_events db_ctx current_user
 ;;
 
 let initialize contact_id experiment_id session_id ?followup_session_id () =
@@ -160,7 +160,7 @@ module InviteContact = struct
           ; create_message = invitation_mail
           })
       |> Lwt.return
-      |>> Pool_event.handle_events database_label current_user
+      |>> Pool_event.handle_events db_ctx current_user
       ||> get_exn
     in
     let%lwt res = get_contact contact_id in
@@ -179,7 +179,7 @@ module AttendAll = struct
   let experiment_id = Experiment.Id.create ()
 
   let experiment () =
-    Experiment.find Test_utils.Data.database_label experiment_id ||> get_exn
+    Experiment.find Test_utils.Data.db_ctx experiment_id ||> get_exn
   ;;
 
   let initialize = initialize contact_id experiment_id session_id ~followup_session_id
@@ -252,12 +252,12 @@ module CancelSession = struct
     |> Lwt_list.iter_s (fun (session, expected_nr_assignments) ->
       let%lwt () =
         let open Cqrs_command.Session_command.Cancel in
-        let%lwt follow_ups = Session.find_follow_ups database_label session.Session.id in
+        let%lwt follow_ups = Session.find_follow_ups db_ctx session.Session.id in
         let%lwt assignments =
           session :: follow_ups
           |> Lwt_list.fold_left_s
                (fun assignments session ->
-                  Assignment.find_uncanceled_by_session database_label session.Session.id
+                  Assignment.find_uncanceled_by_session db_ctx session.Session.id
                   ||> CCList.append assignments)
                []
           ||> Assignment.group_by_contact
@@ -272,7 +272,7 @@ module CancelSession = struct
           [ Pool_common.NotifyVia.Email ]
           reason
         |> get_exn
-        |> Pool_event.handle_events database_label current_user
+        |> Pool_event.handle_events db_ctx current_user
       in
       test_result expected_nr_assignments)
   ;;
@@ -309,7 +309,7 @@ module DoNotAttend = struct
   let experiment_id = Experiment.Id.create ()
 
   let experiment () =
-    Experiment.find Test_utils.Data.database_label experiment_id ||> get_exn
+    Experiment.find Test_utils.Data.db_ctx experiment_id ||> get_exn
   ;;
 
   let initialize = initialize contact_id experiment_id session_id
@@ -350,7 +350,7 @@ module NoShow = struct
   let experiment_id = Experiment.Id.create ()
 
   let experiment () =
-    Experiment.find Test_utils.Data.database_label experiment_id ||> get_exn
+    Experiment.find Test_utils.Data.db_ctx experiment_id ||> get_exn
   ;;
 
   let initialize = initialize contact_id experiment_id session_id
@@ -448,7 +448,7 @@ module DeleteUnattended = struct
     let%lwt () =
       Contact.Updated contact
       |> Pool_event.contact
-      |> Pool_event.handle_event database_label current_user
+      |> Pool_event.handle_event db_ctx current_user
     in
     let%lwt () = sign_up_for_session experiment contact session_id in
     let%lwt res = get_contact contact_id in
@@ -510,7 +510,7 @@ module UpdateAssignments = struct
       ; num_participations = initial_participations
       }
     in
-    let%lwt () = Updated contact |> handle_event database_label in
+    let%lwt () = Updated contact |> handle_event db_ctx in
     Lwt.return (contact, session, experiment, follow_ups)
   ;;
 
@@ -587,7 +587,7 @@ module UpdateAssignments = struct
     let participated_in_other_sessions assignments =
       Assignment.(
         contact_participation_in_other_assignments
-          database_label
+          db_ctx
           ~exclude_assignments:assignments
           experiment_id
           contact_id
@@ -602,7 +602,7 @@ module UpdateAssignments = struct
       |> decode
       >>= handle experiment (`Session session) assignment participated_in_other_sessions
       |> get_exn
-      |> Pool_event.handle_events database_label current_user
+      |> Pool_event.handle_events db_ctx current_user
     in
     let%lwt () =
       let%lwt assignment = find_assignment_by_contact_and_session contact_id session_id in
@@ -756,7 +756,7 @@ module UpdateAssignments = struct
     let participated_in_other_sessions assignments =
       Assignment.(
         contact_participation_in_other_assignments
-          database_label
+          db_ctx
           ~exclude_assignments:assignments
           experiment_id
           contact_id
@@ -775,7 +775,7 @@ module UpdateAssignments = struct
             assignment
             participated_in_other_sessions
       |> get_exn
-      |> Pool_event.handle_events database_label current_user
+      |> Pool_event.handle_events db_ctx current_user
     in
     let%lwt assignment =
       find_assignment_by_contact_and_session contact_id followup_session_id

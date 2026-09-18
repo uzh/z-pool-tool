@@ -1,7 +1,7 @@
 open Utils.Lwt_result.Infix
 open Integration_utils
 
-let pool = Test_utils.Data.database_label
+let pool = Test_utils.Data.db_ctx
 let get_exn = Test_utils.get_or_failwith
 
 module Utils = struct

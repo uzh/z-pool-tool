@@ -6,7 +6,7 @@ module Model = Test_utils.Model
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 let testable_tag = Alcotest.testable Tags.pp Tags.equal
-let database_label = Test_utils.Data.database_label
+let db_ctx = Test_utils.Data.db_ctx
 let current_user = Model.create_admin ()
 
 let check_tag_result =
@@ -89,11 +89,11 @@ let create_persistent _ () =
   let tag = Data.Tag.create_with_description () in
   let%lwt () =
     Pool_event.handle_events
-      database_label
+      db_ctx
       current_user
       [ Tags.Created tag |> Pool_event.tags ]
   in
-  let%lwt found_tag = Tags.find database_label Data.Tag.id in
+  let%lwt found_tag = Tags.find db_ctx Data.Tag.id in
   let expected = Ok tag in
   let () = check_tag_result expected found_tag in
   Lwt.return_unit
@@ -105,7 +105,7 @@ let create_persistent_fail _ () =
     Lwt.catch
       (fun () ->
          Pool_event.handle_events
-           database_label
+           db_ctx
            current_user
            [ Tags.Created tag |> Pool_event.tags ])
       (fun exeption ->
@@ -123,11 +123,11 @@ let update_persistent _ () =
   let tag = Data.Tag.updated_tag () in
   let%lwt () =
     Pool_event.handle_events
-      database_label
+      db_ctx
       current_user
       [ Tags.Updated (tag, tag) |> Pool_event.tags ]
   in
-  let%lwt found_tag = Tags.find database_label Data.Tag.id in
+  let%lwt found_tag = Tags.find db_ctx Data.Tag.id in
   let expected = Ok tag in
   let () = check_tag_result expected found_tag in
   Lwt.return_unit
@@ -142,14 +142,14 @@ let assign_tag_to_contact _ () =
     |> Http_utils.remove_empty_values
     |> decode
     |> Lwt_result.lift
-    >>= Tags.find database_label
+    >>= Tags.find db_ctx
     >== validate
     >== handle contact
     ||> get_or_failwith
   in
-  let%lwt () = Pool_event.handle_events database_label current_user events in
+  let%lwt () = Pool_event.handle_events db_ctx current_user events in
   let%lwt found_tagged =
-    Tags.(find_all_of_entity Test_utils.Data.database_label Model.Contact)
+    Tags.(find_all_of_entity Test_utils.Data.db_ctx Model.Contact)
       Contact.(contact |> id |> Id.to_common)
   in
   let expected = [ tag ] in
@@ -164,9 +164,9 @@ let remove_tag_from_contact _ () =
   let%lwt contact = Test_utils.Repo.first_contact () in
   let%lwt tag = Test_utils.Repo.first_tag () in
   let events = tag |> handle contact |> get_or_failwith in
-  let%lwt () = Pool_event.handle_events database_label current_user events in
+  let%lwt () = Pool_event.handle_events db_ctx current_user events in
   let%lwt found_tagged =
-    Tags.(find_all_of_entity database_label Model.Contact)
+    Tags.(find_all_of_entity db_ctx Model.Contact)
       Contact.(contact |> id |> Id.to_common)
   in
   let expected = [] in
@@ -182,7 +182,7 @@ let try_assign_experiment_tag_to_contact _ () =
   let tag = Tags.(create Data.Tag.title Model.Experiment) |> get_or_failwith in
   let%lwt () =
     Pool_event.handle_events
-      database_label
+      db_ctx
       current_user
       [ Tags.Created tag |> Pool_event.tags ]
   in
@@ -191,7 +191,7 @@ let try_assign_experiment_tag_to_contact _ () =
     |> Http_utils.remove_empty_values
     |> decode
     |> Lwt_result.lift
-    >>= Tags.find database_label
+    >>= Tags.find db_ctx
     >== validate
     >== handle contact
   in

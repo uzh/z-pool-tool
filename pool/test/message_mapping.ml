@@ -7,7 +7,7 @@ open Pool_common.MessageTemplateLabel
 module JobHistory = Message_template.History
 
 let get_exn = Test_utils.get_or_failwith
-let database_label = Test_utils.Data.database_label
+let db_ctx = Test_utils.Data.db_ctx
 let tenant = Tenant_test.Data.full_tenant |> get_exn
 let experiment_id = Experiment.Id.create ()
 let contact_id = Contact.Id.create ()
@@ -23,10 +23,10 @@ let initialize _ () =
   Lwt.return_unit
 ;;
 
-let find_experiment () = Experiment.find database_label experiment_id ||> get_exn
-let find_contact () = Contact.find database_label contact_id ||> get_exn
-let find_session () = Session.find database_label session_id ||> get_exn
-let find_assignment () = Assignment.find database_label assignment_id ||> get_exn
+let find_experiment () = Experiment.find db_ctx experiment_id ||> get_exn
+let find_contact () = Contact.find db_ctx contact_id ||> get_exn
+let find_session () = Session.find db_ctx session_id ||> get_exn
+let find_assignment () = Assignment.find db_ctx assignment_id ||> get_exn
 let sort_entity_uuids = CCList.stable_sort Pool_common.Id.compare
 
 let check_text_message =
@@ -135,7 +135,7 @@ let email_verification _ () =
   let%lwt contact = find_contact () in
   let%lwt res =
     EmailVerification.create
-      database_label
+      db_ctx
       language
       (Tenant tenant)
       contact
@@ -177,7 +177,7 @@ let password_change _ () =
 let password_reset _ () =
   let%lwt contact = find_contact () in
   let%lwt res =
-    PasswordReset.create database_label language (Tenant tenant) (Contact.user contact)
+    PasswordReset.create db_ctx language (Tenant tenant) (Contact.user contact)
     ||> get_exn
   in
   let () = check_message_template ~label:PasswordReset res in
@@ -191,7 +191,7 @@ let phone_verification _ () =
   let token = "123123" |> Pool_common.VerificationCode.of_string in
   let%lwt res =
     PhoneVerification.create_text_message
-      database_label
+      db_ctx
       language
       tenant
       contact
@@ -215,12 +215,12 @@ let session_reminder _ () =
   let%lwt assignment = find_assignment () in
   let cell_phone = "+41791234567" |> Pool_user.CellPhone.of_string in
   let%lwt email_res =
-    SessionReminder.prepare_emails database_label tenant [ language ] experiment session
+    SessionReminder.prepare_emails db_ctx tenant [ language ] experiment session
     ||> fun msg -> msg assignment |> get_exn
   in
   let%lwt text_msg_res =
     SessionReminder.prepare_text_messages
-      database_label
+      db_ctx
       tenant
       [ language ]
       experiment
@@ -254,7 +254,7 @@ module Resend = struct
   let cell_phone = "+41791234567" |> Pool_user.CellPhone.of_string
 
   let to_queue_job ?(status = Status.Succeeded) =
-    Instance.create ~max_tries:10 ~status database_label
+    Instance.create ~max_tries:10 ~status (Database.label_of_ctx db_ctx)
   ;;
 
   let email_queue_job ?status () =

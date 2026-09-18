@@ -880,11 +880,11 @@ let cancel_assignment_with_follow_ups _ () =
     in
     Session.Created session
     |> Pool_event.session
-    |> Pool_event.handle_event Data.database_label current_user
+    |> Pool_event.handle_event Data.db_ctx current_user
   in
   let%lwt parent_session =
     let%lwt () = create_session (Model.in_an_hour ()) in
-    Session.find_all_for_experiment Data.database_label experiment.Experiment.id
+    Session.find_all_for_experiment Data.db_ctx experiment.Experiment.id
     ||> CCList.hd
   in
   let%lwt () =
@@ -892,9 +892,9 @@ let cancel_assignment_with_follow_ups _ () =
   in
   let%lwt sessions =
     let%lwt session =
-      Session.find Data.database_label parent_session.Session.id ||> get_or_failwith
+      Session.find Data.db_ctx parent_session.Session.id ||> get_or_failwith
     in
-    let%lwt follow_ups = Session.find_follow_ups Data.database_label session.Session.id in
+    let%lwt follow_ups = Session.find_follow_ups Data.db_ctx session.Session.id in
     Lwt.return (session :: follow_ups)
   in
   (* Create assignments *)
@@ -904,26 +904,26 @@ let cancel_assignment_with_follow_ups _ () =
     |> CCList.map (fun session ->
       Assignment.(Created (create contact, session.Session.Public.id))
       |> Pool_event.assignment)
-    |> Pool_event.handle_events Data.database_label current_user
+    |> Pool_event.handle_events Data.db_ctx current_user
   in
   (* Cancel assignments *)
   let%lwt () =
     let open Assignment in
     let%lwt assignment_id =
-      Public.find_all_by_experiment Data.database_label experiment.Experiment.id contact
+      Public.find_all_by_experiment Data.db_ctx experiment.Experiment.id contact
       ||> CCList.hd
       ||> fun ({ Public.id; _ } : Public.t) -> id |> Id.value |> Id.of_string
     in
-    let%lwt assignments = find_with_follow_ups Data.database_label assignment_id in
+    let%lwt assignments = find_with_follow_ups Data.db_ctx assignment_id in
     let notification_email = Model.create_email_job () in
     AssignmentCommand.Cancel.handle notification_email (assignments, parent_session)
     |> get_or_failwith
-    |> Pool_event.handle_events Data.database_label current_user
+    |> Pool_event.handle_events Data.db_ctx current_user
   in
   (* Expect all assigments to be canceled *)
   let%lwt res =
     Assignment.Public.find_all_by_experiment
-      Data.database_label
+      Data.db_ctx
       experiment.Experiment.id
       contact
     ||> CCList.filter (fun { Assignment.Public.canceled_at; _ } ->
@@ -936,7 +936,7 @@ let cancel_assignment_with_follow_ups _ () =
 
 let has_upcoming_sessions _ () =
   let open Integration_utils in
-  let pool = Test_utils.Data.database_label in
+  let pool = Test_utils.Data.db_ctx in
   let%lwt experiment = ExperimentRepo.create () in
   let%lwt contact = ContactRepo.create ~with_terms_accepted:true () in
   let session_id = Session.Id.of_string "c7128f4f-5689-4434-97af-bd19a151d648" in

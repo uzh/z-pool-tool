@@ -1,4 +1,4 @@
-let database_label = Test_utils.Data.database_label
+let db_ctx = Test_utils.Data.db_ctx
 let created_password = Pool_user.Password.Plain.create "CD&*BA8txf3mRuGF"
 let created_password_confirmation = Pool_user.Password.to_confirmed created_password
 
@@ -10,7 +10,7 @@ let reset_password_succeeds =
     let new_password = "Password1!" in
     let%lwt (_ : t) =
       create_user
-        database_label
+        db_ctx
         email
         (Lastname.of_string "Star")
         (Firstname.of_string "Jane")
@@ -19,7 +19,7 @@ let reset_password_succeeds =
       ||> Pool_common.Utils.get_or_failwith
     in
     let%lwt token =
-      Pool_user.Password.Reset.create_token database_label email
+      Pool_user.Password.Reset.create_token db_ctx email
       ||> CCOption.get_exn_or "User with email not found"
     in
     let* events =
@@ -32,10 +32,10 @@ let reset_password_succeeds =
       in
       command_data |> decode |> Lwt_result.lift >== handle
     in
-    let%lwt () = Pool_event.handle_events database_label Pool_context.Guest events in
+    let%lwt () = Pool_event.handle_events db_ctx Pool_context.Guest events in
     let validated_password = Pool_user.Password.Plain.create new_password in
     let%lwt (_ : t) =
-      login database_label email validated_password ||> CCResult.get_exn
+      login db_ctx email validated_password ||> CCResult.get_exn
     in
     Lwt.return_ok ())
 ;;
@@ -50,7 +50,7 @@ let reset_password_fail_password_policy =
     let new_password = "password1!" in
     let%lwt (_ : t) =
       create_user
-        database_label
+        db_ctx
         email
         (Lastname.of_string "Star")
         (Firstname.of_string "Jane")
@@ -59,7 +59,7 @@ let reset_password_fail_password_policy =
       ||> Pool_common.Utils.get_or_failwith
     in
     let%lwt token =
-      Pool_user.Password.Reset.create_token database_label email
+      Pool_user.Password.Reset.create_token db_ctx email
       ||> CCOption.get_exn_or "User with email not found"
     in
     let%lwt result =
@@ -89,7 +89,7 @@ let reset_password_events =
     let new_password = "Password1!" in
     let%lwt _ =
       create_user
-        database_label
+        db_ctx
         email
         (Lastname.of_string "Star")
         (Firstname.of_string "Jane")
@@ -98,7 +98,7 @@ let reset_password_events =
       ||> Pool_common.Utils.get_or_failwith
     in
     let%lwt token =
-      Pool_user.Password.Reset.create_token database_label email
+      Pool_user.Password.Reset.create_token db_ctx email
       ||> CCOption.get_exn_or "User with email not found"
     in
     let* events =
