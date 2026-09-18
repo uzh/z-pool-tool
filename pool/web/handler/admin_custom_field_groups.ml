@@ -15,19 +15,20 @@ let get_group_id req =
 let get_model = Admin_custom_fields.get_model
 
 let form ?id req model =
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
+    Pool_context.connection context @@ fun db_ctx ->
     let* custom_field_group =
       id
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
         let* group =
-          Custom_field.find_group database_label id |> Response.not_found_on_error
+          Custom_field.find_group db_ctx id |> Response.not_found_on_error
         in
-        let%lwt fields = Custom_field.find_by_group database_label id in
+        let%lwt fields = Custom_field.find_by_group db_ctx id in
         (group, fields) |> CCOption.pure |> Lwt_result.return)
     in
     Response.bad_request_render_error context
     @@
-    let%lwt sys_languages = Settings.find_languages database_label in
+    let%lwt sys_languages = Settings.find_languages db_ctx in
     Page.Admin.CustomFieldGroups.detail ?custom_field_group model context sys_languages
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
@@ -53,8 +54,9 @@ let write ?id req model =
     let go = Admin_custom_fields.find_assocs_in_urlencoded urlencoded in
     go Field.Name encode_lang
   in
-  let result { Pool_context.database_label; user; _ } =
-    let%lwt sys_languages = Settings.find_languages database_label in
+  let result ({ Pool_context.user; _ } as context) =
+    Pool_context.connection context @@ fun db_ctx ->
+    let%lwt sys_languages = Settings.find_languages db_ctx in
     let events =
       match id with
       | None ->
@@ -65,15 +67,15 @@ let write ?id req model =
             Create.handle ~tags sys_languages field_names model |> Lwt_result.lift)
       | Some id ->
         let* custom_field_group =
-          id |> Custom_field.find_group database_label |> Response.not_found_on_error
+          id |> Custom_field.find_group db_ctx |> Response.not_found_on_error
         in
         Response.bad_request_on_error ~urlencoded edit
         @@ Cqrs_command.Custom_field_group_command.(
              Update.handle ~tags sys_languages custom_field_group field_names model
              |> Lwt_result.lift)
     in
-    let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let handle db_ctx events =
+      let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
       let success =
         let open Success in
         if CCOption.is_some id
@@ -84,7 +86,7 @@ let write ?id req model =
         (Url.index_path model)
         [ HttpUtils.Message.set ~success:[ success ] ]
     in
-    events |>> handle
+    events |>> handle db_ctx
   in
   Response.handle ~src req result
 ;;
@@ -100,9 +102,10 @@ let delete req =
   let handler req model =
     let tags = Pool_context.Logger.Tags.req req in
     let id = get_group_id req in
-    let result { Pool_context.database_label; user; _ } =
+    let result ({ Pool_context.user; _ } as context) =
+      Pool_context.connection context @@ fun db_ctx ->
       let* group =
-        Custom_field.find_group database_label id |> Response.not_found_on_error
+        Custom_field.find_group db_ctx id |> Response.not_found_on_error
       in
       Response.bad_request_on_error edit
       @@
@@ -111,7 +114,7 @@ let delete req =
         Cqrs_command.Custom_field_group_command.Destroy.handle ~tags group
         |> Lwt_result.lift
       in
-      let%lwt () = Pool_event.handle_events database_label user events in
+      let%lwt () = Pool_event.handle_events db_ctx user events in
       Http_utils.redirect_to_with_actions
         (Url.Group.edit_path (model, id))
         [ HttpUtils.Message.set ~success:[ Success.Deleted Field.CustomFieldGroup ] ]
@@ -125,16 +128,17 @@ let delete req =
 let sort req =
   let handler req model =
     let open Utils.Lwt_result.Infix in
-    let result { Pool_context.database_label; user; _ } =
+    let result ({ Pool_context.user; _ } as context) =
       Response.bad_request_on_error Admin_custom_fields.index
       @@
       let tags = Pool_context.Logger.Tags.req req in
       let%lwt ids =
         Sihl.Web.Request.urlencoded_list Field.(CustomFieldGroup |> array_key) req
       in
+      Pool_context.connection context @@ fun db_ctx ->
       let%lwt groups =
         let open Utils.Lwt_result.Infix in
-        Custom_field.find_groups_by_model database_label model
+        Custom_field.find_groups_by_model db_ctx model
         ||> fun options ->
         CCList.filter_map
           (fun id ->
@@ -148,13 +152,13 @@ let sort req =
         let open Cqrs_command.Custom_field_group_command.Sort in
         groups |> handle ~tags |> Lwt_result.lift
       in
-      let handle events =
-        let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      let handle db_ctx events =
+        let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
         Http_utils.redirect_to_with_actions
           (Url.index_path model)
           [ HttpUtils.Message.set ~success:[ Success.Updated Field.CustomFieldGroup ] ]
       in
-      events |>> handle
+      events |>> handle db_ctx
     in
     Response.handle ~src req result
   in

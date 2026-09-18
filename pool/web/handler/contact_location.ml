@@ -8,12 +8,13 @@ let id req field encode = Sihl.Web.Router.param req @@ Field.show field |> encod
 
 let show req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     let id = id req Field.Location Pool_location.Id.of_string in
-    let* location = Pool_location.find database_label id >|- Response.not_found in
+    Pool_context.connection context @@ fun db_ctx ->
+    let* location = Pool_location.find db_ctx id >|- Response.not_found in
     Response.bad_request_render_error context
     @@
-    let%lwt files = Pool_location.files_by_location database_label id in
+    let%lwt files = Pool_location.files_by_location db_ctx id in
     Page.Contact.Location.show context location files
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
@@ -27,16 +28,17 @@ let asset req =
   let open Pool_location in
   let id = id req Field.File Pool_common.Id.of_string in
   let tags = Pool_context.Logger.Tags.req req in
-  let result { Pool_context.database_label; _ } =
+  let result context =
+    Pool_context.connection context @@ fun db_ctx ->
     let* file =
-      find_location_file database_label id
+      find_location_file db_ctx id
       >>= (fun { File.file; _ } ->
       file.Pool_common.File.id
       |> Pool_common.Id.value
-      |> HttpUtils.File.get_storage_file ~tags database_label)
+      |> HttpUtils.File.get_storage_file ~tags db_ctx)
       >|- Response.not_found
     in
-    let%lwt content = Storage.download_data_base64 database_label file in
+    let%lwt content = Storage.download_data_base64 db_ctx file in
     let mime = file.file.mime in
     let content = content |> Base64.decode_exn in
     Sihl.Web.Response.of_plain_text content

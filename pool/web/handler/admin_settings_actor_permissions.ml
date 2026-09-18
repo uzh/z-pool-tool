@@ -14,11 +14,12 @@ let show req =
     ~query:(module Guard.ActorPermission)
     ~create_layout:General.create_tenant_layout
     req
-  @@ fun ({ Pool_context.database_label; language; _ } as context) query ->
+  @@ fun ({ Pool_context.language; _ } as context) query ->
+  Pool_context.connection context @@ fun db_ctx ->
   let%lwt permissions, query =
-    Guard.Persistence.ActorPermission.find_by query database_label
+    Guard.Persistence.ActorPermission.find_by query db_ctx
   in
-  let%lwt hint = I18n.(find_by_key database_label Key.ActorPermissionHint) language in
+  let%lwt hint = I18n.(find_by_key db_ctx Key.ActorPermissionHint) language in
   let open Page.Admin.Settings.ActorPermission in
   (if HttpUtils.Htmx.is_hx_request req then list else index ~hint)
     context
@@ -28,7 +29,7 @@ let show req =
 ;;
 
 let delete req =
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     let tags = Pool_context.Logger.Tags.req req in
     Response.bad_request_on_error show
     @@
@@ -45,7 +46,9 @@ let delete req =
     let events = Cqrs_command.Guardian_command.DeleteActorPermission.handle ~tags in
     let handle = function
       | Ok events ->
-        let%lwt () = Pool_event.handle_events ~tags database_label user events in
+        let%lwt () =
+          Pool_context.connection context @@ fun db_ctx ->
+          Pool_event.handle_events ~tags db_ctx user events in
         Http_utils.redirect_to_with_actions
           active_navigation
           [ Message.set ~success:[ Success.Deleted Field.Permission ] ]
@@ -61,12 +64,13 @@ let delete req =
 
 let new_form req =
   let result
-        ({ Pool_context.csrf; database_label; language; flash_fetcher; _ } as context)
+        ({ Pool_context.csrf; language; flash_fetcher; _ } as context)
     =
     Response.bad_request_render_error context
     @@
     let%lwt hint =
-      I18n.(find_by_key database_label Key.ActorPermissionCreateHint) language
+      Pool_context.connection context @@ fun db_ctx ->
+      I18n.(find_by_key db_ctx Key.ActorPermissionCreateHint) language
     in
     Page.Admin.Settings.ActorPermission.create
       ~hint
@@ -104,7 +108,7 @@ let handle_toggle_target req =
 let create req =
   let open Utils.Lwt_result.Infix in
   let lift = Lwt_result.lift in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     Response.bad_request_on_error ~urlencoded new_form
     @@
@@ -116,11 +120,12 @@ let create req =
             (Guard.Uuid.Actor.of_string %> CCOption.to_result (Error.Decode Field.Id))
       ||> CCResult.flatten_l
     in
+    Pool_context.connection context @@ fun db_ctx ->
     let%lwt actors =
       let to_id = Guard.Uuid.Actor.to_string %> Admin.Id.of_string in
       actors
       |> Lwt_list.filter_s (fun id ->
-        id |> to_id |> Admin.find database_label ||> CCResult.is_ok)
+        id |> to_id |> Admin.find db_ctx ||> CCResult.is_ok)
     in
     let* permission = find Field.Permission |> lift >== Guard.Permission.of_string_res in
     let* model =
@@ -142,7 +147,7 @@ let create req =
         let to_id = to_string %> Experiment.Id.of_string in
         targets
         |> Lwt_list.filter_s (fun id ->
-          id |> to_id |> Experiment.find database_label ||> CCResult.is_ok)
+          id |> to_id |> Experiment.find db_ctx ||> CCResult.is_ok)
         ||> CCList.map (fun uuid -> model, Some uuid)
         |> Lwt_result.ok
       | _, model ->
@@ -166,7 +171,7 @@ let create req =
       %> CCResult.flatten_l
       %> CCResult.map flatten
     in
-    let handle events = Pool_event.handle_events ~tags database_label user events in
+    let handle events = Pool_event.handle_events ~tags db_ctx user events in
     let* () = expand_targets >== events |>> handle in
     Lwt_result.ok
       (Http_utils.redirect_to_with_actions

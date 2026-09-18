@@ -1,5 +1,5 @@
 val find_roles
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Guard.Actor.t option
   -> (Guard.ActorRole.t * Guard.Persistence.target_model option * string option) list
        Lwt.t
@@ -10,7 +10,7 @@ val find_roles_of_ctx
        Lwt.t
 
 val has_permission
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Pool_context.user
   -> Guard.ValidationSet.t
   -> bool Lwt.t
@@ -22,7 +22,7 @@ val can_access_contact_profile : Pool_context.t -> Experiment.Id.t -> bool
 val can_manage_duplicate_contacts : Pool_context.t -> bool Lwt.t
 
 val target_model_for_actor_role
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Guard.ActorRole.t
   -> (Guard.ActorRole.t * Guard.Persistence.target_model option) Lwt.t
 
@@ -38,7 +38,7 @@ val grant_role
   :  redirect_path:string
   -> user:Pool_context.user
   -> target_id:Guard.Uuid.Actor.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Rock.Request.t
   -> (Rock.Response.t, Pool_message.Error.t) Lwt_result.t
 
@@ -46,7 +46,7 @@ val revoke_role
   :  redirect_path:string
   -> user:Pool_context.user
   -> target_id:Guard.Uuid.Actor.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Rock.Request.t
   -> (Rock.Response.t, Pool_message.Error.t) Lwt_result.t
 

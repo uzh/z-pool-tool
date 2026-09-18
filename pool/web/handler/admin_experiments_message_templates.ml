@@ -26,9 +26,10 @@ type form_context =
 let form form_context req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
+    Pool_context.connection context @@ fun db_ctx ->
     let* experiment =
-      Experiment.find database_label experiment_id >|- Response.not_found
+      Experiment.find db_ctx experiment_id >|- Response.not_found
     in
     Response.bad_request_render_error context
     @@
@@ -41,11 +42,11 @@ let form form_context req =
       | New label ->
         let%lwt languages =
           Pool_context.Tenant.get_tenant_languages_exn req
-          |> missing_template_languages database_label experiment_id label
+          |> missing_template_languages db_ctx experiment_id label
         in
         let%lwt template =
           find_entity_defaults_by_label
-            database_label
+            db_ctx
             ~entity_uuids:[ experiment_id ]
             languages
             label
@@ -53,7 +54,7 @@ let form form_context req =
         in
         Lwt_result.return (`Create template, Some languages, label)
       | Edit template_id ->
-        let* template = Message_template.find database_label template_id in
+        let* template = Message_template.find db_ctx template_id in
         Lwt_result.return (`Update template, None, template.label)
     in
     Page.Admin.Experiments.message_template_form
@@ -111,13 +112,14 @@ let update_template req =
 ;;
 
 let delete req =
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result ({ Pool_context.user; _ } as context) =
     Response.bad_request_render_error context
     @@
     let experiment_id = experiment_id req in
     let template_id = template_id req in
     let redirect = experiment_path experiment_id in
-    Helpers.MessageTemplates.delete database_label user template_id redirect
+    Pool_context.connection context @@ fun db_ctx ->
+    Helpers.MessageTemplates.delete db_ctx user template_id redirect
   in
   Response.handle ~src req result
 ;;

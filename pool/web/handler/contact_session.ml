@@ -11,16 +11,17 @@ let index req =
     ~create_layout
     ~query:(module Session.Public)
     req
-  @@ fun ({ Pool_context.database_label; user; language; _ } as context) query ->
+  @@ fun ({ Pool_context.user; language; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* contact = Pool_context.get_contact_user user |> Lwt_result.lift in
-  let%lwt sessions = Session.query_by_contact ~query database_label contact in
+  Pool_context.connection context @@ fun db_ctx ->
+  let%lwt sessions = Session.query_by_contact ~query db_ctx contact in
   let open Page.Contact.Session in
   match HttpUtils.Htmx.is_hx_request req with
   | true -> list context sessions |> Lwt_result.return
   | false ->
     let%lwt title =
-      I18n.find_by_key database_label I18n.Key.DashboardUpcomingSessions language
+      I18n.find_by_key db_ctx I18n.Key.DashboardUpcomingSessions language
     in
     index context title sessions |> Lwt_result.return
 ;;
@@ -32,29 +33,30 @@ let show req =
     ( HttpUtils.find_id Experiment.Id.of_string Experiment req
     , HttpUtils.find_id Session.Id.of_string Session req )
   in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     let* contact =
       Pool_context.find_contact context
       |> Lwt_result.lift
       >|- CCFun.const Response.access_denied
     in
+    Pool_context.connection context @@ fun db_ctx ->
     let* experiment =
-      Experiment.find_public database_label experiment_id contact >|- Response.not_found
+      Experiment.find_public db_ctx experiment_id contact >|- Response.not_found
     in
     Response.bad_request_render_error context
     @@
     let* () =
       Assignment.Public.find_all_by_experiment
-        database_label
+        db_ctx
         (experiment |> Experiment.Public.id)
         contact
       >|> function
       | [] -> Lwt.return_ok ()
       | _ -> Lwt.return_error Pool_message.Error.AlreadySignedUpForExperiment
     in
-    let* session = Session.find_public database_label id in
+    let* session = Session.find_public db_ctx id in
     let%lwt follow_ups =
-      Session.find_follow_ups database_label id ||> CCList.map Session.to_public
+      Session.find_follow_ups db_ctx id ||> CCList.map Session.to_public
     in
     Page.Contact.Assignment.detail session follow_ups experiment context
     |> Lwt.return_ok

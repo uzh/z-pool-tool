@@ -12,9 +12,10 @@ let htmx_search_helper
       entity
       req
   =
-  let result { Pool_context.database_label; user; language; _ } =
+  let result ({ Pool_context.user; language; _ } as context) =
+    Pool_context.transaction context @@ fun db_ctx ->
     let* actor =
-      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+      Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let query = HttpUtils.find_in_urlencoded_opt query_field urlencoded in
@@ -38,9 +39,9 @@ let htmx_search_helper
       let open Experiment.Guard.Access in
       let%lwt exclude = entities_to_exclude Experiment.Id.of_string in
       let search_experiment value actor =
-        Experiment.search ~exclude database_label value
+        Experiment.search ~exclude db_ctx value
         >|> Lwt_list.filter_s (fun (id, _) ->
-          validate database_label (read id) actor ||> CCResult.is_ok)
+          validate db_ctx (read id) actor ||> CCResult.is_ok)
       in
       execute_search search_experiment query_results
     | `Location ->
@@ -48,9 +49,9 @@ let htmx_search_helper
       let open Pool_location.Guard.Access in
       let%lwt exclude = entities_to_exclude Pool_location.Id.of_string in
       let search_location value actor =
-        Pool_location.search database_label ~exclude value
+        Pool_location.search db_ctx ~exclude value
         >|> Lwt_list.filter_s (fun (id, _) ->
-          validate database_label (read id) actor ||> CCResult.is_ok)
+          validate db_ctx (read id) actor ||> CCResult.is_ok)
       in
       execute_search search_location query_results
     | (`ContactTag | `ExperimentTag) as model_tag ->
@@ -63,9 +64,9 @@ let htmx_search_helper
         | `ExperimentTag -> Tags.Model.Experiment
       in
       let search_tags value actor =
-        Tags.search_by_title database_label ~model ~exclude value
+        Tags.search_by_title db_ctx ~model ~exclude value
         >|> Lwt_list.filter_s (fun (id, _) ->
-          validate database_label (read id) actor ||> CCResult.is_ok)
+          validate db_ctx (read id) actor ||> CCResult.is_ok)
       in
       execute_search search_tags query_results
     | `Admin ->
@@ -73,10 +74,10 @@ let htmx_search_helper
       let open Admin.Guard.Access in
       let%lwt exclude = entities_to_exclude Admin.Id.of_string in
       let search_experiment value actor =
-        Admin.search_by_name_and_email ~exclude database_label value
+        Admin.search_by_name_and_email ~exclude db_ctx value
         >|> Lwt_list.filter_s (fun admin ->
           let id = Admin.id admin in
-          validate database_label (read id) actor ||> CCResult.is_ok)
+          validate db_ctx (read id) actor ||> CCResult.is_ok)
       in
       execute_search search_experiment query_results
   in

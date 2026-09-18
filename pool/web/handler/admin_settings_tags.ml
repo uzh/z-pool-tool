@@ -16,8 +16,8 @@ let index req =
     ~query:(module Tags)
     ~create_layout:General.create_tenant_layout
     req
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
-  let%lwt tags, query = Tags.find_by ~query database_label in
+  @@ fun context query ->
+  let%lwt tags, query = Pool_context.connection context @@ Tags.find_by ~query in
   let open Page.Admin.Settings.Tags in
   (if HttpUtils.Htmx.is_hx_request req then list else index) context tags query
   |> Lwt_result.return
@@ -34,9 +34,12 @@ let new_form req =
 ;;
 
 let edit req =
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     let id = HttpUtils.find_id Tags.Id.of_string Field.Tag req in
-    let* tag = Tags.find database_label id >|- Response.not_found in
+    let* tag =
+      Pool_context.connection context @@ CCFun.flip Tags.find id
+      >|- Response.not_found
+    in
     Page.Admin.Settings.Tags.edit context tag
     |> General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html
@@ -56,31 +59,32 @@ let write action req =
     | `Create -> new_form, Created field
     | `Update _ -> edit, Updated field
   in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     Response.bad_request_on_error ~urlencoded error_handler
     @@
     let tags = Pool_context.Logger.Tags.req req in
+    Pool_context.connection context @@ fun db_ctx ->
     let events =
       let open Cqrs_command.Tags_command in
-      let is_existing ?exclude_id ({ title; model; _ } as data : decoded) =
-        if%lwt Tags.already_exists ?exclude_id database_label title model
+      let is_existing db_ctx ?exclude_id ({ title; model; _ } as data : decoded) =
+        if%lwt Tags.already_exists ?exclude_id db_ctx title model
         then Lwt.return_error (Pool_message.Error.AlreadyExisting Field.Tag)
         else Lwt.return_ok data
       in
       match action with
       | `Create ->
-        Create.(urlencoded |> decode |> Lwt_result.lift >>= is_existing >== handle ~tags)
+        Create.(urlencoded |> decode |> Lwt_result.lift >>= is_existing db_ctx >== handle ~tags)
       | `Update id ->
-        let* ({ Tags.id; _ } as tag) = Tags.find database_label id in
+        let* ({ Tags.id; _ } as tag) = Tags.find db_ctx id in
         Update.(
           urlencoded
           |> decode
           |> Lwt_result.lift
-          >>= is_existing ~exclude_id:id
+          >>= is_existing db_ctx ~exclude_id:id
           >== handle ~tags tag)
     in
     let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
       Http_utils.redirect_to_with_actions
         base_path
         [ HttpUtils.Message.set ~success:[ success ] ]

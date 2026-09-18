@@ -62,7 +62,7 @@ let update ?contact req =
     ||> HttpUtils.format_htmx_request_boolean_values Field.[ Paused |> show ]
   in
   let result
-        ({ Pool_context.database_label; language; query_parameters; user; _ } as context)
+        ({ Pool_context.language; query_parameters; user; _ } as context)
     =
     let is_admin = Pool_context.user_is_admin user in
     let path_with_params = HttpUtils.url_with_field_params query_parameters in
@@ -79,11 +79,12 @@ let update ?contact req =
     let* Pool_context.Tenant.{ tenant_languages; _ } =
       Pool_context.Tenant.find req |> Lwt_result.lift
     in
+    Pool_context.connection context @@ fun db_ctx ->
     let* field, version, value, field_id =
       parse_urlencoded
         ~is_admin
         req
-        database_label
+        db_ctx
         language
         urlencoded
         Contact.(contact |> id)
@@ -92,7 +93,7 @@ let update ?contact req =
     let* custom_field =
       field_id
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-        Custom_field.find_by_contact ~is_admin database_label contact_id id
+        Custom_field.find_by_contact ~is_admin db_ctx contact_id id
         >|+ CCOption.pure)
     in
     let%lwt response =
@@ -172,7 +173,7 @@ let update ?contact req =
                field_id
                |> CCOption.to_result Error.InvalidHtmxRequest
                |> Lwt_result.lift
-               >>= find_by_contact ~is_admin database_label (Contact.id contact)
+               >>= find_by_contact ~is_admin db_ctx (Contact.id contact)
              in
              (match field with
               | Error error ->
@@ -198,7 +199,7 @@ let update ?contact req =
         (* This case cannot occur, cqrs handler always returns an Ok result *)
         | Error _ -> Lwt.return_unit
         | Ok events ->
-          events |> Lwt_list.iter_s (Pool_event.handle_event ~tags database_label user)
+          events |> Lwt_list.iter_s (Pool_event.handle_event ~tags db_ctx user)
       in
       () |> htmx_element
     in

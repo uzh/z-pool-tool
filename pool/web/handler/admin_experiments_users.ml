@@ -12,7 +12,7 @@ let experiment_id =
 let session_id = HttpUtils.find_id Session.Id.of_string Pool_message.Field.Session
 let admin_id = HttpUtils.find_id Admin.Id.of_string Pool_message.Field.Admin
 
-let has_permission_on_role database_label actor role permission =
+let has_permission_on_role db_ctx actor role permission =
   let open Utils.Lwt_result.Infix in
   let open Guard in
   let role, target_uuid = role in
@@ -22,7 +22,7 @@ let has_permission_on_role database_label actor role permission =
       permission
       (role |> Utils.find_assignable_target_role)
     |> ValidationSet.one
-    |> CCFun.flip (Guard.Persistence.validate database_label) actor
+    |> CCFun.flip (Guard.Persistence.validate db_ctx) actor
     ||> CCResult.is_ok
   in
   check permission
@@ -61,13 +61,13 @@ let target_has_role db admin target_role () =
   actor_roles |> CCList.mem ~eq:ActorRole.equal actor_role |> Lwt.return
 ;;
 
-let query_by_role database_label query global_role ?exclude role =
+let query_by_role db_ctx query global_role ?exclude role =
   let open Utils.Lwt_result.Infix in
-  Admin.query_by_role ~query database_label role ?exclude
+  Admin.query_by_role ~query db_ctx role ?exclude
   >|> fun (admins, query) ->
   let%lwt admins =
     Lwt_list.map_s
-      (fun a -> target_has_role database_label a global_role () ||> CCPair.make a)
+      (fun a -> target_has_role db_ctx a global_role () ||> CCPair.make a)
       admins
   in
   Lwt.return (admins, query)
@@ -81,35 +81,36 @@ let query_admin_current_and_exclude_role role guard_id =
 
 let index entity role req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; language; user; _ } as context) =
+  let result ({ Pool_context.language; user; _ } as context) =
     let id = experiment_id req in
-    let* experiment = Experiment.find database_label id >|- Response.not_found in
+    Pool_context.connection context @@ fun db_ctx ->
+    let* experiment = Experiment.find db_ctx id >|- Response.not_found in
     Response.bad_request_render_error context
     @@
     let form_path, guard_id = entity_path_and_guard id req role entity in
     let current_roles, global_role = query_admin_current_and_exclude_role role guard_id in
     let query = Admin.query_from_request req in
-    let query_by_role ?exclude role =
-      query_by_role database_label query global_role ?exclude role
+    let query_by_role db_ctx ?exclude role =
+      query_by_role db_ctx query global_role ?exclude role
     in
     let%lwt applicable_admins =
-      query_by_role None ~exclude:[ current_roles; global_role, None ]
+      query_by_role db_ctx None ~exclude:[ current_roles; global_role, None ]
     in
     let%lwt currently_assigned =
-      query_by_role (Some [ current_roles; global_role, None ])
+      query_by_role db_ctx (Some [ current_roles; global_role, None ])
     in
     let%lwt hint =
       (match role with
        | `Assistants -> I18n.Key.AssistantRoleHint
        | `Experimenter -> I18n.Key.ExperimenterRoleHint)
-      |> CCFun.flip (I18n.find_by_key database_label) language
+      |> CCFun.flip (I18n.find_by_key db_ctx) language
     in
     let%lwt can_assign, can_unassign =
-      match%lwt Pool_context.Utils.find_authorizable_opt database_label user with
+      match%lwt Pool_context.Utils.find_authorizable_opt db_ctx user with
       | None -> Lwt.return (false, false)
       | Some actor ->
         let open Guard in
-        let check = has_permission_on_role database_label actor current_roles in
+        let check = has_permission_on_role db_ctx actor current_roles in
         Lwt.both (check Permission.Create) (check Permission.Delete)
     in
     Page.Admin.Experiments.users
@@ -135,18 +136,19 @@ let index_experimenter = index `Experiment `Experimenter
 let index_session_assistants = index `Session `Assistants
 
 let query_admin entity role state req =
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result ({ Pool_context.user; _ } as context) =
     let id = experiment_id req in
     let form_path, guard_id = entity_path_and_guard id req role entity in
     let current_roles, global_role = query_admin_current_and_exclude_role role guard_id in
+    Pool_context.connection context @@ fun db_ctx ->
     let%lwt admins =
       let query = Admin.query_from_request req in
-      let query_by_role ?exclude role =
-        query_by_role database_label query global_role ?exclude role
+      let query_by_role db_ctx ?exclude role =
+        query_by_role db_ctx query global_role ?exclude role
       in
       match state with
-      | `Assigned -> query_by_role (Some [ current_roles; global_role, None ])
-      | `Available -> query_by_role ~exclude:[ current_roles; global_role, None ] None
+      | `Assigned -> query_by_role db_ctx (Some [ current_roles; global_role, None ])
+      | `Available -> query_by_role db_ctx ~exclude:[ current_roles; global_role, None ] None
     in
     let%lwt permission =
       let open Guard in
@@ -155,9 +157,9 @@ let query_admin entity role state req =
         | `Assigned -> Permission.Delete
         | `Available -> Permission.Create
       in
-      match%lwt Pool_context.Utils.find_authorizable_opt database_label user with
+      match%lwt Pool_context.Utils.find_authorizable_opt db_ctx user with
       | None -> Lwt.return false
-      | Some actor -> has_permission_on_role database_label actor current_roles permission
+      | Some actor -> has_permission_on_role db_ctx actor current_roles permission
     in
     let open Page.Admin.Experiments.User in
     (match state with
@@ -209,12 +211,13 @@ let toggle_role entity action req =
        | `Session -> index_session_assistants)
     | `AssignExperimenter | `UnassignExperimenter -> index_experimenter
   in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     let open Utils.Lwt_result.Infix in
+    Pool_context.connection context @@ fun db_ctx ->
     let* experiment =
-      Experiment.find database_label experiment_id >|- Response.not_found
+      Experiment.find db_ctx experiment_id >|- Response.not_found
     in
-    let* admin = Admin.find database_label admin_id >|- Response.not_found in
+    let* admin = Admin.find db_ctx admin_id >|- Response.not_found in
     Response.bad_request_on_error fallback_handler
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -238,7 +241,7 @@ let toggle_role entity action req =
           | `UnassignExperimenter -> UnassignExperimenter.(handle ~tags update))
       | `Session ->
         let open Cqrs_command.Session_command in
-        let* session = Session.find database_label (session_id req) in
+        let* session = Session.find db_ctx (session_id req) in
         let update = { admin; session } in
         Lwt_result.lift
         @@
@@ -248,7 +251,7 @@ let toggle_role entity action req =
           | `AssignExperimenter | `UnassignExperimenter ->
             failwith "Experimenter does not exist on session level")
     in
-    let%lwt () = Pool_event.handle_events database_label user events in
+    let%lwt () = Pool_event.handle_events db_ctx user events in
     Http_utils.redirect_to_with_actions redirect_path [ Message.set ~success:[ message ] ]
     |> Lwt_result.ok
   in

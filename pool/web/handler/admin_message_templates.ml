@@ -18,17 +18,14 @@ let template_label req =
   | _ -> Error Pool_message.(Error.Invalid Field.Label)
 ;;
 
-let database_label_of_req req =
-  let open CCResult in
-  Pool_context.(req |> find >|= fun { database_label; _ } -> database_label)
-;;
-
 let index req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     Response.bad_request_render_error context
     @@
-    let%lwt template_list = Message_template.all_default database_label () in
+    let%lwt template_list =
+      Pool_context.connection context @@
+      CCFun.flip Message_template.all_default () in
     Page.Admin.MessageTemplate.index context template_list
     |> create_layout ~active_navigation:"/admin/message-template" req context
     >|+ Sihl.Web.Response.of_html
@@ -39,8 +36,11 @@ let index req =
 let edit req =
   let open Utils.Lwt_result.Infix in
   let id = template_id req in
-  let result ({ Pool_context.database_label; _ } as context) =
-    let* template = Message_template.find database_label id >|- Response.not_found in
+  let result context =
+    let* template =
+      Pool_context.connection context @@
+      CCFun.flip Message_template.find id
+      >|- Response.not_found in
     Response.bad_request_render_error context
     @@
     let tenant = Pool_context.Tenant.get_tenant_exn req in
@@ -71,17 +71,18 @@ let write action req =
     | Create (_, _, redirect) -> redirect, Success.Created Field.MessageTemplate
     | Update (_, redirect) -> redirect, Success.Updated Field.MessageTemplate
   in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     Response.bad_request_on_error ~urlencoded redirect.error
     @@
     let tags = Pool_context.Logger.Tags.req req in
+    Pool_context.connection context @@ fun db_ctx ->
     let events =
       let open Cqrs_command.Message_template_command in
       match action with
       | Create (entity_id, label, _) ->
         let%lwt available_languages =
           Pool_context.Tenant.get_tenant_languages_exn req
-          |> Message_template.missing_template_languages database_label entity_id label
+          |> Message_template.missing_template_languages db_ctx entity_id label
         in
         Create.(
           urlencoded
@@ -89,16 +90,18 @@ let write action req =
           |> Lwt_result.lift
           >== handle ~tags label entity_id available_languages)
       | Update (id, _) ->
-        let* template = Message_template.find database_label id in
+        let* template =
+          Message_template.find db_ctx id
+        in
         Update.(urlencoded |> decode |> Lwt_result.lift >== handle template)
     in
-    let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let handle db_ctx events =
+      let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
       Http_utils.redirect_to_with_actions
         redirect.success
         [ HttpUtils.Message.set ~success:[ success ] ]
     in
-    events |>> handle
+    events |>> handle db_ctx
   in
   Response.handle ~src req result
 ;;
@@ -112,7 +115,7 @@ let update req =
   write (Update (id, redirect)) req
 ;;
 
-let default_templates_from_request req ?languages database_label params =
+let default_templates_from_request req ?languages db_ctx params =
   let open Utils.Lwt_result.Infix in
   let open Page.Admin.MessageTemplate in
   let* label = template_label req |> Lwt_result.lift in
@@ -124,16 +127,16 @@ let default_templates_from_request req ?languages database_label params =
   let experiment_entity experiment_id =
     let open Experiment in
     let experiment_id = Id.of_string experiment_id in
-    let* experiment = find database_label experiment_id in
+    let* experiment = find db_ctx experiment_id in
     let entity = Experiment experiment_id in
     Lwt_result.return ([ Id.to_common experiment.id ], entity)
   in
   let session_entity session_id =
     let open Session in
     let session_id = Id.of_string session_id in
-    let* session = find database_label session_id in
+    let* session = find db_ctx session_id in
     let* experiment =
-      Experiment.find_of_session database_label (Id.to_common session.id)
+      Experiment.find_of_session db_ctx (Id.to_common session.id)
     in
     let entity = Session session_id in
     Lwt_result.return
@@ -149,7 +152,7 @@ let default_templates_from_request req ?languages database_label params =
   in
   let%lwt templates =
     Message_template.find_entity_defaults_by_label
-      database_label
+      db_ctx
       ~entity_uuids
       languages
       label
@@ -159,11 +162,12 @@ let default_templates_from_request req ?languages database_label params =
 
 let preview_default req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.database_label; language; _ } =
+  let result ({ Pool_context.language; _ } as context) =
     let query_params = Sihl.Web.Request.query_list req in
     let* label = template_label req |> Lwt_result.lift in
     let* message_templates, _ =
-      default_templates_from_request req database_label query_params
+      Pool_context.connection context @@ fun db_ctx ->
+      default_templates_from_request req db_ctx query_params
     in
     Page.Admin.MessageTemplate.preview_template_modal language (label, message_templates)
     |> Response.Htmx.of_html
@@ -175,13 +179,14 @@ let preview_default req =
 let reset_to_default_htmx req =
   let open Utils.Lwt_result.Infix in
   let open Message_template in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    Pool_context.connection context @@ fun db_ctx ->
     let* current_template =
       let open Message_template in
       let open CCOption in
       HttpUtils.find_in_urlencoded_opt Field.MessageTemplate urlencoded
-      >|= (fun id -> id |> Id.of_string |> find database_label >|+ CCOption.return)
+      >|= (fun id -> id |> Id.of_string |> find db_ctx >|+ CCOption.return)
       |> CCOption.value ~default:(Lwt_result.return None)
     in
     let* template_language =
@@ -212,7 +217,7 @@ let reset_to_default_htmx req =
       default_templates_from_request
         req
         ~languages:[ template_language ]
-        database_label
+        db_ctx
         urlencoded
     in
     let* template =

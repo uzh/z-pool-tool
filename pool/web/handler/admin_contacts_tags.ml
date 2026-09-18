@@ -15,9 +15,10 @@ let handle_tag action req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
+    Pool_context.connection context @@ fun db_ctx ->
     let* contact =
-      Contact.find database_label contact_id |> Response.not_found_on_error
+      Contact.find db_ctx contact_id |> Response.not_found_on_error
     in
     Response.bad_request_on_error ~urlencoded Admin_contacts.edit
     @@ let* message, events =
@@ -32,15 +33,15 @@ let handle_tag action req =
          | `Remove ->
            let open Cqrs_command.Tags_command.RemoveTagFromContact in
            HttpUtils.find_id Tags.Id.of_string Field.Tag req
-           |> Tags.find database_label
+           |> Tags.find db_ctx
            >== handle contact
            >|+ CCPair.make Success.TagRemoved
        in
-       let handle = Lwt_list.iter_s (Pool_event.handle_event ~tags database_label user) in
+       let handle db_ctx = Lwt_list.iter_s (Pool_event.handle_event ~tags db_ctx user) in
        let return_to_overview () =
          HttpUtils.redirect_to_with_actions path [ Message.set ~success:[ message ] ]
        in
-       events |> handle >|> return_to_overview |> Lwt_result.ok
+       events |> handle db_ctx >|> return_to_overview |> Lwt_result.ok
   in
   Response.handle ~src req result
 ;;

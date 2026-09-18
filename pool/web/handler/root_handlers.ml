@@ -10,7 +10,8 @@ module Version = Root_version
 
 let forward_to_entrypoint req =
   let open Utils.Lwt_result.Infix in
-  Pool_user.Web.user_from_session Database.Pool.Root.label req
+  Database.(connection_ctx Pool.Root.label) @@
+  CCFun.flip Pool_user.Web.user_from_session req
   >|> function
   | Some _ -> Http_utils.redirect_to (Http_utils.Url.Root.pool_path ())
   | None -> Http_utils.redirect_to "/root/login"

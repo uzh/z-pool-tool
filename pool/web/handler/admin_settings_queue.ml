@@ -12,16 +12,17 @@ let show = Helpers.QueueJobs.htmx_handler `Current
 let show_archive = Helpers.QueueJobs.htmx_handler `History
 
 let detail req =
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     let open Pool_queue in
     let open JobName in
     let id = job_id req in
-    let* instance = find database_label id >|- Response.not_found in
+    Pool_context.connection context @@ fun db_ctx ->
+    let* instance = find db_ctx id >|- Response.not_found in
     Response.bad_request_render_error context
     @@
     let%lwt text_message_dlr =
       match Instance.name instance with
-      | SendTextMessage -> Text_message.find_report_by_queue_id database_label id
+      | SendTextMessage -> Text_message.find_report_by_queue_id db_ctx id
       | SendEmail | CheckMatchesFilter -> Lwt.return_none
     in
     Page.Admin.Settings.Queue.detail context ?text_message_dlr instance
@@ -36,28 +37,29 @@ let resend req =
   let open Pool_queue in
   let id = job_id req in
   let path = Format.asprintf "%s/%s" base_path (Id.value id) in
-  let result { Pool_context.database_label; user; _ } =
-    let* job = find database_label id >|- Response.not_found in
+  let result ({ Pool_context.user; _ } as context) =
+    Pool_context.connection context @@ fun db_ctx ->
+    let* job = find db_ctx id >|- Response.not_found in
     Response.bad_request_on_error show
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let find_related = find_related database_label job in
+    let find_related = find_related db_ctx job in
     let%lwt job_contact =
       find_related History.User
       >|> CCOption.map_or ~default:Lwt.return_none (fun contact_id ->
         let open Contact in
-        contact_id |> Id.of_common |> find database_label ||> CCResult.to_opt)
+        contact_id |> Id.of_common |> find db_ctx ||> CCResult.to_opt)
     in
     let%lwt job_experiment =
       find_related History.Experiment
       >|> CCOption.map_or ~default:Lwt.return_none (fun experiment_id ->
         let open Experiment in
-        experiment_id |> Id.of_common |> find database_label ||> CCResult.to_opt)
+        experiment_id |> Id.of_common |> find db_ctx ||> CCResult.to_opt)
     in
     let* () =
       Command.Resend.handle ?contact:job_contact ?experiment:job_experiment job
       |> Lwt_result.lift
-      |>> Pool_event.handle_events ~tags database_label user
+      |>> Pool_event.handle_events ~tags db_ctx user
     in
     Http_utils.redirect_to_with_actions
       path

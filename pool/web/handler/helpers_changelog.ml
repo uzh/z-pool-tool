@@ -11,7 +11,7 @@ let htmx_handler
   =
   fun ?to_human ~url entity_id req ->
   Response.Htmx.handle ~src ~error_as_notification:true req
-  @@ fun ({ Pool_context.database_label; _ } as context) ->
+  @@ fun context ->
   let open Utils.Lwt_result.Infix in
   let query =
     Query.from_request
@@ -22,7 +22,7 @@ let htmx_handler
       req
   in
   let%lwt changelogs =
-    Changelog.all_by_entity ~query database_label entity_id
+    Pool_context.connection context @@ CCFun.flip (Changelog.all_by_entity ~query) entity_id
     >|> fun (changelogs, query) ->
     let%lwt changelogs =
       match to_human with

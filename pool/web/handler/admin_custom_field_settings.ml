@@ -9,10 +9,13 @@ let settings_path = "/admin/custom-fields/settings"
 
 let index req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     Response.bad_request_render_error context
     @@
-    let%lwt contact_fields = Custom_field.(find_by_model database_label Model.Contact) in
+    let%lwt contact_fields =
+      Pool_context.connection context @@
+      Custom_field.(CCFun.flip find_by_model Model.Contact)
+    in
     Page.Admin.CustomFieldSettings.show context contact_fields
     |> create_layout ~active_navigation:settings_path req context
     >|+ Sihl.Web.Response.of_html
@@ -22,7 +25,7 @@ let index req =
 
 let update setting req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     Response.bad_request_on_error index
     @@
     let open Custom_field in
@@ -30,7 +33,8 @@ let update setting req =
     let%lwt selected =
       Sihl.Web.Request.urlencoded_list Pool_message.Field.(array_key CustomField) req
     in
-    let%lwt contact_fields = find_by_model database_label Model.Contact in
+    Pool_context.connection context @@ fun db_ctx ->
+    let%lwt contact_fields = find_by_model db_ctx Model.Contact in
     let events =
       Cqrs_command.Custom_field_settings_command.UpdateVisibilitySettings.handle
         ~tags
@@ -40,15 +44,15 @@ let update setting req =
         ()
       |> Lwt_result.lift
     in
-    let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let handle db_ctx events =
+      let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
       Http_utils.redirect_to_with_actions
         settings_path
         [ HttpUtils.Message.set
             ~success:[ Pool_message.(Success.Updated Field.CustomField) ]
         ]
     in
-    events |>> handle
+    events |>> handle db_ctx
   in
   Response.handle ~src req result
 ;;

@@ -15,7 +15,7 @@ let create_layout req = General.create_tenant_layout req
 
 let settings_page ?open_tab req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     Response.bad_request_render_error context
     @@
     let open_tab =
@@ -25,35 +25,36 @@ let settings_page ?open_tab req =
            >>= CCFun.(Settings.action_of_param %> of_result))
     in
     let languages = Pool_context.Tenant.get_tenant_languages_exn req in
-    let%lwt email_suffixes = Settings.find_email_suffixes database_label in
+    Pool_context.connection context @@ fun db_ctx ->
+    let%lwt email_suffixes = Settings.find_email_suffixes db_ctx in
     let%lwt system_email_templates =
-      Settings.find_system_email_templates database_label
+      Settings.find_system_email_templates db_ctx
     in
-    let%lwt contact_email = Settings.find_contact_email database_label in
+    let%lwt contact_email = Settings.find_contact_email db_ctx in
     let%lwt inactive_user_disable_after =
-      Settings.find_inactive_user_disable_after database_label
+      Settings.find_inactive_user_disable_after db_ctx
     in
-    let%lwt inactive_user_warning = Settings.find_inactive_user_warning database_label in
+    let%lwt inactive_user_warning = Settings.find_inactive_user_warning db_ctx in
     let%lwt inactive_user_service_disabled =
-      Settings.find_inactive_user_service_disabled database_label
+      Settings.find_inactive_user_service_disabled db_ctx
     in
     let%lwt trigger_profile_update_after =
-      Settings.find_trigger_profile_update_after database_label
+      Settings.find_trigger_profile_update_after db_ctx
     in
     let%lwt default_reminder_lead_time =
-      Settings.find_default_reminder_lead_time database_label
+      Settings.find_default_reminder_lead_time db_ctx
     in
     let%lwt default_text_msg_reminder_lead_time =
-      Settings.find_default_text_msg_reminder_lead_time database_label
+      Settings.find_default_text_msg_reminder_lead_time db_ctx
     in
     let%lwt user_import_first_reminder =
-      Settings.find_user_import_first_reminder_after database_label
+      Settings.find_user_import_first_reminder_after db_ctx
     in
     let%lwt user_import_second_reminder =
-      Settings.find_user_import_second_reminder_after database_label
+      Settings.find_user_import_second_reminder_after db_ctx
     in
-    let%lwt profile_only = Settings.find_profile_only database_label in
-    let%lwt page_scripts = Settings.PageScript.find database_label in
+    let%lwt profile_only = Settings.find_profile_only db_ctx in
+    let%lwt page_scripts = Settings.PageScript.find db_ctx in
     let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     Page.Admin.Settings.show
       ?open_tab
@@ -89,7 +90,7 @@ let update_settings req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     let* action =
       Sihl.Web.Router.param req "action"
       |> Settings.action_of_param
@@ -99,7 +100,7 @@ let update_settings req =
     Response.bad_request_on_error ~urlencoded (settings_page ~open_tab:action)
     @@
     let redirect_path = HttpUtils.Url.Admin.settings_path_with_action_param action in
-    let events () =
+    let events db_ctx =
       let command_handler urlencoded =
         let open CCResult.Infix in
         function
@@ -119,7 +120,7 @@ let update_settings req =
           |> lift
         | `UpdateEmailSuffixes -> UpdateEmailSuffixes.handle ~tags urlencoded |> lift
         | `CreateEmailSuffix ->
-          let%lwt suffixes = Settings.find_email_suffixes database_label in
+          let%lwt suffixes = Settings.find_email_suffixes db_ctx in
           CreateEmailSuffix.(urlencoded |> decode >>= handle ~tags suffixes) |> lift
         | `UpdateDefaultLeadTime ->
           UpdateDefaultEmailLeadTime.(urlencoded |> decode >>= handle ~tags) |> lift
@@ -158,13 +159,14 @@ let update_settings req =
       in
       command_handler urlencoded action
     in
-    let handle = Pool_event.handle_events ~tags database_label user in
+    Pool_context.connection context @@ fun db_ctx ->
+    let handle = Pool_event.handle_events ~tags db_ctx user in
     let return_to_settings () =
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Pool_message.Success.SettingsUpdated ] ]
     in
-    () |> events |>> handle |>> return_to_settings
+    db_ctx |> events |>> handle |>> return_to_settings
   in
   Response.handle ~src req result
 ;;
@@ -188,27 +190,28 @@ let email_suffix_subform req =
 ;;
 
 let changelog req =
-  let result { Pool_context.database_label; _ } =
+  let result context =
     let key =
       Http_utils.get_field_router_param req Pool_message.Field.Key |> Settings.Key.read
     in
     let url = Http_utils.Url.Admin.system_settings_changelog_path key in
-    let%lwt id = Settings.id_by_key database_label key in
+    let%lwt id = Pool_context.connection context (CCFun.flip Settings.id_by_key key) in
     Lwt_result.ok @@ Helpers.Changelog.htmx_handler ~url id req
   in
   Response.Htmx.handle ~error_as_notification:true req result
 ;;
 
 let open_changelog_modal req =
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     let key =
       Http_utils.get_field_router_param req Pool_message.Field.Key |> Settings.Key.read
     in
-    let%lwt id = Settings.id_by_key database_label key in
+    Pool_context.connection context @@ fun db_ctx ->
+    let%lwt id = Settings.id_by_key db_ctx key in
     let%lwt changelogs =
       let open Changelog in
       let query = Query.from_request ~default:default_query req in
-      all_by_entity ~query database_label id
+      all_by_entity ~query db_ctx id
     in
     Page.Admin.Settings.settings_changelog_modal context key changelogs
     |> Response.Htmx.of_html
@@ -224,23 +227,26 @@ module PageScripts = struct
   ;;
 
   let changelog req =
-    let result { Pool_context.database_label; _ } =
+    let result context =
       let location = location req in
       let url = Http_utils.Url.Admin.page_script_changelog_path location in
-      let%lwt id = Settings.PageScript.find_id database_label location in
+      let%lwt id =
+        Pool_context.connection context @@
+        CCFun.flip Settings.PageScript.find_id location in
       Lwt_result.ok @@ Helpers.Changelog.htmx_handler ~url id req
     in
     Response.Htmx.handle ~error_as_notification:true req result
   ;;
 
   let open_changelog_modal req =
-    let result ({ Pool_context.database_label; _ } as context) =
+    let result context =
       let location = location req in
-      let%lwt id = Settings.PageScript.find_id database_label location in
+      Pool_context.connection context @@ fun db_ctx ->
+      let%lwt id = Settings.PageScript.find_id db_ctx location in
       let%lwt changelogs =
         let open Changelog in
         let query = Query.from_request ~default:default_query req in
-        all_by_entity ~query database_label id
+        all_by_entity ~query db_ctx id
       in
       Page.Admin.Settings.page_scripts_changelog_modal context location changelogs
       |> Response.Htmx.of_html

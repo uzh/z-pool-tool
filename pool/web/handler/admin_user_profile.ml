@@ -16,7 +16,7 @@ module MakeUserProfile (Config : module type of Config) = struct
   let active_navigation = Format.asprintf "%s/user/login-information" prefix
 
   let show req =
-    let result ({ Pool_context.database_label; language; user; _ } as context) =
+    let result ({ Pool_context.language; user; _ } as context) =
       let* admin =
         Pool_context.get_admin_user user
         |> Lwt_result.lift
@@ -25,7 +25,8 @@ module MakeUserProfile (Config : module type of Config) = struct
       Response.bad_request_render_error context
       @@
       let%lwt password_policy =
-        I18n.find_by_key database_label I18n.Key.PasswordPolicyText language
+        Pool_context.connection context @@ fun db_ctx ->
+        I18n.find_by_key db_ctx I18n.Key.PasswordPolicyText language
       in
       Page.Admin.login_information ~action_prefix:prefix admin context password_policy
       |> create_layout ~active_navigation req context
@@ -37,7 +38,7 @@ module MakeUserProfile (Config : module type of Config) = struct
   let update_password req =
     let open HttpUtils in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    let result { Pool_context.database_label; language; user; _ } =
+    let result ({ Pool_context.language; user; _ } as context) =
       let tags = Pool_context.Logger.Tags.req req in
       Response.bad_request_on_error show
       @@ let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
@@ -52,7 +53,10 @@ module MakeUserProfile (Config : module type of Config) = struct
            >>= handle ~tags ~notification Admin.(admin |> id |> Id.to_user)
            |> Lwt_result.lift
          in
-         let%lwt () = Pool_event.handle_events ~tags database_label user events in
+         let%lwt () =
+           Pool_context.connection context @@ fun db_ctx ->
+           Pool_event.handle_events ~tags db_ctx user events
+         in
          redirect_to_with_actions
            active_navigation
            [ Message.set ~success:[ Pool_message.Success.PasswordChanged ] ]
@@ -64,7 +68,7 @@ module MakeUserProfile (Config : module type of Config) = struct
   let update_name req =
     let open HttpUtils in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    let result { Pool_context.database_label; user; _ } =
+    let result ({ Pool_context.user; _ } as context) =
       let tags = Pool_context.Logger.Tags.req req in
       Response.bad_request_on_error show
       @@ let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
@@ -72,7 +76,10 @@ module MakeUserProfile (Config : module type of Config) = struct
            let open CCResult.Infix in
            Command.Update.(decode urlencoded >>= handle ~tags admin) |> Lwt_result.lift
          in
-         let%lwt () = Pool_event.handle_events ~tags database_label user events in
+         let%lwt () =
+           Pool_context.connection context @@ fun db_ctx ->
+           Pool_event.handle_events ~tags db_ctx user events
+         in
          redirect_to_with_actions
            active_navigation
            [ Message.set ~success:[ Pool_message.Success.Updated Field.Name ] ]
