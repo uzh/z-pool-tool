@@ -14,14 +14,15 @@ let handle req action =
   let redirect_path =
     Format.asprintf "/experiments/%s" (Experiment.Id.value experiment_id)
   in
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result ({ Pool_context.user; _ } as context) =
     let* contact =
       Pool_context.find_contact context
       |> Lwt_result.lift
       >|- CCFun.const Response.access_denied
     in
+    Pool_context.connection context @@ fun db_ctx ->
     let* experiment =
-      Experiment.find_public database_label experiment_id contact >|- Response.not_found
+      Experiment.find_public db_ctx experiment_id contact >|- Response.not_found
     in
     Response.bad_request_on_error Contact_experiment.show
     @@
@@ -39,7 +40,7 @@ let handle req action =
         |> Lwt_result.lift
       | `Destroy ->
         let%lwt waiting_list =
-          Waiting_list.find_by_contact_and_experiment database_label contact experiment_id
+          Waiting_list.find_by_contact_and_experiment db_ctx contact experiment_id
         in
         let open CCResult.Infix in
         waiting_list
@@ -47,8 +48,8 @@ let handle req action =
         >>= Destroy.handle ~tags
         |> Lwt_result.lift
     in
-    let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let handle db_ctx events =
+      let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
       let success_message =
         let open Pool_message.Success in
         match action with
@@ -59,7 +60,7 @@ let handle req action =
         redirect_path
         [ Message.set ~success:[ success_message ] ]
     in
-    events |>> handle
+    events |>> handle db_ctx
   in
   Response.handle ~src req result
 ;;

@@ -8,13 +8,14 @@ let src = Logs.Src.create "handler.contact.signup"
 let create_layout = Contact_general.create_layout
 
 let sign_up req =
-  let result ({ Pool_context.database_label; language; _ } as context) =
+  let result ({ Pool_context.language; _ } as context) =
     let open Utils.Lwt_result.Infix in
     Response.bad_request_render_error context
     @@
-    let%lwt custom_fields = Custom_field.all_prompted_on_registration database_label in
+    Pool_context.connection context @@ fun db_ctx ->
+    let%lwt custom_fields = Custom_field.all_prompted_on_registration db_ctx in
     let%lwt terms =
-      I18n.find_by_key database_label I18n.Key.TermsAndConditions language
+      I18n.find_by_key db_ctx I18n.Key.TermsAndConditions language
     in
     Page.Contact.sign_up terms custom_fields context
     |> create_layout req ~active_navigation:"/signup" context
@@ -32,18 +33,19 @@ let sign_up_create req =
     ||> HttpUtils.remove_empty_values
     ||> HttpUtils.format_request_boolean_values [ terms_key ]
   in
-  let result { Pool_context.database_label; query_parameters; language; user; _ } =
+  let result ({ Pool_context.query_parameters; language; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let tags = Pool_context.Logger.Tags.req req in
     Response.bad_request_on_error ~urlencoded sign_up
     @@ let* () = Helpers.terms_and_conditions_accepted urlencoded in
+       Pool_context.connection context @@ fun db_ctx ->
        let%lwt allowed_email_suffixes =
          let open Utils.Lwt_result.Infix in
-         Settings.find_email_suffixes database_label
+         Settings.find_email_suffixes db_ctx
          ||> fun suffixes -> if CCList.is_empty suffixes then None else Some suffixes
        in
        let* answered_custom_fields =
-         Custom_field.all_prompted_on_registration database_label
+         Custom_field.all_prompted_on_registration db_ctx
          >|> Helpers_custom_field.answer_and_validate_multiple
                req
                urlencoded
@@ -69,7 +71,7 @@ let sign_up_create req =
          let* ({ UserCommand.firstname; lastname; _ } as decoded) =
            Command.SignUp.decode urlencoded |> Lwt_result.lift
          in
-         let%lwt token = Email.create_token database_label email_address in
+         let%lwt token = Email.create_token db_ctx email_address in
          let signup_code =
            let open Signup_code in
            let open CCOption.Infix in
@@ -82,7 +84,7 @@ let sign_up_create req =
          let%lwt verification_mail =
            Message_template.SignUpVerification.create
              ?signup_code
-             database_label
+             db_ctx
              (CCOption.value ~default:language query_language)
              tenant
              email_address
@@ -104,7 +106,7 @@ let sign_up_create req =
               query_language
          |> Lwt_result.lift
        in
-       let%lwt existing_user = Pool_user.find_by_email_opt database_label email_address in
+       let%lwt existing_user = Pool_user.find_by_email_opt db_ctx email_address in
        let* events =
          match existing_user with
          | None ->
@@ -113,14 +115,14 @@ let sign_up_create req =
            Lwt_result.return events
          | Some user when Pool_user.is_admin user -> Lwt_result.return []
          | Some _ ->
-           let%lwt contact = email_address |> Contact.find_by_email database_label in
+           let%lwt contact = email_address |> Contact.find_by_email db_ctx in
            let* events =
              contact
              |> function
              | Ok contact when contact |> Contact.user |> Pool_user.is_confirmed ->
                let%lwt send_notification =
                  Contact.should_send_registration_attempt_notification
-                   database_label
+                   db_ctx
                    contact
                in
                if not send_notification
@@ -144,7 +146,7 @@ let sign_up_create req =
            log_request ();
            Lwt_result.return events
        in
-       let%lwt () = Pool_event.handle_events ~tags database_label user events in
+       let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
        HttpUtils.(
          redirect_to_with_actions
            "/email-confirmation"
@@ -158,7 +160,7 @@ let email_verification req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
   let result
-        ({ Pool_context.database_label; language; query_parameters; user; _ } as context)
+        ({ Pool_context.language; query_parameters; user; _ } as context)
     =
     (* TODO: Is this endpoint only used for unverified users? Or also to update user email?
 
@@ -166,6 +168,7 @@ let email_verification req =
     *)
     Response.bad_request_on_error sign_up
     @@
+    Pool_context.connection context @@ fun db_ctx ->
     let%lwt redirect_path =
       let user =
         Pool_context.find_contact context
@@ -176,7 +179,7 @@ let email_verification req =
       | None -> "/login" |> Lwt.return
       | Some user ->
         let open Pool_context in
-        context_user_of_user database_label user ||> dashboard_path
+        context_user_of_user db_ctx user ||> dashboard_path
     in
     let* token =
       Sihl.Web.Request.query Field.(show Token) req
@@ -185,10 +188,10 @@ let email_verification req =
       |> Lwt_result.lift
     in
     let* email =
-      Pool_token.read database_label token ~k:Field.(Email |> show)
+      Pool_token.read db_ctx token ~k:Field.(Email |> show)
       ||> CCOption.to_result Error.TokenInvalidFormat
       >== Pool_user.EmailAddress.create
-      >>= Email.find_unverified_by_address database_label
+      >>= Email.find_unverified_by_address db_ctx
       |> Lwt_result.map_error (fun _ -> Error.Invalid Field.Token)
     in
     let* events, is_admin_email_verification =
@@ -200,10 +203,10 @@ let email_verification req =
         >>= CCFun.(Code.create %> CCResult.to_opt)
       in
       let%lwt admin =
-        Admin.find database_label (email |> Email.user_id |> Admin.Id.of_user)
+        Admin.find db_ctx (email |> Email.user_id |> Admin.Id.of_user)
       in
       let%lwt contact =
-        Contact.find database_label (Email.user_id email |> Contact.Id.of_user)
+        Contact.find db_ctx (Email.user_id email |> Contact.Id.of_user)
       in
       let verify_email ?signup_code user =
         VerifyEmail.(handle ~tags ?signup_code user email) |> Lwt_result.lift
@@ -218,7 +221,7 @@ let email_verification req =
         let tenant = Pool_context.Tenant.get_tenant_exn req in
         let%lwt pw_reset_result =
           Message_template.PasswordReset.create
-            database_label
+            db_ctx
             language
             (Message_template.Tenant tenant)
             (Admin.user admin)
@@ -243,7 +246,7 @@ let email_verification req =
             ([%show: Pool_context.t] context));
         Lwt.return_ok ([], false)
     in
-    let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
     let success_messages, redirect =
       if is_admin_email_verification
       then
@@ -262,11 +265,12 @@ let email_verification req =
 
 let terms req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; language; query_parameters; _ } as context) =
+  let result ({ Pool_context.language; query_parameters; _ } as context) =
     Response.bad_request_render_error context
     @@
     let%lwt terms =
-      I18n.find_by_key database_label I18n.Key.TermsAndConditions language
+      Pool_context.connection context @@ fun db_ctx ->
+      I18n.find_by_key db_ctx I18n.Key.TermsAndConditions language
     in
     let notification =
       Pool_context.Utils.find_query_param query_parameters Field.Redirected
@@ -280,7 +284,7 @@ let terms req =
 ;;
 
 let terms_accept req =
-  let result ({ Pool_context.database_label; query_parameters; user; _ } as context) =
+  let result ({ Pool_context.query_parameters; user; _ } as context) =
     Response.bad_request_on_error terms
     @@
     let open Utils.Lwt_result.Infix in
@@ -289,7 +293,10 @@ let terms_accept req =
     let* events =
       Command.AcceptTermsAndConditions.handle ~tags contact |> Lwt_result.lift
     in
-    let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let%lwt () =
+      Pool_context.connection context @@ fun db_ctx ->
+      Pool_event.handle_events ~tags db_ctx user events
+    in
     HttpUtils.(redirect_to (url_with_field_params query_parameters "/experiments"))
     |> Lwt_result.ok
   in

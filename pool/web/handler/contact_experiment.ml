@@ -16,16 +16,17 @@ let context_user context =
 ;;
 
 let dashboard req =
-  let result ({ Pool_context.database_label; language; _ } as context) =
+  let result ({ Pool_context.language; _ } as context) =
     let* contact = context_user context in
     Response.bad_request_render_error context
     @@
-    let%lwt i18n = I18n.find_all database_label () in
+    Pool_context.connection context @@ fun db_ctx ->
+    let%lwt i18n = I18n.find_all db_ctx () in
     let dashboard_intro = I18n.extract_by_key_exn i18n I18n.Key.DashboardIntro language in
     let%lwt custom_fields_anwsered =
-      Custom_field.all_answered database_label (Contact.id contact)
+      Custom_field.all_answered db_ctx (Contact.id contact)
     in
-    let%lwt profile_only = Settings.find_profile_only database_label in
+    let%lwt profile_only = Settings.find_profile_only db_ctx in
     match Settings.ProfileOnly.value profile_only with
     | true ->
       Page.Contact.Dashboard.create_profile_only
@@ -46,16 +47,16 @@ let dashboard req =
           let pagination = Pagination.create ~limit:2 ~page:0 () in
           create ~pagination ~filter ()
         in
-        query_by_contact ~query database_label contact
+        query_by_contact ~query db_ctx contact
       in
       let%lwt experiment_list =
-        Experiment.find_upcoming database_label (`Dashboard 2) contact `OnSite
+        Experiment.find_upcoming db_ctx (`Dashboard 2) contact `OnSite
       in
       let%lwt online_studies =
-        Experiment.find_upcoming database_label (`Dashboard 2) contact `Online
+        Experiment.find_upcoming db_ctx (`Dashboard 2) contact `Online
       in
       let%lwt waiting_list =
-        Experiment.find_pending_waitinglists_by_contact database_label contact
+        Experiment.find_pending_waitinglists_by_contact db_ctx contact
       in
       Page.Contact.Dashboard.(
         prepare_content
@@ -74,16 +75,17 @@ let dashboard req =
 
 let index_handler page_context req =
   Response.Htmx.index_handler ~create_layout ~query:(module Experiment.Public) req
-  @@ fun ({ Pool_context.database_label; user; language; _ } as context) query ->
+  @@ fun ({ Pool_context.user; language; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* contact = Pool_context.get_contact_user user |> Lwt_result.lift in
+  Pool_context.connection context @@ fun db_ctx ->
   let%lwt experiments =
     let context =
       match page_context with
       | `UpcomingOnsite -> `OnSite
       | `UpcomingOnline -> `Online
     in
-    Experiment.find_upcoming database_label (`Query query) contact context
+    Experiment.find_upcoming db_ctx (`Query query) contact context
   in
   let page_title () =
     let label =
@@ -91,7 +93,7 @@ let index_handler page_context req =
       | `UpcomingOnsite -> I18n.Key.DashboardExperimentRegistration
       | `UpcomingOnline -> I18n.Key.DashboardOnlineStudies
     in
-    I18n.find_by_key database_label label language
+    I18n.find_by_key db_ctx label language
   in
   let open Page.Contact.Experiment in
   let page_context = (page_context :> experiment_list) in
@@ -110,11 +112,12 @@ let available_online = index_handler `UpcomingOnline
 
 let history req =
   Response.Htmx.index_handler ~create_layout ~query:(module Experiment) req
-  @@ fun ({ Pool_context.database_label; user; language; _ } as context) query ->
+  @@ fun ({ Pool_context.user; language; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* contact = Pool_context.get_contact_user user |> Lwt_result.lift in
+  Pool_context.connection context @@ fun db_ctx ->
   let%lwt experiments =
-    Experiment.query_participation_history_by_contact ~query database_label contact
+    Experiment.query_participation_history_by_contact ~query db_ctx contact
   in
   let open Page.Contact.Experiment.History in
   let%lwt page =
@@ -122,7 +125,7 @@ let history req =
     | true -> list |> Lwt.return
     | false ->
       let%lwt title =
-        I18n.find_by_key database_label I18n.Key.DashboardExperimentHistory language
+        I18n.find_by_key db_ctx I18n.Key.DashboardExperimentHistory language
       in
       show title |> Lwt.return
   in
@@ -130,22 +133,23 @@ let history req =
 ;;
 
 let show_online_study
-      ({ Pool_context.database_label; _ } as context)
+      context
       experiment
       matches_filter
       contact
   =
   let open Utils.Lwt_result.Infix in
   let experiment_id = Experiment.Public.id experiment in
+  Pool_context.connection context @@ fun db_ctx ->
   let%lwt assignment =
-    Assignment.Public.find_all_by_experiment database_label experiment_id contact
+    Assignment.Public.find_all_by_experiment db_ctx experiment_id contact
     ||> CCList.head_opt
   in
   let%lwt current_time_window =
-    Time_window.find_current_by_experiment database_label experiment_id
+    Time_window.find_current_by_experiment db_ctx experiment_id
   in
   let%lwt upcoming_time_window =
-    Time_window.find_upcoming_by_experiment database_label experiment_id
+    Time_window.find_upcoming_by_experiment db_ctx experiment_id
   in
   let argument =
     let open CCOption in
@@ -173,23 +177,24 @@ let show_online_study
 
 let show_onsite_study
       id
-      ({ Pool_context.database_label; _ } as context)
+      context
       experiment
       matches_filter
       contact
   =
   let open Utils.Lwt_result.Infix in
+  Pool_context.connection context @@ fun db_ctx ->
   let* grouped_sessions =
-    Session.find_all_public_for_experiment database_label contact id
+    Session.find_all_public_for_experiment db_ctx contact id
     >|+ Session.Public.group_and_sort
     >|+ CCList.filter CCFun.(fst %> Session.Public.is_fully_booked %> not)
   in
-  let find_sessions = Session.find_by_contact_and_experiment database_label contact id in
+  let find_sessions = Session.find_by_contact_and_experiment db_ctx contact id in
   let%lwt upcoming_sessions = find_sessions `Upcoming in
   let%lwt past_sessions = find_sessions `Past in
   let%lwt canceled_sessions = find_sessions `Canceled in
   let%lwt user_is_on_waiting_list =
-    Waiting_list.user_is_enlisted database_label contact id
+    Waiting_list.user_is_enlisted db_ctx contact id
   in
   Page.Contact.Experiment.Detail.onsite_study
     experiment
@@ -206,16 +211,17 @@ let show_onsite_study
 
 let show req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     let id = experiment_id req in
     let* contact = context_user context in
+    Pool_context.connection context @@ fun db_ctx ->
     let* experiment =
-      Experiment.find_public database_label id contact >|- Response.not_found
+      Experiment.find_public db_ctx id contact >|- Response.not_found
     in
     Response.bad_request_render_error context
     @@
     let%lwt matches_filter =
-      Experiment.Public.contact_matches_filter database_label experiment contact
+      Experiment.Public.contact_matches_filter db_ctx experiment contact
     in
     (match Experiment.Public.is_sessionless experiment with
      | true -> show_online_study context
@@ -234,15 +240,16 @@ module OnlineSurvey = struct
 
   let redirect req =
     let open Utils.Lwt_result.Infix in
-    let result ({ Pool_context.database_label; user; _ } as context) =
+    let result ({ Pool_context.user; _ } as context) =
       let experiment_id = experiment_id req in
       let* contact =
         Pool_context.find_contact context
         |> Lwt_result.lift
         >|- CCFun.const Response.access_denied
       in
+      Pool_context.connection context @@ fun db_ctx ->
       let* experiment =
-        Experiment.find_public database_label experiment_id contact >|- Response.not_found
+        Experiment.find_public db_ctx experiment_id contact >|- Response.not_found
       in
       Response.bad_request_render_error context
       @@
@@ -251,7 +258,7 @@ module OnlineSurvey = struct
       let tenant = Pool_context.Tenant.get_tenant_exn req in
       let%lwt assignment =
         let open Utils.Lwt_result.Infix in
-        Assignment.Public.find_all_by_experiment database_label experiment_id contact
+        Assignment.Public.find_all_by_experiment db_ctx experiment_id contact
         ||> CCList.head_opt
       in
       let assignment_id =
@@ -274,7 +281,7 @@ module OnlineSurvey = struct
       in
       let* time_window =
         Time_window.find_current_by_experiment
-          database_label
+          db_ctx
           (Experiment.Public.id experiment)
         ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
       in
@@ -287,25 +294,26 @@ module OnlineSurvey = struct
           let open Command.Create in
           handle ~id:assignment_id ~tags { contact; time_window; experiment }
       in
-      let handle events =
-        let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      let handle db_ctx events =
+        let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
         Sihl.Web.Response.redirect_to survey_url |> Lwt_result.return
       in
-      events |> handle
+      events |> handle db_ctx
     in
     Response.handle ~src req result
   ;;
 
   let submit req =
     let open Utils.Lwt_result.Infix in
-    let result ({ Pool_context.database_label; user; _ } as context) =
+    let result ({ Pool_context.user; _ } as context) =
       let assignment_id = assignment_id req in
       let experiment_id = experiment_id req in
+      Pool_context.connection context @@ fun db_ctx ->
       let* assignment =
-        Assignment.find database_label assignment_id >|- Response.not_found
+        Assignment.find db_ctx assignment_id >|- Response.not_found
       in
       let* experiment =
-        Experiment.find_public database_label experiment_id assignment.Assignment.contact
+        Experiment.find_public db_ctx experiment_id assignment.Assignment.contact
         >|- Response.not_found
       in
       Response.bad_request_render_error context
@@ -317,14 +325,14 @@ module OnlineSurvey = struct
         let open CCResult.Infix in
         query |> decode >>= handle ~tags assignment |> Lwt_result.lift
       in
-      let handle = Pool_event.handle_events ~tags database_label user in
+      let handle db_ctx = Pool_event.handle_events ~tags db_ctx user in
       let return () =
         Page.Contact.Experiment.online_study_completition experiment context
         |> Lwt.return_ok
         >>= create_layout req context
         >|+ Sihl.Web.Response.of_html
       in
-      events |> handle >|> return
+      events |> handle db_ctx >|> return
     in
     Response.handle ~src req result
   ;;

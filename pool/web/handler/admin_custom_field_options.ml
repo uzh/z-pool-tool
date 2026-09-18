@@ -17,21 +17,22 @@ let get_field_id req =
   |> Custom_field.Id.of_string
 ;;
 
-let custom_field_option_opt ?id database_label =
+let custom_field_option_opt ?id db_ctx =
   let open Utils.Lwt_result.Infix in
   match id with
   | None -> Lwt_result.return None
   | Some id ->
-    Custom_field.find_option database_label id >|+ CCOption.pure >|- Response.not_found
+    Custom_field.find_option db_ctx id >|+ CCOption.pure >|- Response.not_found
 ;;
 
 let form ?id req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
+    Pool_context.connection context @@ fun db_ctx ->
     let* custom_field =
-      req |> get_field_id |> Custom_field.find database_label >|- Response.not_found
+      req |> get_field_id |> Custom_field.find db_ctx >|- Response.not_found
     in
-    let* custom_field_option = custom_field_option_opt ?id database_label in
+    let* custom_field_option = custom_field_option_opt ?id db_ctx in
     Response.bad_request_render_error context
     @@
     let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
@@ -65,11 +66,12 @@ let write ?id req =
     let go field = Admin_custom_fields.find_assocs_in_urlencoded urlencoded field in
     go Pool_message.Field.Name encode_lang
   in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
+    Pool_context.connection context @@ fun db_ctx ->
     let* custom_field =
-      req |> get_field_id |> Custom_field.find database_label >|- Response.not_found
+      req |> get_field_id |> Custom_field.find db_ctx >|- Response.not_found
     in
-    let* custom_field_option = custom_field_option_opt ?id database_label in
+    let* custom_field_option = custom_field_option_opt ?id db_ctx in
     let url_data = Custom_field.(model custom_field, id custom_field) in
     let redirect_path = Url.Field.edit_path url_data in
     Response.bad_request_on_error ~urlencoded (form ?id)
@@ -92,8 +94,8 @@ let write ?id req =
           field_names
         |> Lwt_result.lift
     in
-    let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let handle db_ctx events =
+      let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
       let success =
         let open Pool_message.Success in
         if CCOption.is_some id
@@ -104,7 +106,7 @@ let write ?id req =
         redirect_path
         [ Message.set ~success:[ success ] ]
     in
-    events |>> handle
+    events |>> handle db_ctx
   in
   Response.handle ~src req result
 ;;
@@ -118,14 +120,15 @@ let update req =
 
 let toggle_action action req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
+    Pool_context.connection context @@ fun db_ctx ->
     let* custom_field =
-      req |> get_field_id |> Custom_field.find database_label >|- Response.not_found
+      req |> get_field_id |> Custom_field.find db_ctx >|- Response.not_found
     in
     let* option =
       req
       |> get_option_id
-      |> Custom_field.find_option database_label
+      |> Custom_field.find_option db_ctx
       >|- Response.not_found
     in
     let redirect_path =
@@ -148,13 +151,13 @@ let toggle_action action req =
       | `Delete -> Deleted Field.CustomFieldOption
       | `Publish -> Published Field.CustomFieldOption
     in
-    let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let handle db_ctx events =
+      let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ success ] ]
     in
-    events |>> handle
+    events |>> handle db_ctx
   in
   Response.handle ~src req result
 ;;

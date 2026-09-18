@@ -31,7 +31,7 @@ let create req =
   let result { Pool_context.user; _ } =
     Response.bad_request_on_error ~urlencoded tenants
     @@
-    let events () =
+    let events db_ctx =
       let open Cqrs_command.Pool_tenant_command in
       let* database =
         let* { database_url; database_label } =
@@ -41,7 +41,7 @@ let create req =
       in
       let* files =
         HttpUtils.File.upload_files
-          Root.label
+          db_ctx
           (CCList.map Field.show Pool_tenant.file_fields)
           req
       in
@@ -52,15 +52,16 @@ let create req =
         |> Lwt_result.lift
       in
       let events = Create.handle ~tags database decoded |> Lwt_result.lift in
-      events >|> HttpUtils.File.cleanup_upload Root.label files
+      events >|> HttpUtils.File.cleanup_upload db_ctx files
     in
-    let handle = Pool_event.handle_events Database.Pool.Root.label user in
+    Database.transaction_ctx Root.label @@ fun db_ctx ->
+    let handle = Pool_event.handle_events db_ctx user in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         (pool_path ())
         [ Message.set ~success:[ Success.Created Field.Tenant ] ]
     in
-    () |> events |>> handle |>> return_to_overview
+    db_ctx |> events |>> handle |>> return_to_overview
   in
   Response.handle ~src req result
 ;;
@@ -74,7 +75,8 @@ let manage_operators req =
     in
     let* tenant = Pool_tenant.find id in
     let%lwt operators =
-      Admin.find_all_with_role tenant.Pool_tenant.database_label (`Operator, None)
+      Database.connection_ctx tenant.Pool_tenant.database_label @@
+      CCFun.flip Admin.find_all_with_role (`Operator, None)
     in
     Page.Root.Tenant.manage_operators tenant operators context
     |> General.create_root_layout context
@@ -93,7 +95,6 @@ let create_operator req =
   let result ({ Pool_context.language; user; _ } as context) =
     let tags = Pool_context.Logger.Tags.req req in
     let* tenant = Pool_tenant.find tenant_id in
-    let tenant_db = tenant.Pool_tenant.database_label in
     let* email =
       HttpUtils.find_in_urlencoded
         ~error:Error.EmailAddressMissingAdmin
@@ -102,6 +103,7 @@ let create_operator req =
       |> Lwt_result.lift
       >== Pool_user.EmailAddress.create
     in
+    Database.transaction_ctx tenant.Pool_tenant.database_label @@ fun tenant_db ->
     let%lwt existing_user = Pool_user.find_by_email_opt tenant_db email in
     match existing_user with
     | Some existing when Pool_user.is_admin existing ->
@@ -144,7 +146,7 @@ let create_operator req =
       let%lwt () =
         Pool_event.handle_event
           ~tags
-          Database.Pool.Root.label
+          Database.(label_ctx Pool.Root.label)
           user
           (Email.sent reset_email |> Pool_event.email)
       in
@@ -180,7 +182,7 @@ let promote_operator req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* tenant = Pool_tenant.find tenant_id in
-    let tenant_db = tenant.Pool_tenant.database_label in
+    Database.transaction_ctx tenant.Pool_tenant.database_label @@ fun tenant_db ->
     let* admin =
       HttpUtils.find_in_urlencoded Field.Admin urlencoded
       |> Lwt_result.lift

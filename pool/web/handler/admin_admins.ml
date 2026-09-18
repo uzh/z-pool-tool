@@ -9,11 +9,11 @@ let create_layout req = General.create_tenant_layout req
 let admin_id req = HttpUtils.find_id Admin.Id.of_string Field.Admin req
 let admin_path = HttpUtils.Url.Admin.admin_path
 
-let find_authorizable_target database_label req =
+let find_authorizable_target db_ctx req =
   let open Utils.Lwt_result.Infix in
   HttpUtils.find_id Admin.Id.of_string Field.Admin req
   |> Guard.Uuid.target_of Admin.Id.value
-  |> Guard.Persistence.Target.find ~ctx:(Database.to_ctx database_label)
+  |> Guard.Persistence.Target.find ~ctx:(Database.to_ctx db_ctx)
   >|- CCFun.const (Pool_message.Error.NotFound Field.Target)
 ;;
 
@@ -23,11 +23,12 @@ let index req =
     ~query:(module Admin)
     ~create_layout:General.create_tenant_layout
     req
-  @@ fun (Pool_context.{ database_label; user; _ } as context) query ->
+  @@ fun (Pool_context.{ user; _ } as context) query ->
+  Pool_context.connection context @@ fun db_ctx ->
   let* actor =
-    Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+    Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user
   in
-  let%lwt admins = Admin.list_by_user ~query database_label actor in
+  let%lwt admins = Admin.list_by_user ~query db_ctx actor in
   let open Page.Admin.Admins in
   Lwt_result.return
   @@
@@ -35,22 +36,23 @@ let index req =
 ;;
 
 let admin_detail req is_edit =
-  let result ({ Pool_context.csrf; database_label; language; user; _ } as context) =
+  let result ({ Pool_context.csrf; language; user; _ } as context) =
     let id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
-    let* admin = id |> Admin.find database_label |> Response.not_found_on_error in
+    Pool_context.connection context @@ fun db_ctx ->
+    let* admin = id |> Admin.find db_ctx |> Response.not_found_on_error in
     Response.bad_request_render_error context
     @@
     let%lwt actor =
-      Pool_context.Utils.find_authorizable_opt ~admin_only:true database_label user
+      Pool_context.Utils.find_authorizable_opt ~admin_only:true db_ctx user
     in
     let target_id = Guard.Uuid.target_of Admin.Id.value (Admin.id admin) in
     let%lwt roles =
       Pool_context.Admin admin
-      |> Pool_context.Utils.find_authorizable_opt database_label
-      >|> Helpers.Guard.find_roles database_label
+      |> Pool_context.Utils.find_authorizable_opt db_ctx
+      >|> Helpers.Guard.find_roles db_ctx
     in
     let* () =
-      let* _ = General.admin_from_session database_label req in
+      let* _ = General.admin_from_session db_ctx req in
       Lwt.return_ok ()
     in
     (match is_edit with
@@ -58,7 +60,7 @@ let admin_detail req is_edit =
        let%lwt available_roles =
          CCOption.map_or
            ~default:(Lwt.return [])
-           (Guard.Persistence.Actor.can_assign_roles database_label)
+           (Guard.Persistence.Actor.can_assign_roles db_ctx)
            actor
          ||> CCList.map fst
        in
@@ -75,7 +77,7 @@ let admin_detail req is_edit =
      | false ->
        let%lwt failed_login_attempt =
          Pool_user.FailedLoginAttempt.Repo.find_current
-           database_label
+           db_ctx
            (Admin.email_address admin)
        in
        Page.Admin.Admins.detail context admin target_id roles failed_login_attempt
@@ -100,19 +102,20 @@ let new_form req =
 ;;
 
 let create_admin req =
-  let result { Pool_context.database_label; language; user; _ } =
+  let result ({ Pool_context.language; user; _ } as context) =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     Response.bad_request_on_error ~urlencoded new_form
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let id = Admin.Id.create () in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
-    let validate_user () =
+    let validate_user db_ctx =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
       ||> CCOption.to_result Error.EmailAddressMissingAdmin
       >== Pool_user.EmailAddress.create
-      >>= HttpUtils.validate_email_existance database_label
+      >>= HttpUtils.validate_email_existance db_ctx
     in
+    Pool_context.connection context @@ fun db_ctx ->
     let events =
       let open Cqrs_command.Admin_command.CreateAdmin in
       let* cmd = decode urlencoded |> Lwt_result.lift in
@@ -126,10 +129,10 @@ let create_admin req =
         ; confirmed = Pool_user.Confirmed.create false
         }
       in
-      let%lwt token = Email.create_token database_label user.Pool_user.email in
+      let%lwt token = Email.create_token db_ctx user.Pool_user.email in
       let%lwt dispatch =
         Message_template.AdminAccountCreated.create
-          database_label
+          db_ctx
           language
           tenant
           user
@@ -138,8 +141,8 @@ let create_admin req =
       let* admin_events = handle ~id ~tags cmd |> Lwt_result.lift in
       Lwt_result.return (admin_events @ email_verification_events id token dispatch cmd)
     in
-    let handle events =
-      Pool_event.handle_events ~tags database_label user events |> Lwt_result.ok
+    let handle db_ctx events =
+      Pool_event.handle_events ~tags db_ctx user events |> Lwt_result.ok
     in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
@@ -147,7 +150,7 @@ let create_admin req =
         [ Message.set ~success:[ Success.Created Field.Admin ] ]
     in
     let open Utils.Lwt_result.ParallelInfix in
-    () |> validate_user >> events >>= handle |>> return_to_overview
+    validate_user db_ctx >> events >>= handle db_ctx |>> return_to_overview
   in
   Response.handle ~src req result
 ;;
@@ -164,8 +167,11 @@ let handle_toggle_role req =
 ;;
 
 let search_role_entities req =
-  let result { Pool_context.database_label; _ } =
-    let* target = find_authorizable_target database_label req in
+  let result context =
+    let* target =
+      Pool_context.connection context @@ fun db_ctx ->
+      find_authorizable_target db_ctx req
+    in
     Helpers.Guard.search_role_entities target req |> Lwt_result.ok
   in
   Response.Htmx.handle ~src req result
@@ -176,12 +182,13 @@ let grant_role req =
   let admin_id = admin_id req in
   let to_guardian_id admin = admin |> Admin.id |> Guard.Uuid.actor_of Admin.Id.value in
   let redirect_path = admin_path ~id:admin_id ~suffix:"edit" () in
-  let result { Pool_context.database_label; user; _ } =
-    let* admin = Admin.find database_label admin_id >|- Response.not_found in
+  let result ({ Pool_context.user; _ } as context) =
+    Pool_context.connection context @@ fun db_ctx ->
+    let* admin = Admin.find db_ctx admin_id >|- Response.not_found in
     Response.bad_request_on_error edit
     @@
     let target_id = to_guardian_id admin in
-    Helpers.Guard.grant_role ~redirect_path ~user ~target_id database_label req
+    Helpers.Guard.grant_role ~redirect_path ~user ~target_id db_ctx req
   in
   Response.handle ~src req result
 ;;
@@ -191,16 +198,17 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
   let redirect_path =
     CCString.replace ~which:`Right ~sub:"/revoke-role" ~by:"/edit" target
   in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
+    Pool_context.connection context @@ fun db_ctx ->
     let* admin =
       HttpUtils.find_id Admin.Id.of_string Field.Admin req
-      |> Admin.find database_label
+      |> Admin.find db_ctx
       >|- Response.not_found
     in
     Response.bad_request_on_error edit
     @@
     let target_id = Admin.id admin |> Guard.Uuid.actor_of Admin.Id.value in
-    Helpers.Guard.revoke_role ~redirect_path ~user ~target_id database_label req
+    Helpers.Guard.revoke_role ~redirect_path ~user ~target_id db_ctx req
   in
   Response.handle ~src req result
 ;;
@@ -208,8 +216,9 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
 let unblock req =
   let tags = Pool_context.Logger.Tags.req req in
   let admin_id = admin_id req in
-  let result { Pool_context.database_label; user; _ } =
-    let* admin = Admin.find database_label admin_id |> Response.not_found_on_error in
+  let result ({ Pool_context.user; _ } as context) =
+    Pool_context.connection context @@ fun db_ctx ->
+    let* admin = Admin.find db_ctx admin_id |> Response.not_found_on_error in
     Response.bad_request_on_error detail
     @@
     let events =
@@ -217,13 +226,13 @@ let unblock req =
       let open Cqrs_command.User_command.Unblock in
       admin |> user |> handle ~tags |> Lwt_result.lift
     in
-    let handle events =
-      let%lwt () = (Pool_event.handle_events ~tags database_label user) events in
+    let handle db_ctx events =
+      let%lwt () = (Pool_event.handle_events ~tags db_ctx user) events in
       HttpUtils.redirect_to_with_actions
         (admin_path ~id:admin_id ())
         [ Message.set ~success:[ Pool_message.Success.UserUnblocked ] ]
     in
-    events |>> handle
+    events |>> handle db_ctx
   in
   Response.handle ~src req result
 ;;

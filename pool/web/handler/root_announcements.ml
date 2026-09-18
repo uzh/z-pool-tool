@@ -46,8 +46,8 @@ let index req =
     ~query:(module Announcement)
     ~create_layout
     req
-  @@ fun (Pool_context.{ database_label; _ } as context) query ->
-  let%lwt announcements = Announcement.all ~query database_label in
+  @@ fun context query ->
+  let%lwt announcements = Pool_context.connection context @@ Announcement.all ~query in
   let open Page.Root.Announcement in
   (if Http_utils.Htmx.is_hx_request req then list else index) context announcements
   |> Lwt_result.return
@@ -82,7 +82,7 @@ let create req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     Response.bad_request_on_error ~urlencoded new_form
     @@
     let events =
@@ -96,7 +96,9 @@ let create req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      let%lwt () =
+        Pool_context.connection context @@ fun db_ctx ->
+        Pool_event.handle_events ~tags db_ctx user events in
       Http_utils.redirect_to_with_actions
         (announcement_path ())
         [ Http_utils.Message.set ~success:[ Success.Created Field.Announcement ] ]
@@ -112,7 +114,7 @@ let update req =
     Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
   let id = announcement_id req in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     let* announcement = Announcement.find id >|- Response.not_found in
     Response.bad_request_on_error ~urlencoded edit
     @@
@@ -127,7 +129,10 @@ let update req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      let%lwt () =
+        Pool_context.connection context @@ fun db_ctx ->
+        Pool_event.handle_events ~tags db_ctx user events
+      in
       Http_utils.redirect_to_with_actions
         (announcement_path ())
         [ Http_utils.Message.set ~success:[ Success.Updated Field.Announcement ] ]

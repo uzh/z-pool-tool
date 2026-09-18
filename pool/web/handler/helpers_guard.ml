@@ -11,11 +11,12 @@ let find_roles database_label = function
     Guard.Persistence.ActorRole.find_by_actor database_label uuid
 ;;
 
-let find_roles_of_ctx { Pool_context.database_label; user; _ } =
+let find_roles_of_ctx ({ Pool_context.user; _ } as context) =
+  Pool_context.connection context @@ fun db_ctx ->
   user
-  |> Pool_context.Utils.find_authorizable_opt database_label
+  |> Pool_context.Utils.find_authorizable_opt db_ctx
   >|> CCOption.map_or ~default:(Lwt.return []) (fun { Guard.Actor.uuid; _ } ->
-    Guard.Persistence.ActorRole.find_by_actor database_label uuid)
+    Guard.Persistence.ActorRole.find_by_actor db_ctx uuid)
 ;;
 
 let has_permission database_label user set =
@@ -46,8 +47,9 @@ let can_access_contact_profile context id =
     context
 ;;
 
-let can_manage_duplicate_contacts { Pool_context.user; database_label; _ } =
-  has_permission database_label user Duplicate_contacts.Access.index
+let can_manage_duplicate_contacts ({ Pool_context.user; _ } as context) =
+  Pool_context.connection context @@ fun db_ctx ->
+  has_permission db_ctx user Duplicate_contacts.Access.index
 ;;
 
 let target_model_for_actor_role pool ({ Guard.ActorRole.target_uuid; _ } as role) =
@@ -60,20 +62,22 @@ let target_model_for_actor_role pool ({ Guard.ActorRole.target_uuid; _ } as role
   Lwt.return (role, target_model)
 ;;
 
-let can_send_direct_message id { Pool_context.database_label; user; _ } =
+let can_send_direct_message id ({ Pool_context.user; _ } as context) =
+  Pool_context.connection context @@ fun db_ctx ->
   id
   |> Experiment.Id.to_common
   |> Contact.Guard.Access.send_direct_message
-  |> has_permission database_label user
+  |> has_permission db_ctx user
 ;;
 
 let can_rerun_session_filter
-      { Pool_context.database_label; user; _ }
+      ({ Pool_context.user; _ } as context)
       experiment_id
       session_id
   =
+  Pool_context.connection context @@ fun db_ctx ->
   has_permission
-    database_label
+    db_ctx
     user
     (Cqrs_command.Assignment_command.UpdateMatchesFilter.effects experiment_id session_id)
 ;;
@@ -188,11 +192,12 @@ let handle_toggle_role target_id req =
 ;;
 
 let search_role_entities target req =
-  let result { Pool_context.database_label; language; user; _ } =
+  let result ({ Pool_context.language; user; _ } as context) =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let target_id = target.Guard.Target.uuid in
+    Pool_context.connection context @@ fun db_ctx ->
     let* actor =
-      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+      Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user
     in
     let query = Http_utils.find_in_urlencoded_opt Field.Search urlencoded in
     let* search_role =
@@ -221,12 +226,12 @@ let search_role_entities target req =
       let search_experiment value actor =
         Experiment.find_targets_grantable_by_target
           ~exclude
-          database_label
+          db_ctx
           target_id
           search_role
           value
         >|> Lwt_list.filter_s (fun (id, _) ->
-          validate database_label (read id) actor ||> CCResult.is_ok)
+          validate db_ctx (read id) actor ||> CCResult.is_ok)
       in
       execute_search search_experiment Component.Search.Experiment.query_results
     | `LocationManager ->
@@ -234,9 +239,9 @@ let search_role_entities target req =
       let open Pool_location in
       let%lwt exclude = entities_to_exclude Id.of_string in
       let search_location value actor =
-        find_targets_grantable_by_target ~exclude database_label target_id value
+        find_targets_grantable_by_target ~exclude db_ctx target_id value
         >|> Lwt_list.filter_s (fun (id, _) ->
-          validate database_label (read id) actor ||> CCResult.is_ok)
+          validate db_ctx (read id) actor ||> CCResult.is_ok)
       in
       execute_search search_location Component.Search.Location.query_results
     | _ -> Lwt_result.fail (Error.Invalid Field.Role)

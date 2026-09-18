@@ -14,9 +14,10 @@ let handle_tag action redirect error_handler req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
+    Pool_context.connection context @@ fun db_ctx ->
     let* experiment =
-      Experiment.find database_label experiment_id >|- Response.not_found
+      Experiment.find db_ctx experiment_id >|- Response.not_found
     in
     Response.bad_request_on_error ~urlencoded error_handler
     @@
@@ -27,9 +28,9 @@ let handle_tag action redirect error_handler req =
       >== handle
       >|+ CCPair.make Pool_message.Success.TagAssigned
     in
-    let handle_remove handle =
+    let handle_remove db_ctx handle =
       HttpUtils.find_id Tags.Id.of_string Field.Tag req
-      |> Tags.find database_label
+      |> Tags.find db_ctx
       >== handle
       >|+ CCPair.make Pool_message.Success.TagRemoved
     in
@@ -52,22 +53,22 @@ let handle_tag action redirect error_handler req =
       | `Remove ->
         let open Cqrs_command.Tags_command.RemoveTagFromExperiment in
         let fnc = handle ~tags experiment in
-        handle_remove fnc
+        handle_remove db_ctx fnc
       | `RemoveExperimentParticipationTag ->
         let open Cqrs_command.Tags_command.RemoveParticipationTagFromEntity in
         let fnc = handle ~tags (Experiment (Experiment.Id.to_common experiment_id)) in
-        handle_remove fnc
+        handle_remove db_ctx fnc
       | `RemoveSessionParticipationTag ->
         let open Cqrs_command.Tags_command.RemoveParticipationTagFromEntity in
         let session_id = session_id req in
         let fnc = handle ~tags (Session (Session.Id.to_common session_id)) in
-        handle_remove fnc
+        handle_remove db_ctx fnc
     in
-    let handle = Pool_event.handle_events ~tags database_label user in
+    let handle db_ctx = Pool_event.handle_events ~tags db_ctx user in
     let return_to_edit () =
       HttpUtils.redirect_to_with_actions redirect [ Message.set ~success:[ message ] ]
     in
-    events |> handle >|> return_to_edit |> Lwt_result.ok
+    events |> handle db_ctx >|> return_to_edit |> Lwt_result.ok
   in
   Response.handle ~src req result
 ;;

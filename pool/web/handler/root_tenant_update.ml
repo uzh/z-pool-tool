@@ -24,7 +24,7 @@ let update req command success_message =
   let result { Pool_context.user; _ } =
     Response.bad_request_on_error ~urlencoded Root_tenant.tenant_detail
     @@
-    let events tenant_model =
+    let events root_db_ctx tenant_model =
       let open Utils.Lwt_result.Infix in
       let open Pool_tenant in
       let updates, creations =
@@ -39,15 +39,15 @@ let update req command success_message =
             ; tenant_model.Write.email_logo >|= EmailLogo.Write.value, EmailLogo
             ]
       in
-      let* (_ : string list) = File.update_files Root.label updates req in
+      let* (_ : string list) = File.update_files root_db_ctx updates req in
       let* uploaded_files =
         match creations with
         | [] -> Lwt_result.return []
-        | fields -> File.upload_files Root.label (CCList.map show fields) req
+        | fields -> File.upload_files root_db_ctx (CCList.map show fields) req
       in
       let* logo_files =
         File.upload_files
-          Root.label
+          root_db_ctx
           (Pool_tenant.LogoMapping.LogoType.all_fields |> CCList.map show)
           req
       in
@@ -67,15 +67,16 @@ let update req command success_message =
       let files = logo_files @ uploaded_files in
       (files |> File.multipart_form_data_to_urlencoded) @ urlencoded
       |> events_list
-      >|> HttpUtils.File.cleanup_upload Database.Pool.Root.label files
+      >|> HttpUtils.File.cleanup_upload root_db_ctx files
     in
-    let handle = Pool_event.handle_events ~tags Database.Pool.Root.label user in
+    Database.(transaction_ctx Pool.Root.label) @@ fun root_db_ctx ->
+    let handle = Pool_event.handle_events ~tags root_db_ctx user in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ success_message ] ]
     in
-    id |> Pool_tenant.find_full >>= events |>> handle |>> return_to_overview
+    id |> Pool_tenant.find_full >>= events root_db_ctx |>> handle |>> return_to_overview
   in
   Response.handle ~src req result
 ;;
@@ -107,13 +108,14 @@ let update_maintenance req =
       let open Cqrs_command.Pool_tenant_command.UpdateMaintenance in
       decode urlencoded >>= handle ~tags tenant |> Lwt_result.lift
     in
-    let handle = Pool_event.handle_events ~tags Database.Pool.Root.label user in
+    let handle db_ctx = Pool_event.handle_events ~tags db_ctx user in
     let return_to_detail () =
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Success.Updated Field.TenantMaintenanceFlag ] ]
     in
-    events |>> handle |>> return_to_detail
+    Database.(transaction_ctx Pool.Root.label) @@ fun db_ctx ->
+    events |>> handle db_ctx |>> return_to_detail
   in
   Response.handle ~src req result
 ;;
@@ -126,7 +128,7 @@ let delete_asset req =
   let redirect_path =
     Format.asprintf "root/tenants/%s" (Pool_tenant.Id.value tenant_id)
   in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     Response.bad_request_on_error Root_tenant.tenant_detail
     @@
     let open Utils.Lwt_result.Infix in
@@ -134,17 +136,21 @@ let delete_asset req =
       Cqrs_command.Pool_tenant_command.DestroyLogo.handle tenant asset_id
       |> Lwt_result.lift
     in
-    let handle = Pool_event.handle_events Database.Pool.Root.label user in
-    let destroy_file () = Storage.delete database_label (Common.Id.value asset_id) in
+    let handle db_ctx = Pool_event.handle_events db_ctx user in
+    let destroy_file () =
+      Pool_context.connection context @@
+      CCFun.flip Storage.delete (Common.Id.value asset_id)
+    in
     let return_to_tenant () =
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Success.FileDeleted ] ]
     in
+    Database.(transaction_ctx Pool.Root.label) @@ fun root_db_ctx ->
     tenant_id
     |> Pool_tenant.find
     >>= event
-    |>> handle
+    |>> handle root_db_ctx
     |>> destroy_file
     |>> return_to_tenant
   in

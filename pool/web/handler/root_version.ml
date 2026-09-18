@@ -51,7 +51,7 @@ let create req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     Response.bad_request_on_error ~urlencoded new_form
     @@
     let events =
@@ -60,7 +60,10 @@ let create req =
       urlencoded |> decode >>= handle ~tags |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      let%lwt () =
+        Pool_context.connection context @@ fun db_ctx ->
+        Pool_event.handle_events ~tags db_ctx user events
+      in
       Http_utils.redirect_to_with_actions
         (version_path ())
         [ Http_utils.Message.set ~success:[ Success.Created Field.Version ] ]
@@ -76,7 +79,7 @@ let update req =
     Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
   in
   let id = version_id req in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     let* version = Pool_version.find id >|- Response.not_found in
     Response.bad_request_on_error ~urlencoded edit
     @@
@@ -86,7 +89,10 @@ let update req =
       urlencoded |> decode >>= handle ~tags version |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      let%lwt () =
+        Pool_context.connection context @@ fun db_ctx ->
+        Pool_event.handle_events ~tags db_ctx user events
+      in
       Http_utils.redirect_to_with_actions
         (version_path ())
         [ Http_utils.Message.set ~success:[ Success.Updated Field.Version ] ]
@@ -99,7 +105,7 @@ let update req =
 let publish req =
   let tags = Pool_context.Logger.Tags.req req in
   let id = version_id req in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     Response.bad_request_on_error edit
     @@
     let* version = Pool_version.find id in
@@ -111,7 +117,10 @@ let publish req =
       handle ~tags tenant_ids version |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      let%lwt () =
+        Pool_context.connection context @@ fun db_ctx ->
+        Pool_event.handle_events ~tags db_ctx user events
+      in
       Http_utils.redirect_to_with_actions
         (version_path ())
         [ Http_utils.Message.set ~success:[ Success.Published Field.Version ] ]

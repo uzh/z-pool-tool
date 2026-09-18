@@ -16,7 +16,7 @@ include Admin_user_profile.MakeUserProfile (Config)
 let update_password req =
   let open HttpUtils in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     let tags = Pool_context.Logger.Tags.req req in
     Response.bad_request_on_error ~urlencoded show
     @@ let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
@@ -27,7 +27,10 @@ let update_password req =
          >>= handle ~tags Admin.(admin |> id |> Id.to_user)
          |> Lwt_result.lift
        in
-       let%lwt () = Pool_event.handle_events ~tags database_label user events in
+       let%lwt () =
+         Pool_context.connection context @@ fun db_ctx ->
+         Pool_event.handle_events ~tags db_ctx user events
+       in
        redirect_to_with_actions
          active_navigation
          [ Message.set ~success:[ Pool_message.Success.PasswordChanged ] ]

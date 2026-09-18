@@ -12,57 +12,62 @@ let active_navigation = "/root/users"
 
 let index req =
   let context = Pool_context.find_exn req in
-  let%lwt root_list = Admin.all ~query:Admin.default_query Database.Pool.Root.label in
+  let%lwt root_list =
+    Database.(connection_ctx Pool.Root.label) @@
+    Admin.all ~query:Admin.default_query in
   Page.Root.Users.list root_list context
   |> General.create_root_layout ~active_navigation context
   ||> Sihl.Web.Response.of_html
 ;;
 
 let create req =
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     Response.bad_request_on_error ~urlencoded index
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let create_user () =
+    let create_user db_ctx =
       HttpUtils.find_in_urlencoded
         ~error:Error.EmailAddressMissingRoot
         Field.Email
         urlencoded
       |> Lwt_result.lift
       >== Pool_user.EmailAddress.create
-      >>= HttpUtils.validate_email_existance database_label
+      >>= HttpUtils.validate_email_existance db_ctx
     in
     let events () =
       let open CCResult.Infix in
       RootCommand.Create.(urlencoded |> decode >>= handle ~tags)
     in
-    let handle = Pool_event.handle_events ~tags Database.Pool.Root.label user in
+    let handle = Pool_event.handle_events ~tags Database.(label_ctx Pool.Root.label) user in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         (pool_path ())
         [ Message.set ~success:[ Success.Created Field.Root ] ]
     in
-    create_user () >== events |>> handle |>> return_to_overview
+    Pool_context.connection context create_user
+    >== events |>> handle |>> return_to_overview
   in
   Response.handle ~src req result
 ;;
 
 let toggle_status req =
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     let open CCFun in
     Response.bad_request_on_error index
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
     let events = RootCommand.ToggleStatus.handle ~tags %> Lwt_result.lift in
-    let handle = Pool_event.handle_events ~tags database_label user in
+    let handle evts =
+      Pool_context.connection context @@ fun db_ctx ->
+      Pool_event.handle_events ~tags db_ctx user evts in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         (pool_path ())
         [ Message.set ~success:[ Success.Updated Field.Root ] ]
     in
-    id |> Admin.find Database.Pool.Root.label >>= events |>> handle |>> return_to_overview
+    id |> Admin.find Database.(label_ctx Pool.Root.label) >>= events |>> handle |>> return_to_overview
   in
   Response.handle ~src req result
 ;;

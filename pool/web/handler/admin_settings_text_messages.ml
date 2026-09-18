@@ -11,12 +11,13 @@ let src = Logs.Src.create "handler.admin.setting_text_messages"
 let active_navigation = base_path
 
 let index req =
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     Response.bad_request_render_error context
     @@
-    let%lwt gtx_config = Gtx_config.find_opt database_label in
+    Pool_context.connection context @@ fun db_ctx ->
+    let%lwt gtx_config = Gtx_config.find_opt db_ctx in
     let%lwt phone_verification_enabled =
-      Settings.find_phone_verification_enabled database_label
+      Settings.find_phone_verification_enabled db_ctx
     in
     Page.Admin.Settings.TextMessage.index
       context
@@ -30,12 +31,13 @@ let index req =
 
 let update req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     Response.bad_request_on_error ~urlencoded index
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let%lwt gtx_config = Gtx_config.find_opt database_label in
+    Pool_context.connection context @@ fun db_ctx ->
+    let%lwt gtx_config = Gtx_config.find_opt db_ctx in
     let open Command in
     let* validated_config = validated_gtx_api_key ~tags urlencoded in
     let events =
@@ -45,29 +47,32 @@ let update req =
       | None -> CreateGtxApiKey.handle ~tags validated_config
       | Some config -> UpdateGtxApiKey.handle ~tags config validated_config
     in
-    let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let handle db_ctx events =
+      let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
       Http_utils.redirect_to_with_actions
         base_path
         [ HttpUtils.Message.set
             ~success:[ Pool_message.(Success.Updated Field.GtxApiKey) ]
         ]
     in
-    events |>> handle
+    events |>> handle db_ctx
   in
   Response.handle ~src req result
 ;;
 
 let delete req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     Response.bad_request_on_error index
     @@
     let tags = Pool_context.Logger.Tags.req req in
     Command.RemoveGtxApiKey.handle ~tags ()
     |> Lwt_result.lift
     |>> fun events ->
-    let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let%lwt () =
+      Pool_context.connection context @@ fun db_ctx ->
+      Pool_event.handle_events ~tags db_ctx user events
+    in
     Http_utils.redirect_to_with_actions
       base_path
       [ HttpUtils.Message.set ~success:[ Pool_message.(Success.Deleted Field.GtxApiKey) ]
@@ -93,7 +98,7 @@ let delivery_report req =
     Logging_helper.log_request_with_ip ~src message req tags None
   in
   let%lwt result =
-    let* { Pool_context.database_label; user; _ } =
+    let* ({ Pool_context.user; _ } as context) =
       Pool_context.find req |> Lwt_result.lift
     in
     let* job_id =
@@ -104,8 +109,9 @@ let delivery_report req =
         log_request_with_ip "invalid queue job id provided";
         Error Pool_message.(Error.Invalid Field.Id)
     in
+    Pool_context.connection context @@ fun db_ctx ->
     let* (_ : Pool_queue.Instance.t) =
-      Pool_queue.find database_label job_id
+      Pool_queue.find db_ctx job_id
       >|- fun err ->
       Format.asprintf "queue job %s not found" (Pool_queue.Id.value job_id)
       |> log_request_with_ip;
@@ -113,7 +119,7 @@ let delivery_report req =
     in
     let* () =
       let open Text_message in
-      find_report_by_queue_id database_label job_id
+      find_report_by_queue_id db_ctx job_id
       ||> function
       | Some (_ : delivery_report) ->
         Format.asprintf
@@ -130,7 +136,7 @@ let delivery_report req =
       let open Cqrs_command.Queue_command.CreateTextMessageDeliveryReport in
       decode urlparams job_id raw >>= handle ~tags |> Lwt_result.lift
     in
-    Pool_event.handle_events ~tags database_label user events |> Lwt_result.ok
+    Pool_event.handle_events ~tags db_ctx user events |> Lwt_result.ok
   in
   result |> CCResult.map_err log_error |> CCFun.const (respond ())
 ;;
@@ -158,7 +164,7 @@ end
 
 let update_phone_verification req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     Response.bad_request_on_error ~urlencoded index
     @@
@@ -168,7 +174,9 @@ let update_phone_verification req =
       Command.UpdatePhoneVerificationEnabled.(decode urlencoded >>= handle ~tags)
       |> Lwt_result.lift
     in
-    let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let%lwt () =
+      Pool_context.connection context @@ fun db_ctx ->
+      Pool_event.handle_events ~tags db_ctx user events in
     Http_utils.redirect_to_with_actions
       base_path
       [ HttpUtils.Message.set

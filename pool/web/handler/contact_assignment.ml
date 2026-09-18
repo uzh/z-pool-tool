@@ -15,17 +15,18 @@ let create req =
   let redirect_path =
     Format.asprintf "/experiments/%s" (experiment_id |> Experiment.Id.value)
   in
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result ({ Pool_context.user; _ } as context) =
     let* contact =
       Pool_context.find_contact context
       |> Lwt_result.lift
       >|- CCFun.const Response.access_denied
     in
+    Pool_context.connection context @@ fun db_ctx ->
     let* experiment =
-      Experiment.find_full_by_contact database_label experiment_id contact
+      Experiment.find_full_by_contact db_ctx experiment_id contact
       >|- Response.not_found
     in
-    let* session = Session.find_open database_label id >|- Response.not_found in
+    let* session = Session.find_open db_ctx id >|- Response.not_found in
     let* () =
       if Experiment.Id.equal session.Session.experiment.Experiment.id experiment_id
       then Lwt_result.return ()
@@ -34,7 +35,7 @@ let create req =
     in
     Response.bad_request_on_error Contact_session.show
     @@
-    let%lwt follow_up_sessions = Session.find_follow_ups database_label id in
+    let%lwt follow_up_sessions = Session.find_follow_ups db_ctx id in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let%lwt confirmation_email =
       Message_template.AssignmentConfirmation.prepare
@@ -46,7 +47,7 @@ let create req =
     in
     let%lwt already_enrolled =
       Assignment.assignment_to_experiment_exists
-        database_label
+        db_ctx
         session.Session.experiment.Experiment.id
         contact
     in
@@ -60,7 +61,7 @@ let create req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ HttpUtils.Message.set ~success:[ Pool_message.Success.AssignmentCreated ] ]

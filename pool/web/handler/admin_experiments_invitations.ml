@@ -10,13 +10,14 @@ let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 let index req =
   let open Utils.Lwt_result.Infix in
   let id = experiment_id req in
-  let result ({ Pool_context.database_label; _ } as context) =
-    let* experiment = id |> Experiment.find database_label >|- Response.not_found in
+  let result context =
+    Pool_context.connection context @@ fun db_ctx ->
+    let* experiment = id |> Experiment.find db_ctx >|- Response.not_found in
     Response.bad_request_render_error context
     @@
     let common_exp_id = Experiment.(experiment |> id |> Id.to_common) in
-    let%lwt key_list = Filter.all_keys database_label in
-    let%lwt template_list = Filter.find_all_templates database_label () in
+    let%lwt key_list = Filter.all_keys db_ctx in
+    let%lwt template_list = Filter.find_all_templates db_ctx () in
     let%lwt query_experiments, query_tags, query_tagged_experiments =
       match experiment |> Experiment.filter with
       | None -> Lwt.return ([], [], [])
@@ -24,13 +25,13 @@ let index req =
         let%lwt query_experiments =
           filter
           |> Filter.all_query_experiments
-          |> Experiment.search_multiple_by_id database_label
+          |> Experiment.search_multiple_by_id db_ctx
         and query_tags =
-          filter |> Filter.all_query_tags |> Tags.find_multiple database_label
+          filter |> Filter.all_query_tags |> Tags.find_multiple db_ctx
         and query_tagged_experiments =
           filter
           |> Filter.all_query_tagged_experiments
-          |> Tags.find_multiple database_label
+          |> Tags.find_multiple db_ctx
         in
         Lwt.return (query_experiments, query_tags, query_tagged_experiments)
     in
@@ -41,7 +42,7 @@ let index req =
         Filter.(
           find_filtered_contacts
             ~limit:50
-            database_label
+            db_ctx
             (Matcher common_exp_id)
             (experiment |> Experiment.filter))
         >|+ CCOption.pure
@@ -50,7 +51,7 @@ let index req =
       let query =
         experiment.Experiment.filter |> CCOption.map (fun f -> f.Filter.query)
       in
-      Statistics.ExperimentFilter.create database_label experiment query
+      Statistics.ExperimentFilter.create db_ctx experiment query
     in
     Page.Admin.Experiments.invitations
       experiment
@@ -71,12 +72,13 @@ let index req =
 let sent_invitations req =
   let id = experiment_id req in
   Response.Htmx.index_handler ~create_layout ~query:(module Invitation) req
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  @@ fun context query ->
   let open Utils.Lwt_result.Infix in
-  let* experiment = Experiment.find database_label id in
+  Pool_context.connection context @@ fun db_ctx ->
+  let* experiment = Experiment.find db_ctx id in
   let experiment_guard = [ Guard.Uuid.target_of Experiment.Id.value id ] in
   let%lwt invitations =
-    Invitation.find_by_experiment ~query database_label experiment.Experiment.id
+    Invitation.find_by_experiment ~query db_ctx experiment.Experiment.id
   in
   let open Helpers_guard in
   let view_contact_name = can_read_contact_name context experiment_guard in
@@ -94,7 +96,7 @@ let sent_invitations req =
       invitations
     |> Lwt_result.return
   | false ->
-    let* statistics = Statistics.ExperimentInvitations.create database_label experiment in
+    let* statistics = Statistics.ExperimentInvitations.create db_ctx experiment in
     sent_invitations
       ~access_contact_profiles
       ~view_contact_name
@@ -112,8 +114,9 @@ let create req =
   let redirect_path =
     Format.asprintf "/admin/experiments/%s/invitations" (Experiment.Id.value id)
   in
-  let result { Pool_context.database_label; user; _ } =
-    let* experiment = Experiment.find database_label id |> Response.not_found_on_error in
+  let result ({ Pool_context.user; _ } as context) =
+    Pool_context.connection context @@ fun db_ctx ->
+    let* experiment = Experiment.find db_ctx id |> Response.not_found_on_error in
     Response.bad_request_on_error index
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -137,7 +140,7 @@ let create req =
           []
           contact_ids
       in
-      let%lwt contacts = Contact.find_multiple_invitable database_label contact_ids in
+      let%lwt contacts = Contact.find_multiple_invitable db_ctx contact_ids in
       Lwt_result.lift
       @@
       match CCList.length contact_ids == CCList.length contacts with
@@ -149,13 +152,13 @@ let create req =
     in
     let%lwt invited_contacts =
       Invitation.find_multiple_by_experiment_and_contacts
-        database_label
+        db_ctx
         (CCList.map Contact.id contacts)
         experiment
     in
     let%lwt create_message =
       Message_template.ExperimentInvitation.prepare_with_optout_link
-        database_label
+        db_ctx
         tenant
         experiment
         contacts
@@ -167,13 +170,13 @@ let create req =
         { experiment; contacts; invited_contacts; create_message; mailing = None }
       |> Lwt_result.lift
     in
-    let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let handle db_ctx events =
+      let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ HttpMessage.set ~success:[ Success.SentList Field.Invitations ] ]
     in
-    handle events |> Lwt_result.ok
+    handle db_ctx events |> Lwt_result.ok
   in
   Response.handle ~src req result
 ;;
@@ -187,17 +190,18 @@ let resend req =
   let redirect_path =
     HttpUtils.Url.Admin.experiment_path ~id:experiment_id ~suffix:"invitations" ()
   in
-  let result { Pool_context.database_label; user; _ } =
-    let* invitation = Invitation.find database_label id |> Response.not_found_on_error in
+  let result ({ Pool_context.user; _ } as context) =
+    Pool_context.connection context @@ fun db_ctx ->
+    let* invitation = Invitation.find db_ctx id |> Response.not_found_on_error in
     let* experiment =
-      Experiment.find database_label experiment_id |> Response.not_found_on_error
+      Experiment.find db_ctx experiment_id |> Response.not_found_on_error
     in
     Response.bad_request_on_error index
     @@
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let%lwt create_email =
       Message_template.ExperimentInvitation.prepare_with_optout_link
-        database_label
+        db_ctx
         tenant
         experiment
         [ invitation.Invitation.contact ]
@@ -206,7 +210,7 @@ let resend req =
       let open Cqrs_command.Invitation_command.Resend in
       handle ~tags create_email invitation |> Lwt_result.lift
     in
-    let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
     Http_utils.redirect_to_with_actions
       redirect_path
       [ HttpMessage.set ~success:[ Success.SentList Field.Invitations ] ]

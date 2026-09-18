@@ -86,7 +86,7 @@ let rule_from_request req role =
 
 let index req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result ({ Pool_context.user; _ } as context) =
     let* actor_id =
       user
       |> Pool_context.get_admin_user
@@ -98,8 +98,9 @@ let index req =
     Response.bad_request_render_error context
     @@
     let* roles =
+      Pool_context.connection context @@ fun db_ctx ->
       Guard.Persistence.Role.find_by_actor_and_permission
-        database_label
+        db_ctx
         actor_id
         Guard.Permission.[ Read ]
     in
@@ -116,11 +117,12 @@ let show req =
     ~query:(module Guard.RolePermission)
     ~create_layout:General.create_tenant_layout
     req
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  @@ fun context query ->
   let* role = role_from_request req |> Lwt_result.lift in
   (* TODO: check only available permissions *)
   let%lwt permissions =
-    Guard.Persistence.RolePermission.query_by_role database_label role
+    Pool_context.connection context @@ fun db_ctx ->
+    Guard.Persistence.RolePermission.query_by_role db_ctx role
     ||> fst
     ||> group_by_target query
   in
@@ -130,12 +132,13 @@ let show req =
 ;;
 
 let edit_htmx req =
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     let* role = role_from_request req |> Lwt_result.lift in
     let* target = target_from_request req |> Lwt_result.lift in
     let%lwt permissions =
+      Pool_context.connection context @@ fun db_ctx ->
       Guard.Persistence.RolePermission.permissions_by_role_and_target
-        database_label
+        db_ctx
         role
         target
     in
@@ -148,14 +151,15 @@ let edit_htmx req =
 
 let update req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result ({ Pool_context.user; _ } as context) =
     let open Cqrs_command.Guardian_command in
     let open Guard in
     let tags = Pool_context.Logger.Tags.req req in
     let* role = role_from_request req |> Lwt_result.lift in
     let* target = target_from_request req |> Lwt_result.lift in
+    Pool_context.connection context @@ fun db_ctx ->
     let%lwt current_permissions =
-      Persistence.RolePermission.permissions_by_role_and_target database_label role target
+      Persistence.RolePermission.permissions_by_role_and_target db_ctx role target
     in
     let events =
       Sihl.Web.Request.to_urlencoded req
@@ -167,7 +171,7 @@ let update req =
       let open HttpUtils in
       function
       | Ok events ->
-        let%lwt () = Pool_event.handle_events ~tags database_label user events in
+        let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
         Response.Htmx.redirect
           ~actions:[ Message.set ~success:[ Success.Updated Field.Permission ] ]
           (Url.Admin.role_permission_path ~role ())

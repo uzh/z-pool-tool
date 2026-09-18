@@ -14,7 +14,7 @@ module I18nMap = CCMap.Make (struct
 
 let index req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     Response.bad_request_render_error context
     @@
     let sort translations =
@@ -32,7 +32,9 @@ let index req =
       |> CCList.stable_sort (fun (k1, _) (k2, _) -> I18n.Key.compare k1 k2)
       |> Lwt.return
     in
-    let%lwt translation_list = I18n.find_all database_label () >|> sort in
+    let%lwt translation_list = 
+      Pool_context.connection context @@ CCFun.flip I18n.find_all ()
+      >|> sort in
     Page.Admin.I18n.list translation_list context
     |> create_layout req ~active_navigation:(i18n_path ()) context
     >|+ Sihl.Web.Response.of_html
@@ -46,24 +48,25 @@ let update req =
     HttpUtils.get_field_router_param req Pool_message.Field.i18n
     |> Pool_common.Id.of_string
   in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     Response.bad_request_on_error index
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let property () = I18n.find_with_default_content database_label id in
+    let property db_ctx = I18n.find_with_default_content db_ctx id in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let events property =
       let open CCResult.Infix in
       let open Cqrs_command.I18n_command.Update in
       urlencoded |> decode >>= handle ~tags property
     in
-    let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let handle db_ctx events =
+      let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
       Http_utils.redirect_to_with_actions
         (i18n_path ())
         [ Message.set ~success:[ Pool_message.(Success.Updated Field.I18n) ] ]
     in
-    () |> property ||> events |>> handle
+    Pool_context.connection context @@ fun db_ctx ->
+    db_ctx |> property ||> events |>> handle db_ctx
   in
   Response.handle ~src req result
 ;;

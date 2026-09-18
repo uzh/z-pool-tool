@@ -6,14 +6,15 @@ let src = Logs.Src.create "handler.admin.users"
 let id req = get_field_router_param req Pool_message.Field.User
 
 let redirect req =
-  let result { Pool_context.database_label; _ } =
+  let result context =
     let user_id = id req in
     let open Pool_user in
     let* user =
+      Pool_context.connection context @@ fun db_ctx ->
       user_id
       |> Id.validate
       |> Lwt_result.lift
-      >>= find database_label
+      >>= find db_ctx
       >|- Response.not_found
     in
     let redirect =

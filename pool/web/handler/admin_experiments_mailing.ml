@@ -14,13 +14,13 @@ let experiment_path ?suffix id =
   |> CCString.concat "/"
 ;;
 
-let matching_filter_count database_label experiment =
+let matching_filter_count db_ctx experiment =
   let open Filter in
   let query =
     experiment |> Experiment.filter |> CCOption.map (fun { Filter.query; _ } -> query)
   in
   count_filtered_contacts
-    database_label
+    db_ctx
     (Matcher Experiment.(experiment |> id |> Id.to_common))
     query
 ;;
@@ -28,12 +28,13 @@ let matching_filter_count database_label experiment =
 let index req =
   let id = experiment_id req in
   Response.Htmx.index_handler ~create_layout ~query:(module Mailing) req
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  @@ fun context query ->
   let open Utils.Lwt_result.Infix in
-  let* experiment = Experiment.find database_label id in
+  Pool_context.connection context @@ fun db_ctx ->
+  let* experiment = Experiment.find db_ctx id in
   let%lwt mailings =
     Mailing.find_by_experiment_with_count
-      database_label
+      db_ctx
       (Some query)
       experiment.Experiment.id
   in
@@ -56,22 +57,23 @@ let urlencoded_with_distribution urlencoded req =
 let new_form req =
   let open Utils.Lwt_result.Infix in
   let id = experiment_id req in
-  let result ({ Pool_context.database_label; _ } as context) =
-    let* experiment = Experiment.find database_label id >|- Response.not_found in
+  let result context =
+    Pool_context.connection context @@ fun db_ctx ->
+    let* experiment = Experiment.find db_ctx id >|- Response.not_found in
     Response.bad_request_render_error context
     @@
     let%lwt has_no_upcoming_session =
       match experiment.Experiment.online_experiment with
-      | None -> Session.find_upcoming_for_experiment database_label id ||> CCList.is_empty
+      | None -> Session.find_upcoming_for_experiment db_ctx id ||> CCList.is_empty
       | Some _ ->
-        Time_window.find_upcoming_by_experiment database_label id ||> CCOption.is_none
+        Time_window.find_upcoming_by_experiment db_ctx id ||> CCOption.is_none
     in
     let%lwt is_bookable =
       match has_no_upcoming_session with
       | true -> Lwt.return false
-      | false -> Matcher.experiment_has_bookable_spots database_label experiment
+      | false -> Matcher.experiment_has_bookable_spots db_ctx experiment
     in
-    let* matching_filter_count = matching_filter_count database_label experiment in
+    let* matching_filter_count = matching_filter_count db_ctx experiment in
     Page.Admin.Mailing.form
       ~has_no_upcoming_session
       ~fully_booked:(not is_bookable)
@@ -87,7 +89,7 @@ let new_form req =
 let create req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
       ||> HttpUtils.remove_empty_values
@@ -97,20 +99,21 @@ let create req =
     Response.bad_request_on_error ~urlencoded new_form
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* experiment = Experiment.find database_label experiment_id in
+    Pool_context.connection context @@ fun db_ctx ->
+    let* experiment = Experiment.find db_ctx experiment_id in
     let* urlencoded = urlencoded_with_distribution urlencoded req in
     let events =
       let open CCResult in
       let open Cqrs_command.Mailing_command.Create in
       urlencoded |> HttpUtils.remove_empty_values |> decode >>= handle ~tags experiment
     in
-    let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let handle db_ctx events =
+      let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
       Http_utils.redirect_to_with_actions
         (experiment_path ~suffix:"mailings" experiment_id)
         [ Message.set ~success:[ Success.Created Field.Mailing ] ]
     in
-    events |> Lwt_result.lift |>> handle
+    events |> Lwt_result.lift |>> handle db_ctx
   in
   Response.handle ~src req result
 ;;
@@ -119,11 +122,12 @@ let detail edit req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
   let id = mailing_id req in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
+    Pool_context.connection context @@ fun db_ctx ->
     let* experiment =
-      Experiment.find database_label experiment_id >|- Response.not_found
+      Experiment.find db_ctx experiment_id >|- Response.not_found
     in
-    let* m, count = Mailing.find_with_detail database_label id >|- Response.not_found in
+    let* m, count = Mailing.find_with_detail db_ctx id >|- Response.not_found in
     Response.bad_request_render_error context
     @@ let* mailing, count =
          if edit && Pool_model.Time.now () > Mailing.StartAt.value m.Mailing.start_at
@@ -134,7 +138,7 @@ let detail edit req =
         | false ->
           Page.Admin.Mailing.detail context experiment (mailing, count) |> Lwt_result.ok
         | true ->
-          let* matching_filter_count = matching_filter_count database_label experiment in
+          let* matching_filter_count = matching_filter_count db_ctx experiment in
           Page.Admin.Mailing.form ~matching_filter_count ~mailing context experiment
           |> Lwt_result.ok)
        >>= create_layout req context
@@ -153,7 +157,7 @@ let update req =
   let redirect_path =
     HttpUtils.Url.Admin.mailing_path experiment_id ~suffix:"edit" ~id ()
   in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
       ||> HttpUtils.remove_empty_values
@@ -163,27 +167,28 @@ let update req =
     Response.bad_request_on_error ~urlencoded edit
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* mailing = Mailing.find database_label id in
+    Pool_context.connection context @@ fun db_ctx ->
+    let* mailing = Mailing.find db_ctx id in
     let* urlencoded = urlencoded_with_distribution urlencoded req in
     let events =
       let open CCResult in
       let open Cqrs_command.Mailing_command.Update in
       urlencoded |> decode >>= handle ~tags mailing
     in
-    let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let handle db_ctx events =
+      let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Success.Updated Field.Mailing ] ]
     in
-    events |> Lwt_result.lift |>> handle
+    events |> Lwt_result.lift |>> handle db_ctx
   in
   Response.handle ~src req result
 ;;
 
 let search_info req =
   let id = experiment_id req in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     let open Utils.Lwt_result.Infix in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* mailing =
@@ -212,7 +217,10 @@ let search_info req =
       let interval = 5 * 60 |> Ptime.Span.of_int_s in
       Mailing.per_interval interval mailing
     in
-    let%lwt mailings = Mailing.find_overlaps database_label mailing in
+    let%lwt mailings =
+      Pool_context.connection context @@
+      CCFun.flip Mailing.find_overlaps mailing
+    in
     Page.Admin.Mailing.overlaps ~average_send ~show_limit_warning context id mailings
     |> Response.Htmx.of_html
     |> Lwt.return_ok
@@ -252,13 +260,14 @@ let disabler command success_handler req =
   let open Utils.Lwt_result.Infix in
   let redirect_path = experiment_path ~suffix:"mailings" (experiment_id req) in
   let id = mailing_id req in
-  let result { Pool_context.database_label; user; _ } =
-    let* mailing = Mailing.find database_label id >|- Response.not_found in
+  let result ({ Pool_context.user; _ } as context) =
+    Pool_context.connection context @@ fun db_ctx ->
+    let* mailing = Mailing.find db_ctx id >|- Response.not_found in
     Response.bad_request_on_error index
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* events = command mailing |> Lwt_result.lift in
-    let%lwt () = Pool_event.handle_events ~tags database_label user events in
+    let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
     Http_utils.redirect_to_with_actions
       redirect_path
       [ Message.set ~success:[ success_handler Field.Mailing ] ]

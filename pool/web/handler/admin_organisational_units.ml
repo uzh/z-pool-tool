@@ -15,11 +15,6 @@ let id req =
   |> Organisational_unit.Id.of_string
 ;;
 
-let database_label_of_req req =
-  let open CCResult in
-  Pool_context.(req |> find >|= fun { database_label; _ } -> database_label)
-;;
-
 let index req =
   let active_navigation = ou_path () in
   Response.Htmx.index_handler
@@ -27,9 +22,9 @@ let index req =
     ~create_layout
     ~query:(module Organisational_unit)
     req
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  @@ fun context query ->
   let%lwt organisational_unit_list, query =
-    Organisational_unit.find_by query database_label
+    Pool_context.connection context @@ Organisational_unit.find_by query
   in
   (if HttpUtils.Htmx.is_hx_request req then View.list else View.index)
     context
@@ -39,9 +34,10 @@ let index req =
 ;;
 
 let show action req =
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     let* ou =
-      req |> id |> Organisational_unit.find database_label >|- Response.not_found
+      Pool_context.connection context @@ fun db_ctx ->
+      req |> id |> Organisational_unit.find db_ctx >|- Response.not_found
     in
     Response.bad_request_render_error context
     @@
@@ -62,7 +58,7 @@ let create req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     Response.bad_request_on_error ~urlencoded new_form
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -71,7 +67,10 @@ let create req =
       Create.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags)
     in
     let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      let%lwt () =
+        Pool_context.connection context @@ fun db_ctx ->
+        Pool_event.handle_events ~tags db_ctx user events
+      in
       Http_utils.redirect_to_with_actions
         (ou_path ())
         [ HttpUtils.Message.set ~success:[ Pool_message.Success.Created field ] ]
@@ -86,8 +85,9 @@ let update req =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
   let id = id req in
-  let result { Pool_context.database_label; user; _ } =
-    let* ou = Organisational_unit.find database_label id >|- Response.not_found in
+  let result ({ Pool_context.user; _ } as context) =
+    Pool_context.connection context @@ fun db_ctx ->
+    let* ou = Organisational_unit.find db_ctx id >|- Response.not_found in
     Response.bad_request_on_error ~urlencoded edit
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -96,7 +96,7 @@ let update req =
       Update.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags ou)
     in
     let handle events =
-      let%lwt () = Pool_event.handle_events ~tags database_label user events in
+      let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
       Http_utils.redirect_to_with_actions
         (ou_path ~id ~suffix:"edit" ())
         [ HttpUtils.Message.set ~success:[ Pool_message.Success.Updated field ] ]

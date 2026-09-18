@@ -37,8 +37,8 @@ let index req =
     ~query:(module SmtpAuth)
     ~create_layout:General.create_tenant_layout
     req
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
-  let%lwt smtp_list, query = SmtpAuth.find_by query database_label in
+  @@ fun context query ->
+  let%lwt smtp_list, query = Pool_context.connection context @@ SmtpAuth.find_by query in
   let open Page.Admin.Settings.Smtp in
   (if HttpUtils.Htmx.is_hx_request req then list else index)
     context
@@ -63,7 +63,7 @@ let new_form req =
 ;;
 
 let smtp_form location req =
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     Response.bad_request_render_error context
     @@
     let open Page.Admin.Settings.Smtp in
@@ -71,14 +71,14 @@ let smtp_form location req =
     let* html =
       match location with
       | `Tenant ->
+        Pool_context.connection context @@ fun db_ctx ->
         req
         |> smtp_auth_id
-        |> SmtpAuth.find database_label
+        |> SmtpAuth.find db_ctx
         >|+ show context location
         >>= General.create_tenant_layout req ~active_navigation context
       | `Root ->
-        Database.Pool.Root.label
-        |> SmtpAuth.find_default
+        Database.(connection_ctx Pool.Root.label) SmtpAuth.find_default
         ||> CCResult.to_opt
         ||> (function
          | Some auth -> show context location auth
@@ -102,23 +102,24 @@ let create_post location req =
     ||> HttpUtils.format_request_boolean_values boolean_fields
     ||> HttpUtils.remove_empty_values
   in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     Response.bad_request_on_error ~urlencoded new_form
     @@
-    let validate_label ({ Command.label; _ } as m : Command.create) =
-      SmtpAuth.find_by_label database_label label
+    let validate_label db_ctx ({ Command.label; _ } as m : Command.create) =
+      SmtpAuth.find_by_label db_ctx label
       ||> function
       | Some _ -> Error (Error.Uniqueness Field.SmtpLabel)
       | None -> Ok m
     in
-    let%lwt default_smtp = SmtpAuth.find_default_opt database_label in
+    Pool_context.connection context @@ fun db_ctx ->
+    let%lwt default_smtp = SmtpAuth.find_default_opt db_ctx in
     let test_smtp_config smtp_auth =
       let* email = email_of_urlencoded urlencoded in
-      let* () = Email.Service.test_smtp_config database_label smtp_auth email in
+      let* () = Email.Service.test_smtp_config db_ctx smtp_auth email in
       Lwt_result.return smtp_auth
     in
     let events = handle ~tags default_smtp in
-    let handle = Pool_event.handle_events ~tags database_label user in
+    let handle = Pool_event.handle_events ~tags db_ctx user in
     let return_to_overview () =
       HttpUtils.redirect_to_with_actions
         redirect_path
@@ -127,7 +128,7 @@ let create_post location req =
     urlencoded
     |> decode
     |> Lwt_result.lift
-    >>= validate_label
+    >>= validate_label db_ctx
     >== smtp_of_command
     >>= test_smtp_config
     >== events
@@ -142,29 +143,30 @@ let create = create_post `Tenant
 let update_base location command success_message req =
   let tags = Pool_context.Logger.Tags.req req in
   let redirect_path = settings_detail_path location req in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
       ||> HttpUtils.format_request_boolean_values boolean_fields
       ||> HttpUtils.remove_empty_values
     in
+    Pool_context.connection context @@ fun db_ctx ->
     let* smtp_auth =
-      req |> smtp_auth_id |> SmtpAuth.find database_label >|- Response.not_found
+      req |> smtp_auth_id |> SmtpAuth.find db_ctx >|- Response.not_found
     in
     Response.bad_request_on_error ~urlencoded (smtp_form location)
     @@
-    let events (_ : SmtpAuth.t) =
+    let events db_ctx (_ : SmtpAuth.t) =
       let open CCResult.Infix in
       match command with
       | `UpdateDetails ->
-        let%lwt default_smtp = SmtpAuth.find_default_opt database_label in
+        let%lwt default_smtp = SmtpAuth.find_default_opt db_ctx in
         Command.Update.(decode urlencoded >>= handle ~tags default_smtp smtp_auth)
         |> Lwt_result.lift
       | `UpdatePassword ->
         Command.UpdatePassword.(decode urlencoded >>= handle ~tags smtp_auth)
         |> Lwt_result.lift
     in
-    let handle = Pool_event.handle_events ~tags database_label user in
+    let handle = Pool_event.handle_events ~tags db_ctx user in
     let return_to_overview () =
       HttpUtils.redirect_to_with_actions
         redirect_path
@@ -172,8 +174,8 @@ let update_base location command success_message req =
     in
     req
     |> smtp_auth_id
-    |> SmtpAuth.find database_label
-    >>= events
+    |> SmtpAuth.find db_ctx
+    >>= events db_ctx
     |>> handle
     |>> return_to_overview
   in
@@ -186,19 +188,20 @@ let update = update_base `Tenant `UpdateDetails Success.SmtpDetailsUpdated
 let delete_base location req =
   let tags = Pool_context.Logger.Tags.req req in
   let path = active_navigation location in
-  let result { Pool_context.database_label; user; _ } =
+  let result ({ Pool_context.user; _ } as context) =
+    Pool_context.connection context @@ fun db_ctx ->
     let* smtp =
       Sihl.Web.Router.param req (Field.show Field.Smtp)
       |> SmtpAuth.Id.of_string
-      |> SmtpAuth.find database_label
+      |> SmtpAuth.find db_ctx
       >|- Response.not_found
     in
     Response.bad_request_on_error index
     @@
-    let* () = SmtpAuth.check_can_delete database_label in
+    let* () = SmtpAuth.check_can_delete db_ctx in
     Cqrs_command.Smtp_command.Delete.handle ~tags smtp.SmtpAuth.id
     |> Lwt_result.lift
-    |>> Pool_event.handle_events ~tags database_label user
+    |>> Pool_event.handle_events ~tags db_ctx user
     |>> fun () ->
     Http_utils.redirect_to_with_actions
       path
@@ -214,15 +217,16 @@ let validate location req =
   let id = req |> smtp_auth_id in
   let redirect_path = settings_detail_path location req in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result { Pool_context.database_label; _ } =
-    let* smtp = SmtpAuth.find_full database_label id >|- Response.not_found in
+  let result context =
+    Pool_context.connection context @@ fun db_ctx ->
+    let* smtp = SmtpAuth.find_full db_ctx id >|- Response.not_found in
     Response.bad_request_on_error ~urlencoded (smtp_form location)
     @@
     let* email = email_of_urlencoded urlencoded in
     let redirect actions =
       Http_utils.redirect_to_with_actions redirect_path actions ||> CCResult.return
     in
-    Email.Service.test_smtp_config database_label smtp email
+    Email.Service.test_smtp_config db_ctx smtp email
     >|> function
     | Ok () -> redirect [ Message.set ~success:[ Success.Validated Field.Smtp ] ]
     | Error err -> redirect [ Message.set ~error:[ err ] ]

@@ -3,12 +3,12 @@ module Response = Http_response
 let src = Logs.Src.create "handler.admin.dashboard"
 let create_layout req = General.create_tenant_layout req
 
-let statistics_from_request req database_label =
+let statistics_from_request req db_ctx =
   let open CCOption.Infix in
   let period =
     Sihl.Web.Request.query Pool_message.Field.(show Period) req >>= Statistics.read_period
   in
-  let%lwt statistics = Statistics.Pool.create ?period database_label () in
+  let%lwt statistics = Statistics.Pool.create ?period db_ctx () in
   Lwt.return (period, statistics)
 ;;
 
@@ -18,10 +18,11 @@ let sessions_query_from_req req =
 ;;
 
 let index req =
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result ({ Pool_context.user; _ } as context) =
     let open Utils.Lwt_result.Infix in
+    Pool_context.connection context @@ fun db_ctx ->
     let* actor =
-      Pool_context.Utils.find_authorizable database_label user >|- Response.not_found
+      Pool_context.Utils.find_authorizable db_ctx user >|- Response.not_found
     in
     Response.bad_request_render_error context
     @@
@@ -29,25 +30,25 @@ let index req =
       let open Guard in
       let open CCList in
       let recruiter_roles : Role.Role.t list = [ `Operator; `Recruiter ] in
-      Persistence.ActorRole.find_by_actor database_label actor.Actor.uuid
+      Persistence.ActorRole.find_by_actor db_ctx actor.Actor.uuid
       ||> find_opt (fun (role, _, _) -> mem role.ActorRole.role recruiter_roles)
       ||> CCOption.is_some
     in
     let%lwt statistics =
-      Guard.Persistence.validate database_label Statistics.Guard.Access.read actor
+      Guard.Persistence.validate db_ctx Statistics.Guard.Access.read actor
       ||> CCResult.is_ok
       >|> function
-      | true -> statistics_from_request req database_label ||> CCOption.pure
+      | true -> statistics_from_request req db_ctx ||> CCOption.pure
       | false -> Lwt.return_none
     in
     let%lwt duplicate_contacts_count =
       match%lwt Helpers.Guard.can_manage_duplicate_contacts context with
       | false -> Lwt.return_none
-      | true -> Duplicate_contacts.count database_label ||> CCOption.pure
+      | true -> Duplicate_contacts.count db_ctx ||> CCOption.pure
     in
     let query = sessions_query_from_req req in
     let%lwt incomplete_sessions =
-      Session.find_incomplete_by_admin ~query actor database_label
+      Session.find_incomplete_by_admin ~query actor db_ctx
     in
     let open Page.Admin.Dashboard in
     let%lwt layout =
@@ -55,7 +56,7 @@ let index req =
       then Clean incomplete_sessions |> Lwt.return
       else (
         let%lwt upcoming_sessions =
-          Session.find_upcoming_by_admin ~query actor database_label
+          Session.find_upcoming_by_admin ~query actor db_ctx
         in
         Admin (incomplete_sessions, upcoming_sessions) |> Lwt.return)
     in
@@ -67,12 +68,13 @@ let index req =
 ;;
 
 let htmx_session_helper table req =
-  let result { Pool_context.database_label; language; user; _ } =
+  let result ({ Pool_context.language; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
-    let* actor = Pool_context.Utils.find_authorizable database_label user in
+    Pool_context.connection context @@ fun db_ctx ->
+    let* actor = Pool_context.Utils.find_authorizable db_ctx user in
     let%lwt sessions =
       let query = sessions_query_from_req req in
-      (fun fnc -> fnc ?query:(Some query) actor database_label)
+      (fun fnc -> fnc ?query:(Some query) actor db_ctx)
       @@
       match table with
       | `incomplete -> Session.find_incomplete_by_admin
@@ -93,8 +95,8 @@ let incomplete_sessions = htmx_session_helper `incomplete
 let upcoming_sessions = htmx_session_helper `upcoming
 
 let statistics req =
-  let result { Pool_context.database_label; language; _ } =
-    let%lwt statistics = statistics_from_request req database_label in
+  let result ({ Pool_context.language; _ } as context) =
+    let%lwt statistics = Pool_context.connection context @@ statistics_from_request req in
     Component.Statistics.Pool.create language statistics
     |> Response.Htmx.of_html
     |> Lwt.return_ok

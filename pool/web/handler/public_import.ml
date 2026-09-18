@@ -9,32 +9,32 @@ let import_pending req =
   General.note ~title:ImportPendingTitle ~body:ImportPendingNote req
 ;;
 
-let user_and_import_from_token database_label token =
+let user_and_import_from_token db_ctx token =
   let open Pool_context in
   token
-  |> User_import.find_pending_by_token database_label
+  |> User_import.find_pending_by_token db_ctx
   >>= fun ({ User_import.user_uuid; _ } as import) ->
   user_uuid
-  |> Pool_user.find_exn database_label
-  >|> context_user_of_user database_label
+  |> Pool_user.find_exn db_ctx
+  >|> context_user_of_user db_ctx
   ||> fun user ->
   match user with
   | Guest -> Error (Error.Invalid Field.Token)
   | Admin _ | Contact _ -> Ok (import, user)
 ;;
 
-let user_import_from_req database_label req =
+let user_import_from_req db_ctx req =
   let open Utils.Lwt_result.Infix in
   Sihl.Web.Request.query Field.(show Token) req
   |> CCOption.to_result (Error.NotFound Field.Token)
   |> Lwt_result.lift
   >== User_import.Token.create
-  >>= user_and_import_from_token database_label
+  >>= user_and_import_from_token db_ctx
 ;;
 
 let render_import_confirmation_page req context user_import user =
   let open Pool_context in
-  let { Pool_context.database_label; language; _ } = context in
+  let { Pool_context.language; _ } = context in
   let { User_import.token; active_after_import; _ } = user_import in
   let* email, terms_and_conditions =
     Lwt_result.map_error Response.not_found
@@ -45,12 +45,13 @@ let render_import_confirmation_page req context user_import user =
       Lwt.return_ok (Admin.email_address admin |> Pool_user.EmailAddress.value, None)
     | Contact contact ->
       let address = Contact.email_address contact |> Pool_user.EmailAddress.value in
-      Contact.has_terms_accepted database_label contact
+      Pool_context.connection context @@ fun db_ctx ->
+      Contact.has_terms_accepted db_ctx contact
       >|> (function
        | true -> Lwt.return_ok (address, None)
        | false ->
          let%lwt terms =
-           I18n.find_by_key database_label I18n.Key.TermsAndConditions language
+           I18n.find_by_key db_ctx I18n.Key.TermsAndConditions language
          in
          Lwt.return_ok (address, Some terms))
   in
@@ -66,9 +67,11 @@ let render_import_confirmation_page req context user_import user =
 ;;
 
 let import_confirmation req =
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     let* user_import, user =
-      user_import_from_req database_label req >|- Response.not_found
+      Pool_context.connection context @@
+      CCFun.flip user_import_from_req req
+      >|- Response.not_found
     in
     render_import_confirmation_page req context user_import user
   in
@@ -100,14 +103,14 @@ let target_user_pool_user = function
   | Pool_context.Guest -> Error Pool_message.(Error.Invalid Field.User)
 ;;
 
-let password_reset_events_for_target_user req database_label language tags target_user =
+let password_reset_events_for_target_user req db_ctx language tags target_user =
   let open Utils.Lwt_result.Infix in
   let tenant = Pool_context.Tenant.get_tenant_exn req in
   let message_language = target_user_message_language language target_user in
   let* user = target_user_pool_user target_user |> Lwt_result.lift in
   let* reset_message =
     Message_template.PasswordReset.create
-      database_label
+      db_ctx
       message_language
       (Message_template.Tenant tenant)
       user
@@ -124,8 +127,9 @@ let import_confirmation_post req =
     ||> format_request_boolean_values Field.[ show TermsAccepted ]
   in
   let result
-        { Pool_context.database_label; query_parameters; user = actor_user; language; _ }
+        ({ Pool_context.query_parameters; user = actor_user; language; _ } as context)
     =
+    Pool_context.connection context @@ fun db_ctx ->
     let* user_import, target_user =
       let* token =
         urlencoded
@@ -134,20 +138,20 @@ let import_confirmation_post req =
         >== User_import.Token.create
         |> bad_request_confirmation
       in
-      user_and_import_from_token database_label token >|- Response.not_found
+      user_and_import_from_token db_ctx token >|- Response.not_found
     in
     let* import_events =
       import_confirmation_events urlencoded target_user user_import
       |> bad_request_confirmation
     in
     let* reset_events =
-      password_reset_events_for_target_user req database_label language tags target_user
+      password_reset_events_for_target_user req db_ctx language tags target_user
       |> bad_request_confirmation
     in
     (* Public token flow: command target user may differ from unauthenticated actor user. *)
     let%lwt () =
       import_events @ reset_events
-      |> Pool_event.handle_events ~tags database_label actor_user
+      |> Pool_event.handle_events ~tags db_ctx actor_user
     in
     let success_message =
       if User_import.ActiveAfterImport.value user_import.User_import.active_after_import
@@ -163,14 +167,14 @@ let import_confirmation_post req =
   Response.handle ~src req result
 ;;
 
-let contact_import_from_req { Pool_context.database_label; user; _ } req =
+let contact_import_from_req ({ Pool_context.user; _ } as context) req =
   let open Utils.Lwt_result.Infix in
-  let contact_from_unsubscribe_token token =
-    let%lwt user_id_opt = Pool_token.read database_label token ~k:"user_id" in
-    let%lwt token_type_opt = Pool_token.read database_label token ~k:"type" in
+  let contact_from_unsubscribe_token db_ctx token =
+    let%lwt user_id_opt = Pool_token.read db_ctx token ~k:"user_id" in
+    let%lwt token_type_opt = Pool_token.read db_ctx token ~k:"type" in
     match token_type_opt, user_id_opt with
     | Some "unsubscribe", Some user_id ->
-      Contact.find database_label (Contact.Id.of_string user_id)
+      Contact.find db_ctx (Contact.Id.of_string user_id)
       ||> CCResult.map (fun contact -> Some token, contact)
     | _ -> Lwt_result.fail Pool_message.(Error.NotFound Field.Token)
   in
@@ -181,22 +185,27 @@ let contact_import_from_req { Pool_context.database_label; user; _ } req =
       Lwt.return_error Pool_message.(Error.NotFound Field.Contact)
   in
   match Sihl.Web.Request.query Field.(show Token) req with
-  | Some token -> Pool_token.of_string token |> contact_from_unsubscribe_token
+  | Some token ->
+    Pool_token.of_string token
+    |> CCFun.flip contact_from_unsubscribe_token
+    |> Pool_context.connection context
   | None -> contact_from_context_user ()
 ;;
 
 let unsubscribe req =
   let open Utils.Lwt_result.Infix in
-  let result (Pool_context.{ database_label; language; _ } as context) =
+  let result (Pool_context.{ language; _ } as context) =
     contact_import_from_req context req
     >|> function
     | Error (_ : Error.t) -> Lwt_result.fail Response.generic_not_found
     | Ok (token_opt, contact) ->
       let email = contact |> Contact.email_address |> Pool_user.EmailAddress.value in
-      let%lwt title =
-        I18n.find_by_key database_label I18n.Key.UnsubscribeTitle language
+      let%lwt title, text =
+        Pool_context.connection context @@ fun db_ctx ->
+        Lwt.both
+          (I18n.find_by_key db_ctx I18n.Key.UnsubscribeTitle language)
+          (I18n.find_by_key db_ctx I18n.Key.UnsubscribeText language)
       in
-      let%lwt text = I18n.find_by_key database_label I18n.Key.UnsubscribeText language in
       Page.Contact.pause_account context ?token:token_opt ~email ~title ~text ()
       |> General.create_tenant_layout req context
       >|+ Sihl.Web.Response.of_html
@@ -208,14 +217,15 @@ let unsubscribe req =
 let unsubscribe_post req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
-  let result ({ Pool_context.database_label; query_parameters; user; _ } as context) =
+  let result ({ Pool_context.query_parameters; user; _ } as context) =
     contact_import_from_req context req
     >|> function
     | Error (_ : Error.t) -> Lwt_result.fail Response.generic_not_found
     | Ok (token, contact) ->
+      Pool_context.connection context @@ fun db_ctx ->
       let* import_events =
         User_import.find_pending_by_user_id_opt
-          database_label
+          db_ctx
           (Contact.id contact |> Contact.Id.to_user)
         >|> (function
          | None -> Lwt_result.return []
@@ -235,14 +245,14 @@ let unsubscribe_post req =
       let%lwt () =
         Pool_event.handle_events
           ~tags
-          database_label
+          db_ctx
           user
           (pause_contact_events @ import_events)
       in
       let%lwt () =
         CCOption.map_or
           ~default:Lwt.return_unit
-          Pool_token.(deactivate database_label)
+          Pool_token.(deactivate db_ctx)
           token
       in
       Http_utils.(

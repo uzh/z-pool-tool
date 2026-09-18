@@ -8,7 +8,6 @@ module Response = Http_response
 
 let src = Logs.Src.create "handler.public"
 let create_layout req = General.create_tenant_layout req
-let root_label = Database.Pool.Root.label
 
 let root_redirect req =
   let open Http_utils in
@@ -23,15 +22,16 @@ let index req =
   if Http_utils.is_req_from_root_host req
   then Http_utils.redirect_to "/root"
   else (
-    let result ({ Pool_context.database_label; language; _ } as context) =
+    let result ({ Pool_context.language; _ } as context) =
       let open Utils.Lwt_result.Infix in
       Response.bad_request_render_error context
-      @@ let* tenant = Pool_tenant.find_by_label database_label in
+      @@ Pool_context.connection context @@ fun db_ctx ->
+         let* tenant = Pool_tenant.find_by_db_ctx db_ctx in
          let%lwt welcome_text =
-           I18n.find_by_key database_label I18n.Key.WelcomeText language
+           I18n.find_by_key db_ctx I18n.Key.WelcomeText language
          in
          let%lwt signup_cta =
-           I18n.find_by_key database_label I18n.Key.SignUpCTA language
+           I18n.find_by_key db_ctx I18n.Key.SignUpCTA language
          in
          Page.Public.index tenant context welcome_text signup_cta
          |> create_layout req context
@@ -51,14 +51,15 @@ let index_css req =
       >== fun { tenant; _ } ->
       tenant.Pool_tenant.styles |> CCOption.to_result (Error.NotFound Field.Styles)
     in
+    let db_ctx = Database.(label_ctx Pool.Root.label) in
     let* file =
       Http_utils.File.get_storage_file
         ~tags
-        root_label
+        db_ctx
         (styles |> Pool_tenant.Styles.id |> Common.Id.value)
     in
     let%lwt content =
-      Storage.download_data_base64 root_label file ||> Base64.decode_exn
+      Storage.download_data_base64 db_ctx file ||> Base64.decode_exn
     in
     Sihl.Web.Response.of_plain_text content
     |> Sihl.Web.Response.set_content_type
@@ -118,8 +119,9 @@ let asset req =
   let%lwt response =
     let tags = Pool_context.Logger.Tags.req req in
     let asset_id = Sihl.Web.Router.param req Field.(Id |> show) in
-    let* file = Http_utils.File.get_storage_file ~tags root_label asset_id in
-    let%lwt content = Storage.download_data_base64 root_label file in
+    let db_ctx = Database.(label_ctx Pool.Root.label) in
+    let* file = Http_utils.File.get_storage_file ~tags db_ctx asset_id in
+    let%lwt content = Storage.download_data_base64 db_ctx file in
     let mime = file.file.mime in
     let content = content |> Base64.decode_exn in
     Sihl.Web.Response.of_plain_text content
@@ -149,12 +151,13 @@ let error req =
 ;;
 
 let credits req =
-  let result ({ Pool_context.language; database_label; _ } as context) =
+  let result ({ Pool_context.language; _ } as context) =
     Response.bad_request_render_error context
     @@
     let open Utils.Lwt_result.Infix in
     let%lwt html =
-      I18n.find_by_key database_label I18n.Key.CreditsText language
+      Pool_context.connection context @@ fun db_ctx ->
+      I18n.find_by_key db_ctx I18n.Key.CreditsText language
       ||> Page.Utils.i18n_page
     in
     html |> create_layout req context >|+ Sihl.Web.Response.of_html
@@ -163,13 +166,14 @@ let credits req =
 ;;
 
 let privacy_policy req =
-  let result ({ Pool_context.language; query_parameters; database_label; _ } as context) =
+  let result ({ Pool_context.language; query_parameters; _ } as context) =
     Response.bad_request_render_error context
     @@
     let redirect_path = Http_utils.url_with_field_params query_parameters "/" in
     let open Utils.Lwt_result.Infix in
     let%lwt policy =
-      I18n.find_by_key_opt database_label I18n.Key.PrivacyPolicy language
+      Pool_context.connection context @@ fun db_ctx ->
+      I18n.find_by_key_opt db_ctx I18n.Key.PrivacyPolicy language
     in
     match policy with
     | None -> Http_utils.redirect_to redirect_path ||> CCResult.return
@@ -183,14 +187,15 @@ let privacy_policy req =
 ;;
 
 let terms_and_conditions req =
-  let result ({ Pool_context.language; database_label; _ } as context) =
+  let result ({ Pool_context.language; _ } as context) =
     Response.bad_request_render_error context
     @@
     let open Utils.Lwt_result.Infix in
+    Pool_context.connection context @@ fun db_ctx ->
     let%lwt terms =
-      I18n.find_by_key database_label I18n.Key.TermsAndConditions language
+      I18n.find_by_key db_ctx I18n.Key.TermsAndConditions language
     in
-    let%lwt terms_last_updated = I18n.terms_and_conditions_last_updated database_label in
+    let%lwt terms_last_updated = I18n.terms_and_conditions_last_updated db_ctx in
     Page.Public.terms_and_conditions language terms terms_last_updated
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
@@ -211,7 +216,7 @@ let hide_announcement req =
     let* () =
       Cqrs_command.Announcement_command.Hide.handle (user, announcement)
       |> Lwt_result.lift
-      |>> Pool_event.handle_events Database.Pool.Root.label user
+      |>> Pool_event.handle_events Database.(label_ctx Pool.Root.label) user
     in
     Tyxml.Html.txt "" |> Response.Htmx.of_html |> Lwt_result.return
   in
