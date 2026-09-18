@@ -1,5 +1,6 @@
 module Data = struct
   let database_label = "econ-test" |> Database.Label.of_string
+  let db_ctx = Database.label_ctx database_label
 end
 
 (* Testable *)
@@ -82,7 +83,7 @@ let file_to_storage file =
       }
   in
   let base64 = Base64.encode_exn file.body in
-  let%lwt _ = Storage.upload_base64 Data.database_label stored_file base64 in
+  let%lwt _ = Storage.upload_base64 Data.db_ctx stored_file base64 in
   Lwt.return_unit
 ;;
 
@@ -574,22 +575,22 @@ end
 module Repo = struct
   let first_contact () =
     let open Utils.Lwt_result.Infix in
-    Contact.all Data.database_label ||> fst ||> CCList.hd
+    Contact.all Data.db_ctx ||> fst ||> CCList.hd
   ;;
 
   let first_tag () =
     let open Utils.Lwt_result.Infix in
-    Tags.find_by Data.database_label ||> fst ||> CCList.hd
+    Tags.find_by Data.db_ctx ||> fst ||> CCList.hd
   ;;
 
   let first_experiment () =
     let open Utils.Lwt_result.Infix in
-    Experiment.all Data.database_label ||> CCList.hd
+    Experiment.all Data.db_ctx ||> CCList.hd
   ;;
 
   let first_location () =
     let open Utils.Lwt_result.Infix in
-    Pool_location.all Data.database_label ||> CCList.hd
+    Pool_location.all Data.db_ctx ||> CCList.hd
   ;;
 end
 

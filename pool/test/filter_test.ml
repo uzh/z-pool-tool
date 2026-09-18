@@ -21,13 +21,13 @@ let allowed_email_suffixes =
 let convert_id = CCFun.(Experiment.Id.value %> Pool_common.Id.of_string)
 
 module TestContacts = struct
-  let all () = TestSeed.Contacts.contact_ids |> Contact.find_multiple Data.database_label
+  let all () = TestSeed.Contacts.contact_ids |> Contact.find_multiple Data.db_ctx
 
   let get_contact index =
     let open Utils.Lwt_result.Infix in
     index
     |> CCList.nth TestSeed.Contacts.contact_ids
-    |> Contact.find Data.database_label
+    |> Contact.find Data.db_ctx
     ||> get_exn
   ;;
 
@@ -35,7 +35,7 @@ module TestContacts = struct
     let open Contact in
     Updated contact
     |> Pool_event.contact
-    |> Pool_event.handle_event Data.database_label current_user
+    |> Pool_event.handle_event Data.db_ctx current_user
     |> Lwt.map (CCFun.const contact)
   ;;
 end
@@ -85,7 +85,7 @@ let firstname firstname =
 
 let find_contact_in_filtered_list contact experiment_id filter =
   let open Utils.Lwt_result.Infix in
-  let find = Filter.find_filtered_contacts Data.database_label experiment_id in
+  let find = Filter.find_filtered_contacts Data.db_ctx experiment_id in
   filter
   |> CCOption.pure
   |> find
@@ -106,7 +106,7 @@ let save_filter current_user filter experiment =
   ; Experiment.Updated (experiment, { experiment with Experiment.filter = Some filter })
     |> Pool_event.experiment
   ]
-  |> Pool_event.handle_events Data.database_label current_user
+  |> Pool_event.handle_events Data.db_ctx current_user
 ;;
 
 let update_filter _ () =
@@ -139,9 +139,9 @@ let create_and_update_filter_template _ () =
   let%lwt current_user = current_user () in
   let%lwt () =
     CustomFieldData.NrOfSiblings.save ()
-    |> Pool_event.handle_event Data.database_label current_user
+    |> Pool_event.handle_event Data.db_ctx current_user
   in
-  let%lwt key_list = Filter.all_keys Data.database_label in
+  let%lwt key_list = Filter.all_keys Data.db_ctx in
   let title = "has siblings" |> Filter.Title.of_string in
   let id = Filter.Id.create () in
   let query = nr_of_siblings_filter () in
@@ -169,7 +169,7 @@ let filter_contacts _ () =
       (* Save field and answer with 3 *)
       CustomFieldData.NrOfSiblings.(
         save_answers ~answer_value:(Some answer_value) contacts)
-      |> Pool_event.handle_events Data.database_label current_user
+      |> Pool_event.handle_events Data.db_ctx current_user
     in
     let filter = Filter.create None (nr_of_siblings_filter ()) in
     let%lwt () = save_filter current_user filter experiment in
@@ -177,7 +177,7 @@ let filter_contacts _ () =
     let%lwt filtered_contacts =
       Filter.(
         find_filtered_contacts
-          Data.database_label
+          Data.db_ctx
           (Matcher (experiment.Experiment.id |> convert_id))
           (Some filter))
       ||> get_exn
@@ -228,7 +228,7 @@ let filter_exclude_inactive _ () =
   let%lwt () = test_filter true contact filter experiment in
   let%lwt (_ : Pool_user.t) =
     let open Pool_user in
-    update Test_utils.Data.database_label ~status:Status.Inactive contact.Contact.user
+    update Test_utils.Data.db_ctx ~status:Status.Inactive contact.Contact.user
   in
   (* Expect inactive contact to be excluded *)
   test_filter false contact filter experiment
@@ -237,7 +237,7 @@ let filter_exclude_inactive _ () =
 let validate_filter_with_unknown_field _ () =
   let open Test_utils in
   let open CCResult in
-  let%lwt key_list = Filter.all_keys Data.database_label in
+  let%lwt key_list = Filter.all_keys Data.db_ctx in
   let query =
     let open Filter in
     Pred
@@ -256,7 +256,7 @@ let validate_filter_with_unknown_field _ () =
 let validate_filter_with_invalid_value _ () =
   let open Test_utils in
   let open CCResult.Infix in
-  let%lwt key_list = Filter.all_keys Data.database_label in
+  let%lwt key_list = Filter.all_keys Data.db_ctx in
   let query =
     let open Filter in
     Pred
@@ -309,7 +309,7 @@ let filter_by_list_contains_all _ () =
         create_multi_select ()
         @ answer_multi_select [ contact ] answer_index
         @ publish_fields ())
-      |> Pool_event.handle_events Data.database_label current_user
+      |> Pool_event.handle_events Data.db_ctx current_user
     in
     let%lwt experiment = Repo.first_experiment () in
     test_list_filter
@@ -360,7 +360,7 @@ let filter_by_select_field _ () =
   let%lwt experiment = Repo.first_experiment () in
   let%lwt () =
     SelectField.(save_answer (Some (option_to_public default_answer)) [ contact ])
-    |> Pool_event.handle_events Test_utils.Data.database_label current_user
+    |> Pool_event.handle_events Test_utils.Data.db_ctx current_user
   in
   let test_select_filter operator expected =
     let filter = SelectField.(filter [ default_answer ] operator) () in
@@ -377,14 +377,14 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
   let open CCFun in
   let open Test_utils in
   let open Utils.Lwt_result.Infix in
-  let pool = Data.database_label in
+  let pool = Data.db_ctx in
   let%lwt current_user = current_user () in
   let%lwt () =
     let%lwt () =
       TestSeed.Contacts.(
         [ 11; 12 ]
         |> CCList.map create_contact
-        |> fun contact_data -> create ~contact_data Data.database_label)
+        |> fun contact_data -> create ~contact_data Data.db_ctx)
     in
     let find_contact = TestSeed.Contacts.find_contact_by_id pool in
     let%lwt contact_one = find_contact 11 in
@@ -413,7 +413,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
           |> updated
           |> Pool_event.contact
         ]
-      |> Pool_event.handle_events Data.database_label current_user
+      |> Pool_event.handle_events Data.db_ctx current_user
     in
     let order_by =
       let open Mailing.Distribution in
@@ -421,7 +421,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
     in
     let%lwt contacts =
       Filter.(
-        find_filtered_contacts ~order_by Data.database_label (Matcher id) (Some filter))
+        find_filtered_contacts ~order_by Data.db_ctx (Matcher id) (Some filter))
       |> Lwt.map get_exn
     in
     let get_index contact =
@@ -477,7 +477,7 @@ let filter_with_admin_value _ () =
         create_admin_override_nr_field ()
         :: (answer_admin_override_nr_field ~answer_value:3 [ contact ]
             @ answer_admin_override_nr_field ~answer_value:1 ~admin [ contact ]))
-      |> Pool_event.handle_events Data.database_label current_user
+      |> Pool_event.handle_events Data.db_ctx current_user
     in
     let search = find_contact_in_filtered_list contact (Filter.Matcher id) in
     let%lwt should_not_contain =
@@ -499,7 +499,7 @@ let no_admin_values_shown_to_contacts _ () =
     let open Custom_field in
     let%lwt custom_fields =
       find_all_by_contact
-        Data.database_label
+        Data.db_ctx
         (Pool_context.Contact contact)
         (Contact.id contact)
       ||> fun (grouped, ungrouped) ->
@@ -544,7 +544,7 @@ let filter_ignore_admin_value _ () =
       in
       (Updated (admin_override_nr_field, override_field) |> Pool_event.custom_field)
       :: answer_admin_override_nr_field ~answer_value [ contact ]
-      |> Pool_event.handle_events Test_utils.Data.database_label current_user
+      |> Pool_event.handle_events Test_utils.Data.db_ctx current_user
     in
     let search = find_contact_in_filtered_list contact (Filter.Matcher id) in
     let%lwt res =
@@ -559,28 +559,28 @@ let filter_by_experiment_participation _ () =
   let open Assignment in
   let open Utils.Lwt_result.Infix in
   let hd = CCList.hd in
-  let database_label = Data.database_label in
+  let db_ctx = Data.db_ctx in
   let%lwt current_user = current_user () in
-  let%lwt all_experiments = Experiment.all database_label in
+  let%lwt all_experiments = Experiment.all db_ctx in
   let first_experiment = CCList.nth all_experiments 0 |> Experiment.(fun exp -> exp.id) in
   let second_experiment =
     CCList.nth all_experiments 2 |> Experiment.(fun exp -> exp.id)
   in
   let%lwt first_session =
-    Session.find_all_for_experiment database_label first_experiment ||> hd
+    Session.find_all_for_experiment db_ctx first_experiment ||> hd
   in
   let%lwt second_session =
-    Session.find_all_for_experiment database_label second_experiment ||> hd
+    Session.find_all_for_experiment db_ctx second_experiment ||> hd
   in
   let%lwt contact = TestContacts.get_contact 2 in
-  let handle_events = Pool_event.handle_events Data.database_label current_user in
+  let handle_events = Pool_event.handle_events Data.db_ctx current_user in
   let%lwt () =
     let%lwt () =
       [ Created (create contact, first_session.Session.id) |> Pool_event.assignment ]
       |> handle_events
     in
     let%lwt assignment =
-      find_not_deleted_by_session database_label first_session.Session.id
+      find_not_deleted_by_session db_ctx first_session.Session.id
       ||> CCList.find (fun (assignment : t) -> Contact.equal assignment.contact contact)
     in
     let assignment =
@@ -728,7 +728,7 @@ let filter_by_non_empty_custom_field _ () =
   let%lwt () =
     let open CustomFieldData in
     NrOfSiblings.(save_answers ~answer_value:(Some answer_value) [ contact ])
-    |> Pool_event.handle_events Test_utils.Data.database_label current_user
+    |> Pool_event.handle_events Test_utils.Data.db_ctx current_user
   in
   let%lwt experiment = Repo.first_experiment () in
   let filter operator =
@@ -754,7 +754,7 @@ let filter_by_empty_custom_field_with_deleted_value _ () =
   let%lwt experiment = Repo.first_experiment () in
   let%lwt () =
     CustomFieldData.NrOfSiblings.(save_answers ~answer_value:None [ contact ])
-    |> Pool_event.handle_events Data.database_label current_user
+    |> Pool_event.handle_events Data.db_ctx current_user
   in
   let filter operator =
     let open Filter in
@@ -780,7 +780,7 @@ let filter_by_date_custom_field _ () =
   let%lwt experiment = Repo.first_experiment () in
   let%lwt () =
     Birthday.(save () :: save_answers ~answer_value:(Some answer_value) [ contact ])
-    |> Pool_event.handle_events Test_utils.Data.database_label current_user
+    |> Pool_event.handle_events Test_utils.Data.db_ctx current_user
   in
   let date = "1985-01-01" |> Pool_model.Base.Ptime.date_of_string |> get_exn in
   let greater_filter = Birthday.filter ~date Operator.(Size.Greater |> size) () in
@@ -799,13 +799,13 @@ let filter_by_tags _ () =
   let open Operator.ListM in
   let open Alcotest in
   let%lwt current_user = current_user () in
-  let database_label = Data.database_label in
+  let db_ctx = Data.db_ctx in
   let contact_testable = Contact.(testable pp equal) in
   let create_tag title =
     let id = Id.create () in
     let tag = create ~id (Title.of_string title) Tags.Model.Contact |> get_exn in
-    let%lwt () = Created tag |> Tags.handle_event database_label in
-    find database_label id ||> get_exn
+    let%lwt () = Created tag |> Tags.handle_event db_ctx in
+    find db_ctx id ||> get_exn
   in
   let%lwt tag_one = create_tag "A Testing Tag" in
   let%lwt tag_two = create_tag "Another Testing Tag" in
@@ -813,7 +813,7 @@ let filter_by_tags _ () =
   let%lwt contact_one = TestContacts.get_contact 2 in
   let%lwt contact_two = TestContacts.get_contact 3 in
   let%lwt contact_three = TestContacts.get_contact 4 in
-  let handle_events = Pool_event.handle_events Data.database_label current_user in
+  let handle_events = Pool_event.handle_events Data.db_ctx current_user in
   let%lwt () =
     let create_tagged_event contact tag =
       let open Tagged in
@@ -832,7 +832,7 @@ let filter_by_tags _ () =
   let search filter =
     let find =
       Filter.Matcher (id |> Experiment.Id.to_common)
-      |> Filter.find_filtered_contacts Data.database_label
+      |> Filter.find_filtered_contacts Data.db_ctx
     in
     find (Some filter)
     ||> get_exn

@@ -3,7 +3,7 @@ module Field = Pool_message.Field
 module Model = Test_utils.Model
 
 let get_exn = Test_utils.get_or_failwith
-let database_label = Test_utils.Data.database_label
+let db_ctx = Test_utils.Data.db_ctx
 let current_user () = Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
 
 let create () =
@@ -106,7 +106,7 @@ module PendingWaitingLists = struct
     let%lwt res =
       let open CCFun in
       Experiment.find_pending_waitinglists_by_contact
-        Test_utils.Data.database_label
+        Test_utils.Data.db_ctx
         contact
       |> Lwt.map (CCList.find_opt (Experiment.Public.equal experiment) %> CCOption.is_some)
     in
@@ -116,8 +116,8 @@ module PendingWaitingLists = struct
 
   let exclude_after_assignign_to_session _ () =
     let open Utils.Lwt_result.Infix in
-    let%lwt experiment = Experiment.find database_label experiment_id ||> get_exn in
-    let%lwt contact = Contact.find database_label contact_id ||> get_exn in
+    let%lwt experiment = Experiment.find db_ctx experiment_id ||> get_exn in
+    let%lwt contact = Contact.find db_ctx contact_id ||> get_exn in
     let%lwt session = Integration_utils.SessionRepo.create ~id:session_id experiment () in
     let%lwt (_ : Assignment.t) =
       Integration_utils.AssignmentRepo.create session contact
@@ -125,7 +125,7 @@ module PendingWaitingLists = struct
     let%lwt res =
       let open CCFun in
       let open Experiment in
-      find_pending_waitinglists_by_contact Test_utils.Data.database_label contact
+      find_pending_waitinglists_by_contact Test_utils.Data.db_ctx contact
       |> Lwt.map
            (CCList.find_opt (fun public -> Id.equal (Public.id public) experiment_id)
             %> CCOption.is_none)
@@ -138,19 +138,19 @@ module PendingWaitingLists = struct
     let open Utils.Lwt_result.Infix in
     let%lwt current_user = current_user () in
     let%lwt experiment =
-      Experiment.find database_label experiment_id ||> get_exn ||> Experiment.to_public
+      Experiment.find db_ctx experiment_id ||> get_exn ||> Experiment.to_public
     in
-    let%lwt contact = Contact.find database_label contact_id ||> get_exn in
-    let%lwt session = Session.find database_label session_id ||> get_exn in
+    let%lwt contact = Contact.find db_ctx contact_id ||> get_exn in
+    let%lwt session = Session.find db_ctx session_id ||> get_exn in
     let%lwt () =
       Session.Canceled session
       |> Pool_event.session
-      |> Pool_event.handle_event database_label current_user
+      |> Pool_event.handle_event db_ctx current_user
     in
     let%lwt res =
       let open CCFun in
       Experiment.find_pending_waitinglists_by_contact
-        Test_utils.Data.database_label
+        Test_utils.Data.db_ctx
         contact
       |> Lwt.map (CCList.find_opt (Experiment.Public.equal experiment) %> CCOption.is_some)
     in

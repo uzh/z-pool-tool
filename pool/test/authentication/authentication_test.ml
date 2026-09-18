@@ -2,7 +2,7 @@ open Test_utils
 open Utils.Lwt_result.Infix
 module Request = Test_request
 
-let pool = Data.database_label
+let pool = Data.db_ctx
 
 module Data = struct
   let contact_id = Contact.Id.create ()
@@ -34,7 +34,7 @@ let setup_test ?contact_id () =
 ;;
 
 let setup_request urlencoded =
-  let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
+  let%lwt tenant = Pool_tenant.find_by_db_ctx pool ||> get_or_failwith in
   Request.mock_post_request ~context_tenant:tenant urlencoded |> Lwt.return
 ;;
 
@@ -123,7 +123,7 @@ let successful_create_2fa_test _ () =
   let%lwt expected =
     let user = Contact.user contact in
     let auth = (create ~id:auth_id ~token:auth_token ~user ~channel:Channel.Email) () in
-    let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
+    let%lwt tenant = Pool_tenant.find_by_db_ctx pool ||> get_or_failwith in
     let%lwt email =
       let open Message_template in
       Login2FAToken.prepare pool Pool_common.Language.En (Tenant tenant)

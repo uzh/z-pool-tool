@@ -4,7 +4,7 @@ module ExperimentCommand = Cqrs_command.Experiment_command
 module Model = Test_utils.Model
 
 let get_exn = Test_utils.get_or_failwith
-let database_label = Test_utils.Data.database_label
+let db_ctx = Test_utils.Data.db_ctx
 let current_user = Model.create_admin ()
 let experiment_boolean_fields = Experiment.boolean_fields |> CCList.map Field.show
 let boolean_fields = Experiment.boolean_fields |> CCList.map Field.show
@@ -365,7 +365,7 @@ let autofill_public_title _ () =
     Alcotest.(check tesetable msg res expected)
   in
   (* Create with public title *)
-  let%lwt default_public_title = Experiment.get_default_public_title database_label in
+  let%lwt default_public_title = Experiment.get_default_public_title db_ctx in
   let get_result urlencoded =
     let open CCResult in
     let open ExperimentCommand.Create in
@@ -376,9 +376,9 @@ let autofill_public_title _ () =
       |> decode default_public_title
       >>= handle ~id
       |> get_exn
-      |> Lwt_list.iter_s (Pool_event.handle_event database_label current_user)
+      |> Lwt_list.iter_s (Pool_event.handle_event db_ctx current_user)
     in
-    let%lwt experiment = Experiment.find database_label id ||> get_exn in
+    let%lwt experiment = Experiment.find db_ctx id ||> get_exn in
     Lwt.return experiment.Experiment.public_title
   in
   let%lwt result = get_result Data.urlencoded in
@@ -430,12 +430,12 @@ module AvailableExperiments = struct
       in
       [ on_site_experiment; online_experiment ]
       |> CCList.map invitation
-      |> Pool_event.handle_events database_label current_user
+      |> Pool_event.handle_events db_ctx current_user
     in
     let find_experiment experiment exp_type =
       let open Experiment in
       let public = experiment |> to_public in
-      find_upcoming database_label (`Query Public.default_query) contact exp_type
+      find_upcoming db_ctx (`Query Public.default_query) contact exp_type
       ||> fst
       ||> CCList.find_opt (Public.equal public)
       ||> CCOption.is_some
@@ -459,23 +459,23 @@ module AvailableExperiments = struct
 
   let exclude_experiment_after_registration_for_session _ () =
     let open Utils.Lwt_result.Infix in
-    let%lwt experiment = Experiment.find database_label experiment_id ||> get_exn in
-    let%lwt contact = Contact.find database_label contact_id ||> get_exn in
-    let%lwt session = Session.find database_label session_id ||> get_exn in
+    let%lwt experiment = Experiment.find db_ctx experiment_id ||> get_exn in
+    let%lwt contact = Contact.find db_ctx contact_id ||> get_exn in
+    let%lwt session = Session.find db_ctx session_id ||> get_exn in
     let%lwt (_ : Assignment.t) =
       Integration_utils.AssignmentRepo.create session contact
     in
     let%lwt experiment_not_available =
       (* Expect the experiment not to be found after registration for a session *)
       let open Experiment in
-      find_upcoming database_label (`Query Public.default_query) contact `OnSite
+      find_upcoming db_ctx (`Query Public.default_query) contact `OnSite
       ||> fst
       ||> CCList.find_opt (fun public -> Id.equal (Public.id public) experiment.id)
       ||> CCOption.is_none
     in
     let%lwt upcoming_session_found =
       (* Expect the session to be listed among the upcoming sessions *)
-      Session.query_by_contact database_label contact
+      Session.query_by_contact db_ctx contact
       ||> fst
       ||> CCList.find_opt (fun upcoming ->
         Session.(Id.equal upcoming.Public.id session.id))
@@ -489,19 +489,19 @@ module AvailableExperiments = struct
   let cancel_session _ () =
     let open Utils.Lwt_result.Infix in
     let%lwt current_user = Integration_utils.AdminRepo.create () ||> Pool_context.admin in
-    let%lwt experiment = Experiment.find database_label experiment_id ||> get_exn in
-    let%lwt contact = Contact.find database_label contact_id ||> get_exn in
-    let%lwt session = Session.find database_label session_id ||> get_exn in
+    let%lwt experiment = Experiment.find db_ctx experiment_id ||> get_exn in
+    let%lwt contact = Contact.find db_ctx contact_id ||> get_exn in
+    let%lwt session = Session.find db_ctx session_id ||> get_exn in
     let%lwt () =
       Session.Canceled session
       |> Pool_event.session
-      |> Pool_event.handle_event database_label current_user
+      |> Pool_event.handle_event db_ctx current_user
     in
     let find_available_experiment () =
       (* Expect the experiment not to be found after session cancellation as there is no
          upcoming uncanceled session *)
       let open Experiment in
-      find_upcoming database_label (`Query Public.default_query) contact `OnSite
+      find_upcoming db_ctx (`Query Public.default_query) contact `OnSite
       ||> fst
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
@@ -511,7 +511,7 @@ module AvailableExperiments = struct
     let%lwt upcoming_session_found =
       (* Expect the session to be listed among the upcoming sessions, but to be marked as
          canceled *)
-      Session.query_by_contact database_label contact
+      Session.query_by_contact db_ctx contact
       ||> fst
       ||> CCList.find_opt (fun upcoming ->
         Session.(
@@ -529,27 +529,27 @@ module AvailableExperiments = struct
 
   let mark_assignment_as_deleted _ () =
     let open Utils.Lwt_result.Infix in
-    let%lwt contact = Contact.find database_label contact_id ||> get_exn in
-    let%lwt session = Session.find database_label session_id ||> get_exn in
+    let%lwt contact = Contact.find db_ctx contact_id ||> get_exn in
+    let%lwt session = Session.find db_ctx session_id ||> get_exn in
     let%lwt current_user = Integration_utils.AdminRepo.create () ||> Pool_context.admin in
     let%lwt () =
       let open Assignment in
-      find_not_deleted_by_session database_label session_id
+      find_not_deleted_by_session db_ctx session_id
       ||> CCList.map (fun assignment ->
         Assignment.MarkedAsDeleted assignment |> Pool_event.assignment)
-      >|> Pool_event.handle_events database_label current_user
+      >|> Pool_event.handle_events db_ctx current_user
     in
     let%lwt experiment_available =
       (* Expect the experiment not to be found after marking the assignment as deleted *)
       let open Experiment in
-      find_upcoming database_label (`Query Public.default_query) contact `OnSite
+      find_upcoming db_ctx (`Query Public.default_query) contact `OnSite
       ||> fst
       ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
     in
     let%lwt upcoming_session_not_found =
       (* Expect the session not to be listed, as the assignments are marked as deleted *)
-      Session.query_by_contact database_label contact
+      Session.query_by_contact db_ctx contact
       ||> fst
       ||> CCList.find_opt (fun upcoming ->
         Session.(Id.equal upcoming.Public.id session.id))

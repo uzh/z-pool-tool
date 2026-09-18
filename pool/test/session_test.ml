@@ -1429,7 +1429,7 @@ let follow_up_enrollment_setup grant_permission =
       ()
   in
   let%lwt tenant =
-    Pool_tenant.find_by_label Test_utils.Data.database_label ||> get_or_failwith
+    Pool_tenant.find_by_db_ctx Test_utils.Data.db_ctx ||> get_or_failwith
   in
   let context = Test_request.mock_context ~user () in
   let%lwt () =
@@ -1437,7 +1437,7 @@ let follow_up_enrollment_setup grant_permission =
     | false -> Lwt.return_unit
     | true ->
       let%lwt actor =
-        Pool_context.Utils.find_authorizable Test_utils.Data.database_label user
+        Pool_context.Utils.find_authorizable Test_utils.Data.db_ctx user
         ||> get_or_failwith
       in
       let%lwt () =
@@ -1488,7 +1488,7 @@ let enroll_from_main_creates_assignments_for_uncanceled_participants _ () =
   let%lwt () =
     Assignment.Canceled canceled
     |> Pool_event.assignment
-    |> Pool_event.handle_event Test_utils.Data.database_label user
+    |> Pool_event.handle_event Test_utils.Data.db_ctx user
   in
   let%lwt result =
     Handler.Admin.Session.enroll_from_main
@@ -1502,7 +1502,7 @@ let enroll_from_main_creates_assignments_for_uncanceled_participants _ () =
   let () = Alcotest.(check (result unit error)) "enrollment succeeds" (Ok ()) result in
   let%lwt follow_up_assignments =
     Assignment.find_uncanceled_by_session
-      Test_utils.Data.database_label
+      Test_utils.Data.db_ctx
       follow_up_session.Session.id
   in
   let expected_contacts = contacts |> CCList.take 2 |> contact_ids in
@@ -1541,7 +1541,7 @@ let enroll_from_main_without_permission_preserves_follow_up_session _ () =
   in
   let%lwt follow_up_assignments =
     Assignment.find_uncanceled_by_session
-      Test_utils.Data.database_label
+      Test_utils.Data.db_ctx
       follow_up_session.Session.id
   in
   let () =
@@ -1551,7 +1551,7 @@ let enroll_from_main_without_permission_preserves_follow_up_session _ () =
       (CCList.length follow_up_assignments)
   in
   let%lwt persisted_follow_up =
-    Session.find Test_utils.Data.database_label follow_up_session.Session.id
+    Session.find Test_utils.Data.db_ctx follow_up_session.Session.id
     |> Lwt.map get_or_failwith
   in
   let () =
@@ -1580,7 +1580,7 @@ let close_session_check_contact_figures _ () =
     contacts |> Lwt_list.map_s (fst %> AssignmentRepo.create session)
   in
   let%lwt assignments =
-    Assignment.find_not_deleted_by_session Data.database_label session.Session.id
+    Assignment.find_not_deleted_by_session Data.db_ctx session.Session.id
   in
   let find_assignment contact =
     CCList.find
@@ -1626,7 +1626,7 @@ let close_session_check_contact_figures _ () =
       ])
     |> flatten
     |> cons (Session.Closed session |> Pool_event.session)
-    |> Pool_event.handle_events Data.database_label current_user
+    |> Pool_event.handle_events Data.db_ctx current_user
   in
   let%lwt res =
     contacts
@@ -1643,7 +1643,7 @@ let close_session_check_contact_figures _ () =
         , NumberOfParticipations.of_int participation )
       in
       let%lwt contact =
-        find_by_email Data.database_label (Contact.email_address contact)
+        find_by_email Data.db_ctx (Contact.email_address contact)
         ||> get_or_failwith
       in
       (NumberOfShowUps.equal contact.num_show_ups num_show_ups
@@ -1661,20 +1661,20 @@ let send_session_reminders_with_default_leat_time _ () =
   let open Utils.Lwt_result.Infix in
   let open Integration_utils in
   let get_exn = get_or_failwith in
-  let database_label = Test_utils.Data.database_label in
-  let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
+  let db_ctx = Test_utils.Data.db_ctx in
+  let%lwt tenant = Pool_tenant.find_by_db_ctx db_ctx ||> get_exn in
   (* NOTE: disable GTX key initially to test that text message reminders are
      suppressed when no SMS service is configured *)
   let%lwt () =
     let open Gtx_config in
-    [ Removed; CacheCleared ] |> Lwt_list.iter_s (handle_event database_label)
+    [ Removed; CacheCleared ] |> Lwt_list.iter_s (handle_event db_ctx)
   in
   (* NOTE: disable phone verification so that text messages are sent to all
      contacts with a cell phone regardless of verification status *)
   let%lwt () =
     Settings.(
       PhoneVerificationEnabledUpdated (PhoneVerification.create false)
-      |> handle_event database_label)
+      |> handle_event db_ctx)
   in
   let s_to_lead encode s = s |> Ptime.Span.of_int_s |> encode |> get_exn in
   let%lwt () =
@@ -1684,7 +1684,7 @@ let send_session_reminders_with_default_leat_time _ () =
       ; Settings.DefaultTextMsgReminderLeadTimeUpdated
           (12 * 60 * 60 |> s_to_lead TextMessageLeadTime.create)
       ]
-    |> Lwt_list.iter_s (Settings.handle_event database_label)
+    |> Lwt_list.iter_s (Settings.handle_event db_ctx)
   in
   let%lwt experiment = ExperimentRepo.create () in
   let create_session ?email_reminder_sent_at hours =
@@ -1708,12 +1708,12 @@ let send_session_reminders_with_default_leat_time _ () =
       { contact with
         Contact.cell_phone = Some Pool_user.CellPhone.(of_string "+41791234567")
       }
-    |> Contact.handle_event database_label
-    >|> fun () -> Contact.find database_label (Contact.id contact) ||> get_exn
+    |> Contact.handle_event db_ctx
+    >|> fun () -> Contact.find db_ctx (Contact.id contact) ||> get_exn
   in
   let%lwt assignment1 = AssignmentRepo.create session1 contact in
   let%lwt assignment2 = AssignmentRepo.create session2 contact in
-  let update_session { Session.id; _ } = Session.find database_label id ||> get_exn in
+  let update_session { Session.id; _ } = Session.find db_ctx id ||> get_exn in
   let%lwt session1 = update_session session1 in
   let%lwt session2 = update_session session2 in
   let%lwt _, text_message_reminders =
@@ -1728,9 +1728,9 @@ let send_session_reminders_with_default_leat_time _ () =
     let api_key = ApiKey.of_string "api-key" in
     let sender = Sender.of_string "sender" in
     let config = create api_key sender in
-    Created config |> handle_event database_label
+    Created config |> handle_event db_ctx
   in
-  let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
+  let%lwt tenant = Pool_tenant.find_by_db_ctx db_ctx ||> get_exn in
   let%lwt email_reminders, text_message_reminders =
     Session.find_sessions_to_remind tenant
     ||> get_exn
@@ -1747,11 +1747,11 @@ let send_session_reminders_with_default_leat_time _ () =
   in
   let%lwt expected =
     let open Message_template in
-    let%lwt sys_languages = Settings.find_languages database_label in
+    let%lwt sys_languages = Settings.find_languages db_ctx in
     let%lwt emails =
       let%lwt create =
         SessionReminder.prepare_emails
-          database_label
+          db_ctx
           tenant
           sys_languages
           experiment
@@ -1768,7 +1768,7 @@ let send_session_reminders_with_default_leat_time _ () =
       in
       let%lwt create =
         Message_template.SessionReminder.prepare_text_messages
-          database_label
+          db_ctx
           tenant
           sys_languages
           experiment

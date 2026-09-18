@@ -24,7 +24,7 @@ module AnnouncementRepo = struct
     let%lwt () =
       Announcement.Created (announcement, tenant_ids)
       |> Pool_event.announcement
-      |> Pool_event.handle_event Database.Pool.Root.label current_user
+      |> Pool_event.handle_event Database.(label_ctx Pool.Root.label) current_user
     in
     Lwt.return announcement
   ;;
@@ -37,10 +37,10 @@ module AssignmentRepo = struct
     let%lwt () =
       Assignment.(Created (assignment, session.Session.id))
       |> Pool_event.assignment
-      |> Pool_event.handle_event Data.database_label current_user
+      |> Pool_event.handle_event Data.db_ctx current_user
     in
     Assignment.find_by_contact_and_experiment
-      Data.database_label
+      Data.db_ctx
       session.Session.experiment.Experiment.id
       contact
     ||> CCList.find (fun ({ Session.id; _ }, _) -> Session.Id.equal id session.Session.id)
@@ -78,14 +78,14 @@ module ContactRepo = struct
       ]
       @ confirm
       |> Pool_event.(map contact)
-      |> Pool_event.handle_events Data.database_label current_user
+      |> Pool_event.handle_events Data.db_ctx current_user
     in
-    contact |> id |> find Data.database_label ||> get_or_failwith
+    contact |> id |> find Data.db_ctx ||> get_or_failwith
   ;;
 end
 
 module CustomFieldRepo = struct
-  let pool = Data.database_label
+  let pool = Data.db_ctx
 
   open Custom_field_utils
 
@@ -106,7 +106,7 @@ module AdminRepo = struct
     let admin_id = id |> CCOption.value ~default:(Admin.Id.create ()) in
     let open Admin in
     let open Utils.Lwt_result.Infix in
-    let tags = Database.Logger.Tags.create Data.database_label in
+    let tags = Database.Logger.Tags.of_db_ctx Data.db_ctx in
     let email =
       email
       |> CCOption.value
@@ -125,9 +125,9 @@ module AdminRepo = struct
     in
     let%lwt () =
       [ Created admin |> Pool_event.admin ]
-      |> Pool_event.handle_events ~tags Data.database_label current_user
+      |> Pool_event.handle_events ~tags Data.db_ctx current_user
     in
-    admin_id |> find Data.database_label ||> get_or_failwith
+    admin_id |> find Data.db_ctx ||> get_or_failwith
   ;;
 end
 
@@ -143,7 +143,7 @@ module ExperimentRepo = struct
     let%lwt () =
       Experiment.Created experiment
       |> Pool_event.experiment
-      |> Pool_event.handle_event Data.database_label current_user
+      |> Pool_event.handle_event Data.db_ctx current_user
     in
     experiment |> Lwt.return
   ;;
@@ -155,7 +155,7 @@ module LocationRepo = struct
     let%lwt () =
       Pool_location.Created location
       |> Pool_event.pool_location
-      |> Pool_event.handle_event Data.database_label current_user
+      |> Pool_event.handle_event Data.db_ctx current_user
     in
     location |> Lwt.return
   ;;
@@ -172,9 +172,9 @@ module MailingRepo = struct
     =
     let mailing = Model.create_mailing ~id ?start ?duration ?distribution ?limit () in
     let%lwt () =
-      Mailing.(Created (mailing, experiment_id) |> handle_event Data.database_label)
+      Mailing.(Created (mailing, experiment_id) |> handle_event Data.db_ctx)
     in
-    Mailing.find Data.database_label id |> Lwt.map get_or_failwith
+    Mailing.find Data.db_ctx id |> Lwt.map get_or_failwith
   ;;
 end
 
@@ -185,11 +185,11 @@ module WaitingListRepo = struct
     let%lwt () =
       Waiting_list.Created { Waiting_list.experiment; contact }
       |> Pool_event.waiting_list
-      |> Pool_event.handle_event Data.database_label (Pool_context.Contact contact)
+      |> Pool_event.handle_event Data.db_ctx (Pool_context.Contact contact)
     in
     experiment
     |> Experiment.Public.id
-    |> Waiting_list.find_by_contact_and_experiment Data.database_label contact
+    |> Waiting_list.find_by_contact_and_experiment Data.db_ctx contact
   ;;
 end
 
@@ -222,10 +222,10 @@ module SessionRepo = struct
     let%lwt () =
       Session.(Created session)
       |> Pool_event.session
-      |> Pool_event.handle_event Data.database_label current_user
+      |> Pool_event.handle_event Data.db_ctx current_user
     in
     (* To compare the start time it is required to read the session from the database again *)
-    Session.find Data.database_label session.Session.id |> Lwt.map get_or_failwith
+    Session.find Data.db_ctx session.Session.id |> Lwt.map get_or_failwith
   ;;
 end
 
@@ -233,8 +233,8 @@ module TagRepo = struct
   let create ?(id = Tags.Id.create ()) ?(name = "Tag") model =
     let open Tags in
     let tag = Tags.create ~id (Title.of_string name) model |> get_or_failwith in
-    let%lwt () = Tags.(Created tag |> handle_event Data.database_label) in
-    Tags.find Data.database_label id |> Lwt.map get_or_failwith
+    let%lwt () = Tags.(Created tag |> handle_event Data.db_ctx) in
+    Tags.find Data.db_ctx id |> Lwt.map get_or_failwith
   ;;
 end
 
@@ -244,7 +244,7 @@ module TimeWindowRepo = struct
     let%lwt () =
       Time_window.(Created time_window)
       |> Pool_event.time_window
-      |> Pool_event.handle_event Data.database_label current_user
+      |> Pool_event.handle_event Data.db_ctx current_user
     in
     Lwt.return time_window
   ;;
@@ -257,7 +257,7 @@ let create_admin_actor () =
   let open Utils.Lwt_result.Infix in
   AdminRepo.create ()
   ||> Pool_context.admin
-  >|> Pool_context.Utils.find_authorizable Test_utils.Data.database_label
+  >|> Pool_context.Utils.find_authorizable Test_utils.Data.db_ctx
   ||> Test_utils.get_or_failwith
 ;;
 
@@ -265,6 +265,6 @@ let create_contact_actor () =
   let open Utils.Lwt_result.Infix in
   ContactRepo.create ()
   ||> Pool_context.contact
-  >|> Pool_context.Utils.find_authorizable Test_utils.Data.database_label
+  >|> Pool_context.Utils.find_authorizable Test_utils.Data.db_ctx
   ||> Test_utils.get_or_failwith
 ;;
