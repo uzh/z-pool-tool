@@ -3,7 +3,8 @@ let root_data =
   let description = "Seed development data to root database" in
   Command_utils.make_no_args name description (fun () ->
     let%lwt () = Database.Pool.Root.setup () in
-    let%lwt () = Seed.Root.create () in
+    Database.(connection_ctx Pool.Root.label) @@ fun db_ctx ->
+    let%lwt () = Seed.Root.create db_ctx in
     Lwt.return_some ())
 ;;
 
@@ -12,13 +13,14 @@ let root_data_clean =
   let description = "Clean database and seed development data to root database" in
   Command_utils.make_no_args name description (fun () ->
     let%lwt () = Database.Pool.Root.setup () in
-    let%lwt () = Database.(transaction_ctx Pool.Root.label clean_all) in
-    let%lwt () = Seed.Root.create () in
+    Database.(connection_ctx Pool.Root.label) @@ fun db_ctx ->
+    let%lwt () = Database.clean_all db_ctx in
+    let%lwt () = Seed.Root.create db_ctx in
     Lwt.return_some ())
 ;;
 
 let seed_tenant_clean ?is_test db_pools =
-  let%lwt () = Lwt_list.iter_p (CCFun.flip Database.transaction_ctx Database.clean_all) db_pools in
+  let%lwt () = Lwt_list.iter_p (CCFun.flip Database.connection_ctx Database.clean_all) db_pools in
   let%lwt () = Seed.Tenant.create ?is_test db_pools in
   Lwt.return_some ()
 ;;
