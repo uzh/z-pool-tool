@@ -1,8 +1,7 @@
 module Assets = Seed_assets
 
 module Root = struct
-  let create () =
-    Database.transaction_ctx Database.Pool.Root.label @@ fun db_ctx ->
+  let create db_ctx =
     let%lwt () = Seed_tenant.create db_ctx in
     let%lwt () = Seed_guard.create db_ctx in
     let%lwt () = Seed_smtp.create db_ctx in
