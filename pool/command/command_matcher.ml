@@ -5,7 +5,7 @@ let run_tenant =
     "matcher.run"
     "Run invitation matcher (Inverval: 5 minutes)"
     (fun pool ->
-       let%lwt () = Database.transaction_ctx pool @@ Matcher.match_invitations interval in
+       let%lwt () = Database.connection_ctx pool @@ Matcher.match_invitations interval in
        Lwt.return_some ())
 ;;
 
@@ -18,7 +18,7 @@ let run_all =
        let%lwt () = initialize () in
        let%lwt () =
          Tenant.all ()
-         |> Lwt_list.iter_s (CCFun.flip Database.transaction_ctx
+         |> Lwt_list.iter_s (CCFun.flip Database.connection_ctx
                                (Matcher.match_invitations interval))
        in
        Lwt.return_some ())

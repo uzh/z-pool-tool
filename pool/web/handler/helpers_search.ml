@@ -13,7 +13,7 @@ let htmx_search_helper
       req
   =
   let result ({ Pool_context.user; language; _ } as context) =
-    Pool_context.transaction context @@ fun db_ctx ->
+    Pool_context.connection context @@ fun db_ctx ->
     let* actor =
       Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user
     in

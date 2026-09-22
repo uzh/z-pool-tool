@@ -42,7 +42,7 @@ let context () =
         |> with_status `Internal_server_error
         |> Lwt_result.lift
       in
-      Database.transaction_ctx database_label @@ fun db_ctx ->
+      Database.connection_ctx database_label @@ fun db_ctx ->
       let* api_key = find_api_key db_ctx req ||> with_status `Unauthorized in
       let%lwt guardian =
         api_key.Api_key.id

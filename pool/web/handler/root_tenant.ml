@@ -54,7 +54,7 @@ let create req =
       let events = Create.handle ~tags database decoded |> Lwt_result.lift in
       events >|> HttpUtils.File.cleanup_upload db_ctx files
     in
-    Database.transaction_ctx Root.label @@ fun db_ctx ->
+    Database.connection_ctx Root.label @@ fun db_ctx ->
     let handle = Pool_event.handle_events db_ctx user in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
@@ -103,7 +103,7 @@ let create_operator req =
       |> Lwt_result.lift
       >== Pool_user.EmailAddress.create
     in
-    Database.transaction_ctx tenant.Pool_tenant.database_label @@ fun tenant_db ->
+    Database.connection_ctx tenant.Pool_tenant.database_label @@ fun tenant_db ->
     let%lwt existing_user = Pool_user.find_by_email_opt tenant_db email in
     match existing_user with
     | Some existing when Pool_user.is_admin existing ->
@@ -182,7 +182,7 @@ let promote_operator req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* tenant = Pool_tenant.find tenant_id in
-    Database.transaction_ctx tenant.Pool_tenant.database_label @@ fun tenant_db ->
+    Database.connection_ctx tenant.Pool_tenant.database_label @@ fun tenant_db ->
     let* admin =
       HttpUtils.find_in_urlencoded Field.Admin urlencoded
       |> Lwt_result.lift

@@ -248,7 +248,7 @@ let create_schedule (database_label, (job : AnyJob.t)) : Schedule.t =
   let open Schedule in
   let interval = Every (Ptime.Span.of_int_s 1 |> ScheduledTimeSpan.of_span) in
   let periodic_fcn () =
-    Database.transaction_ctx database_label @@ fun db_ctx ->
+    Database.connection_ctx database_label @@ fun db_ctx ->
     let tags = Database.Logger.Tags.of_db_ctx db_ctx in
     Logs.debug (fun m ->
       m
