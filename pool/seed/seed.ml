@@ -35,7 +35,7 @@ module Tenant = struct
     seeds |> Lwt_list.iter_s ((|>) db_ctx)
 
   let create ?is_test db_pools =
-    Lwt_list.iter_s (CCFun.flip Database.transaction_ctx (create_one ?is_test)) db_pools
+    Lwt_list.iter_s (CCFun.flip Database.connection_ctx (create_one ?is_test)) db_pools
   ;;
 
   let create_contacts db_label = Seed_user.contacts db_label

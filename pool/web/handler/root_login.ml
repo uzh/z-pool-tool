@@ -93,7 +93,7 @@ let request_reset_password_get req =
     @@
     let open Utils.Lwt_result.Infix in
     let open Sihl.Web in
-    Database.(transaction_ctx Pool.Root.label) @@
+    Database.(connection_ctx Pool.Root.label) @@
     CCFun.flip Pool_user.Web.user_from_session req
     >|> function
     | Some _ -> redirect_to_entrypoint |> Lwt_result.ok

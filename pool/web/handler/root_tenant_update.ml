@@ -69,7 +69,7 @@ let update req command success_message =
       |> events_list
       >|> HttpUtils.File.cleanup_upload root_db_ctx files
     in
-    Database.(transaction_ctx Pool.Root.label) @@ fun root_db_ctx ->
+    Database.(connection_ctx Pool.Root.label) @@ fun root_db_ctx ->
     let handle = Pool_event.handle_events ~tags root_db_ctx user in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
@@ -114,7 +114,7 @@ let update_maintenance req =
         redirect_path
         [ Message.set ~success:[ Success.Updated Field.TenantMaintenanceFlag ] ]
     in
-    Database.(transaction_ctx Pool.Root.label) @@ fun db_ctx ->
+    Database.(connection_ctx Pool.Root.label) @@ fun db_ctx ->
     events |>> handle db_ctx |>> return_to_detail
   in
   Response.handle ~src req result
@@ -146,7 +146,7 @@ let delete_asset req =
         redirect_path
         [ Message.set ~success:[ Success.FileDeleted ] ]
     in
-    Database.(transaction_ctx Pool.Root.label) @@ fun root_db_ctx ->
+    Database.(connection_ctx Pool.Root.label) @@ fun root_db_ctx ->
     tenant_id
     |> Pool_tenant.find
     >>= event

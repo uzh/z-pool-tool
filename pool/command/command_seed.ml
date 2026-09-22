@@ -66,7 +66,7 @@ let tenant_data_contacts_specific =
     "Seed 200 additional contacts (development data!) to specific tenant database"
   in
   Command_utils.make_pool_specific name description (fun pool ->
-    let%lwt () = Database.transaction_ctx pool Seed.Tenant.create_contacts in
+    let%lwt () = Database.connection_ctx pool Seed.Tenant.create_contacts in
     Lwt.return_some ())
 ;;
 
@@ -77,7 +77,7 @@ let demo_instance =
   in
   Command_utils.make_pool_specific name description (fun pool ->
     (* Seed Demo Instance with DEV Data *)
-    Database.transaction_ctx pool @@ fun pool ->
+    Database.connection_ctx pool @@ fun pool ->
     let%lwt () = Seed.Tenant.create_one pool in
     (* Change Demo Instance specific Settings *)
     let%lwt () = Seed.DemoInstance.create pool in
@@ -91,7 +91,7 @@ let demo_instance_clean =
      permissions"
   in
   Command_utils.make_pool_specific name description (fun pool ->
-    Database.transaction_ctx pool @@ fun pool ->
+    Database.connection_ctx pool @@ fun pool ->
     let%lwt () = Database.clean_all pool in
     (* Seed Demo Instance with DEV Data *)
     let%lwt () = Seed.Tenant.create_one pool in
