@@ -437,6 +437,7 @@ Solange die neue E-Mail-Adresse nicht bestätigt ist, wird weiterhin die aktuell
   | TagRemoved -> "Der Tag wurde entfernt."
   | TenantUpdateDatabase -> "Datenbank Informationen wurden erfolgreich upgedated."
   | TenantUpdateDetails -> "Tenant wurde erfolgreich upgedated."
+  | Unsubscribed -> "Sie wurden erfolgreich abgemeldet."
   | UserUnblocked -> "Der Benutzer wurde erfolgreich entsperrt."
   | Updated field ->
     field_message "" (field_to_string field) "wurde erfolgreich upgedated."

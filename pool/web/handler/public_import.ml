@@ -244,7 +244,7 @@ let unsubscribe_post req =
       Http_utils.(
         redirect_to_with_actions
           (url_with_field_params query_parameters "/index")
-          [ Message.set ~success:[ Success.PausedToggled true ] ])
+          [ Message.set ~success:[ Success.Unsubscribed ] ])
       |> Lwt_result.ok
   in
   Response.handle ~src req result
