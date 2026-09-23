@@ -407,7 +407,10 @@ let pause_account
     ; div
         ~a:[ a_class [ "rich-text" ] ]
         [ I18n.content_to_string text
-          |> CCString.replace ~which:`All ~sub:"{email}" ~by:email
+          |> CCString.replace
+               ~which:`All
+               ~sub:"{email}"
+               ~by:(Xml_print.encode_unsafe_char email)
           |> Unsafe.data
         ]
     ; form
