@@ -428,6 +428,7 @@ As long as the new e-mail address has not been confirmed, the current address wi
   | TagRemoved -> "The tag is removed."
   | TenantUpdateDatabase -> "Database information was successfully updated."
   | TenantUpdateDetails -> "Tenant was successfully updated."
+  | Unsubscribed -> "You have been successfully unsubscribed."
   | UserUnblocked -> "User was successfully unblocked."
   | Updated field -> field_message "" (field_to_string field) "was successfully updated."
   | Validated field ->
