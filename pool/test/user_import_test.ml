@@ -311,13 +311,34 @@ let inactive_import_confirmation_page_renders_activation_form () =
     (CCString.find ~sub:"name=\"password_confirmation\"" html_lower >= 0)
 ;;
 
+let render_unsubscribe_page context ~email ~title ~text =
+  let i18n key content =
+    I18n.create
+      key
+      context.Pool_context.language
+      (I18n.Content.create_opt content |> get_exn)
+  in
+  Page.Contact.pause_account
+    context
+    ~token:(Pool_token.of_string Data.token)
+    ~email
+    ~title:(i18n I18n.Key.UnsubscribeTitle title)
+    ~text:(i18n I18n.Key.UnsubscribeText text)
+    ()
+  |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
+;;
+
 let unsubscribe_page_renders_pause_form () =
   let context = Test_request.mock_context () in
   let token = Pool_token.of_string Data.token in
   let email = "mymail@test.com" in
   let html =
-    Page.Contact.pause_account context ~token ~email ()
-    |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
+    render_unsubscribe_page
+      context
+      ~email
+      ~title:"Unsubscribe from experiment invitations"
+      ~text:
+        {|<p>The email address "{email}" is unsubscribed from receiving experiment invitations. You can reactivate it in your account settings.</p><p>Are you sure you want to unsubscribe from the experiment invitations?</p>|}
   in
   let html_lower = html |> CCString.lowercase_ascii in
   let unsubscribe_label =
@@ -343,6 +364,54 @@ let unsubscribe_page_renders_pause_form () =
     "contains token in form"
     true
     (CCString.find ~sub:(Pool_token.value token) html_lower >= 0)
+;;
+
+let unsubscribe_page_renders_custom_text () =
+  let context = Test_request.mock_context () in
+  let email = "mymail@test.com" in
+  let html =
+    render_unsubscribe_page
+      context
+      ~email
+      ~title:"Stop invitations"
+      ~text:{|<p>Hi <strong>{email}</strong></p><ul><li>{email}</li></ul>|}
+  in
+  let contains sub = CCString.find ~sub html >= 0 in
+  let open Alcotest in
+  check bool "renders custom title" true (contains "<h1>Stop invitations</h1>");
+  check
+    bool
+    "renders custom rich text with email"
+    true
+    (contains "<p>Hi <strong>mymail@test.com</strong></p>");
+  check bool "replaces every email placeholder" true (contains "<li>mymail@test.com</li>");
+  check bool "leaves no email placeholder" false (contains "{email}");
+  check
+    bool
+    "does not render default text"
+    false
+    (contains "Are you sure you want to unsubscribe")
+;;
+
+let unsubscribe_page_escapes_email () =
+  let context = Test_request.mock_context () in
+  let email =
+    {|"<img/src/onerror=alert(1)>"@example.com|}
+    |> Pool_user.EmailAddress.create
+    |> get_exn
+    |> Pool_user.EmailAddress.value
+  in
+  let html =
+    render_unsubscribe_page context ~email ~title:"Unsubscribe" ~text:{|<p>{email}</p>|}
+  in
+  let contains sub = CCString.find ~sub html >= 0 in
+  let open Alcotest in
+  check bool "does not render email as markup" false (contains "<img");
+  check
+    bool
+    "renders escaped email"
+    true
+    (contains "<p>&quot;&lt;img/src/onerror=alert(1)&gt;&quot;@example.com</p>")
 ;;
 
 let confirm_as_contact_integration _ () =

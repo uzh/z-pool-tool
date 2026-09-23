@@ -383,7 +383,14 @@ let contact_information
   |> contact_profile_layout language I18n.ContactInformation
 ;;
 
-let pause_account Pool_context.{ language; query_parameters; csrf; _ } ?token ~email () =
+let pause_account
+      Pool_context.{ language; query_parameters; csrf; _ }
+      ?token
+      ~email
+      ~title
+      ~text
+      ()
+  =
   let externalize = HttpUtils.externalize_path_with_params query_parameters in
   let action =
     match token with
@@ -394,14 +401,17 @@ let pause_account Pool_context.{ language; query_parameters; csrf; _ } ?token ~e
         [ Message.Field.Token, Pool_token.value token ]
       |> externalize
   in
-  let open Pool_common in
-  let to_txt i18n = Utils.hint_to_string language i18n |> txt in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack" ] ]
-    [ h1 [ to_txt I18n.UnsubscribeExperimentInvitationsTitle ]
-    ; p [ to_txt (I18n.UnsubscribeExperimentInvitationsInfo email) ]
-    ; p
-        [ txt (Utils.confirmable_to_string language I18n.UnsubscribeExperimentInvitation)
+    [ h1 [ txt (I18n.content_to_string title) ]
+    ; div
+        ~a:[ a_class [ "rich-text" ] ]
+        [ I18n.content_to_string text
+          |> CCString.replace
+               ~which:`All
+               ~sub:"{email}"
+               ~by:(Xml_print.encode_unsafe_char email)
+          |> Unsafe.data
         ]
     ; form
         ~a:[ a_method `Post; a_action action ]

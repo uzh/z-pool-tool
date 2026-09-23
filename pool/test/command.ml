@@ -555,6 +555,14 @@ let () =
             "unsubscribe page"
             `Quick
             User_import_test.unsubscribe_page_renders_pause_form
+        ; test_case
+            "unsubscribe page with custom text"
+            `Quick
+            User_import_test.unsubscribe_page_renders_custom_text
+        ; test_case
+            "unsubscribe page escapes email"
+            `Quick
+            User_import_test.unsubscribe_page_escapes_email
         ; test_case "disable as contact" `Quick User_import_test.disable_as_contact
         ; test_case "disable as admin" `Quick User_import_test.disable_as_admin
         ; test_case
