@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Changed
 
-- Unsubscribe confirmaation banner text to make it more clear, a user has successfully
+- Unsubscribe confirmation banner text to make it more clear, a user has successfully
   unsubscribed from e-mail communication
 
 ## [0.13.9](https://github.com/uzh/z-pool-tool/tree/0.13.9)
