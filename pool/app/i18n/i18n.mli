@@ -16,6 +16,8 @@ module Key : sig
     | PrivacyPolicy
     | SignUpCTA
     | TermsAndConditions
+    | UnsubscribeText
+    | UnsubscribeTitle
     | WelcomeText
 
   val create : string -> (t, Pool_message.Error.t) result

@@ -35,6 +35,8 @@ module Key = struct
       | SignUpCTA [@name "signupcta"] [@printer print "signupcta"]
       | TermsAndConditions [@name "terms_and_conditions"]
       [@printer print "terms_and_conditions"]
+      | UnsubscribeText [@name "unsubscribe_text"] [@printer print "unsubscribe_text"]
+      | UnsubscribeTitle [@name "unsubscribe_title"] [@printer print "unsubscribe_title"]
       | WelcomeText [@name "welcome_text"] [@printer print "welcome_text"]
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
@@ -52,6 +54,7 @@ module Key = struct
     | PrivacyPolicy
     | SignUpCTA
     | TermsAndConditions
+    | UnsubscribeText
     | WelcomeText -> `RichText
     | PasswordPolicyText -> `TextArea
     | DashboardUpcomingSessions
@@ -59,7 +62,8 @@ module Key = struct
     | DashboardExperimentRegistration
     | DashboardExperimentHistory
     | ExperimentNavigationTitle
-    | DashboardWaitingList -> `TextInput
+    | DashboardWaitingList
+    | UnsubscribeTitle -> `TextInput
   ;;
 end
 

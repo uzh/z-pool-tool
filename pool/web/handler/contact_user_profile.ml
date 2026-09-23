@@ -473,7 +473,7 @@ let completion_post req =
 
 let pause_account req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.user; _ } as context) =
+  let result (Pool_context.{ database_label; user; language; _ } as context) =
     Response.bad_request_on_error personal_details
     @@
     let* email =
@@ -483,7 +483,9 @@ let pause_account req =
       | Pool_context.Admin _ | Pool_context.Guest ->
         Lwt_result.fail (Error.NotFound Field.User)
     in
-    Page.Contact.pause_account context ~email ()
+    let%lwt title = I18n.find_by_key database_label I18n.Key.UnsubscribeTitle language in
+    let%lwt text = I18n.find_by_key database_label I18n.Key.UnsubscribeText language in
+    Page.Contact.pause_account context ~email ~title ~text ()
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in

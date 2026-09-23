@@ -187,13 +187,17 @@ let contact_import_from_req { Pool_context.database_label; user; _ } req =
 
 let unsubscribe req =
   let open Utils.Lwt_result.Infix in
-  let result context =
+  let result (Pool_context.{ database_label; language; _ } as context) =
     contact_import_from_req context req
     >|> function
     | Error (_ : Error.t) -> Lwt_result.fail Response.generic_not_found
     | Ok (token_opt, contact) ->
       let email = contact |> Contact.email_address |> Pool_user.EmailAddress.value in
-      Page.Contact.pause_account context ?token:token_opt ~email ()
+      let%lwt title =
+        I18n.find_by_key database_label I18n.Key.UnsubscribeTitle language
+      in
+      let%lwt text = I18n.find_by_key database_label I18n.Key.UnsubscribeText language in
+      Page.Contact.pause_account context ?token:token_opt ~email ~title ~text ()
       |> General.create_tenant_layout req context
       >|+ Sihl.Web.Response.of_html
       |> Response.bad_request_render_error context

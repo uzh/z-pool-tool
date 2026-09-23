@@ -794,12 +794,6 @@ Only sessions with open spots can be selected.|}
      api key. The number must have the format +41791234567."
   | TextLengthMax i -> error_to_string (Pool_message.Error.TextLengthMax i)
   | TextLengthMin i -> error_to_string (Pool_message.Error.TextLengthMin i)
-  | UnsubscribeExperimentInvitationsTitle -> "Unsubscribe from experiment invitations"
-  | UnsubscribeExperimentInvitationsInfo email ->
-    Format.asprintf
-      "The email address \"%s\" is unsubscribed from receiving experiment invitations. \
-       You can reactivate it in your account settings."
-      email
   | UserImportInterval ->
     {|<p>Define after how many days a reminder will be sent to contacts that have not confirmed the import yet.</p>
 <p><strong>The 'second reminder' setting defines how long after the first reminder the second reminder is sent.</strong></p>|}

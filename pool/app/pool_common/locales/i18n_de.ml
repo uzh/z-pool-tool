@@ -830,12 +830,6 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
      +41791234567 sein."
   | TextLengthMax i -> error_to_string (Pool_message.Error.TextLengthMax i)
   | TextLengthMin i -> error_to_string (Pool_message.Error.TextLengthMin i)
-  | UnsubscribeExperimentInvitationsInfo email ->
-    Format.asprintf
-      "Die E-Mail-Adresse \"%s\" wird künftig keine Experimenteinladungen mehr erhalten. \
-       Sie können dies in Ihren Kontoeinstellungen wieder aktivieren."
-      email
-  | UnsubscribeExperimentInvitationsTitle -> "Abmelden"
   | UserImportInterval ->
     {|<p>Legen Sie fest, nach wie vielen Tagen eine Erinnerung an Kontakte gesendet werden soll, die den Import noch nicht bestätigt haben.</p>
 <p><strong>Die Einstellung "Zweite Erinnerung" legt fest, wie lange nach der ersten Erinnerung die zweite Erinnerung gesendet wird.</strong></p>|}

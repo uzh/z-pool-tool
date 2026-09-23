@@ -381,8 +381,6 @@ type hint =
   | TestPhoneNumber
   | TextLengthMax of int
   | TextLengthMin of int
-  | UnsubscribeExperimentInvitationsTitle
-  | UnsubscribeExperimentInvitationsInfo of string
   | UserImportInterval
   | VerifyContact
   | WaitingListPhoneMissingContact

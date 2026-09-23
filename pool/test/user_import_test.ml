@@ -315,8 +315,20 @@ let unsubscribe_page_renders_pause_form () =
   let context = Test_request.mock_context () in
   let token = Pool_token.of_string Data.token in
   let email = "mymail@test.com" in
+  let i18n key content =
+    I18n.create
+      key
+      context.Pool_context.language
+      (I18n.Content.create_opt content |> get_exn)
+  in
+  let title = i18n I18n.Key.UnsubscribeTitle "Unsubscribe from experiment invitations" in
+  let text =
+    i18n
+      I18n.Key.UnsubscribeText
+      {|<p>The email address "{email}" is unsubscribed from receiving experiment invitations. You can reactivate it in your account settings.</p><p>Are you sure you want to unsubscribe from the experiment invitations?</p>|}
+  in
   let html =
-    Page.Contact.pause_account context ~token ~email ()
+    Page.Contact.pause_account context ~token ~email ~title ~text ()
     |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
   in
   let html_lower = html |> CCString.lowercase_ascii in
