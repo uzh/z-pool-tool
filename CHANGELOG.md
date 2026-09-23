@@ -4,6 +4,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+### Changed
+
+- Clarify the unsubscribe confirmation banner text to indicate that the user has 
+  successfully unsubscribed from e-mail communication
+
 ## [0.13.9](https://github.com/uzh/z-pool-tool/tree/0.13.9)
 
 ### Changed
