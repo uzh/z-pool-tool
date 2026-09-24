@@ -94,7 +94,7 @@ depends: [
   "jwto" {= "0.4.0"}
   "kdf" {= "1.1.0"}
   "ke" {= "0.6"}
-  "letters" {= "0.4.0-bug-connection-close-wait+HEAD"}
+  "letters" {= "0.4.0-master+c7c4ca8"}
   "logs" {= "0.10.0"}
   "lru" {= "0.3.1"}
   "lsp" {= "1.23.1" & with-dev-setup}
@@ -239,8 +239,8 @@ pin-depends: [
   ]
   ["guardian.0.5.0" "git+https://github.com/uzh/guardian.git#0.5.0"]
   [
-    "letters.0.4.0-bug-connection-close-wait+HEAD"
-    "git+https://github.com/mabiede/letters.git#bug/connection-close-wait"
+    "letters.0.4.0-master+c7c4ca8"
+    "git+https://github.com/uzh/letters.git#c7c4ca86ae15c6f2149565f1adc0602bfb074fac"
   ]
   [
     "opium.0.20.0-master+da1b22e"

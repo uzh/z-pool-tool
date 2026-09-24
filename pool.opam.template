@@ -6,7 +6,7 @@ pin-depends: [
 
     ["conformist.0.8.1-master+aa7b95d" "git+https://github.com/oxidizing/conformist.git#aa7b95d1f39215cdaab8cf96d765d63e41d5f8a6"]
 
-    ["letters.0.4.0-bug-connection-close-wait+HEAD" "git+https://github.com/mabiede/letters.git#bug/connection-close-wait"]
+    ["letters.0.4.0-master+c7c4ca8" "git+https://github.com/uzh/letters.git#c7c4ca86ae15c6f2149565f1adc0602bfb074fac"]
 
     ["opium.0.20.0-master+da1b22e" "git+https://github.com/rgrinberg/opium.git#da1b22e2ee31889fea68a943b4a6358a633df0c6"]
     ["rock.0.20.0-master+da1b22e" "git+https://github.com/rgrinberg/opium.git#da1b22e2ee31889fea68a943b4a6358a633df0c6"]
