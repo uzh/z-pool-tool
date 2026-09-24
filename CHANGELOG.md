@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - Clarify the unsubscribe confirmation banner text to indicate that the user has 
   successfully unsubscribed from e-mail communication
+- Fix long e-mail subjects being cut off in the middle of words
 
 ## [0.13.9](https://github.com/uzh/z-pool-tool/tree/0.13.9)
 
