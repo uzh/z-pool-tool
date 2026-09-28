@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.13.10](https://github.com/uzh/z-pool-tool/tree/0.13.10)
+
 ### Added
 
 - Option to customize the text on the unsubscribe page using the new texts "Unsubscribe 
