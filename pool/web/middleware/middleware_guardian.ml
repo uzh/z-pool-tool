@@ -68,8 +68,8 @@ let validate_web_access_request_dependent ?any_id effects req =
 let validate_api_access_request_dependent ?any_id effects req =
   let open Utils.Lwt_result.Infix in
   let open Pool_context.Api in
-  let* ({ api_key; database_label; _ } as context) = req |> find |> Lwt_result.lift in
-  Database.connection_ctx database_label @@ fun db_ctx ->
+  let* ({ api_key; _ } as context) = req |> find |> Lwt_result.lift in
+  Pool_context.Api.connection context @@ fun db_ctx ->
   Lwt_result.map_error (access_denied db_ctx)
   @@
   let ctx = Database.to_ctx db_ctx in

@@ -109,6 +109,10 @@ module Api : sig
   val create : Api_key.t -> Database.Label.t -> Guard.PermissionOnTarget.t list -> t
   val find : Rock.Request.t -> (t, Pool_message.Error.t) result
   val set : Rock.Request.t -> t -> Rock.Request.t
+
+  val on_demand : t -> Database.no_transaction Database.ctx
+  val connection : t -> (Database.no_transaction Database.ctx -> 'a Lwt.t) -> 'a Lwt.t
+  val transaction : t -> (Database.transaction Database.ctx -> 'a Lwt.t) -> 'a Lwt.t
 end
 
 val sexp_of_t : t -> Sexplib.Sexp.t
