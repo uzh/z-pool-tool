@@ -995,7 +995,7 @@ module PhoneVerification = struct
   let message_params token = [ "token", Pool_common.VerificationCode.value token ]
 
   let create_text_message
-        pool
+        db_ctx
         message_language
         (tenant : Pool_tenant.t)
         contact
@@ -1003,18 +1003,13 @@ module PhoneVerification = struct
         token
     =
     let open Text_message in
-    (* TODO(reynir): review call sites *)
-    let (Database.Any db_ctx) =
-      if Database.Label.equal
-           tenant.Pool_tenant.database_label
-           (Database.label_of_ctx pool) then
-        Database.Any pool
-      else
-        Database.Any (Database.label_ctx tenant.Pool_tenant.database_label)
-    in
+    (* this has been verified at the two call sites in contact_user_profile.ml *)
+    assert (Database.Label.equal
+              tenant.Pool_tenant.database_label
+              (Database.label_of_ctx db_ctx));
     let%lwt gtx_config = Gtx_config.find_exn db_ctx in
     let%lwt { sms_text; _ } =
-      find_by_label_and_language_to_send pool label message_language
+      find_by_label_and_language_to_send db_ctx label message_language
     in
     let message =
       render_and_create
