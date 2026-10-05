@@ -12,8 +12,8 @@ let redirect_to_entrypoint = HttpUtils.redirect_to root_entrypoint_path
 
 let login_get req =
   let result context =
-    Database.(connection_ctx Pool.Root.label) @@
-    CCFun.flip Pool_user.Web.user_from_session req
+    Database.(connection_ctx Pool.Root.label)
+    @@ CCFun.flip Pool_user.Web.user_from_session req
     >|> function
     | Some _ -> redirect_to_entrypoint |> Lwt_result.ok
     | None ->
@@ -34,9 +34,7 @@ let login_post req =
   let result ({ Pool_context.user; _ } as context) =
     Response.bad_request_on_error ~urlencoded login_get
     @@
-    let handle_events db_ctx evts =
-      Pool_event.handle_events db_ctx user evts
-    in
+    let handle_events db_ctx evts = Pool_event.handle_events db_ctx user evts in
     let* (_ : Pool_user.t), auth, events =
       Helpers_login.create_2fa_login ~tags req context urlencoded
     in
@@ -47,8 +45,8 @@ let login_post req =
             [ "auth_id", auth.Authentication.id |> Authentication.Id.value ]
         ]
     in
-    Pool_context.connection context @@ fun db_ctx ->
-    events |> handle_events db_ctx >|> success |> Lwt_result.ok
+    Pool_context.connection context
+    @@ fun db_ctx -> events |> handle_events db_ctx >|> success |> Lwt_result.ok
   in
   Response.handle ~src req result
 ;;
@@ -93,8 +91,8 @@ let request_reset_password_get req =
     @@
     let open Utils.Lwt_result.Infix in
     let open Sihl.Web in
-    Database.(connection_ctx Pool.Root.label) @@
-    CCFun.flip Pool_user.Web.user_from_session req
+    Database.(connection_ctx Pool.Root.label)
+    @@ CCFun.flip Pool_user.Web.user_from_session req
     >|> function
     | Some _ -> redirect_to_entrypoint |> Lwt_result.ok
     | None ->
@@ -118,7 +116,8 @@ let request_reset_password_post req =
     Response.bad_request_on_error ~urlencoded request_reset_password_get
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     urlencoded
     |> decode
     |> Lwt_result.lift
@@ -167,8 +166,9 @@ let reset_password_post req =
       urlencoded |> decode |> Lwt_result.lift >== handle ~tags
     in
     let%lwt () =
-      Database.(connection_ctx Pool.Root.label) @@ fun db_ctx ->
-      events |> Pool_event.handle_events ~tags db_ctx user in
+      Database.(connection_ctx Pool.Root.label)
+      @@ fun db_ctx -> events |> Pool_event.handle_events ~tags db_ctx user
+    in
     HttpUtils.redirect_to_with_actions
       root_login_path
       [ Message.set ~success:[ Success.PasswordReset ] ]

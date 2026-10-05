@@ -25,8 +25,8 @@ module MakeUserProfile (Config : module type of Config) = struct
       Response.bad_request_render_error context
       @@
       let%lwt password_policy =
-        Pool_context.connection context @@ fun db_ctx ->
-        I18n.find_by_key db_ctx I18n.Key.PasswordPolicyText language
+        Pool_context.connection context
+        @@ fun db_ctx -> I18n.find_by_key db_ctx I18n.Key.PasswordPolicyText language
       in
       Page.Admin.login_information ~action_prefix:prefix admin context password_policy
       |> create_layout ~active_navigation req context
@@ -54,8 +54,8 @@ module MakeUserProfile (Config : module type of Config) = struct
            |> Lwt_result.lift
          in
          let%lwt () =
-           Pool_context.connection context @@ fun db_ctx ->
-           Pool_event.handle_events ~tags db_ctx user events
+           Pool_context.connection context
+           @@ fun db_ctx -> Pool_event.handle_events ~tags db_ctx user events
          in
          redirect_to_with_actions
            active_navigation
@@ -77,8 +77,8 @@ module MakeUserProfile (Config : module type of Config) = struct
            Command.Update.(decode urlencoded >>= handle ~tags admin) |> Lwt_result.lift
          in
          let%lwt () =
-           Pool_context.connection context @@ fun db_ctx ->
-           Pool_event.handle_events ~tags db_ctx user events
+           Pool_context.connection context
+           @@ fun db_ctx -> Pool_event.handle_events ~tags db_ctx user events
          in
          redirect_to_with_actions
            active_navigation

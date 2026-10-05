@@ -83,7 +83,8 @@ let index entity role req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.language; user; _ } as context) =
     let id = experiment_id req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment = Experiment.find db_ctx id >|- Response.not_found in
     Response.bad_request_render_error context
     @@
@@ -140,7 +141,8 @@ let query_admin entity role state req =
     let id = experiment_id req in
     let form_path, guard_id = entity_path_and_guard id req role entity in
     let current_roles, global_role = query_admin_current_and_exclude_role role guard_id in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt admins =
       let query = Admin.query_from_request req in
       let query_by_role db_ctx ?exclude role =
@@ -148,7 +150,8 @@ let query_admin entity role state req =
       in
       match state with
       | `Assigned -> query_by_role db_ctx (Some [ current_roles; global_role, None ])
-      | `Available -> query_by_role db_ctx ~exclude:[ current_roles; global_role, None ] None
+      | `Available ->
+        query_by_role db_ctx ~exclude:[ current_roles; global_role, None ] None
     in
     let%lwt permission =
       let open Guard in
@@ -213,10 +216,9 @@ let toggle_role entity action req =
   in
   let result ({ Pool_context.user; _ } as context) =
     let open Utils.Lwt_result.Infix in
-    Pool_context.connection context @@ fun db_ctx ->
-    let* experiment =
-      Experiment.find db_ctx experiment_id >|- Response.not_found
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* experiment = Experiment.find db_ctx experiment_id >|- Response.not_found in
     let* admin = Admin.find db_ctx admin_id >|- Response.not_found in
     Response.bad_request_on_error fallback_handler
     @@

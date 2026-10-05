@@ -19,4 +19,7 @@ let user_from_session find_user ?cookie_key ?secret ?(key = "user_id") db_ctx re
 ;;
 
 let user_from_token ?key db_ctx = user_from_token ?key Repo.find_opt db_ctx
-let user_from_session ?cookie_key ?secret ?key db_ctx = user_from_session ?cookie_key ?secret ?key Repo.find_opt db_ctx
+
+let user_from_session ?cookie_key ?secret ?key db_ctx =
+  user_from_session ?cookie_key ?secret ?key Repo.find_opt db_ctx
+;;

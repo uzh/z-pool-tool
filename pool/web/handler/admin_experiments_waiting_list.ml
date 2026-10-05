@@ -14,7 +14,8 @@ let index req =
   Response.Htmx.index_handler ~create_layout ~query:(module Waiting_list) req
   @@ fun context query ->
   let open Utils.Lwt_result.Infix in
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let* experiment = Experiment.find db_ctx id in
   let access_contact_profiles = Helpers.Guard.can_access_contact_profile context id in
   let%lwt waiting_list =
@@ -32,15 +33,12 @@ let detail req =
   let experiment_id = experiment_id req in
   let waiting_list_id = waiting_list_id req in
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
-    let* waiting_list =
-      Waiting_list.find db_ctx waiting_list_id >|- Response.not_found
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* waiting_list = Waiting_list.find db_ctx waiting_list_id >|- Response.not_found in
     Response.bad_request_render_error context
     @@
-    let%lwt sessions =
-      Session.find_all_to_assign_from_waitinglist db_ctx experiment_id
-    in
+    let%lwt sessions = Session.find_all_to_assign_from_waitinglist db_ctx experiment_id in
     let grouped_sessions, chronological =
       let open Session in
       let sessions = group_and_sort sessions in
@@ -81,7 +79,8 @@ let update req =
     Response.bad_request_on_error ~urlencoded detail
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* waiting_list = Waiting_list.find db_ctx waiting_list_id in
     let events =
       let open Cqrs_command.Waiting_list_command in
@@ -107,13 +106,10 @@ let assign_contact req =
   let redirect_path = waiting_list_path experiment_id in
   let result ({ Pool_context.user; _ } as context) =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    Pool_context.connection context @@ fun db_ctx -> 
-    let* experiment =
-      Experiment.find db_ctx experiment_id >|- Response.not_found
-    in
-    let* waiting_list =
-      Waiting_list.find db_ctx waiting_list_id >|- Response.not_found
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* experiment = Experiment.find db_ctx experiment_id >|- Response.not_found in
+    let* waiting_list = Waiting_list.find db_ctx waiting_list_id >|- Response.not_found in
     let* session =
       let open Pool_message in
       let* id =
@@ -130,9 +126,7 @@ let assign_contact req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
-    let%lwt follow_up_sessions =
-      Session.find_follow_ups db_ctx session.Session.id
-    in
+    let%lwt follow_up_sessions = Session.find_follow_ups db_ctx session.Session.id in
     let%lwt already_enrolled =
       let open Utils.Lwt_result.Infix in
       Assignment.Public.find_all_by_experiment
@@ -173,8 +167,8 @@ let changelog req =
   let id = waiting_list_id req in
   let url = HttpUtils.Url.Admin.waiting_list_path ~suffix:"changelog" ~id experiment_id in
   let to_human ({ Pool_context.language; _ } as context) changelog =
-    Pool_context.connection context @@ fun db_ctx ->
-    Custom_field.changelog_to_human db_ctx language changelog
+    Pool_context.connection context
+    @@ fun db_ctx -> Custom_field.changelog_to_human db_ctx language changelog
   in
   Helpers.Changelog.htmx_handler ~to_human ~url (Waiting_list.Id.to_common id) req
 ;;

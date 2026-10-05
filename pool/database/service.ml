@@ -133,3 +133,4 @@ let resolve_ctx (type maybe_txn) ?(db_ctx : maybe_txn Entity.ctx option) label =
   | Some db_ctx ->
     assert (String.equal (Entity.label_of_ctx db_ctx) label);
     Any db_ctx
+;;

@@ -13,8 +13,8 @@ let active_navigation = base_path
 let index req =
   let result context =
     Response.bad_request_render_error context
-    @@
-    Pool_context.connection context @@ fun db_ctx ->
+    @@ Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt gtx_config = Gtx_config.find_opt db_ctx in
     let%lwt phone_verification_enabled =
       Settings.find_phone_verification_enabled db_ctx
@@ -36,7 +36,8 @@ let update req =
     Response.bad_request_on_error ~urlencoded index
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt gtx_config = Gtx_config.find_opt db_ctx in
     let open Command in
     let* validated_config = validated_gtx_api_key ~tags urlencoded in
@@ -70,8 +71,8 @@ let delete req =
     |> Lwt_result.lift
     |>> fun events ->
     let%lwt () =
-      Pool_context.connection context @@ fun db_ctx ->
-      Pool_event.handle_events ~tags db_ctx user events
+      Pool_context.connection context
+      @@ fun db_ctx -> Pool_event.handle_events ~tags db_ctx user events
     in
     Http_utils.redirect_to_with_actions
       base_path
@@ -109,7 +110,8 @@ let delivery_report req =
         log_request_with_ip "invalid queue job id provided";
         Error Pool_message.(Error.Invalid Field.Id)
     in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* (_ : Pool_queue.Instance.t) =
       Pool_queue.find db_ctx job_id
       >|- fun err ->
@@ -175,8 +177,9 @@ let update_phone_verification req =
       |> Lwt_result.lift
     in
     let%lwt () =
-      Pool_context.connection context @@ fun db_ctx ->
-      Pool_event.handle_events ~tags db_ctx user events in
+      Pool_context.connection context
+      @@ fun db_ctx -> Pool_event.handle_events ~tags db_ctx user events
+    in
     Http_utils.redirect_to_with_actions
       base_path
       [ HttpUtils.Message.set

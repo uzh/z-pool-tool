@@ -11,12 +11,10 @@ let sign_up req =
   let result ({ Pool_context.language; _ } as context) =
     let open Utils.Lwt_result.Infix in
     Response.bad_request_render_error context
-    @@
-    Pool_context.connection context @@ fun db_ctx ->
+    @@ Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt custom_fields = Custom_field.all_prompted_on_registration db_ctx in
-    let%lwt terms =
-      I18n.find_by_key db_ctx I18n.Key.TermsAndConditions language
-    in
+    let%lwt terms = I18n.find_by_key db_ctx I18n.Key.TermsAndConditions language in
     Page.Contact.sign_up terms custom_fields context
     |> create_layout req ~active_navigation:"/signup" context
     >|+ Sihl.Web.Response.of_html
@@ -38,7 +36,8 @@ let sign_up_create req =
     let tags = Pool_context.Logger.Tags.req req in
     Response.bad_request_on_error ~urlencoded sign_up
     @@ let* () = Helpers.terms_and_conditions_accepted urlencoded in
-       Pool_context.connection context @@ fun db_ctx ->
+       Pool_context.connection context
+       @@ fun db_ctx ->
        let%lwt allowed_email_suffixes =
          let open Utils.Lwt_result.Infix in
          Settings.find_email_suffixes db_ctx
@@ -121,9 +120,7 @@ let sign_up_create req =
              |> function
              | Ok contact when contact |> Contact.user |> Pool_user.is_confirmed ->
                let%lwt send_notification =
-                 Contact.should_send_registration_attempt_notification
-                   db_ctx
-                   contact
+                 Contact.should_send_registration_attempt_notification db_ctx contact
                in
                if not send_notification
                then Lwt_result.return []
@@ -159,16 +156,14 @@ let sign_up_create req =
 let email_verification req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
-  let result
-        ({ Pool_context.language; query_parameters; user; _ } as context)
-    =
+  let result ({ Pool_context.language; query_parameters; user; _ } as context) =
     (* TODO: Is this endpoint only used for unverified users? Or also to update user email?
 
        * We probably need a redirect response to redirect if the user is logged in
     *)
     Response.bad_request_on_error sign_up
-    @@
-    Pool_context.connection context @@ fun db_ctx ->
+    @@ Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt redirect_path =
       let user =
         Pool_context.find_contact context
@@ -202,12 +197,8 @@ let email_verification req =
         Pool_context.Utils.find_query_param query_parameters url_key
         >>= CCFun.(Code.create %> CCResult.to_opt)
       in
-      let%lwt admin =
-        Admin.find db_ctx (email |> Email.user_id |> Admin.Id.of_user)
-      in
-      let%lwt contact =
-        Contact.find db_ctx (Email.user_id email |> Contact.Id.of_user)
-      in
+      let%lwt admin = Admin.find db_ctx (email |> Email.user_id |> Admin.Id.of_user) in
+      let%lwt contact = Contact.find db_ctx (Email.user_id email |> Contact.Id.of_user) in
       let verify_email ?signup_code user =
         VerifyEmail.(handle ~tags ?signup_code user email) |> Lwt_result.lift
       in
@@ -269,8 +260,8 @@ let terms req =
     Response.bad_request_render_error context
     @@
     let%lwt terms =
-      Pool_context.connection context @@ fun db_ctx ->
-      I18n.find_by_key db_ctx I18n.Key.TermsAndConditions language
+      Pool_context.connection context
+      @@ fun db_ctx -> I18n.find_by_key db_ctx I18n.Key.TermsAndConditions language
     in
     let notification =
       Pool_context.Utils.find_query_param query_parameters Field.Redirected
@@ -294,8 +285,8 @@ let terms_accept req =
       Command.AcceptTermsAndConditions.handle ~tags contact |> Lwt_result.lift
     in
     let%lwt () =
-      Pool_context.connection context @@ fun db_ctx ->
-      Pool_event.handle_events ~tags db_ctx user events
+      Pool_context.connection context
+      @@ fun db_ctx -> Pool_event.handle_events ~tags db_ctx user events
     in
     HttpUtils.(redirect_to (url_with_field_params query_parameters "/experiments"))
     |> Lwt_result.ok

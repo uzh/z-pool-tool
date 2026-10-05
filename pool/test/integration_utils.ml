@@ -171,9 +171,7 @@ module MailingRepo = struct
         experiment_id
     =
     let mailing = Model.create_mailing ~id ?start ?duration ?distribution ?limit () in
-    let%lwt () =
-      Mailing.(Created (mailing, experiment_id) |> handle_event Data.db_ctx)
-    in
+    let%lwt () = Mailing.(Created (mailing, experiment_id) |> handle_event Data.db_ctx) in
     Mailing.find Data.db_ctx id |> Lwt.map get_or_failwith
   ;;
 end

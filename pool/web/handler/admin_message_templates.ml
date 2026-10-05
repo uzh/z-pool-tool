@@ -24,8 +24,8 @@ let index req =
     Response.bad_request_render_error context
     @@
     let%lwt template_list =
-      Pool_context.connection context @@
-      CCFun.flip Message_template.all_default () in
+      Pool_context.connection context @@ CCFun.flip Message_template.all_default ()
+    in
     Page.Admin.MessageTemplate.index context template_list
     |> create_layout ~active_navigation:"/admin/message-template" req context
     >|+ Sihl.Web.Response.of_html
@@ -38,9 +38,9 @@ let edit req =
   let id = template_id req in
   let result context =
     let* template =
-      Pool_context.connection context @@
-      CCFun.flip Message_template.find id
-      >|- Response.not_found in
+      Pool_context.connection context @@ CCFun.flip Message_template.find id
+      >|- Response.not_found
+    in
     Response.bad_request_render_error context
     @@
     let tenant = Pool_context.Tenant.get_tenant_exn req in
@@ -75,7 +75,8 @@ let write action req =
     Response.bad_request_on_error ~urlencoded redirect.error
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let events =
       let open Cqrs_command.Message_template_command in
       match action with
@@ -90,9 +91,7 @@ let write action req =
           |> Lwt_result.lift
           >== handle ~tags label entity_id available_languages)
       | Update (id, _) ->
-        let* template =
-          Message_template.find db_ctx id
-        in
+        let* template = Message_template.find db_ctx id in
         Update.(urlencoded |> decode |> Lwt_result.lift >== handle template)
     in
     let handle db_ctx events =
@@ -135,9 +134,7 @@ let default_templates_from_request req ?languages db_ctx params =
     let open Session in
     let session_id = Id.of_string session_id in
     let* session = find db_ctx session_id in
-    let* experiment =
-      Experiment.find_of_session db_ctx (Id.to_common session.id)
-    in
+    let* experiment = Experiment.find_of_session db_ctx (Id.to_common session.id) in
     let entity = Session session_id in
     Lwt_result.return
       ( [ Experiment.Id.to_common experiment.Experiment.id; Id.to_common session.id ]
@@ -151,11 +148,7 @@ let default_templates_from_request req ?languages db_ctx params =
     |> CCOption.value ~default:(Lwt_result.fail (Error.NotFound Field.Context))
   in
   let%lwt templates =
-    Message_template.find_entity_defaults_by_label
-      db_ctx
-      ~entity_uuids
-      languages
-      label
+    Message_template.find_entity_defaults_by_label db_ctx ~entity_uuids languages label
   in
   Lwt_result.return (templates, entity)
 ;;
@@ -166,8 +159,8 @@ let preview_default req =
     let query_params = Sihl.Web.Request.query_list req in
     let* label = template_label req |> Lwt_result.lift in
     let* message_templates, _ =
-      Pool_context.connection context @@ fun db_ctx ->
-      default_templates_from_request req db_ctx query_params
+      Pool_context.connection context
+      @@ fun db_ctx -> default_templates_from_request req db_ctx query_params
     in
     Page.Admin.MessageTemplate.preview_template_modal language (label, message_templates)
     |> Response.Htmx.of_html
@@ -181,7 +174,8 @@ let reset_to_default_htmx req =
   let open Message_template in
   let result context =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* current_template =
       let open Message_template in
       let open CCOption in

@@ -23,7 +23,8 @@ let index req =
   Response.Htmx.index_handler ~query:(module Duplicate_contacts) ~create_layout req
   @@ fun context query ->
   let open Contact in
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let* contact =
     match contact_id with
     | None -> Lwt_result.return None
@@ -44,15 +45,12 @@ let index req =
 let show req =
   let result context =
     let open Duplicate_contacts in
-    Pool_context.connection context @@ fun db_ctx ->
-    let* duplicate =
-      duplicate_id req |> find db_ctx |> Response.not_found_on_error
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* duplicate = duplicate_id req |> find db_ctx |> Response.not_found_on_error in
     Response.bad_request_render_error context
     @@
-    let%lwt fields =
-      Custom_field.find_by_model db_ctx Custom_field.Model.Contact
-    in
+    let%lwt fields = Custom_field.find_by_model db_ctx Custom_field.Model.Contact in
     let get_fields db_ctx contact =
       contact
       |> Contact.id
@@ -72,11 +70,10 @@ let ignore req =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_context.Logger.Tags.req req in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* duplicate =
-      duplicate_id req
-      |> Duplicate_contacts.find db_ctx
-      |> Response.not_found_on_error
+      duplicate_id req |> Duplicate_contacts.find db_ctx |> Response.not_found_on_error
     in
     Response.bad_request_on_error show
     @@
@@ -101,16 +98,15 @@ let merge req =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> Http_utils.remove_empty_values
     in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* duplicate =
       duplicate_id req |> Duplicate_contacts.find db_ctx >|- Response.not_found
     in
     Response.bad_request_on_error ~urlencoded show
     @@
     let open Duplicate_contacts in
-    let%lwt fields =
-      Custom_field.find_by_model db_ctx Custom_field.Model.Contact
-    in
+    let%lwt fields = Custom_field.find_by_model db_ctx Custom_field.Model.Contact in
     let get_fields db_ctx contact =
       contact |> Contact.id |> Custom_field.find_to_merge_contact db_ctx
     in

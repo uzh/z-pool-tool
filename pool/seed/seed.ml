@@ -14,8 +14,7 @@ module Tenant = struct
     let seeds =
       (if is_test
        then []
-       else
-         [ Seed_user.contacts; Seed_guard.create_role_assignments; Seed_smtp.create ])
+       else [ Seed_user.contacts; Seed_guard.create_role_assignments; Seed_smtp.create ])
       @ [ Seed_experiment.experiments
         ; Seed_custom_fields.create
         ; Seed_user.admins
@@ -32,7 +31,8 @@ module Tenant = struct
         ; Seed_gtx_api_key.create
         ]
     in
-    seeds |> Lwt_list.iter_s ((|>) db_ctx)
+    seeds |> Lwt_list.iter_s (( |> ) db_ctx)
+  ;;
 
   let create ?is_test db_pools =
     Lwt_list.iter_s (CCFun.flip Database.connection_ctx (create_one ?is_test)) db_pools

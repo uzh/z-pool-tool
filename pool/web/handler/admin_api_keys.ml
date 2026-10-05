@@ -43,8 +43,8 @@ let show req =
   let open Api_key in
   let result context =
     Response.bad_request_render_error context
-    @@
-    Pool_context.connection context @@ fun db_ctx ->
+    @@ Pool_context.connection context
+    @@ fun db_ctx ->
     let* api_key = api_key_id req |> find db_ctx in
     let target_id = api_key.id |> Guard.Uuid.target_of Id.value in
     let%lwt granted_roles = find_granted_roles db_ctx api_key in
@@ -69,8 +69,8 @@ let edit req =
   let open Api_key in
   let result ({ Pool_context.user; _ } as context) =
     Response.bad_request_render_error context
-    @@
-    Pool_context.connection context @@ fun db_ctx ->
+    @@ Pool_context.connection context
+    @@ fun db_ctx ->
     let* api_key = api_key_id req |> find db_ctx in
     let%lwt actor =
       Pool_context.Utils.find_authorizable_opt ~admin_only:true db_ctx user
@@ -111,8 +111,7 @@ let create req =
         (api_key_path ~id ())
         [ Http_utils.Message.set ~success:[ Success.Created Field.ApiKey ] ]
     in
-    events |>> fun events -> Pool_context.connection context @@
-    handle events
+    events |>> fun events -> Pool_context.connection context @@ handle events
   in
   Response.handle ~src req result
 ;;
@@ -124,7 +123,8 @@ let update req =
   in
   let result ({ Pool_context.user; _ } as context) =
     let id = api_key_id req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* api_key = Api_key.find db_ctx id |> Response.not_found_on_error in
     Response.bad_request_on_error ~urlencoded edit
     @@
@@ -148,7 +148,8 @@ let disable req =
   let tags = Pool_context.Logger.Tags.req req in
   let result ({ Pool_context.user; _ } as context) =
     let id = api_key_id req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* api_key = Api_key.find db_ctx id |> Response.not_found_on_error in
     Response.bad_request_on_error index
     @@
@@ -171,8 +172,7 @@ let handle_toggle_role req =
   let open Api_key in
   let result context =
     let* api_key =
-      Pool_context.connection context @@ fun db_ctx ->
-      api_key_id req |> find db_ctx
+      Pool_context.connection context @@ fun db_ctx -> api_key_id req |> find db_ctx
     in
     let target_id = Guard.Uuid.target_of Id.value api_key.id in
     Helpers.Guard.handle_toggle_role target_id req |> Lwt_result.ok
@@ -182,7 +182,8 @@ let handle_toggle_role req =
 
 let search_role_entities req =
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* api_key = api_key_id req |> Api_key.find db_ctx in
     let* target = find_authorizable_target db_ctx api_key in
     Helpers.Guard.search_role_entities target req |> Lwt_result.ok
@@ -195,7 +196,8 @@ let grant_role req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.user; _ } as context) =
     let key_id = api_key_id req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* api_key = find db_ctx key_id |> Response.not_found_on_error in
     Response.bad_request_on_error edit
     @@
@@ -213,7 +215,8 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
     CCString.replace ~which:`Right ~sub:"/revoke-role" ~by:"/edit" target
   in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* api_key = api_key_id req |> find db_ctx |> Response.not_found_on_error in
     Response.bad_request_on_error edit
     @@

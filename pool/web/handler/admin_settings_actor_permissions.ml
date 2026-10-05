@@ -15,10 +15,9 @@ let show req =
     ~create_layout:General.create_tenant_layout
     req
   @@ fun ({ Pool_context.language; _ } as context) query ->
-  Pool_context.connection context @@ fun db_ctx ->
-  let%lwt permissions, query =
-    Guard.Persistence.ActorPermission.find_by query db_ctx
-  in
+  Pool_context.connection context
+  @@ fun db_ctx ->
+  let%lwt permissions, query = Guard.Persistence.ActorPermission.find_by query db_ctx in
   let%lwt hint = I18n.(find_by_key db_ctx Key.ActorPermissionHint) language in
   let open Page.Admin.Settings.ActorPermission in
   (if HttpUtils.Htmx.is_hx_request req then list else index ~hint)
@@ -47,8 +46,9 @@ let delete req =
     let handle = function
       | Ok events ->
         let%lwt () =
-          Pool_context.connection context @@ fun db_ctx ->
-          Pool_event.handle_events ~tags db_ctx user events in
+          Pool_context.connection context
+          @@ fun db_ctx -> Pool_event.handle_events ~tags db_ctx user events
+        in
         Http_utils.redirect_to_with_actions
           active_navigation
           [ Message.set ~success:[ Success.Deleted Field.Permission ] ]
@@ -63,14 +63,12 @@ let delete req =
 ;;
 
 let new_form req =
-  let result
-        ({ Pool_context.csrf; language; flash_fetcher; _ } as context)
-    =
+  let result ({ Pool_context.csrf; language; flash_fetcher; _ } as context) =
     Response.bad_request_render_error context
     @@
     let%lwt hint =
-      Pool_context.connection context @@ fun db_ctx ->
-      I18n.(find_by_key db_ctx Key.ActorPermissionCreateHint) language
+      Pool_context.connection context
+      @@ fun db_ctx -> I18n.(find_by_key db_ctx Key.ActorPermissionCreateHint) language
     in
     Page.Admin.Settings.ActorPermission.create
       ~hint
@@ -120,12 +118,12 @@ let create req =
             (Guard.Uuid.Actor.of_string %> CCOption.to_result (Error.Decode Field.Id))
       ||> CCResult.flatten_l
     in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt actors =
       let to_id = Guard.Uuid.Actor.to_string %> Admin.Id.of_string in
       actors
-      |> Lwt_list.filter_s (fun id ->
-        id |> to_id |> Admin.find db_ctx ||> CCResult.is_ok)
+      |> Lwt_list.filter_s (fun id -> id |> to_id |> Admin.find db_ctx ||> CCResult.is_ok)
     in
     let* permission = find Field.Permission |> lift >== Guard.Permission.of_string_res in
     let* model =

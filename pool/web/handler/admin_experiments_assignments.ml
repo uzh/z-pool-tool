@@ -24,10 +24,9 @@ let cancel req =
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let redirect_path = Url.session_path ~id:session_id experiment_id in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
-    let* experiment =
-      Experiment.find db_ctx experiment_id >|- Response.not_found
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* experiment = Experiment.find db_ctx experiment_id >|- Response.not_found in
     let* session = Session.find db_ctx session_id >|- Response.not_found in
     Response.bad_request_on_error Admin_session.show
     @@
@@ -82,7 +81,8 @@ let mark_as_deleted req =
     Response.bad_request_on_error Admin_session.show
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt assignments = Assignment.find_with_follow_ups db_ctx assignment_id in
     let events =
       match assignments with
@@ -164,7 +164,8 @@ module Close = struct
     let tags = Pool_context.Logger.Tags.req req in
     let assignment_id = assignment_id req in
     let result ({ Pool_context.language; user; _ } as context) =
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       let* experiment, session = router_params req db_ctx in
       let* assignment = find db_ctx assignment_id in
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
@@ -201,7 +202,8 @@ module Close = struct
     let tags = Pool_context.Logger.Tags.req req in
     let assignment_id = assignment_id req in
     let result ({ Pool_context.language; user; _ } as context) =
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       let* experiment, session = router_params req db_ctx in
       let* assignment = find db_ctx assignment_id in
       let* events =
@@ -231,7 +233,8 @@ module Close = struct
   let toggle req =
     let tags = Pool_context.Logger.Tags.req req in
     let result ({ Pool_context.language; user; _ } as context) =
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       let* experiment, session = router_params req db_ctx in
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
       let* decoded =
@@ -285,8 +288,7 @@ let session_of_experiment db_ctx session_id experiment =
   let open Utils.Lwt_result.Infix in
   match Experiment.is_sessionless experiment with
   | true ->
-    Time_window.find db_ctx session_id
-    >|+ fun time_window -> `TimeWindow time_window
+    Time_window.find db_ctx session_id >|+ fun time_window -> `TimeWindow time_window
   | false -> Session.find db_ctx session_id >|+ fun session -> `Session session
 ;;
 
@@ -294,11 +296,10 @@ let edit req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment = Experiment.find db_ctx experiment_id |> map_not_found in
-    let* session =
-      session_of_experiment db_ctx session_id experiment |> map_not_found
-    in
+    let* session = session_of_experiment db_ctx session_id experiment |> map_not_found in
     let* assignment = Assignment.find db_ctx assignment_id |> map_not_found in
     Response.bad_request_render_error context
     @@
@@ -326,12 +327,11 @@ let update req =
       assignment_id
   in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* assignment = find db_ctx assignment_id |> map_not_found in
     let* experiment = Experiment.find db_ctx experiment_id |> map_not_found in
-    let* session =
-      session_of_experiment db_ctx session_id experiment |> map_not_found
-    in
+    let* session = session_of_experiment db_ctx session_id experiment |> map_not_found in
     Response.bad_request_on_error edit
     @@
     let tags = Pool_context.Logger.Tags.req req in
@@ -373,7 +373,8 @@ let remind req =
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let redirect_path = Page.Admin.Session.session_path ~id:session_id experiment_id in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* assignment = find db_ctx assignment_id |> map_not_found in
     let* experiment = Experiment.find db_ctx experiment_id |> map_not_found in
     let* session = Session.find db_ctx session_id |> map_not_found in
@@ -412,7 +413,8 @@ let swap_session_get_helper action req =
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let result context =
     let open Utils.Lwt_result.Infix in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment = Experiment.find db_ctx experiment_id in
     let* assignment = find db_ctx assignment_id in
     let* template_lang =
@@ -451,9 +453,7 @@ let swap_session_get_helper action req =
           (Contact.id assignment.contact)
           experiment_id
       in
-      let%lwt sessions =
-        Session.find_all_to_swap_by_experiment db_ctx experiment_id
-      in
+      let%lwt sessions = Session.find_all_to_swap_by_experiment db_ctx experiment_id in
       Page.Admin.Assignment.Partials.swap_session_form
         ~text_messages_enabled
         context
@@ -494,7 +494,8 @@ let swap_session_post req =
     ||> HttpUtils.format_request_boolean_values Field.[ show NotifyContact ]
   in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* assignment = find db_ctx assignment_id |> map_not_found in
     let* experiment = Experiment.find db_ctx experiment_id |> map_not_found in
     let* current_session = Session.find db_ctx session_id |> map_not_found in

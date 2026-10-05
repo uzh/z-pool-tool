@@ -3,7 +3,8 @@ let root_data =
   let description = "Seed development data to root database" in
   Command_utils.make_no_args name description (fun () ->
     let%lwt () = Database.Pool.Root.setup () in
-    Database.(connection_ctx Pool.Root.label) @@ fun db_ctx ->
+    Database.(connection_ctx Pool.Root.label)
+    @@ fun db_ctx ->
     let%lwt () = Seed.Root.create db_ctx in
     Lwt.return_some ())
 ;;
@@ -13,14 +14,17 @@ let root_data_clean =
   let description = "Clean database and seed development data to root database" in
   Command_utils.make_no_args name description (fun () ->
     let%lwt () = Database.Pool.Root.setup () in
-    Database.(connection_ctx Pool.Root.label) @@ fun db_ctx ->
+    Database.(connection_ctx Pool.Root.label)
+    @@ fun db_ctx ->
     let%lwt () = Database.clean_all db_ctx in
     let%lwt () = Seed.Root.create db_ctx in
     Lwt.return_some ())
 ;;
 
 let seed_tenant_clean ?is_test db_pools =
-  let%lwt () = Lwt_list.iter_p (CCFun.flip Database.connection_ctx Database.clean_all) db_pools in
+  let%lwt () =
+    Lwt_list.iter_p (CCFun.flip Database.connection_ctx Database.clean_all) db_pools
+  in
   let%lwt () = Seed.Tenant.create ?is_test db_pools in
   Lwt.return_some ()
 ;;
@@ -30,8 +34,7 @@ let tenant_data =
   let description = "Seed development data to tenant databases" in
   Command_utils.make_no_args name description (fun () ->
     let%lwt () = Database.Pool.initialize () in
-    let%lwt () =
-      Database.Pool.Tenant.all ()|> Seed.Tenant.create in
+    let%lwt () = Database.Pool.Tenant.all () |> Seed.Tenant.create in
     Lwt.return_some ())
 ;;
 
@@ -77,7 +80,8 @@ let demo_instance =
   in
   Command_utils.make_pool_specific name description (fun pool ->
     (* Seed Demo Instance with DEV Data *)
-    Database.connection_ctx pool @@ fun pool ->
+    Database.connection_ctx pool
+    @@ fun pool ->
     let%lwt () = Seed.Tenant.create_one pool in
     (* Change Demo Instance specific Settings *)
     let%lwt () = Seed.DemoInstance.create pool in
@@ -91,7 +95,8 @@ let demo_instance_clean =
      permissions"
   in
   Command_utils.make_pool_specific name description (fun pool ->
-    Database.connection_ctx pool @@ fun pool ->
+    Database.connection_ctx pool
+    @@ fun pool ->
     let%lwt () = Database.clean_all pool in
     (* Seed Demo Instance with DEV Data *)
     let%lwt () = Seed.Tenant.create_one pool in

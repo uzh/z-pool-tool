@@ -97,8 +97,9 @@ let create req =
     in
     let handle events =
       let%lwt () =
-        Pool_context.connection context @@ fun db_ctx ->
-        Pool_event.handle_events ~tags db_ctx user events in
+        Pool_context.connection context
+        @@ fun db_ctx -> Pool_event.handle_events ~tags db_ctx user events
+      in
       Http_utils.redirect_to_with_actions
         (announcement_path ())
         [ Http_utils.Message.set ~success:[ Success.Created Field.Announcement ] ]
@@ -130,8 +131,8 @@ let update req =
     in
     let handle events =
       let%lwt () =
-        Pool_context.connection context @@ fun db_ctx ->
-        Pool_event.handle_events ~tags db_ctx user events
+        Pool_context.connection context
+        @@ fun db_ctx -> Pool_event.handle_events ~tags db_ctx user events
       in
       Http_utils.redirect_to_with_actions
         (announcement_path ())

@@ -58,8 +58,7 @@ let contact_person_from_urlencoded db_ctx urlencoded experiment_id =
       |> Guard.Uuid.Actor.of_string
       |> CCOption.to_result (Error.NotFound Field.ContactPerson)
       |> Lwt_result.lift
-      >>= (fun id ->
-      Guard.Persistence.Actor.find db_ctx id >|- Error.authorization)
+      >>= (fun id -> Guard.Persistence.Actor.find db_ctx id >|- Error.authorization)
       >>= Guard.Persistence.validate db_ctx (validation_set experiment_id)
     in
     id |> Admin.Id.of_string |> Admin.find db_ctx
@@ -82,10 +81,7 @@ let experiment_message_templates db_ctx experiment =
   let open Experiment in
   let open Utils.Lwt_result.Infix in
   let find_templates label =
-    find_all_of_entity_by_label
-      db_ctx
-      (experiment.Experiment.id |> Id.to_common)
-      label
+    find_all_of_entity_by_label db_ctx (experiment.Experiment.id |> Id.to_common) label
     ||> (fun templates ->
     match experiment.language with
     | None -> templates
@@ -106,10 +102,9 @@ let index req =
     req
   @@ fun ({ Pool_context.user; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
-  Pool_context.connection context @@ fun db_ctx ->
-  let* actor =
-    Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user
-  in
+  Pool_context.connection context
+  @@ fun db_ctx ->
+  let* actor = Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user in
   let%lwt experiments, query = Experiment.list_by_user ~query db_ctx actor in
   let open Page.Admin.Experiments in
   (if HttpUtils.Htmx.is_hx_request req then list else index) context experiments query
@@ -122,7 +117,8 @@ let new_form req =
     Response.bad_request_render_error context
     @@
     let tenant = Pool_context.Tenant.get_tenant_exn req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt default_email_reminder_lead_time =
       Settings.find_default_reminder_lead_time db_ctx
     in
@@ -160,15 +156,12 @@ let create req =
     Response.bad_request_on_error ~urlencoded new_form
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    Pool_context.connection context @@ fun db_ctx ->
-    let* organisational_unit =
-      organisational_unit_from_urlencoded urlencoded db_ctx
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* organisational_unit = organisational_unit_from_urlencoded urlencoded db_ctx in
     let* smtp_auth = smtp_auth_from_urlencoded urlencoded db_ctx in
     let id = Experiment.Id.create () in
-    let* actor =
-      Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user
-    in
+    let* actor = Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user in
     let%lwt role_events =
       let open Guard in
       let has_general_experimenter_permission actor =
@@ -211,7 +204,8 @@ let detail edit req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.user; flash_fetcher; _ } as context) =
     let id = experiment_id req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment = Experiment.find db_ctx id |> Response.not_found_on_error in
     Response.bad_request_on_error index
     @@
@@ -220,8 +214,7 @@ let detail edit req =
     let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let%lwt message_templates = experiment_message_templates db_ctx experiment in
     let%lwt current_tags =
-      Tags.(find_all_of_entity db_ctx Model.Experiment)
-        (id |> Experiment.Id.to_common)
+      Tags.(find_all_of_entity db_ctx Model.Experiment) (id |> Experiment.Id.to_common)
     in
     let%lwt current_participation_tags =
       Tags.(
@@ -320,7 +313,8 @@ let update req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.user; _ } as context) =
     let id = experiment_id req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment = Experiment.find db_ctx id |> Response.not_found_on_error in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
@@ -333,9 +327,7 @@ let update req =
     Response.bad_request_on_error ~urlencoded edit
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* organisational_unit =
-      organisational_unit_from_urlencoded urlencoded db_ctx
-    in
+    let* organisational_unit = organisational_unit_from_urlencoded urlencoded db_ctx in
     let* smtp_auth = smtp_auth_from_urlencoded urlencoded db_ctx in
     let%lwt session_count = Experiment.session_count db_ctx id in
     let events =
@@ -361,7 +353,8 @@ let delete req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.user; _ } as context) =
     let experiment_id = experiment_id req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment =
       Experiment.find db_ctx experiment_id |> Response.not_found_on_error
     in
@@ -387,9 +380,7 @@ let delete req =
       let open Message_template in
       [ ExperimentInvitation; SessionReminder; AssignmentConfirmation ]
       |> Lwt_list.map_s
-           (find_all_of_entity_by_label
-              db_ctx
-              (experiment_id |> Experiment.Id.to_common))
+           (find_all_of_entity_by_label db_ctx (experiment_id |> Experiment.Id.to_common))
       ||> CCList.flatten
     in
     let events =
@@ -423,7 +414,8 @@ let reset_invitations req =
   let experiment_id = experiment_id req in
   let redirect_path = HttpUtils.Url.Admin.experiment_path ~id:experiment_id () in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment =
       Experiment.find db_ctx experiment_id |> Response.not_found_on_error
     in
@@ -439,7 +431,7 @@ let reset_invitations req =
         redirect_path
         [ Message.set ~success:[ Success.ResetInvitations ] ]
     in
-    events |>> handle db_ctx 
+    events |>> handle db_ctx
   in
   Response.handle ~src req result
 ;;
@@ -452,8 +444,7 @@ module Filter = struct
 
   let handler fnc req =
     let id = experiment_id req in
-    database_connection_from_req req @@
-    CCFun.flip Experiment.find id
+    database_connection_from_req req @@ CCFun.flip Experiment.find id
     |>> (fun e -> fnc (Experiment e) req)
     >|> function
     | Ok res -> Lwt.return res
@@ -479,7 +470,8 @@ module Filter = struct
         HttpUtils.Url.Admin.experiment_path ~id:experiment_id ~suffix:"invitations" ()
       in
       let tags = Pool_context.Logger.Tags.req req in
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       let* experiment = Experiment.find db_ctx experiment_id in
       let events =
         let open Cqrs_command.Experiment_command.DeleteFilter in
@@ -506,7 +498,8 @@ let message_history req =
     req
   @@ fun context query ->
   let open Utils.Lwt_result.Infix in
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let* experiment = Experiment.find db_ctx experiment_id in
   let%lwt messages =
     let open Pool_queue in

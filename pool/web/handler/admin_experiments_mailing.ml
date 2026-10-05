@@ -30,13 +30,11 @@ let index req =
   Response.Htmx.index_handler ~create_layout ~query:(module Mailing) req
   @@ fun context query ->
   let open Utils.Lwt_result.Infix in
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let* experiment = Experiment.find db_ctx id in
   let%lwt mailings =
-    Mailing.find_by_experiment_with_count
-      db_ctx
-      (Some query)
-      experiment.Experiment.id
+    Mailing.find_by_experiment_with_count db_ctx (Some query) experiment.Experiment.id
   in
   let open Page.Admin.Mailing in
   match HttpUtils.Htmx.is_hx_request req with
@@ -58,15 +56,15 @@ let new_form req =
   let open Utils.Lwt_result.Infix in
   let id = experiment_id req in
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment = Experiment.find db_ctx id >|- Response.not_found in
     Response.bad_request_render_error context
     @@
     let%lwt has_no_upcoming_session =
       match experiment.Experiment.online_experiment with
       | None -> Session.find_upcoming_for_experiment db_ctx id ||> CCList.is_empty
-      | Some _ ->
-        Time_window.find_upcoming_by_experiment db_ctx id ||> CCOption.is_none
+      | Some _ -> Time_window.find_upcoming_by_experiment db_ctx id ||> CCOption.is_none
     in
     let%lwt is_bookable =
       match has_no_upcoming_session with
@@ -99,7 +97,8 @@ let create req =
     Response.bad_request_on_error ~urlencoded new_form
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment = Experiment.find db_ctx experiment_id in
     let* urlencoded = urlencoded_with_distribution urlencoded req in
     let events =
@@ -123,10 +122,9 @@ let detail edit req =
   let experiment_id = experiment_id req in
   let id = mailing_id req in
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
-    let* experiment =
-      Experiment.find db_ctx experiment_id >|- Response.not_found
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* experiment = Experiment.find db_ctx experiment_id >|- Response.not_found in
     let* m, count = Mailing.find_with_detail db_ctx id >|- Response.not_found in
     Response.bad_request_render_error context
     @@ let* mailing, count =
@@ -167,7 +165,8 @@ let update req =
     Response.bad_request_on_error ~urlencoded edit
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* mailing = Mailing.find db_ctx id in
     let* urlencoded = urlencoded_with_distribution urlencoded req in
     let events =
@@ -218,8 +217,7 @@ let search_info req =
       Mailing.per_interval interval mailing
     in
     let%lwt mailings =
-      Pool_context.connection context @@
-      CCFun.flip Mailing.find_overlaps mailing
+      Pool_context.connection context @@ CCFun.flip Mailing.find_overlaps mailing
     in
     Page.Admin.Mailing.overlaps ~average_send ~show_limit_warning context id mailings
     |> Response.Htmx.of_html
@@ -261,7 +259,8 @@ let disabler command success_handler req =
   let redirect_path = experiment_path ~suffix:"mailings" (experiment_id req) in
   let id = mailing_id req in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* mailing = Mailing.find db_ctx id >|- Response.not_found in
     Response.bad_request_on_error index
     @@

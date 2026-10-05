@@ -19,8 +19,8 @@ let dashboard req =
   let result ({ Pool_context.language; _ } as context) =
     let* contact = context_user context in
     Response.bad_request_render_error context
-    @@
-    Pool_context.connection context @@ fun db_ctx ->
+    @@ Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt i18n = I18n.find_all db_ctx () in
     let dashboard_intro = I18n.extract_by_key_exn i18n I18n.Key.DashboardIntro language in
     let%lwt custom_fields_anwsered =
@@ -78,7 +78,8 @@ let index_handler page_context req =
   @@ fun ({ Pool_context.user; language; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* contact = Pool_context.get_contact_user user |> Lwt_result.lift in
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let%lwt experiments =
     let context =
       match page_context with
@@ -115,7 +116,8 @@ let history req =
   @@ fun ({ Pool_context.user; language; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* contact = Pool_context.get_contact_user user |> Lwt_result.lift in
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let%lwt experiments =
     Experiment.query_participation_history_by_contact ~query db_ctx contact
   in
@@ -132,15 +134,11 @@ let history req =
   page context experiments |> Lwt.return_ok
 ;;
 
-let show_online_study
-      context
-      experiment
-      matches_filter
-      contact
-  =
+let show_online_study context experiment matches_filter contact =
   let open Utils.Lwt_result.Infix in
   let experiment_id = Experiment.Public.id experiment in
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let%lwt assignment =
     Assignment.Public.find_all_by_experiment db_ctx experiment_id contact
     ||> CCList.head_opt
@@ -175,15 +173,10 @@ let show_online_study
   |> Lwt.return_ok
 ;;
 
-let show_onsite_study
-      id
-      context
-      experiment
-      matches_filter
-      contact
-  =
+let show_onsite_study id context experiment matches_filter contact =
   let open Utils.Lwt_result.Infix in
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let* grouped_sessions =
     Session.find_all_public_for_experiment db_ctx contact id
     >|+ Session.Public.group_and_sort
@@ -193,9 +186,7 @@ let show_onsite_study
   let%lwt upcoming_sessions = find_sessions `Upcoming in
   let%lwt past_sessions = find_sessions `Past in
   let%lwt canceled_sessions = find_sessions `Canceled in
-  let%lwt user_is_on_waiting_list =
-    Waiting_list.user_is_enlisted db_ctx contact id
-  in
+  let%lwt user_is_on_waiting_list = Waiting_list.user_is_enlisted db_ctx contact id in
   Page.Contact.Experiment.Detail.onsite_study
     experiment
     matches_filter
@@ -214,10 +205,9 @@ let show req =
   let result context =
     let id = experiment_id req in
     let* contact = context_user context in
-    Pool_context.connection context @@ fun db_ctx ->
-    let* experiment =
-      Experiment.find_public db_ctx id contact >|- Response.not_found
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* experiment = Experiment.find_public db_ctx id contact >|- Response.not_found in
     Response.bad_request_render_error context
     @@
     let%lwt matches_filter =
@@ -247,7 +237,8 @@ module OnlineSurvey = struct
         |> Lwt_result.lift
         >|- CCFun.const Response.access_denied
       in
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       let* experiment =
         Experiment.find_public db_ctx experiment_id contact >|- Response.not_found
       in
@@ -280,9 +271,7 @@ module OnlineSurvey = struct
               ~assignment_id:(Assignment.Id.to_common assignment_id)
       in
       let* time_window =
-        Time_window.find_current_by_experiment
-          db_ctx
-          (Experiment.Public.id experiment)
+        Time_window.find_current_by_experiment db_ctx (Experiment.Public.id experiment)
         ||> CCOption.to_result Pool_message.(Error.NotFound Field.Experiment)
       in
       let* events =
@@ -308,10 +297,9 @@ module OnlineSurvey = struct
     let result ({ Pool_context.user; _ } as context) =
       let assignment_id = assignment_id req in
       let experiment_id = experiment_id req in
-      Pool_context.connection context @@ fun db_ctx ->
-      let* assignment =
-        Assignment.find db_ctx assignment_id >|- Response.not_found
-      in
+      Pool_context.connection context
+      @@ fun db_ctx ->
+      let* assignment = Assignment.find db_ctx assignment_id >|- Response.not_found in
       let* experiment =
         Experiment.find_public db_ctx experiment_id assignment.Assignment.contact
         >|- Response.not_found

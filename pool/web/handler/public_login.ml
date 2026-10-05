@@ -39,7 +39,8 @@ let login_post req =
     Response.redirect_unauthorized_on_error ~urlencoded
     @@
     let* login_step = Helpers_login.initiate_login ~tags req context urlencoded in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     match login_step with
     | Helpers_login.MfaRequired (_, auth, events) ->
       let handle_events = Pool_event.handle_events db_ctx user in
@@ -136,7 +137,8 @@ let login_verify_post req =
       match required_answers_given with
       | true -> success_and_redirect db_ctx contact
       | false ->
-        success_and_redirect db_ctx
+        success_and_redirect
+          db_ctx
           ~set_completion_cookie:true
           ~redirect:"/user/completion"
           ~actions:[ Message.set ~error:[ Pool_message.Error.RequiredFieldsMissing ] ]
@@ -147,7 +149,8 @@ let login_verify_post req =
       redirect_to (url_with_field_params query_parameters "/email-confirmation")
       |> Lwt_result.ok
     | true ->
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       user
       |> Admin.user_is_admin db_ctx
       >|> (function
@@ -200,7 +203,8 @@ let request_reset_password_post req =
     let tags = Pool_context.Logger.Tags.req req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* user =
       Sihl.Web.Request.to_urlencoded req
       ||> decode
@@ -270,7 +274,7 @@ let request_reset_password_post req =
         [ Message.set ~success:[ Pool_message.Success.PasswordResetSuccessMessage ] ]
       >|> Lwt_result.return
     in
-    Pool_context.connection context handle 
+    Pool_context.connection context handle
     ||> CCResult.get_lazy (fun err ->
       let (_ : Pool_message.Error.t) = Pool_common.Utils.with_log_error err in
       ())
@@ -284,7 +288,8 @@ let reset_password_get req =
     Response.bad_request_render_error context
     @@
     let token = Sihl.Web.Request.query Pool_message.Field.(Token |> show) req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt password_policy =
       I18n.find_by_key db_ctx I18n.Key.PasswordPolicyText language
     in
@@ -325,8 +330,8 @@ let reset_password_post req =
         redirect_to_with_actions "/reset-password" [ Message.set ~error:[ err ] ]
     in
     handle_error
-    @@
-    Pool_context.connection context @@ fun db_ctx ->
+    @@ Pool_context.connection context
+    @@ fun db_ctx ->
     let* ({ Cqrs_command.User_command.ResetPassword.token; _ } as decoded_params) =
       let open Cqrs_command.User_command.ResetPassword in
       let token =

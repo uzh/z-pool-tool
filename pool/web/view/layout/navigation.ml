@@ -10,7 +10,8 @@ module NavElements = struct
   ;;
 
   let contact_experiment_title context =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt experiments_title =
       Translations.find_by_key
         db_ctx
@@ -189,9 +190,7 @@ module NavElements = struct
       |> parent Settings
       |> NavElement.create
     in
-    let%lwt profile =
-      Profile.nav (Pool_context.on_demand context) ~prefix:"/root" ()
-    in
+    let%lwt profile = Profile.nav (Pool_context.on_demand context) ~prefix:"/root" () in
     [ tenants
     ; users
     ; announcements
@@ -227,7 +226,9 @@ let create_main
       ({ Pool_context.user; _ } as context)
       tenant_languages
   =
-  let%lwt actor = Pool_context.Utils.find_authorizable_opt (Pool_context.on_demand context) user in
+  let%lwt actor =
+    Pool_context.Utils.find_authorizable_opt (Pool_context.on_demand context) user
+  in
   let%lwt nav_links =
     let make_links =
       match kind with

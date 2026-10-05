@@ -37,8 +37,7 @@ let edit req =
   let result context =
     let id = HttpUtils.find_id Tags.Id.of_string Field.Tag req in
     let* tag =
-      Pool_context.connection context @@ CCFun.flip Tags.find id
-      >|- Response.not_found
+      Pool_context.connection context @@ CCFun.flip Tags.find id >|- Response.not_found
     in
     Page.Admin.Settings.Tags.edit context tag
     |> General.create_tenant_layout req ~active_navigation context
@@ -63,7 +62,8 @@ let write action req =
     Response.bad_request_on_error ~urlencoded error_handler
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let events =
       let open Cqrs_command.Tags_command in
       let is_existing db_ctx ?exclude_id ({ title; model; _ } as data : decoded) =
@@ -73,7 +73,8 @@ let write action req =
       in
       match action with
       | `Create ->
-        Create.(urlencoded |> decode |> Lwt_result.lift >>= is_existing db_ctx >== handle ~tags)
+        Create.(
+          urlencoded |> decode |> Lwt_result.lift >>= is_existing db_ctx >== handle ~tags)
       | `Update id ->
         let* ({ Tags.id; _ } as tag) = Tags.find db_ctx id in
         Update.(

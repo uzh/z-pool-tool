@@ -18,8 +18,8 @@ let run_all =
        let%lwt () = initialize () in
        let%lwt () =
          Tenant.all ()
-         |> Lwt_list.iter_s (CCFun.flip Database.connection_ctx
-                               (Matcher.match_invitations interval))
+         |> Lwt_list.iter_s
+              (CCFun.flip Database.connection_ctx (Matcher.match_invitations interval))
        in
        Lwt.return_some ())
 ;;

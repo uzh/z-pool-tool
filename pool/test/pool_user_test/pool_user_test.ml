@@ -205,9 +205,7 @@ let malformed_password_hash_does_not_raise =
         [%string "login fails for stored hash %{hash}"]
         (Error Pool_message.Error.LoginInvalidEmailPassword)
         login_result);
-    let%lwt is_valid =
-      Password.validate_current db_ctx user.id created_password
-    in
+    let%lwt is_valid = Password.validate_current db_ctx user.id created_password in
     Alcotest.(
       check
         bool
@@ -241,8 +239,7 @@ let find_by_email_is_case_insensitive =
       email_addresses
   in
   let%lwt user =
-    EmailAddress.of_string "User1@Example.com"
-    |> Pool_user.find_by_email_opt db_ctx
+    EmailAddress.of_string "User1@Example.com" |> Pool_user.find_by_email_opt db_ctx
   in
   match user with
   | Some _ -> Lwt.return_ok ()
@@ -271,8 +268,7 @@ let filter_users_by_email_returns_single_user =
       email_addresses
   in
   let%lwt actual_user =
-    EmailAddress.of_string "fooz@example.com"
-    |> Pool_user.find_by_email_exn db_ctx
+    EmailAddress.of_string "fooz@example.com" |> Pool_user.find_by_email_exn db_ctx
   in
   Alcotest.(
     check

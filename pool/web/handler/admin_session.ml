@@ -46,7 +46,8 @@ let list req =
   let experiment_id = experiment_id req in
   Response.Htmx.index_handler ~create_layout ~query:(module Session) req
   @@ fun ({ Pool_context.user; _ } as context) query ->
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let* experiment = Experiment.find db_ctx experiment_id in
   let flatten_sessions =
     CCList.fold_left (fun acc (parent, follow_ups) -> acc @ (parent :: follow_ups)) []
@@ -100,43 +101,44 @@ let new_helper req page =
   let id = experiment_id req in
   let result context =
     Response.bad_request_render_error context
-    @@ Pool_context.connection context @@ fun db_ctx ->
-       let* experiment = Experiment.find db_ctx id in
-       let%lwt locations = Pool_location.all db_ctx in
-       let%lwt default_leadtime_settings = default_lead_time_settings db_ctx in
-       let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
-       let html =
-         match page with
-         | `FollowUp ->
-           let session_id = session_id req in
-           let* parent_session = find db_ctx session_id in
-           let* () =
-             match parent_session.follow_up_to with
-             | Some _ -> Lwt_result.fail Error.SessionIsFollowup
-             | None -> Lwt_result.return ()
-           in
-           Page.Admin.Session.follow_up
-             context
-             experiment
-             default_leadtime_settings
-             parent_session
-             locations
-             text_messages_enabled
-           |> Lwt_result.ok
-         | `New ->
-           Lwt_result.ok
-           @@
-             (match CCOption.is_some experiment.Experiment.online_experiment with
-             | false ->
-               Page.Admin.Session.new_form
-                 context
-                 experiment
-                 default_leadtime_settings
-                 locations
-                 text_messages_enabled
-             | true -> Page.Admin.TimeWindow.new_form context experiment)
-       in
-       html >>= create_layout req context >|+ Sihl.Web.Response.of_html
+    @@ Pool_context.connection context
+    @@ fun db_ctx ->
+    let* experiment = Experiment.find db_ctx id in
+    let%lwt locations = Pool_location.all db_ctx in
+    let%lwt default_leadtime_settings = default_lead_time_settings db_ctx in
+    let%lwt text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
+    let html =
+      match page with
+      | `FollowUp ->
+        let session_id = session_id req in
+        let* parent_session = find db_ctx session_id in
+        let* () =
+          match parent_session.follow_up_to with
+          | Some _ -> Lwt_result.fail Error.SessionIsFollowup
+          | None -> Lwt_result.return ()
+        in
+        Page.Admin.Session.follow_up
+          context
+          experiment
+          default_leadtime_settings
+          parent_session
+          locations
+          text_messages_enabled
+        |> Lwt_result.ok
+      | `New ->
+        Lwt_result.ok
+        @@
+          (match CCOption.is_some experiment.Experiment.online_experiment with
+          | false ->
+            Page.Admin.Session.new_form
+              context
+              experiment
+              default_leadtime_settings
+              locations
+              text_messages_enabled
+          | true -> Page.Admin.TimeWindow.new_form context experiment)
+    in
+    html >>= create_layout req context >|+ Sihl.Web.Response.of_html
   in
   Response.handle ~src req result
 ;;
@@ -163,8 +165,7 @@ let duplicate req =
   let result context =
     Response.bad_request_render_error context
     @@ let* experiment, session, followups, parent_session =
-         Pool_context.connection context @@
-         duplication_session_data req
+         Pool_context.connection context @@ duplication_session_data req
        in
        Page.Admin.Session.duplicate context experiment session ?parent_session followups
        >|> create_layout req context
@@ -199,10 +200,9 @@ let duplicate_post_htmx req =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    Pool_context.connection context @@ fun db_ctx ->
-    let* _, session, followups, parent_session =
-      duplication_session_data req db_ctx
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* _, session, followups, parent_session = duplication_session_data req db_ctx in
     let* events =
       let open Cqrs_command.Session_command.Duplicate in
       urlencoded |> handle ~tags ?parent_session session followups |> Lwt_result.lift
@@ -224,8 +224,8 @@ let create req =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     Response.bad_request_on_error ~urlencoded new_form
-    @@
-    Pool_context.connection context @@ fun db_ctx ->
+    @@ Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment = Experiment.find db_ctx id in
     let field =
       if Experiment.is_sessionless experiment then Field.TimeWindow else Field.Session
@@ -323,8 +323,7 @@ let session_page db_ctx req context session experiment =
     Page.Admin.Session.cancel context experiment session follow_ups >|> create_layout
   | `Print ->
     let%lwt assignments =
-      Assignment.(
-        find_for_session_detail_screen ~query:default_query db_ctx session_id)
+      Assignment.(find_for_session_detail_screen ~query:default_query db_ctx session_id)
     in
     Page.Admin.Session.print
       ~view_contact_name
@@ -383,13 +382,13 @@ let show req =
   Response.Htmx.index_handler ~create_layout ~query:(module Assignment) req
   @@ fun ({ Pool_context.user; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let* experiment = Experiment.find db_ctx experiment_id in
   let* session =
     match Experiment.is_sessionless experiment with
     | true ->
-      Time_window.find db_ctx session_id
-      >|+ fun time_window -> `TimeWindow time_window
+      Time_window.find db_ctx session_id >|+ fun time_window -> `TimeWindow time_window
     | false -> Session.find db_ctx session_id >|+ fun session -> `Session session
   in
   let view_contact_name = can_read_contact_name context experiment_target_id in
@@ -406,12 +405,10 @@ let show req =
       match HttpUtils.Session.canceled_at session with
       | Some _ -> Lwt.return_none
       | None ->
-        Assignment.count_unsuitable_by db_ctx (`Session session_id)
-        ||> CCOption.return
+        Assignment.count_unsuitable_by db_ctx (`Session session_id) ||> CCOption.return
     in
     let%lwt current_tags =
-      Tags.ParticipationTags.(
-        find_all db_ctx (Session (Session.Id.to_common session_id)))
+      Tags.ParticipationTags.(find_all db_ctx (Session (Session.Id.to_common session_id)))
     in
     let%lwt session_reminder_templates =
       Message_template.find_all_of_entity_by_label
@@ -482,8 +479,8 @@ let detail page req =
   let session_id = session_id req in
   let result context =
     Response.bad_request_render_error context
-    @@
-    Pool_context.connection context @@ fun db_ctx ->
+    @@ Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment =
       Experiment.find_of_session db_ctx (session_id |> Session.Id.to_common)
     in
@@ -536,8 +533,8 @@ let update_handler action req =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     Response.bad_request_on_error ~urlencoded error_handler
-    @@
-    Pool_context.connection context @@ fun db_ctx ->
+    @@ Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment = Experiment.find db_ctx experiment_id in
     let field =
       if Experiment.is_sessionless experiment then Field.TimeWindow else Field.Session
@@ -626,7 +623,8 @@ let cancel req =
     ||> HttpUtils.format_request_boolean_values Field.[ show Email; show SMS ]
   in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* session = Session.find db_ctx session_id >|- Response.not_found in
     Response.bad_request_on_error ~urlencoded cancel_form
     @@
@@ -699,7 +697,8 @@ let delete req =
   let experiment_id = experiment_id req in
   let result ({ Pool_context.user; _ } as context) =
     let session_id = session_id req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* session = Session.find db_ctx session_id >|- Response.not_found in
     Response.bad_request_on_error list
     @@
@@ -738,7 +737,8 @@ let enroll_from_main
   let urlencoded =
     HttpUtils.format_request_boolean_values Field.[ EnrollFromMain |> show ] urlencoded
   in
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let* enroll_participants_from_main_session =
     HttpUtils.find_in_urlencoded_opt Field.EnrollFromMain urlencoded
     |> CCOption.map Utils.Bool.of_string
@@ -786,7 +786,8 @@ let create_follow_up req =
   let experiment_id = experiment_id req in
   let session_id = session_id req in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* session = Session.find db_ctx session_id >|- Response.not_found in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
@@ -810,9 +811,7 @@ let create_follow_up req =
             location
       |> Lwt_result.lift
     in
-    let%lwt () =
-      Pool_event.handle_events ~tags db_ctx user create_session_events
-    in
+    let%lwt () = Pool_event.handle_events ~tags db_ctx user create_session_events in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let%lwt error =
       match%lwt
@@ -841,7 +840,8 @@ let close_post req =
   let session_id = session_id req in
   let path = session_path experiment_id ~id:session_id in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* session = Session.find db_ctx session_id >|- Response.not_found in
     Response.bad_request_on_error close
     @@
@@ -899,10 +899,9 @@ let message_template_form ?template_id label req =
   let experiment_id = experiment_id req in
   let session_id = session_id req in
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
-    let* experiment =
-      Experiment.find db_ctx experiment_id >|- Response.not_found
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* experiment = Experiment.find db_ctx experiment_id >|- Response.not_found in
     Response.bad_request_render_error context
     @@
     let open Message_template in
@@ -914,10 +913,7 @@ let message_template_form ?template_id label req =
       | None ->
         let%lwt languages =
           Pool_context.Tenant.get_tenant_languages_exn req
-          |> missing_template_languages
-               db_ctx
-               (session_id |> Session.Id.to_common)
-               label
+          |> missing_template_languages db_ctx (session_id |> Session.Id.to_common) label
         in
         let%lwt template =
           find_entity_defaults_by_label
@@ -1005,8 +1001,8 @@ let delete_message_template req =
     let session_id = session_id req in
     let template_id = template_id req in
     let redirect = session_path experiment_id ~id:session_id in
-    Pool_context.connection context @@ fun db_ctx ->
-    Helpers.MessageTemplates.delete db_ctx user template_id redirect
+    Pool_context.connection context
+    @@ fun db_ctx -> Helpers.MessageTemplates.delete db_ctx user template_id redirect
   in
   Response.handle ~src req result
 ;;
@@ -1019,10 +1015,9 @@ let resend_reminders req =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    Pool_context.connection context @@ fun db_ctx ->
-    let* experiment =
-      Experiment.find db_ctx experiment_id >|- Response.not_found
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* experiment = Experiment.find db_ctx experiment_id >|- Response.not_found in
     let* session = Session.find db_ctx session_id >|- Response.not_found in
     Response.bad_request_on_error ~urlencoded show
     @@
@@ -1088,7 +1083,8 @@ module DirectMessage = struct
   let modal_htmx req =
     let session_id = session_id req in
     let result context =
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       let* assignments = assignments_from_requeset req db_ctx session_id in
       let* session = Session.find db_ctx session_id in
       let system_languages = Pool_context.Tenant.get_tenant_languages_exn req in
@@ -1122,7 +1118,8 @@ module DirectMessage = struct
         Sihl.Web.Request.to_urlencoded req
         ||> HttpUtils.format_request_boolean_values Field.[ show FallbackToEmail ]
       in
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       let* session = Session.find db_ctx session_id >|- Response.not_found in
       Response.bad_request_on_error ~urlencoded show
       @@
@@ -1167,14 +1164,12 @@ let update_matches_filter req =
   let session_id = session_id req in
   let result ({ Pool_context.user; _ } as context) =
     let tags = Pool_context.Logger.Tags.req req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* session = Session.find db_ctx session_id in
     let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
     let* events =
-      Assignment_job.update_matches_filter
-        ~current_user:admin
-        db_ctx
-        (`Session session)
+      Assignment_job.update_matches_filter ~current_user:admin db_ctx (`Session session)
       >== Cqrs_command.Assignment_command.UpdateMatchesFilter.handle ~tags
     in
     let%lwt () = Pool_event.handle_events ~tags db_ctx user events in
@@ -1210,10 +1205,9 @@ module Api = struct
     let result ({ Pool_context.user; guardian; _ } as context) =
       let* start_time = find_param Field.Start in
       let* end_time = find_param Field.End in
-      Pool_context.connection context @@ fun db_ctx ->
-      let* actor =
-        Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user
-      in
+      Pool_context.connection context
+      @@ fun db_ctx ->
+      let* actor = Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user in
       query_sessions ~start_time ~end_time db_ctx actor guardian
       ||> CCList.map Session.Calendar.yojson_of_t
       ||> (fun json -> `List json)

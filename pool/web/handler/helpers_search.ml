@@ -13,10 +13,9 @@ let htmx_search_helper
       req
   =
   let result ({ Pool_context.user; language; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
-    let* actor =
-      Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* actor = Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let query = HttpUtils.find_in_urlencoded_opt query_field urlencoded in
     let entities_to_exclude encode_id =

@@ -32,7 +32,8 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
        let%lwt pool = Command_utils.is_available_exn db_pool in
        let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
        let user_id = Contact.Id.create () in
-       Database.connection_ctx pool @@ fun db_ctx ->
+       Database.connection_ctx pool
+       @@ fun db_ctx ->
        let%lwt events =
          let open Cqrs_command in
          let language = Pool_common.Language.create language |> CCResult.to_opt in
@@ -76,12 +77,15 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
 let trigger_profile_update_by_tenant pool =
   let open Utils.Lwt_result.Infix in
   let* tenant = Pool_tenant.find_by_label pool in
-  Database.connection_ctx pool @@ fun db_ctx ->
+  Database.connection_ctx pool
+  @@ fun db_ctx ->
   let* contacts = Contact.find_to_trigger_profile_update db_ctx in
   match contacts with
   | [] -> Lwt_result.return ()
   | contacts ->
-    let%lwt create_message = Message_template.ProfileUpdateTrigger.prepare db_ctx tenant in
+    let%lwt create_message =
+      Message_template.ProfileUpdateTrigger.prepare db_ctx tenant
+    in
     let* emails = Lwt_list.map_s create_message contacts ||> CCResult.flatten_l in
     Cqrs_command.Contact_command.SendProfileUpdateTrigger.(
       { contacts; emails }
@@ -131,7 +135,8 @@ Provide all fields to sign up a new contact:
       let%lwt () = Database.Pool.initialize () in
       let user_uuid = Pool_common.Id.of_string user_uuid in
       let db_pool = Database.Label.of_string db_pool in
-      Database.connection_ctx db_pool @@ fun db_pool ->
+      Database.connection_ctx db_pool
+      @@ fun db_pool ->
       Duplicate_contacts.Service.run db_pool user_uuid ||> CCOption.return
     | _ -> Command_utils.failwith_missmatch help)
 ;;

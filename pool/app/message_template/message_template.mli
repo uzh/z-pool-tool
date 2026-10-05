@@ -190,7 +190,7 @@ module AccountSuspensionNotification : sig
   val email_params : email_layout -> Pool_user.t -> (string * string) list
 
   val create
-    :  ?db_ctx: _ Database.ctx
+    :  ?db_ctx:_ Database.ctx
     -> Pool_tenant.t
     -> Pool_user.t
     -> (Email.dispatch, Pool_message.Error.t) Lwt_result.t
@@ -219,7 +219,7 @@ module AssignmentCancellation : sig
     -> (string * string) list
 
   val create
-    :  ?db_ctx: _ Database.ctx
+    :  ?db_ctx:_ Database.ctx
     -> ?follow_up_sessions:Session.t list
     -> Pool_tenant.t
     -> Experiment.t
@@ -239,7 +239,7 @@ module AssignmentConfirmation : sig
     -> (string * string) list
 
   val prepare
-    :  ?db_ctx: _ Database.ctx
+    :  ?db_ctx:_ Database.ctx
     -> ?follow_up_sessions:Session.t list
     -> Pool_tenant.t
     -> Contact.t
@@ -259,7 +259,7 @@ module AssignmentSessionChange : sig
     -> (string * string) list
 
   val create
-    :  ?db_ctx: _ Database.ctx
+    :  ?db_ctx:_ Database.ctx
     -> ManualMessage.t
     -> Pool_tenant.t
     -> Experiment.t
@@ -277,7 +277,7 @@ module ContactEmailChangeAttempt : sig
     -> (string * string) list
 
   val create
-    :  ?db_ctx: _ Database.ctx
+    :  ?db_ctx:_ Database.ctx
     -> Pool_tenant.t
     -> Pool_user.t
     -> (Email.dispatch, Pool_message.Error.t) Lwt_result.t
@@ -291,7 +291,7 @@ module ContactRegistrationAttempt : sig
     -> (string * string) list
 
   val create
-    :  ?db_ctx: _ Database.ctx
+    :  ?db_ctx:_ Database.ctx
     -> Pool_common.Language.t
     -> Pool_tenant.t
     -> Pool_user.t
@@ -313,15 +313,16 @@ end
 
 module ExperimentInvitation : sig
   val email_params : email_layout -> Experiment.t -> Contact.t -> (string * string) list
+
   val create
-    :  ?db_ctx: _ Database.ctx
+    :  ?db_ctx:_ Database.ctx
     -> Pool_tenant.t
     -> Experiment.t
     -> Invitation.t
     -> Email.dispatch Lwt.t
 
   val prepare
-    :  ?db_ctx: _ Database.ctx
+    :  ?db_ctx:_ Database.ctx
     -> Pool_tenant.t
     -> Experiment.t
     -> (Invitation.t
@@ -385,13 +386,13 @@ module ManualSessionMessage : sig
     -> (string * string) list
 
   val prepare
-    :  ?db_ctx: _ Database.ctx
+    :  ?db_ctx:_ Database.ctx
     -> Pool_tenant.t
     -> Session.t
     -> (Assignment.t -> ManualMessage.t -> Email.dispatch) Lwt.t
 
   val prepare_text_message
-    :  ?db_ctx: _ Database.ctx
+    :  ?db_ctx:_ Database.ctx
     -> Pool_tenant.t
     -> Session.t
     -> (Pool_common.Language.t
@@ -406,7 +407,7 @@ module MatcherNotification : sig
   val email_params : email_layout -> Pool_user.t -> Experiment.t -> (string * string) list
 
   val create
-    :  ?db_ctx: _ Database.ctx
+    :  ?db_ctx:_ Database.ctx
     -> Pool_tenant.t
     -> Pool_common.Language.t
     -> Experiment.t
@@ -425,7 +426,7 @@ module MatchFilterUpdateNotification : sig
     -> (string * string) list
 
   val create
-    :  ?db_ctx: _ Database.ctx
+    :  ?db_ctx:_ Database.ctx
     -> Pool_tenant.t
     -> Pool_common.I18n.t
     -> Admin.t
@@ -438,7 +439,7 @@ module PasswordChange : sig
   val email_params : email_layout -> Pool_user.t -> (string * string) list
 
   val create
-    :  ?db_ctx: _ Database.ctx
+    :  ?db_ctx:_ Database.ctx
     -> Pool_common.Language.t
     -> Pool_tenant.t
     -> Pool_user.t
@@ -627,7 +628,7 @@ module WaitingListConfirmation : sig
     -> (string * string) list
 
   val create
-    :  ?db_ctx: _ Database.ctx
+    :  ?db_ctx:_ Database.ctx
     -> Pool_tenant.t
     -> Contact.t
     -> Experiment.Public.t

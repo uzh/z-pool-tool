@@ -420,8 +420,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
       Sorted [ SortableField.InvitationCount, SortOrder.Ascending ] |> get_order_element
     in
     let%lwt contacts =
-      Filter.(
-        find_filtered_contacts ~order_by Data.db_ctx (Matcher id) (Some filter))
+      Filter.(find_filtered_contacts ~order_by Data.db_ctx (Matcher id) (Some filter))
       |> Lwt.map get_exn
     in
     let get_index contact =
@@ -498,10 +497,7 @@ let no_admin_values_shown_to_contacts _ () =
     let%lwt contact = TestContacts.get_contact 0 in
     let open Custom_field in
     let%lwt custom_fields =
-      find_all_by_contact
-        Data.db_ctx
-        (Pool_context.Contact contact)
-        (Contact.id contact)
+      find_all_by_contact Data.db_ctx (Pool_context.Contact contact) (Contact.id contact)
       ||> fun (grouped, ungrouped) ->
       ungrouped @ CCList.flat_map Group.Public.(fun group -> group.fields) grouped
     in

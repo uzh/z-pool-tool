@@ -16,8 +16,15 @@ end
 let find = Repo.find Database.(label_ctx Pool.Root.label)
 let find_full = Repo.find_full Database.(label_ctx Pool.Root.label)
 let find_by_label = Repo.find_by_label Database.(label_ctx Pool.Root.label)
-let find_by_db_ctx db_ctx = Repo.find_by_label Database.(label_ctx Pool.Root.label) (Database.label_of_ctx db_ctx)
-let find_by_url ?should_cache = Repo.find_by_url ?should_cache Database.(label_ctx Pool.Root.label)
+
+let find_by_db_ctx db_ctx =
+  Repo.find_by_label Database.(label_ctx Pool.Root.label) (Database.label_of_ctx db_ctx)
+;;
+
+let find_by_url ?should_cache =
+  Repo.find_by_url ?should_cache Database.(label_ctx Pool.Root.label)
+;;
+
 let find_all = Repo.find_all Database.(label_ctx Pool.Root.label)
 
 let public_scheme () =

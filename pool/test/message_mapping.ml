@@ -190,13 +190,7 @@ let phone_verification _ () =
   let cell_phone = "+41791234567" |> Pool_user.CellPhone.of_string in
   let token = "123123" |> Pool_common.VerificationCode.of_string in
   let%lwt res =
-    PhoneVerification.create_text_message
-      db_ctx
-      language
-      tenant
-      contact
-      cell_phone
-      token
+    PhoneVerification.create_text_message db_ctx language tenant contact cell_phone token
     ||> get_exn
   in
   let expected =
@@ -219,12 +213,7 @@ let session_reminder _ () =
     ||> fun msg -> msg assignment |> get_exn
   in
   let%lwt text_msg_res =
-    SessionReminder.prepare_text_messages
-      db_ctx
-      tenant
-      [ language ]
-      experiment
-      session
+    SessionReminder.prepare_text_messages db_ctx tenant [ language ] experiment session
     ||> fun msg -> msg assignment cell_phone |> get_exn
   in
   let expected_label = SessionReminder in

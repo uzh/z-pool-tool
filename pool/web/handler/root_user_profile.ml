@@ -28,8 +28,8 @@ let update_password req =
          |> Lwt_result.lift
        in
        let%lwt () =
-         Pool_context.connection context @@ fun db_ctx ->
-         Pool_event.handle_events ~tags db_ctx user events
+         Pool_context.connection context
+         @@ fun db_ctx -> Pool_event.handle_events ~tags db_ctx user events
        in
        redirect_to_with_actions
          active_navigation

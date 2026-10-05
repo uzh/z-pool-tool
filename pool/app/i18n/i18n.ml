@@ -50,7 +50,12 @@ let is_about_page_configured db_ctx language =
       let%lwt title_is_set = has_content Key.AboutPageTitle in
       if title_is_set then has_content Key.AboutPageText else Lwt.return_false
     in
-    let () = Hashtbl.replace I18nCache.about_page (Database.label_of_ctx db_ctx, language) configured in
+    let () =
+      Hashtbl.replace
+        I18nCache.about_page
+        (Database.label_of_ctx db_ctx, language)
+        configured
+    in
     Lwt.return configured
 ;;
 
@@ -64,7 +69,12 @@ let privacy_policy_is_set db_ctx language =
       find_by_key_opt db_ctx Key.PrivacyPolicy language
       ||> CCOption.map_or ~default:false (content %> CCOption.is_some)
     in
-    let () = Hashtbl.add I18nCache.privacy_policy (Database.label_of_ctx db_ctx, language) existing in
+    let () =
+      Hashtbl.add
+        I18nCache.privacy_policy
+        (Database.label_of_ctx db_ctx, language)
+        existing
+    in
     Lwt.return existing
 ;;
 

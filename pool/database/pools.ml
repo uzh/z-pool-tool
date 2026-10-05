@@ -296,8 +296,14 @@ module Make (Config : Pools_sig.ConfigSig) = struct
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let%lwt () = Connection.disconnect () in
         Lwt.fail (Database_error.Failed (Database_error.create label error))
+    ;;
 
-    let map_fetched (type maybe_txn) ?retries (ctx : maybe_txn Entity.ctx) (fcn : 'a -> ('b, 'e) Lwt_result.t) =
+    let map_fetched
+          (type maybe_txn)
+          ?retries
+          (ctx : maybe_txn Entity.ctx)
+          (fcn : 'a -> ('b, 'e) Lwt_result.t)
+      =
       match ctx with
       | Label { label; tags = _ } ->
         let%lwt connection = fetch ?retries label in
@@ -309,21 +315,27 @@ module Make (Config : Pools_sig.ConfigSig) = struct
         let%lwt r = Caqti_lwt_unix.Pool.use fcn connection in
         (* [get_ok r] is safe because only [fcn] above can return the [Error _] case *)
         Lwt.return (Result.get_ok r)
-      | Connection { connection; label; tags = _ } | TransactionalConnection{ connection; label; tags = _ } ->
-        fcn connection
-        |> disconnect_and_raise_on_error connection label
+      | Connection { connection; label; tags = _ }
+      | TransactionalConnection { connection; label; tags = _ } ->
+        fcn connection |> disconnect_and_raise_on_error connection label
+    ;;
 
-
-    let raise_caqti_error (type maybe_transaction) (ctx : maybe_transaction Entity.ctx) input =
-      let label = match ctx with
-        | Label { label; _ } | Connection { label; _ } | TransactionalConnection { label; _ } -> label
+    let raise_caqti_error
+          (type maybe_transaction)
+          (ctx : maybe_transaction Entity.ctx)
+          input
+      =
+      let label =
+        match ctx with
+        | Label { label; _ }
+        | Connection { label; _ }
+        | TransactionalConnection { label; _ } -> label
       in
       raise_caqti_error_labelled label input
+    ;;
   end
 
-  let query db_ctx f =
-    Pool.map_fetched db_ctx f
-  ;;
+  let query db_ctx f = Pool.map_fetched db_ctx f
 
   let collect label request input =
     query label (fun connection ->
@@ -358,39 +370,41 @@ module Make (Config : Pools_sig.ConfigSig) = struct
 
   let in_transaction_sql =
     let open Caqti_request.Infix in
-    {sql|select @@in_transaction|sql}
-    |> Caqti_type.unit ->! Caqti_type.bool
+    {sql|select @@in_transaction|sql} |> Caqti_type.unit ->! Caqti_type.bool
+  ;;
 
   let exec_each fns connection =
     let open Utils.Lwt_result.Infix in
     List.fold_left
-      (fun acc fn ->
-         acc >>= fun () -> fn connection)
+      (fun acc fn -> acc >>= fun () -> fn connection)
       (Lwt_result.return ())
       fns
   ;;
 
-  let transaction db_ctx ?(setup=[]) ?(cleanup=[]) fn =
-    query db_ctx @@ fun ((module Connection : Caqti_lwt.CONNECTION) as connection) ->
+  let transaction db_ctx ?(setup = []) ?(cleanup = []) fn =
+    query db_ctx
+    @@ fun ((module Connection : Caqti_lwt.CONNECTION) as connection) ->
     let open Utils.Lwt_result.Infix in
     let fn' () =
-      exec_each setup connection >>= fun () ->
-      fn connection >>= fun result ->
-      exec_each cleanup connection >>= fun () ->
-      Lwt_result.return result
+      exec_each setup connection
+      >>= fun () ->
+      fn connection
+      >>= fun result ->
+      exec_each cleanup connection >>= fun () -> Lwt_result.return result
     in
-    Connection.find in_transaction_sql () >>= fun in_transaction ->
-    if in_transaction then
-      fn' ()
-    else
-      Connection.with_transaction fn'
+    Connection.find in_transaction_sql ()
+    >>= fun in_transaction ->
+    if in_transaction then fn' () else Connection.with_transaction fn'
+  ;;
 
   let transaction_iter db_ctx ?setup ?cleanup fs =
     transaction db_ctx ?setup ?cleanup (exec_each fs)
+  ;;
 
   let label_ctx ?tags label =
     let tags = Logger.Tags.extend label tags in
     Entity.Label { label; tags }
+  ;;
 
   let connection_ctx ?tags label fcn =
     let tags = Logger.Tags.extend label tags in
@@ -398,13 +412,13 @@ module Make (Config : Pools_sig.ConfigSig) = struct
     Caqti_lwt_unix.Pool.use
       (fun connection ->
          let ctx = Entity.Connection { connection; label; tags } in
-         fcn ctx
-         |> Lwt_result.ok)
+         fcn ctx |> Lwt_result.ok)
       pool
     |> Lwt.map Result.get_ok
+  ;;
+
   (* XXX(reynir): This is safe because we always return [Ok _] or raise an
-     exception . The type of [Caqti_lwt_unix.Pool.use] forces us to return a [_
-     result Lwt.t], but the type also tells us that it doesn't return errors
+     exception . The type of [Caqti_lwt_unix.Pool.use] forces us to return a [_ result Lwt.t], but the type also tells us that it doesn't return errors
      other than what [fcn] returns. *)
 
   let transaction_ctx ?tags label fcn =
@@ -415,15 +429,18 @@ module Make (Config : Pools_sig.ConfigSig) = struct
          let open Lwt_result.Syntax in
          let (module Connection : Caqti_lwt.CONNECTION) = connection in
          let ctx = Entity.TransactionalConnection { connection; label; tags } in
-         Pool.raise_caqti_error ctx @@
+         Pool.raise_caqti_error ctx
+         @@
          let* () = Connection.start () in
-         Lwt.catch (fun () ->
-             let%lwt result = fcn ctx in
-             let* () = Connection.commit () in
-             Lwt.return_ok result)
+         Lwt.catch
+           (fun () ->
+              let%lwt result = fcn ctx in
+              let* () = Connection.commit () in
+              Lwt.return_ok result)
            (fun exn ->
               let%lwt () =
-                Pool.raise_caqti_error ctx @@
+                Pool.raise_caqti_error ctx
+                @@
                 let+ () = Connection.rollback () in
                 Logs.debug (fun m -> m "Successfully rolled back transaction")
               in
@@ -431,9 +448,8 @@ module Make (Config : Pools_sig.ConfigSig) = struct
          |> Lwt_result.ok)
       pool
     |> Lwt.map Result.get_ok
-    (* XXX(reynir): This is safe because we always return [Ok _] or raise an
-       exception . The type of [Caqti_lwt_unix.Pool.use] forces us to return a [_
-       result Lwt.t], but the type also tells us that it doesn't return errors
-       other than what [fcn] returns. *)
-
+  ;;
+  (* XXX(reynir): This is safe because we always return [Ok _] or raise an
+     exception . The type of [Caqti_lwt_unix.Pool.use] forces us to return a [_ result Lwt.t], but the type also tells us that it doesn't return errors
+     other than what [fcn] returns. *)
 end

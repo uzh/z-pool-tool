@@ -61,9 +61,7 @@ let update ?contact req =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.format_htmx_request_boolean_values Field.[ Paused |> show ]
   in
-  let result
-        ({ Pool_context.language; query_parameters; user; _ } as context)
-    =
+  let result ({ Pool_context.language; query_parameters; user; _ } as context) =
     let is_admin = Pool_context.user_is_admin user in
     let path_with_params = HttpUtils.url_with_field_params query_parameters in
     let* contact =
@@ -79,22 +77,16 @@ let update ?contact req =
     let* Pool_context.Tenant.{ tenant_languages; _ } =
       Pool_context.Tenant.find req |> Lwt_result.lift
     in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* field, version, value, field_id =
-      parse_urlencoded
-        ~is_admin
-        req
-        db_ctx
-        language
-        urlencoded
-        Contact.(contact |> id)
+      parse_urlencoded ~is_admin req db_ctx language urlencoded Contact.(contact |> id)
     in
     let contact_id = Contact.id contact in
     let* custom_field =
       field_id
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-        Custom_field.find_by_contact ~is_admin db_ctx contact_id id
-        >|+ CCOption.pure)
+        Custom_field.find_by_contact ~is_admin db_ctx contact_id id >|+ CCOption.pure)
     in
     let%lwt response =
       let tags = Pool_context.Logger.Tags.req req in

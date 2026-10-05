@@ -205,11 +205,7 @@ val find_email_suffixes : _ Database.ctx -> EmailSuffix.t list Lwt.t
 val find_system_email_templates : _ Database.ctx -> SystemEmailTemplates.t Lwt.t
 val find_contact_email : _ Database.ctx -> ContactEmail.t Lwt.t
 val find_profile_only : _ Database.ctx -> ProfileOnly.t Lwt.t
-
-val find_inactive_user_disable_after
-  :  _ Database.ctx
-  -> InactiveUser.DisableAfter.t Lwt.t
-
+val find_inactive_user_disable_after : _ Database.ctx -> InactiveUser.DisableAfter.t Lwt.t
 val find_inactive_user_warning : _ Database.ctx -> InactiveUser.Warning.t Lwt.t
 
 val find_inactive_user_service_disabled

@@ -21,10 +21,10 @@ let create req =
       |> Lwt_result.lift
       >|- CCFun.const Response.access_denied
     in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment =
-      Experiment.find_full_by_contact db_ctx experiment_id contact
-      >|- Response.not_found
+      Experiment.find_full_by_contact db_ctx experiment_id contact >|- Response.not_found
     in
     let* session = Session.find_open db_ctx id >|- Response.not_found in
     let* () =

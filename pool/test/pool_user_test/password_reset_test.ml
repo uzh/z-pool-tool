@@ -34,9 +34,7 @@ let reset_password_succeeds =
     in
     let%lwt () = Pool_event.handle_events db_ctx Pool_context.Guest events in
     let validated_password = Pool_user.Password.Plain.create new_password in
-    let%lwt (_ : t) =
-      login db_ctx email validated_password ||> CCResult.get_exn
-    in
+    let%lwt (_ : t) = login db_ctx email validated_password ||> CCResult.get_exn in
     Lwt.return_ok ())
 ;;
 

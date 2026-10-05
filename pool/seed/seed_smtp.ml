@@ -13,7 +13,8 @@ let create db_ctx =
     , Default.create true )
   in
   Write.create
-    (Label.create (db_ctx |> Database.label_of_ctx |> Database.Label.value) |> get_or_failwith)
+    (Label.create (db_ctx |> Database.label_of_ctx |> Database.Label.value)
+     |> get_or_failwith)
     (Server.create server |> get_or_failwith)
     (Port.create port |> get_or_failwith)
     (CCOption.map CCFun.(Username.create %> get_or_failwith) username)

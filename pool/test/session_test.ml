@@ -1643,8 +1643,7 @@ let close_session_check_contact_figures _ () =
         , NumberOfParticipations.of_int participation )
       in
       let%lwt contact =
-        find_by_email Data.db_ctx (Contact.email_address contact)
-        ||> get_or_failwith
+        find_by_email Data.db_ctx (Contact.email_address contact) ||> get_or_failwith
       in
       (NumberOfShowUps.equal contact.num_show_ups num_show_ups
        && NumberOfNoShows.equal contact.num_no_shows num_no_shows
@@ -1750,12 +1749,7 @@ let send_session_reminders_with_default_leat_time _ () =
     let%lwt sys_languages = Settings.find_languages db_ctx in
     let%lwt emails =
       let%lwt create =
-        SessionReminder.prepare_emails
-          db_ctx
-          tenant
-          sys_languages
-          experiment
-          session1
+        SessionReminder.prepare_emails db_ctx tenant sys_languages experiment session1
       in
       [ Email.BulkSent [ create assignment1 |> get_exn ] |> Pool_event.email
       ; Session.EmailReminderSent session1 |> Pool_event.session

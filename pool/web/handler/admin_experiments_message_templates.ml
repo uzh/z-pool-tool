@@ -27,10 +27,9 @@ let form form_context req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
-    let* experiment =
-      Experiment.find db_ctx experiment_id >|- Response.not_found
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* experiment = Experiment.find db_ctx experiment_id >|- Response.not_found in
     Response.bad_request_render_error context
     @@
     let open Message_template in
@@ -118,8 +117,8 @@ let delete req =
     let experiment_id = experiment_id req in
     let template_id = template_id req in
     let redirect = experiment_path experiment_id in
-    Pool_context.connection context @@ fun db_ctx ->
-    Helpers.MessageTemplates.delete db_ctx user template_id redirect
+    Pool_context.connection context
+    @@ fun db_ctx -> Helpers.MessageTemplates.delete db_ctx user template_id redirect
   in
   Response.handle ~src req result
 ;;

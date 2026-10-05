@@ -16,8 +16,8 @@ let toggle_paused
     |> Lwt_result.lift
   in
   let handle events =
-    Pool_context.connection context @@ fun db_ctx ->
-    events |> Pool_event.handle_events ~tags db_ctx user
+    Pool_context.connection context
+    @@ fun db_ctx -> events |> Pool_event.handle_events ~tags db_ctx user
   in
   let redirect () =
     let open Http_utils in

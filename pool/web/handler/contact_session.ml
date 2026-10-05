@@ -14,15 +14,14 @@ let index req =
   @@ fun ({ Pool_context.user; language; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* contact = Pool_context.get_contact_user user |> Lwt_result.lift in
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let%lwt sessions = Session.query_by_contact ~query db_ctx contact in
   let open Page.Contact.Session in
   match HttpUtils.Htmx.is_hx_request req with
   | true -> list context sessions |> Lwt_result.return
   | false ->
-    let%lwt title =
-      I18n.find_by_key db_ctx I18n.Key.DashboardUpcomingSessions language
-    in
+    let%lwt title = I18n.find_by_key db_ctx I18n.Key.DashboardUpcomingSessions language in
     index context title sessions |> Lwt_result.return
 ;;
 
@@ -39,7 +38,8 @@ let show req =
       |> Lwt_result.lift
       >|- CCFun.const Response.access_denied
     in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment =
       Experiment.find_public db_ctx experiment_id contact >|- Response.not_found
     in

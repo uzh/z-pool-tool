@@ -145,7 +145,8 @@ module Tenant = struct
 
   let text_messages_enabled =
     find_key_exn (fun c ->
-      Database.connection_ctx c.tenant.Pool_tenant.database_label
+      Database.connection_ctx
+        c.tenant.Pool_tenant.database_label
         Gtx_config.text_messages_enabled)
   ;;
 end
@@ -162,7 +163,6 @@ module Api = struct
   let create api_key database_label guardian = { api_key; database_label; guardian }
   let find = find_context key
   let set = set_context key
-
   let connection ({ database_label; _ } : t) = Database.connection_ctx database_label
   let transaction ({ database_label; _ } : t) = Database.transaction_ctx database_label
   let on_demand ({ database_label; _ } : t) = Database.label_ctx database_label

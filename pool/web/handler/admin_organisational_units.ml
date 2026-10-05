@@ -36,8 +36,8 @@ let index req =
 let show action req =
   let result context =
     let* ou =
-      Pool_context.connection context @@ fun db_ctx ->
-      req |> id |> Organisational_unit.find db_ctx >|- Response.not_found
+      Pool_context.connection context
+      @@ fun db_ctx -> req |> id |> Organisational_unit.find db_ctx >|- Response.not_found
     in
     Response.bad_request_render_error context
     @@
@@ -68,8 +68,8 @@ let create req =
     in
     let handle events =
       let%lwt () =
-        Pool_context.connection context @@ fun db_ctx ->
-        Pool_event.handle_events ~tags db_ctx user events
+        Pool_context.connection context
+        @@ fun db_ctx -> Pool_event.handle_events ~tags db_ctx user events
       in
       Http_utils.redirect_to_with_actions
         (ou_path ())
@@ -86,7 +86,8 @@ let update req =
   in
   let id = id req in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* ou = Organisational_unit.find db_ctx id >|- Response.not_found in
     Response.bad_request_on_error ~urlencoded edit
     @@

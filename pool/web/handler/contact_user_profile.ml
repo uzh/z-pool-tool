@@ -20,7 +20,8 @@ let show usage req =
     let create_layout active_navigation html =
       html |> create_layout ~active_navigation req context >|+ Sihl.Web.Response.of_html
     in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     match usage with
     | `ContactInformation ->
       let was_reset =
@@ -74,14 +75,13 @@ let update = Helpers.PartialUpdate.update
 
 let update_email req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result
-        ({ Pool_context.query_parameters; language; user; _ } as context)
-    =
+  let result ({ Pool_context.query_parameters; language; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let tags = tags req in
     Response.bad_request_on_error ~urlencoded login_information
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-    Pool_context.connection context @@ fun db_ctx ->
+       Pool_context.connection context
+       @@ fun db_ctx ->
        let%lwt allowed_email_suffixes =
          let open Utils.Lwt_result.Infix in
          Settings.find_email_suffixes db_ctx
@@ -170,9 +170,7 @@ let update_email req =
 
 let update_password req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result
-        ({ Pool_context.query_parameters; language; user; _ } as context)
-    =
+  let result ({ Pool_context.query_parameters; language; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let tags = tags req in
     Response.bad_request_on_error ~urlencoded login_information
@@ -181,7 +179,8 @@ let update_password req =
        let%lwt notification =
          Message_template.PasswordChange.create language tenant contact.Contact.user
        in
-       Pool_context.connection context @@ fun db_ctx ->
+       Pool_context.connection context
+       @@ fun db_ctx ->
        let* events =
          let open Pool_user in
          let open Cqrs_command.User_command.UpdatePassword in
@@ -201,9 +200,7 @@ let update_password req =
 
 let update_cell_phone req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result
-        ({ Pool_context.language; query_parameters; user; _ } as context)
-    =
+  let result ({ Pool_context.language; query_parameters; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let tags = tags req in
     Response.bad_request_on_error ~urlencoded contact_information
@@ -224,7 +221,8 @@ let update_cell_phone req =
            Format.asprintf "+%i%s" code cell_phone |> Pool_user.CellPhone.create)
          |> Lwt_result.lift
        in
-       Pool_context.connection context @@ fun db_ctx ->
+       Pool_context.connection context
+       @@ fun db_ctx ->
        let%lwt text_messages_enabled = Gtx_config.text_messages_enabled db_ctx in
        let%lwt phone_verification_enabled =
          Settings.find_phone_verification_enabled db_ctx
@@ -286,12 +284,10 @@ let verify_cell_phone req =
          >|= Pool_common.VerificationCode.of_string
          |> Lwt_result.lift
        in
-       Pool_context.connection context @@ fun db_ctx ->
+       Pool_context.connection context
+       @@ fun db_ctx ->
        let* { User.UnverifiedCellPhone.cell_phone; _ } =
-         Contact.find_cell_phone_verification_by_contact_and_code
-           db_ctx
-           contact
-           token
+         Contact.find_cell_phone_verification_by_contact_and_code db_ctx contact token
        in
        let* events =
          Command.VerifyCellPhone.handle ~tags (contact, cell_phone) |> Lwt_result.lift
@@ -316,8 +312,8 @@ let reset_phone_verification req =
          Command.ResetCellPhoneVerification.handle ~tags contact |> Lwt_result.lift
        in
        let%lwt () =
-         Pool_context.connection context @@ fun db_ctx ->
-         Pool_event.handle_events ~tags db_ctx user events
+         Pool_context.connection context
+         @@ fun db_ctx -> Pool_event.handle_events ~tags db_ctx user events
        in
        HttpUtils.(
          redirect_to
@@ -330,13 +326,12 @@ let reset_phone_verification req =
 ;;
 
 let resend_token req =
-  let result
-        ({ Pool_context.language; query_parameters; user; _ } as context)
-    =
+  let result ({ Pool_context.language; query_parameters; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
     Response.bad_request_on_error contact_information
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-       Pool_context.connection context @@ fun db_ctx ->
+       Pool_context.connection context
+       @@ fun db_ctx ->
        let%lwt text_messages_enabled = Gtx_config.text_messages_enabled db_ctx in
        let%lwt phone_verification_enabled =
          Settings.find_phone_verification_enabled db_ctx
@@ -410,11 +405,9 @@ let completion req =
     @@
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     let%lwt custom_fields =
-      Pool_context.connection context @@ fun db_ctx ->
-      Custom_field.find_unanswered_required_by_contact
-        db_ctx
-        user
-        (Contact.id contact)
+      Pool_context.connection context
+      @@ fun db_ctx ->
+      Custom_field.find_unanswered_required_by_contact db_ctx user (Contact.id contact)
     in
     Page.Contact.completion context custom_fields
     |> create_layout req ~active_navigation:"/user" context
@@ -436,12 +429,10 @@ let completion_post req =
     let tags = tags req in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     let contact_id = Contact.id contact in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt custom_fields =
-      Custom_field.find_unanswered_ungrouped_required_by_contact
-        db_ctx
-        user
-        contact_id
+      Custom_field.find_unanswered_ungrouped_required_by_contact db_ctx user contact_id
     in
     let events =
       let open Utils.Lwt_result.Infix in
@@ -495,7 +486,8 @@ let pause_account req =
         Lwt_result.fail (Error.NotFound Field.User)
     in
     let%lwt title, text =
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       Lwt.both
         (I18n.find_by_key db_ctx I18n.Key.UnsubscribeTitle language)
         (I18n.find_by_key db_ctx I18n.Key.UnsubscribeText language)

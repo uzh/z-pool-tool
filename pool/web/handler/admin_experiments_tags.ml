@@ -15,10 +15,9 @@ let handle_tag action redirect error_handler req =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
-    let* experiment =
-      Experiment.find db_ctx experiment_id >|- Response.not_found
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* experiment = Experiment.find db_ctx experiment_id >|- Response.not_found in
     Response.bad_request_on_error ~urlencoded error_handler
     @@
     let handle_assign decode handle =

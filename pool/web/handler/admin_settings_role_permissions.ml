@@ -98,7 +98,8 @@ let index req =
     Response.bad_request_render_error context
     @@
     let* roles =
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       Guard.Persistence.Role.find_by_actor_and_permission
         db_ctx
         actor_id
@@ -121,7 +122,8 @@ let show req =
   let* role = role_from_request req |> Lwt_result.lift in
   (* TODO: check only available permissions *)
   let%lwt permissions =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     Guard.Persistence.RolePermission.query_by_role db_ctx role
     ||> fst
     ||> group_by_target query
@@ -136,11 +138,9 @@ let edit_htmx req =
     let* role = role_from_request req |> Lwt_result.lift in
     let* target = target_from_request req |> Lwt_result.lift in
     let%lwt permissions =
-      Pool_context.connection context @@ fun db_ctx ->
-      Guard.Persistence.RolePermission.permissions_by_role_and_target
-        db_ctx
-        role
-        target
+      Pool_context.connection context
+      @@ fun db_ctx ->
+      Guard.Persistence.RolePermission.permissions_by_role_and_target db_ctx role target
     in
     Page.Admin.Settings.RolePermission.edit_target_modal context role target permissions
     |> Response.Htmx.of_html
@@ -157,7 +157,8 @@ let update req =
     let tags = Pool_context.Logger.Tags.req req in
     let* role = role_from_request req |> Lwt_result.lift in
     let* target = target_from_request req |> Lwt_result.lift in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt current_permissions =
       Persistence.RolePermission.permissions_by_role_and_target db_ctx role target
     in

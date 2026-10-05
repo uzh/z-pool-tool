@@ -9,7 +9,6 @@ end
 
 module Data = struct
   let database_label = "econ-test" |> Label.create |> get_exn
-
   let db_ctx = label_ctx database_label
 
   let database =
@@ -53,7 +52,9 @@ let check_session_time_zone_utc _ () =
     "SELECT ABS(TIMESTAMPDIFF(SECOND, NOW(), ?))" |> Caqti_type.(ptime ->! int)
   in
   let check label =
-    let name suffix = Format.asprintf "%s: %s" (Label.value (label_of_ctx label)) suffix in
+    let name suffix =
+      Format.asprintf "%s: %s" (Label.value (label_of_ctx label)) suffix
+    in
     let%lwt session_offset = Database.find label session_offset_request () in
     let%lwt clock_drift = Database.find label clock_drift_request (Ptime_clock.now ()) in
     Alcotest.(check int (name "session time_zone is UTC") 0 session_offset);

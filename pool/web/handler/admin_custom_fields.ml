@@ -48,7 +48,8 @@ let index req =
   let result context =
     Response.bad_request_render_error context
     @@ let* model = model_from_router req |> Lwt_result.lift in
-       Pool_context.connection context @@ fun db_ctx ->
+       Pool_context.connection context
+       @@ fun db_ctx ->
        let%lwt group_list = Custom_field.find_groups_by_model db_ctx model in
        let%lwt field_list = find_by_model db_ctx model in
        Page.Admin.CustomFields.index field_list group_list model context
@@ -70,7 +71,8 @@ let redirect _ =
 let form ?id req model =
   let open Utils.Lwt_result.Infix in
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* custom_field =
       id
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
@@ -112,15 +114,14 @@ let write ?id req model =
     , go Field.Validation CCOption.pure )
   in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* custom_field, error_handler, success =
       match id with
       | None -> Lwt_result.return (None, new_form, Success.Created Field.CustomField)
       | Some id ->
         let* field =
-          Custom_field.find db_ctx id
-          |> Response.not_found_on_error
-          >|+ CCOption.return
+          Custom_field.find db_ctx id |> Response.not_found_on_error >|+ CCOption.return
         in
         Lwt_result.return (field, edit, Success.Updated Field.CustomField)
     in
@@ -181,7 +182,8 @@ let toggle_action action req =
     HttpUtils.get_field_router_param req Field.CustomField |> Custom_field.Id.of_string
   in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* custom_field = Custom_field.find db_ctx id >|- Response.not_found in
     Response.bad_request_on_error edit
     @@
@@ -221,7 +223,8 @@ let sort_options req =
       HttpUtils.get_field_router_param req Field.CustomField |> Custom_field.Id.of_string
     in
     let result ({ Pool_context.user; _ } as context) =
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       let* custom_field =
         custom_field_id |> Custom_field.find db_ctx >|- Response.not_found
       in
@@ -276,7 +279,8 @@ let sort_fields req ?group () =
       let%lwt ids =
         Sihl.Web.Request.urlencoded_list Field.(CustomField |> array_key) req
       in
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       let%lwt fields =
         match group with
         | None -> find_ungrouped_by_model db_ctx current_model
@@ -322,8 +326,8 @@ let changelog req =
         ()
     in
     let to_human ({ Pool_context.language; _ } as context) changelog =
-      Pool_context.connection context @@ fun db_ctx ->
-      Custom_field.changelog_to_human db_ctx language changelog
+      Pool_context.connection context
+      @@ fun db_ctx -> Custom_field.changelog_to_human db_ctx language changelog
     in
     let open Custom_field in
     Helpers.Changelog.htmx_handler ~to_human ~url (custom_field_id |> Id.to_common) req

@@ -21,14 +21,14 @@ let custom_field_option_opt ?id db_ctx =
   let open Utils.Lwt_result.Infix in
   match id with
   | None -> Lwt_result.return None
-  | Some id ->
-    Custom_field.find_option db_ctx id >|+ CCOption.pure >|- Response.not_found
+  | Some id -> Custom_field.find_option db_ctx id >|+ CCOption.pure >|- Response.not_found
 ;;
 
 let form ?id req =
   let open Utils.Lwt_result.Infix in
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* custom_field =
       req |> get_field_id |> Custom_field.find db_ctx >|- Response.not_found
     in
@@ -67,7 +67,8 @@ let write ?id req =
     go Pool_message.Field.Name encode_lang
   in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* custom_field =
       req |> get_field_id |> Custom_field.find db_ctx >|- Response.not_found
     in
@@ -121,15 +122,13 @@ let update req =
 let toggle_action action req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* custom_field =
       req |> get_field_id |> Custom_field.find db_ctx >|- Response.not_found
     in
     let* option =
-      req
-      |> get_option_id
-      |> Custom_field.find_option db_ctx
-      >|- Response.not_found
+      req |> get_option_id |> Custom_field.find_option db_ctx >|- Response.not_found
     in
     let redirect_path =
       Url.Field.edit_path Custom_field.(model custom_field, id custom_field)

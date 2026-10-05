@@ -166,6 +166,6 @@ let database_status_by_label_request =
 ;;
 
 let database_status_by_label db_label =
-    let db_ctx = Service.label_ctx db_label in
+  let db_ctx = Service.label_ctx db_label in
   Service.find_opt db_ctx database_status_by_label_request db_label
 ;;

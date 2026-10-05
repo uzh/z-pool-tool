@@ -177,11 +177,7 @@ module AttendAll = struct
   let session_id = Session.Id.create ()
   let followup_session_id = Session.Id.create ()
   let experiment_id = Experiment.Id.create ()
-
-  let experiment () =
-    Experiment.find Test_utils.Data.db_ctx experiment_id ||> get_exn
-  ;;
-
+  let experiment () = Experiment.find Test_utils.Data.db_ctx experiment_id ||> get_exn
   let initialize = initialize contact_id experiment_id session_id ~followup_session_id
 
   let register_for_session _ () =
@@ -307,11 +303,7 @@ module DoNotAttend = struct
   let contact_id = Contact.Id.create ()
   let session_id = Session.Id.create ()
   let experiment_id = Experiment.Id.create ()
-
-  let experiment () =
-    Experiment.find Test_utils.Data.db_ctx experiment_id ||> get_exn
-  ;;
-
+  let experiment () = Experiment.find Test_utils.Data.db_ctx experiment_id ||> get_exn
   let initialize = initialize contact_id experiment_id session_id
 
   let register_for_session _ () =
@@ -348,11 +340,7 @@ module NoShow = struct
   let contact_id = Contact.Id.create ()
   let session_id = Session.Id.create ()
   let experiment_id = Experiment.Id.create ()
-
-  let experiment () =
-    Experiment.find Test_utils.Data.db_ctx experiment_id ||> get_exn
-  ;;
-
+  let experiment () = Experiment.find Test_utils.Data.db_ctx experiment_id ||> get_exn
   let initialize = initialize contact_id experiment_id session_id
 
   let register_for_session _ () =

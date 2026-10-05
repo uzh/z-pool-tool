@@ -884,8 +884,7 @@ let cancel_assignment_with_follow_ups _ () =
   in
   let%lwt parent_session =
     let%lwt () = create_session (Model.in_an_hour ()) in
-    Session.find_all_for_experiment Data.db_ctx experiment.Experiment.id
-    ||> CCList.hd
+    Session.find_all_for_experiment Data.db_ctx experiment.Experiment.id ||> CCList.hd
   in
   let%lwt () =
     create_session ~parent_id:parent_session.Session.id (Model.in_two_hours ())
@@ -922,10 +921,7 @@ let cancel_assignment_with_follow_ups _ () =
   in
   (* Expect all assigments to be canceled *)
   let%lwt res =
-    Assignment.Public.find_all_by_experiment
-      Data.db_ctx
-      experiment.Experiment.id
-      contact
+    Assignment.Public.find_all_by_experiment Data.db_ctx experiment.Experiment.id contact
     ||> CCList.filter (fun { Assignment.Public.canceled_at; _ } ->
       CCOption.is_none canceled_at)
     ||> CCList.is_empty

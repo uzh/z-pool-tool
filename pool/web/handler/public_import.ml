@@ -45,14 +45,13 @@ let render_import_confirmation_page req context user_import user =
       Lwt.return_ok (Admin.email_address admin |> Pool_user.EmailAddress.value, None)
     | Contact contact ->
       let address = Contact.email_address contact |> Pool_user.EmailAddress.value in
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       Contact.has_terms_accepted db_ctx contact
       >|> (function
        | true -> Lwt.return_ok (address, None)
        | false ->
-         let%lwt terms =
-           I18n.find_by_key db_ctx I18n.Key.TermsAndConditions language
-         in
+         let%lwt terms = I18n.find_by_key db_ctx I18n.Key.TermsAndConditions language in
          Lwt.return_ok (address, Some terms))
   in
   Page.Public.Import.import_confirmation
@@ -69,8 +68,7 @@ let render_import_confirmation_page req context user_import user =
 let import_confirmation req =
   let result context =
     let* user_import, user =
-      Pool_context.connection context @@
-      CCFun.flip user_import_from_req req
+      Pool_context.connection context @@ CCFun.flip user_import_from_req req
       >|- Response.not_found
     in
     render_import_confirmation_page req context user_import user
@@ -129,7 +127,8 @@ let import_confirmation_post req =
   let result
         ({ Pool_context.query_parameters; user = actor_user; language; _ } as context)
     =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* user_import, target_user =
       let* token =
         urlencoded
@@ -150,8 +149,7 @@ let import_confirmation_post req =
     in
     (* Public token flow: command target user may differ from unauthenticated actor user. *)
     let%lwt () =
-      import_events @ reset_events
-      |> Pool_event.handle_events ~tags db_ctx actor_user
+      import_events @ reset_events |> Pool_event.handle_events ~tags db_ctx actor_user
     in
     let success_message =
       if User_import.ActiveAfterImport.value user_import.User_import.active_after_import
@@ -201,7 +199,8 @@ let unsubscribe req =
     | Ok (token_opt, contact) ->
       let email = contact |> Contact.email_address |> Pool_user.EmailAddress.value in
       let%lwt title, text =
-        Pool_context.connection context @@ fun db_ctx ->
+        Pool_context.connection context
+        @@ fun db_ctx ->
         Lwt.both
           (I18n.find_by_key db_ctx I18n.Key.UnsubscribeTitle language)
           (I18n.find_by_key db_ctx I18n.Key.UnsubscribeText language)
@@ -222,7 +221,8 @@ let unsubscribe_post req =
     >|> function
     | Error (_ : Error.t) -> Lwt_result.fail Response.generic_not_found
     | Ok (token, contact) ->
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       let* import_events =
         User_import.find_pending_by_user_id_opt
           db_ctx
@@ -243,17 +243,10 @@ let unsubscribe_post req =
         |> Response.bad_request_on_error unsubscribe
       in
       let%lwt () =
-        Pool_event.handle_events
-          ~tags
-          db_ctx
-          user
-          (pause_contact_events @ import_events)
+        Pool_event.handle_events ~tags db_ctx user (pause_contact_events @ import_events)
       in
       let%lwt () =
-        CCOption.map_or
-          ~default:Lwt.return_unit
-          Pool_token.(deactivate db_ctx)
-          token
+        CCOption.map_or ~default:Lwt.return_unit Pool_token.(deactivate db_ctx) token
       in
       Http_utils.(
         redirect_to_with_actions

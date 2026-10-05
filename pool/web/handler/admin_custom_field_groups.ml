@@ -16,13 +16,12 @@ let get_model = Admin_custom_fields.get_model
 
 let form ?id req model =
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* custom_field_group =
       id
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-        let* group =
-          Custom_field.find_group db_ctx id |> Response.not_found_on_error
-        in
+        let* group = Custom_field.find_group db_ctx id |> Response.not_found_on_error in
         let%lwt fields = Custom_field.find_by_group db_ctx id in
         (group, fields) |> CCOption.pure |> Lwt_result.return)
     in
@@ -55,7 +54,8 @@ let write ?id req model =
     go Field.Name encode_lang
   in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt sys_languages = Settings.find_languages db_ctx in
     let events =
       match id with
@@ -103,10 +103,9 @@ let delete req =
     let tags = Pool_context.Logger.Tags.req req in
     let id = get_group_id req in
     let result ({ Pool_context.user; _ } as context) =
-      Pool_context.connection context @@ fun db_ctx ->
-      let* group =
-        Custom_field.find_group db_ctx id |> Response.not_found_on_error
-      in
+      Pool_context.connection context
+      @@ fun db_ctx ->
+      let* group = Custom_field.find_group db_ctx id |> Response.not_found_on_error in
       Response.bad_request_on_error edit
       @@
       let open Utils.Lwt_result.Infix in
@@ -135,7 +134,8 @@ let sort req =
       let%lwt ids =
         Sihl.Web.Request.urlencoded_list Field.(CustomFieldGroup |> array_key) req
       in
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       let%lwt groups =
         let open Utils.Lwt_result.Infix in
         Custom_field.find_groups_by_model db_ctx model

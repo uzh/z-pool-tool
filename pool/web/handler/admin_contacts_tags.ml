@@ -16,10 +16,9 @@ let handle_tag action req =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
-    let* contact =
-      Contact.find db_ctx contact_id |> Response.not_found_on_error
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* contact = Contact.find db_ctx contact_id |> Response.not_found_on_error in
     Response.bad_request_on_error ~urlencoded Admin_contacts.edit
     @@ let* message, events =
          match action with

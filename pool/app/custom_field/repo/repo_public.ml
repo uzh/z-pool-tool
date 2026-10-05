@@ -352,14 +352,14 @@ end
 
 let find_all_by_contact ~required ~is_admin db_ctx =
   Sql.find_all_by_model Entity.Model.Contact db_ctx ~required ~is_admin
+;;
 
 let find_unanswered_required_by_contact ~is_admin db_ctx =
   Sql.find_unanswered_required_by_model Entity.Model.Contact ~is_admin db_ctx
 ;;
 
 let find_unanswered_ungrouped_required_by_contact ~is_admin db_ctx =
-  Sql.find_unanswered_ungrouped_required_by_model Entity.Model.Contact
-    ~is_admin db_ctx
+  Sql.find_unanswered_ungrouped_required_by_model Entity.Model.Contact ~is_admin db_ctx
 ;;
 
 let find_multiple_by_contact = Sql.find_multiple_by_contact

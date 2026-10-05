@@ -69,12 +69,7 @@ val show_event : event -> string
 val handle_event : _ Database.ctx -> event -> unit Lwt.t
 val insert : _ Database.ctx -> t -> unit Lwt.t
 val update : _ Database.ctx -> t -> unit Lwt.t
-
-val find_contacts_to_notify
-  :  _ Database.ctx
-  -> int
-  -> unit
-  -> (Contact.t * t) list Lwt.t
+val find_contacts_to_notify : _ Database.ctx -> int -> unit -> (Contact.t * t) list Lwt.t
 
 val find_contacts_to_remind
   :  Settings.UserImportReminder.FirstReminderAfter.t

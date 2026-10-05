@@ -56,7 +56,6 @@ type t =
 val on_demand : t -> Database.no_transaction Database.ctx
 val connection : t -> (Database.no_transaction Database.ctx -> 'a Lwt.t) -> 'a Lwt.t
 val transaction : t -> (Database.transaction Database.ctx -> 'a Lwt.t) -> 'a Lwt.t
-
 val show : t -> string
 val pp : Format.formatter -> t -> unit
 val find : Rock.Request.t -> (t, Pool_message.Error.t) result
@@ -109,7 +108,6 @@ module Api : sig
   val create : Api_key.t -> Database.Label.t -> Guard.PermissionOnTarget.t list -> t
   val find : Rock.Request.t -> (t, Pool_message.Error.t) result
   val set : Rock.Request.t -> t -> Rock.Request.t
-
   val on_demand : t -> Database.no_transaction Database.ctx
   val connection : t -> (Database.no_transaction Database.ctx -> 'a Lwt.t) -> 'a Lwt.t
   val transaction : t -> (Database.transaction Database.ctx -> 'a Lwt.t) -> 'a Lwt.t

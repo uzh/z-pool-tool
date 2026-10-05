@@ -58,7 +58,8 @@ let dev_dispatch
   Logs.info (fun m -> m ?tags "Skipping queue");
   Logs.debug (fun m ->
     m ?tags "Environment is not 'production' and/or var `QUEUE_FORCE_ASYNC` not set");
-  Database.connection_ctx database_label @@ fun db_ctx ->
+  Database.connection_ctx database_label
+  @@ fun db_ctx ->
   let db_ctx = Database.Any db_ctx in
   match%lwt decode input |> Lwt_result.lift >>= handle db_ctx with
   | Ok () -> callback instance
@@ -86,7 +87,14 @@ let dispatch
       job_ctx
   in
   let instance =
-    Job.to_instance ~id ?message_template ?run_at ?clone_of (Database.label_of_ctx db_ctx) input job
+    Job.to_instance
+      ~id
+      ?message_template
+      ?run_at
+      ?clone_of
+      (Database.label_of_ctx db_ctx)
+      input
+      job
   in
   if Sihl.Configuration.is_production () || config.force_async
   then (
@@ -120,7 +128,14 @@ let dispatch_all ?(callback = fun (_ : 'a) -> Lwt.return_unit) ?run_at db_ctx in
            | Clone id -> Some id
          in
          let instance =
-           Job.to_instance ~id ?message_template ?run_at ?clone_of (Database.label_of_ctx db_ctx) input job
+           Job.to_instance
+             ~id
+             ?message_template
+             ?run_at
+             ?clone_of
+             (Database.label_of_ctx db_ctx)
+             input
+             job
          in
          match job_ctx with
          | Create uuids ->
@@ -156,7 +171,8 @@ let run_job
     Logs.err (fun m -> m ~tags "%s:\n'%s'" message (Printexc.to_string exn));
     Lwt.reraise exn
   in
-  Database.connection_ctx database_label @@ fun db_ctx ->
+  Database.connection_ctx database_label
+  @@ fun db_ctx ->
   let db_ctx = Database.Any db_ctx in
   let%lwt result =
     Lwt.catch
@@ -182,7 +198,8 @@ let run_job
 let work_job job instance =
   let database_label = Instance.database_label instance in
   let tags = Database.Logger.Tags.create database_label in
-  Database.connection_ctx database_label @@ fun db_ctx ->
+  Database.connection_ctx database_label
+  @@ fun db_ctx ->
   if Instance.should_run ~is_polled:true instance
   then (
     let fail = fail db_ctx (AnyJob.retry_delay job) instance in
@@ -222,9 +239,7 @@ let work_queue (job : AnyJob.t) (db_ctx : _ Database.ctx) =
     Lwt.return_unit
   | Ok count ->
     Logs.debug (fun m -> m ~tags "%s count: %d" msg_prefix count);
-    let%lwt instances =
-      Repo.poll_n_workable db_ctx config.batch_size job.AnyJob.name
-    in
+    let%lwt instances = Repo.poll_n_workable db_ctx config.batch_size job.AnyJob.name in
     (* Isolate failures per instance: a raising [work_job] (e.g. connection
        drop while persisting the result) must not abort the remaining batch. *)
     let work_job instance =
@@ -248,7 +263,8 @@ let create_schedule (database_label, (job : AnyJob.t)) : Schedule.t =
   let open Schedule in
   let interval = Every (Ptime.Span.of_int_s 1 |> ScheduledTimeSpan.of_span) in
   let periodic_fcn () =
-    Database.connection_ctx database_label @@ fun db_ctx ->
+    Database.connection_ctx database_label
+    @@ fun db_ctx ->
     let tags = Database.Logger.Tags.of_db_ctx db_ctx in
     Logs.debug (fun m ->
       m

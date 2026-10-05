@@ -398,7 +398,8 @@ module Actor = struct
       else Cache.log_cache_size Cache.lru_find_actor "lru_find_actor"
     in
     let find' (label, id) = find ~ctx:(Database.Label.to_ctx label) id in
-    (Database.label_of_ctx db_ctx, id) |> CCCache.(with_cache ~cb Cache.lru_find_actor find')
+    (Database.label_of_ctx db_ctx, id)
+    |> CCCache.(with_cache ~cb Cache.lru_find_actor find')
   ;;
 
   let can_assign_roles database_label actor =
@@ -501,12 +502,7 @@ module ActorRole = struct
   ;;
 end
 
-let validate
-      ?(any_id = false)
-      db_ctx
-      validation_set
-      ({ Core.Actor.uuid; _ } as actor)
-  =
+let validate ?(any_id = false) db_ctx validation_set ({ Core.Actor.uuid; _ } as actor) =
   let cb ~in_cache _ _ =
     if in_cache
     then

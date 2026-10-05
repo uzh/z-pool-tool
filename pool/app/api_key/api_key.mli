@@ -29,12 +29,7 @@ val sexp_of_t : t -> Sexplib0.Sexp.t
 val t_of_yojson : Yojson.Safe.t -> t
 val yojson_of_t : t -> Yojson.Safe.t
 val create : ?id:Id.t -> ?token:Token.t -> Name.t -> Pool_common.ExpiresAt.t -> t
-
-val find
-  :  _ Database.ctx
-  -> Id.t
-  -> (t, Pool_message__Pool_message_error.t) result Lwt.t
-
+val find : _ Database.ctx -> Id.t -> (t, Pool_message__Pool_message_error.t) result Lwt.t
 val find_by_token : _ Database.ctx -> string -> t option Lwt.t
 val all : ?query:Query.t -> _ Database.ctx -> (t list * Query.t) Lwt.t
 

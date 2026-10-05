@@ -88,10 +88,7 @@ let update_event () =
 let create_persistent _ () =
   let tag = Data.Tag.create_with_description () in
   let%lwt () =
-    Pool_event.handle_events
-      db_ctx
-      current_user
-      [ Tags.Created tag |> Pool_event.tags ]
+    Pool_event.handle_events db_ctx current_user [ Tags.Created tag |> Pool_event.tags ]
   in
   let%lwt found_tag = Tags.find db_ctx Data.Tag.id in
   let expected = Ok tag in
@@ -166,8 +163,7 @@ let remove_tag_from_contact _ () =
   let events = tag |> handle contact |> get_or_failwith in
   let%lwt () = Pool_event.handle_events db_ctx current_user events in
   let%lwt found_tagged =
-    Tags.(find_all_of_entity db_ctx Model.Contact)
-      Contact.(contact |> id |> Id.to_common)
+    Tags.(find_all_of_entity db_ctx Model.Contact) Contact.(contact |> id |> Id.to_common)
   in
   let expected = [] in
   let () =
@@ -181,10 +177,7 @@ let try_assign_experiment_tag_to_contact _ () =
   let%lwt contact = Test_utils.Repo.first_contact () in
   let tag = Tags.(create Data.Tag.title Model.Experiment) |> get_or_failwith in
   let%lwt () =
-    Pool_event.handle_events
-      db_ctx
-      current_user
-      [ Tags.Created tag |> Pool_event.tags ]
+    Pool_event.handle_events db_ctx current_user [ Tags.Created tag |> Pool_event.tags ]
   in
   let%lwt events =
     [ Field.(Tag |> show), [ Tags.(tag.id |> Id.value) ] ]

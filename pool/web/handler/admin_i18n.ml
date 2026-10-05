@@ -32,9 +32,9 @@ let index req =
       |> CCList.stable_sort (fun (k1, _) (k2, _) -> I18n.Key.compare k1 k2)
       |> Lwt.return
     in
-    let%lwt translation_list = 
-      Pool_context.connection context @@ CCFun.flip I18n.find_all ()
-      >|> sort in
+    let%lwt translation_list =
+      Pool_context.connection context @@ CCFun.flip I18n.find_all () >|> sort
+    in
     Page.Admin.I18n.list translation_list context
     |> create_layout req ~active_navigation:(i18n_path ()) context
     >|+ Sihl.Web.Response.of_html
@@ -65,8 +65,8 @@ let update req =
         (i18n_path ())
         [ Message.set ~success:[ Pool_message.(Success.Updated Field.I18n) ] ]
     in
-    Pool_context.connection context @@ fun db_ctx ->
-    db_ctx |> property ||> events |>> handle db_ctx
+    Pool_context.connection context
+    @@ fun db_ctx -> db_ctx |> property ||> events |>> handle db_ctx
   in
   Response.handle ~src req result
 ;;

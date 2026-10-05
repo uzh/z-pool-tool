@@ -71,7 +71,8 @@ let smtp_form location req =
     let* html =
       match location with
       | `Tenant ->
-        Pool_context.connection context @@ fun db_ctx ->
+        Pool_context.connection context
+        @@ fun db_ctx ->
         req
         |> smtp_auth_id
         |> SmtpAuth.find db_ctx
@@ -111,7 +112,8 @@ let create_post location req =
       | Some _ -> Error (Error.Uniqueness Field.SmtpLabel)
       | None -> Ok m
     in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt default_smtp = SmtpAuth.find_default_opt db_ctx in
     let test_smtp_config smtp_auth =
       let* email = email_of_urlencoded urlencoded in
@@ -149,10 +151,9 @@ let update_base location command success_message req =
       ||> HttpUtils.format_request_boolean_values boolean_fields
       ||> HttpUtils.remove_empty_values
     in
-    Pool_context.connection context @@ fun db_ctx ->
-    let* smtp_auth =
-      req |> smtp_auth_id |> SmtpAuth.find db_ctx >|- Response.not_found
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* smtp_auth = req |> smtp_auth_id |> SmtpAuth.find db_ctx >|- Response.not_found in
     Response.bad_request_on_error ~urlencoded (smtp_form location)
     @@
     let events db_ctx (_ : SmtpAuth.t) =
@@ -189,7 +190,8 @@ let delete_base location req =
   let tags = Pool_context.Logger.Tags.req req in
   let path = active_navigation location in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* smtp =
       Sihl.Web.Router.param req (Field.show Field.Smtp)
       |> SmtpAuth.Id.of_string
@@ -218,7 +220,8 @@ let validate location req =
   let redirect_path = settings_detail_path location req in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* smtp = SmtpAuth.find_full db_ctx id >|- Response.not_found in
     Response.bad_request_on_error ~urlencoded (smtp_form location)
     @@

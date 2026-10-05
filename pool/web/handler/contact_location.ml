@@ -10,7 +10,8 @@ let show req =
   let open Utils.Lwt_result.Infix in
   let result context =
     let id = id req Field.Location Pool_location.Id.of_string in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* location = Pool_location.find db_ctx id >|- Response.not_found in
     Response.bad_request_render_error context
     @@
@@ -29,7 +30,8 @@ let asset req =
   let id = id req Field.File Pool_common.Id.of_string in
   let tags = Pool_context.Logger.Tags.req req in
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* file =
       find_location_file db_ctx id
       >>= (fun { File.file; _ } ->

@@ -16,7 +16,8 @@ let run ?fields db_ctx user_uuid =
 ;;
 
 let run_by_tenant database_label =
-  Database.connection_ctx database_label @@ fun db_ctx ->
+  Database.connection_ctx database_label
+  @@ fun db_ctx ->
   let%lwt contacts = Repo.find_to_check db_ctx in
   match contacts with
   | [] -> Lwt.return_unit
@@ -24,9 +25,7 @@ let run_by_tenant database_label =
     let%lwt fields = Custom_field.find_for_duplicate_check db_ctx in
     Lwt_list.iter_s
       (fun contact ->
-         let%lwt () =
-           Contact.id contact |> Contact.Id.to_common |> run ~fields db_ctx
-         in
+         let%lwt () = Contact.id contact |> Contact.Id.to_common |> run ~fields db_ctx in
          Repo.mark_as_checked db_ctx contact)
       contacts
 ;;
