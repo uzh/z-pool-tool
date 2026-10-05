@@ -300,9 +300,7 @@ module AccountSuspensionNotification = struct
       match Pool_user.is_admin user with
       | true -> Lwt_result.return Pool_common.Language.En
       | false ->
-        email
-        |> Contact.find_by_email db_ctx
-        >|+ contact_language system_languages
+        email |> Contact.find_by_email db_ctx >|+ contact_language system_languages
     in
     let%lwt template = find_by_label_and_language_to_send db_ctx label language in
     let%lwt sender = default_sender_of_pool db_ctx in
@@ -821,7 +819,9 @@ module ManualSessionMessage = struct
 
   let prepare_text_message ?db_ctx (tenant : Pool_tenant.t) session =
     let experiment = session.Session.experiment in
-    let (Database.Any db_ctx) = Database.resolve_ctx ?db_ctx tenant.Pool_tenant.database_label in
+    let (Database.Any db_ctx) =
+      Database.resolve_ctx ?db_ctx tenant.Pool_tenant.database_label
+    in
     let%lwt gtx_config = Gtx_config.find_exn db_ctx in
     let open Text_message in
     let fnc language assignment message cell_phone =
@@ -1004,9 +1004,10 @@ module PhoneVerification = struct
     =
     let open Text_message in
     (* this has been verified at the two call sites in contact_user_profile.ml *)
-    assert (Database.Label.equal
-              tenant.Pool_tenant.database_label
-              (Database.label_of_ctx db_ctx));
+    assert (
+      Database.Label.equal
+        tenant.Pool_tenant.database_label
+        (Database.label_of_ctx db_ctx));
     let%lwt gtx_config = Gtx_config.find_exn db_ctx in
     let%lwt { sms_text; _ } =
       find_by_label_and_language_to_send db_ctx label message_language

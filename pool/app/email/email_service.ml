@@ -227,9 +227,7 @@ module Smtp = struct
         let%lwt auth =
           let tags = Database.Logger.Tags.of_db_ctx db_ctx in
           smtp_auth_id
-          |> CCOption.map_or
-               ~default:(find_full_default db_ctx)
-               (find_full db_ctx)
+          |> CCOption.map_or ~default:(find_full_default db_ctx) (find_full db_ctx)
           >|- with_log_error ~src ~tags
           ||> get_or_failwith
         in
@@ -259,8 +257,7 @@ module Smtp = struct
       let%lwt sender =
         match Database.Pool.is_root (Database.label_of_ctx db_ctx) with
         | true -> default_sender_of_pool |> Pool_user.EmailAddress.value |> Lwt.return
-        | false ->
-          Settings.(find_contact_email db_ctx |> Lwt.map ContactEmail.value)
+        | false -> Settings.(find_contact_email db_ctx |> Lwt.map ContactEmail.value)
       in
       let recipient = test_email |> Pool_user.EmailAddress.value in
       let subject = "Test email" in
@@ -315,10 +312,7 @@ let test_smtp_config db_ctx config test_email_address =
   >|- fun exn -> Pool_message.Error.SmtpException (Printexc.to_string exn)
 ;;
 
-let send ?smtp_auth_id db_ctx =
-  intercept_send (Smtp.send ?smtp_auth_id db_ctx)
-;;
-
+let send ?smtp_auth_id db_ctx = intercept_send (Smtp.send ?smtp_auth_id db_ctx)
 let start () = Lwt.return_unit
 let stop () = Lwt.return_unit
 

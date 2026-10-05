@@ -113,8 +113,7 @@ let intercept_prepare db_ctx message =
         "Sending text message intercepted. Sending message as email to ('%s')"
         new_recipient);
     let%lwt sender =
-      Email.Service.default_sender_of_pool db_ctx
-      |> Lwt.map Pool_user.EmailAddress.value
+      Email.Service.default_sender_of_pool db_ctx |> Lwt.map Pool_user.EmailAddress.value
     in
     let subject =
       Format.asprintf
@@ -294,6 +293,5 @@ let dispatch
   >|> function
   | TextMessageJob job ->
     Pool_queue.dispatch ?id ?message_template ~job_ctx db_ctx job Job.send
-  | EmailJob job ->
-    Email.Service.dispatch ?id ?message_template ~job_ctx db_ctx job
+  | EmailJob job -> Email.Service.dispatch ?id ?message_template ~job_ctx db_ctx job
 ;;

@@ -105,7 +105,10 @@ let admins db_ctx =
          Lwt.return_unit
        | Some _ ->
          Logs.debug ~src (fun m ->
-           m ~tags:(Database.Logger.Tags.of_db_ctx db_ctx) "%s" "Admin user already exists");
+           m
+             ~tags:(Database.Logger.Tags.of_db_ctx db_ctx)
+             "%s"
+             "Admin user already exists");
          Lwt.return_unit)
     data
 ;;

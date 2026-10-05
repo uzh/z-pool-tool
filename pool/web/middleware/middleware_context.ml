@@ -126,7 +126,8 @@ let context () =
     let%lwt context =
       let* database_label = database_label_of_request is_root req |> Lwt_result.lift in
       (* The database connection is only live until we've created the Pool_context.t *)
-      Database.connection_ctx database_label @@ fun db_ctx ->
+      Database.connection_ctx database_label
+      @@ fun db_ctx ->
       let%lwt user = find_user db_ctx in
       let url_parameters = Utils.url_parameters_by_user req user in
       let%lwt language, guardian =

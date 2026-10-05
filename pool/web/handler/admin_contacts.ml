@@ -18,10 +18,9 @@ let index req =
     ~create_layout:General.create_tenant_layout
     req
   @@ fun (Pool_context.{ user; _ } as context) query ->
-  Pool_context.connection context @@ fun db_ctx ->
-  let* actor =
-    Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user
-  in
+  Pool_context.connection context
+  @@ fun db_ctx ->
+  let* actor = Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user in
   let%lwt contacts, query = Contact.list_by_user ~query db_ctx actor in
   let open Page.Admin.Contact in
   (if HttpUtils.Htmx.is_hx_request req then list else index) context contacts query
@@ -42,7 +41,8 @@ let experiment_history_htmx req =
   let contact_id = contact_id req in
   let experiment_id = experiment_id req in
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* contact = Contact.find db_ctx contact_id in
     let* experiment = Experiment.find db_ctx experiment_id in
     let%lwt assignments =
@@ -58,7 +58,8 @@ let experiment_history_htmx req =
 let past_experiments_htmx req =
   let contact_id = contact_id req in
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* contact = Contact.find db_ctx contact_id in
     let%lwt experiments, query =
       let query = experiments_query_from_req req in
@@ -75,7 +76,8 @@ let detail req =
   let result context =
     let open Contact in
     let contact_id = contact_id req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* contact = find_contact db_ctx contact_id in
     Response.bad_request_render_error context
     @@
@@ -87,10 +89,7 @@ let detail req =
     in
     let%lwt admin_comment = find_admin_comment db_ctx (id contact) in
     let%lwt custom_fields =
-      Custom_field.find_all_by_contact
-        db_ctx
-        context.Pool_context.user
-        (id contact)
+      Custom_field.find_all_by_contact db_ctx context.Pool_context.user (id contact)
     in
     let%lwt past_experiments =
       let query = experiments_query_from_req req in
@@ -126,7 +125,8 @@ let detail req =
 let edit req =
   let result ({ Pool_context.user; _ } as context) =
     let id = contact_id req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* contact = find_contact db_ctx id in
     Response.bad_request_render_error context
     @@
@@ -174,7 +174,8 @@ let edit req =
 let update req =
   let result context =
     let* contact =
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       HttpUtils.get_field_router_param req Field.Contact
       |> Contact.Id.of_string
       |> Contact.find db_ctx
@@ -189,7 +190,8 @@ let delete_answer req =
   let contact_id = contact_id req in
   let result ({ Pool_context.user; language; _ } as context) =
     let is_admin = Pool_context.user_is_admin user in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* contact = contact_id |> Contact.find db_ctx in
     let* custom_field =
       HttpUtils.find_id Custom_field.Id.of_string Field.CustomField req
@@ -222,7 +224,8 @@ let promote req =
   let tags = Pool_context.Logger.Tags.req req in
   let contact_id = contact_id req in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* contact = contact_id |> find_contact db_ctx in
     Response.bad_request_on_error edit
     @@
@@ -257,7 +260,8 @@ let mark_as_deleted req =
   let id = contact_id req in
   let tags = Pool_context.Logger.Tags.req req in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* contact = find_contact db_ctx id in
     Response.bad_request_on_error edit
     @@
@@ -283,7 +287,8 @@ let toggle_verified req =
   let id = contact_id req in
   let tags = Pool_context.Logger.Tags.req req in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* contact = Contact.find db_ctx id |> Response.not_found_on_error in
     Response.bad_request_on_error edit
     @@
@@ -299,7 +304,8 @@ let toggle_verified req =
 let external_data_ids req =
   let contact_id = contact_id req in
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* contact = find_contact db_ctx contact_id in
     Response.bad_request_on_error edit
     @@
@@ -317,11 +323,10 @@ let htmx_experiments_get req =
   let contact_id = contact_id req in
   let result ({ Pool_context.user; _ } as context) =
     let query = Sihl.Web.Request.query Field.(show Search) req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* contact = Contact.find db_ctx contact_id in
-    let* actor =
-      Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user
-    in
+    let* actor = Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user in
     let%lwt experiments =
       query
       |> CCOption.map_or ~default:(Lwt.return []) (fun query ->
@@ -338,12 +343,12 @@ let htmx_experiment_modal req =
   let contact_id = contact_id req in
   let experiment_id = experiment_id req in
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* contact = Contact.find db_ctx contact_id in
     let* experiment = Experiment.find db_ctx experiment_id in
     let%lwt sessions =
-      Session.find_all_for_experiment db_ctx experiment_id
-      ||> Session.group_and_sort
+      Session.find_all_for_experiment db_ctx experiment_id ||> Session.group_and_sort
     in
     let%lwt matches_filter =
       Experiment.contact_meets_criteria db_ctx experiment contact
@@ -369,7 +374,8 @@ let enroll_contact_post req =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* contact = find_contact db_ctx contact_id in
     Response.bad_request_on_error ~urlencoded edit
     @@
@@ -386,9 +392,7 @@ let enroll_contact_post req =
       then Lwt_result.return ()
       else Lwt_result.fail (Pool_message.Error.NotFound Field.Session)
     in
-    let%lwt follow_up_sessions =
-      Session.find_follow_ups db_ctx session.Session.id
-    in
+    let%lwt follow_up_sessions = Session.find_follow_ups db_ctx session.Session.id in
     let%lwt confirmation =
       let tenant = Pool_context.Tenant.get_tenant_exn req in
       Message_template.AssignmentConfirmation.prepare
@@ -433,7 +437,8 @@ let message_history req =
     ~create_layout:General.create_tenant_layout
     req
   @@ fun context query ->
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let* contact = Contact.find db_ctx contact_id in
   let%lwt messages =
     let open Pool_queue in
@@ -454,7 +459,8 @@ let unblock req =
   let tags = Pool_context.Logger.Tags.req req in
   let contact_id = contact_id req in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* contact = find_contact db_ctx contact_id in
     Response.bad_request_on_error edit
     @@
@@ -478,8 +484,8 @@ let changelog req =
   let id = contact_id req in
   let url = HttpUtils.Url.Admin.contact_path ~suffix:"changelog" ~id () in
   let to_human ({ Pool_context.language; _ } as context) changelog =
-    Pool_context.connection context @@ fun db_ctx ->
-    Custom_field.changelog_to_human db_ctx language changelog
+    Pool_context.connection context
+    @@ fun db_ctx -> Custom_field.changelog_to_human db_ctx language changelog
   in
   Helpers.Changelog.htmx_handler ~to_human ~url (Contact.Id.to_common id) req
 ;;
@@ -503,10 +509,9 @@ end = struct
   let create_contact_validation_set contact_fcn permission =
     (fun req ->
       let open Guard.ValidationSet in
-      let* context =
-        req |> Pool_context.find |> Lwt_result.lift
-      in
-      Pool_context.connection context @@ fun db_ctx ->
+      let* context = req |> Pool_context.find |> Lwt_result.lift in
+      Pool_context.connection context
+      @@ fun db_ctx ->
       let contact = HttpUtils.find_id Contact.Id.of_string Field.Contact req in
       let%lwt experiments =
         Experiment.find_all_ids_of_contact_id db_ctx contact

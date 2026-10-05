@@ -49,9 +49,7 @@ let forge_token =
   let%lwt value = Pool_token.read db_ctx token ~k:"foo" in
   Alcotest.(check (option string) "reads value" (Some "bar") value);
   let forged_token = "prefix" ^ Pool_token.value token in
-  let%lwt value =
-    Pool_token.read db_ctx (Pool_token.of_string forged_token) ~k:"foo"
-  in
+  let%lwt value = Pool_token.read db_ctx (Pool_token.of_string forged_token) ~k:"foo" in
   Alcotest.(check (option string) "reads no value" None value);
   let%lwt value =
     Pool_token.read db_ctx ~force:() (Pool_token.of_string forged_token) ~k:"foo"

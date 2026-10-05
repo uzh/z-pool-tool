@@ -395,12 +395,7 @@ val sending_invitations
   -> (SendingInvitations.t, Pool_message.Error.t) Lwt_result.t
 
 val assignment_counts : _ Database.ctx -> Id.t -> assignment_counts Lwt.t
-
-val find_admins_to_notify_about_invitations
-  :  _ Database.ctx
-  -> Id.t
-  -> Admin.t list Lwt.t
-
+val find_admins_to_notify_about_invitations : _ Database.ctx -> Id.t -> Admin.t list Lwt.t
 val invited_contacts_count : _ Database.ctx -> Id.t -> int Lwt.t
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t

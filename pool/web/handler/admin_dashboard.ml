@@ -20,7 +20,8 @@ let sessions_query_from_req req =
 let index req =
   let result ({ Pool_context.user; _ } as context) =
     let open Utils.Lwt_result.Infix in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* actor =
       Pool_context.Utils.find_authorizable db_ctx user >|- Response.not_found
     in
@@ -47,17 +48,13 @@ let index req =
       | true -> Duplicate_contacts.count db_ctx ||> CCOption.pure
     in
     let query = sessions_query_from_req req in
-    let%lwt incomplete_sessions =
-      Session.find_incomplete_by_admin ~query actor db_ctx
-    in
+    let%lwt incomplete_sessions = Session.find_incomplete_by_admin ~query actor db_ctx in
     let open Page.Admin.Dashboard in
     let%lwt layout =
       if clean_layout
       then Clean incomplete_sessions |> Lwt.return
       else (
-        let%lwt upcoming_sessions =
-          Session.find_upcoming_by_admin ~query actor db_ctx
-        in
+        let%lwt upcoming_sessions = Session.find_upcoming_by_admin ~query actor db_ctx in
         Admin (incomplete_sessions, upcoming_sessions) |> Lwt.return)
     in
     index statistics duplicate_contacts_count layout context
@@ -70,7 +67,8 @@ let index req =
 let htmx_session_helper table req =
   let result ({ Pool_context.language; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* actor = Pool_context.Utils.find_authorizable db_ctx user in
     let%lwt sessions =
       let query = sessions_query_from_req req in

@@ -19,13 +19,7 @@ let nav_elements =
     |> CCList.map NavElement.create)
 ;;
 
-let create
-      ?buttons
-      ?hint
-      ({ Pool_context.language; user; _ } as context)
-      model
-      content
-  =
+let create ?buttons ?hint ({ Pool_context.language; user; _ } as context) model content =
   let open Utils.Lwt_result.Infix in
   let open Tab_navigation in
   let%lwt actor =

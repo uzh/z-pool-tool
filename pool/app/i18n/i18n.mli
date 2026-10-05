@@ -65,13 +65,7 @@ val handle_event : _ Database.ctx -> event -> unit Lwt.t
 val find : _ Database.ctx -> Pool_common.Id.t -> t Lwt.t
 val find_with_default_content : _ Database.ctx -> Pool_common.Id.t -> t Lwt.t
 val find_by_key : _ Database.ctx -> Key.t -> Pool_common.Language.t -> t Lwt.t
-
-val find_by_key_opt
-  :  _ Database.ctx
-  -> Key.t
-  -> Pool_common.Language.t
-  -> t option Lwt.t
-
+val find_by_key_opt : _ Database.ctx -> Key.t -> Pool_common.Language.t -> t option Lwt.t
 val find_all : _ Database.ctx -> unit -> t list Lwt.t
 val terms_and_conditions_last_updated : _ Database.ctx -> Ptime.t Lwt.t
 

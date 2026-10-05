@@ -24,9 +24,7 @@ let notify_user db_ctx tags email = function
       | Some user ->
         let* tenant = Pool_tenant.find_by_db_ctx db_ctx in
         Message_template.AccountSuspensionNotification.create tenant user
-        |>> Email.sent
-            %> Pool_event.email
-            %> Pool_event.handle_system_event ~tags db_ctx
+        |>> Email.sent %> Pool_event.email %> Pool_event.handle_system_event ~tags db_ctx
         >|- fun err ->
         Logs.err (fun m ->
           m
@@ -118,8 +116,7 @@ let validate_login req ~tags db_ctx ~email ~password =
     let handle_result = function
       | Ok user ->
         let%lwt () =
-          login_attempts
-          |> CCOption.map_or ~default:(Lwt.return ()) (Repo.delete db_ctx)
+          login_attempts |> CCOption.map_or ~default:(Lwt.return ()) (Repo.delete db_ctx)
         in
         Lwt_result.return user
       | Error err ->
@@ -145,9 +142,9 @@ let validate_login req ~tags db_ctx ~email ~password =
 ;;
 
 (* Internal helper: create 2FA auth token and email job events for a validated user *)
-let create_2fa_auth ?id ?token ~tags req ({ Pool_context.language; _ } as context) user
-  =
-  Pool_context.connection context @@ fun db_ctx ->
+let create_2fa_auth ?id ?token ~tags req ({ Pool_context.language; _ } as context) user =
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let%lwt id =
     match id with
     | Some _ as id -> Lwt.return id
@@ -170,17 +167,12 @@ let create_2fa_auth ?id ?token ~tags req ({ Pool_context.language; _ } as contex
   Lwt_result.return (user, auth, events)
 ;;
 
-let create_2fa_login
-      ?id
-      ?token
-      ?tags
-      req
-      context
-      urlencoded
-  =
+let create_2fa_login ?id ?token ?tags req context urlencoded =
   let tags = CCOption.value tags ~default:(Pool_context.Logger.Tags.req req) in
   let* email, password = login_params urlencoded in
-  let* user = Pool_context.connection context (validate_login req ~tags ~email ~password) in
+  let* user =
+    Pool_context.connection context (validate_login req ~tags ~email ~password)
+  in
   create_2fa_auth ?id ?token ~tags req context user
 ;;
 
@@ -202,17 +194,11 @@ type login_step =
 
 (** Entry point for the login POST handler. Determines whether 2FA is needed based
     on the SMTP configuration and the user type/permissions. *)
-let initiate_login
-      ?id
-      ?token
-      ?tags
-      req
-      context
-      urlencoded
-  =
+let initiate_login ?id ?token ?tags req context urlencoded =
   let tags = CCOption.value tags ~default:(Pool_context.Logger.Tags.req req) in
   let* email, password = login_params urlencoded in
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let* user = validate_login req ~tags db_ctx ~email ~password in
   let%lwt smtp_set = Email.SmtpAuth.defalut_is_set db_ctx in
   match Database.Pool.is_root (Database.label_of_ctx db_ctx) with
@@ -303,7 +289,8 @@ let verify_2fa_login ~tags ({ Pool_context.user = context_user; _ } as context) 
   | None -> Lwt.return SessionMissing
   | Some id ->
     let auth_id = Authentication.Id.of_string id in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     auth_id
     |> Authentication.find_valid_by_id db_ctx
     >|> (function
@@ -334,10 +321,7 @@ let verify_2fa_login ~tags ({ Pool_context.user = context_user; _ } as context) 
              if remaining <= 0
              then (
                let%lwt () =
-                 increment_failed_login_attempt
-                   ~tags
-                   db_ctx
-                   (Pool_user.email user)
+                 increment_failed_login_attempt ~tags db_ctx (Pool_user.email user)
                in
                Lwt.return (SessionExpired auth_id))
              else Lwt.return (InvalidToken err))))
@@ -350,9 +334,9 @@ let login_verify_get ~render_confirmation ~login_path req =
     let%lwt auth_data =
       match Sihl.Web.Session.find "auth_id" req with
       | Some auth_id ->
-        (Pool_context.connection context @@ fun db_ctx ->
-         Authentication.Id.of_string auth_id
-         |> Authentication.find_valid_by_id db_ctx)
+        (Pool_context.connection context
+         @@ fun db_ctx ->
+         Authentication.Id.of_string auth_id |> Authentication.find_valid_by_id db_ctx)
         >|- fun (_ : Error.t) ->
         let _ =
           Pool_common.Utils.with_log_error
@@ -395,7 +379,8 @@ let login_verify_post ~verify_path ~handle_verified ~handle_invalid_session req 
       |> Lwt_result.ok
     | SessionExpired auth_id ->
       let%lwt () =
-        Pool_context.connection context @@ fun db_ctx ->
+        Pool_context.connection context
+        @@ fun db_ctx ->
         Pool_event.handle_event
           ~tags
           db_ctx
@@ -419,7 +404,8 @@ let resend_token_post ~verify_path req =
         | None -> Lwt.return_error Pool_message.(Error.Invalid Field.Id)
         | Some auth_id -> Authentication.Id.of_string auth_id |> Lwt.return_ok
       in
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       let* (_ : Authentication.t), login_user =
         Authentication.find_valid_by_id db_ctx auth_id
       in

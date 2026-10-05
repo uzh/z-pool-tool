@@ -11,7 +11,8 @@ let index req =
   let open Utils.Lwt_result.Infix in
   let id = experiment_id req in
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment = id |> Experiment.find db_ctx >|- Response.not_found in
     Response.bad_request_render_error context
     @@
@@ -26,12 +27,9 @@ let index req =
           filter
           |> Filter.all_query_experiments
           |> Experiment.search_multiple_by_id db_ctx
-        and query_tags =
-          filter |> Filter.all_query_tags |> Tags.find_multiple db_ctx
+        and query_tags = filter |> Filter.all_query_tags |> Tags.find_multiple db_ctx
         and query_tagged_experiments =
-          filter
-          |> Filter.all_query_tagged_experiments
-          |> Tags.find_multiple db_ctx
+          filter |> Filter.all_query_tagged_experiments |> Tags.find_multiple db_ctx
         in
         Lwt.return (query_experiments, query_tags, query_tagged_experiments)
     in
@@ -74,7 +72,8 @@ let sent_invitations req =
   Response.Htmx.index_handler ~create_layout ~query:(module Invitation) req
   @@ fun context query ->
   let open Utils.Lwt_result.Infix in
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let* experiment = Experiment.find db_ctx id in
   let experiment_guard = [ Guard.Uuid.target_of Experiment.Id.value id ] in
   let%lwt invitations =
@@ -115,7 +114,8 @@ let create req =
     Format.asprintf "/admin/experiments/%s/invitations" (Experiment.Id.value id)
   in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment = Experiment.find db_ctx id |> Response.not_found_on_error in
     Response.bad_request_on_error index
     @@
@@ -191,7 +191,8 @@ let resend req =
     HttpUtils.Url.Admin.experiment_path ~id:experiment_id ~suffix:"invitations" ()
   in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* invitation = Invitation.find db_ctx id |> Response.not_found_on_error in
     let* experiment =
       Experiment.find db_ctx experiment_id |> Response.not_found_on_error

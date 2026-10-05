@@ -33,7 +33,8 @@ let set_flash_fetcher context flash_fetcher =
 module Utils = struct
   let find_authorizable_opt ?(admin_only = false) db_ctx user =
     match user with
-    | Contact _ when Database.Pool.is_root (Database.label_of_ctx db_ctx) -> Lwt.return_none
+    | Contact _ when Database.Pool.is_root (Database.label_of_ctx db_ctx) ->
+      Lwt.return_none
     | Contact contact when not admin_only ->
       Contact.id contact
       |> Guard.Uuid.actor_of Contact.Id.value

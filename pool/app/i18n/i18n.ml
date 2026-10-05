@@ -40,7 +40,12 @@ let privacy_policy_is_set db_ctx language =
       find_by_key_opt db_ctx Key.PrivacyPolicy language
       ||> CCOption.map_or ~default:false (content %> CCOption.is_some)
     in
-    let () = Hashtbl.add I18nCache.privacy_policy (Database.label_of_ctx db_ctx, language) existing in
+    let () =
+      Hashtbl.add
+        I18nCache.privacy_policy
+        (Database.label_of_ctx db_ctx, language)
+        existing
+    in
     Lwt.return existing
 ;;
 

@@ -234,7 +234,9 @@ module PageScripts = struct
     |> Caqti_type.(string ->? string)
   ;;
 
-  let find db_ctx location = Database.find_opt db_ctx find_request (show_location location)
+  let find db_ctx location =
+    Database.find_opt db_ctx find_request (show_location location)
+  ;;
 
   let find db_ctx =
     match Cache.find (Database.label_of_ctx db_ctx) with

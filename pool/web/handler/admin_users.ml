@@ -10,12 +10,9 @@ let redirect req =
     let user_id = id req in
     let open Pool_user in
     let* user =
-      Pool_context.connection context @@ fun db_ctx ->
-      user_id
-      |> Id.validate
-      |> Lwt_result.lift
-      >>= find db_ctx
-      >|- Response.not_found
+      Pool_context.connection context
+      @@ fun db_ctx ->
+      user_id |> Id.validate |> Lwt_result.lift >>= find db_ctx >|- Response.not_found
     in
     let redirect =
       match is_admin user with

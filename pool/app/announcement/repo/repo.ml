@@ -222,7 +222,10 @@ let find_by_user_request context =
 ;;
 
 let find_by_user database_label (context, user_id) =
-  find_opt (label_ctx Pool.Root.label) (find_by_user_request context) (database_label, user_id)
+  find_opt
+    (label_ctx Pool.Root.label)
+    (find_by_user_request context)
+    (database_label, user_id)
 ;;
 
 let hide_requeset =

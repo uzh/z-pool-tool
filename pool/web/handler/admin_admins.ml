@@ -24,10 +24,9 @@ let index req =
     ~create_layout:General.create_tenant_layout
     req
   @@ fun (Pool_context.{ user; _ } as context) query ->
-  Pool_context.connection context @@ fun db_ctx ->
-  let* actor =
-    Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user
-  in
+  Pool_context.connection context
+  @@ fun db_ctx ->
+  let* actor = Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user in
   let%lwt admins = Admin.list_by_user ~query db_ctx actor in
   let open Page.Admin.Admins in
   Lwt_result.return
@@ -38,7 +37,8 @@ let index req =
 let admin_detail req is_edit =
   let result ({ Pool_context.csrf; language; user; _ } as context) =
     let id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* admin = id |> Admin.find db_ctx |> Response.not_found_on_error in
     Response.bad_request_render_error context
     @@
@@ -76,9 +76,7 @@ let admin_detail req is_edit =
        |> Lwt.return
      | false ->
        let%lwt failed_login_attempt =
-         Pool_user.FailedLoginAttempt.Repo.find_current
-           db_ctx
-           (Admin.email_address admin)
+         Pool_user.FailedLoginAttempt.Repo.find_current db_ctx (Admin.email_address admin)
        in
        Page.Admin.Admins.detail context admin target_id roles failed_login_attempt
        |> Lwt.return)
@@ -115,7 +113,8 @@ let create_admin req =
       >== Pool_user.EmailAddress.create
       >>= HttpUtils.validate_email_existance db_ctx
     in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let events =
       let open Cqrs_command.Admin_command.CreateAdmin in
       let* cmd = decode urlencoded |> Lwt_result.lift in
@@ -131,12 +130,7 @@ let create_admin req =
       in
       let%lwt token = Email.create_token db_ctx user.Pool_user.email in
       let%lwt dispatch =
-        Message_template.AdminAccountCreated.create
-          db_ctx
-          language
-          tenant
-          user
-          token
+        Message_template.AdminAccountCreated.create db_ctx language tenant user token
       in
       let* admin_events = handle ~id ~tags cmd |> Lwt_result.lift in
       Lwt_result.return (admin_events @ email_verification_events id token dispatch cmd)
@@ -169,8 +163,7 @@ let handle_toggle_role req =
 let search_role_entities req =
   let result context =
     let* target =
-      Pool_context.connection context @@ fun db_ctx ->
-      find_authorizable_target db_ctx req
+      Pool_context.connection context @@ fun db_ctx -> find_authorizable_target db_ctx req
     in
     Helpers.Guard.search_role_entities target req |> Lwt_result.ok
   in
@@ -183,7 +176,8 @@ let grant_role req =
   let to_guardian_id admin = admin |> Admin.id |> Guard.Uuid.actor_of Admin.Id.value in
   let redirect_path = admin_path ~id:admin_id ~suffix:"edit" () in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* admin = Admin.find db_ctx admin_id >|- Response.not_found in
     Response.bad_request_on_error edit
     @@
@@ -199,7 +193,8 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
     CCString.replace ~which:`Right ~sub:"/revoke-role" ~by:"/edit" target
   in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* admin =
       HttpUtils.find_id Admin.Id.of_string Field.Admin req
       |> Admin.find db_ctx
@@ -217,7 +212,8 @@ let unblock req =
   let tags = Pool_context.Logger.Tags.req req in
   let admin_id = admin_id req in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* admin = Admin.find db_ctx admin_id |> Response.not_found_on_error in
     Response.bad_request_on_error detail
     @@

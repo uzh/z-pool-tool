@@ -108,11 +108,7 @@ val find_by_email
   -> Pool_user.EmailAddress.t
   -> (t, Pool_message.Error.t) Lwt_result.t
 
-val find_by_user
-  :  _ Database.ctx
-  -> Pool_user.t
-  -> (t, Pool_message.Error.t) Lwt_result.t
-
+val find_by_user : _ Database.ctx -> Pool_user.t -> (t, Pool_message.Error.t) Lwt_result.t
 val all : ?query:Query.t -> _ Database.ctx -> (t list * Query.t) Lwt.t
 val find_to_trigger_profile_update : _ Database.ctx -> (t list, 'a) Lwt_result.t
 val should_send_registration_attempt_notification : _ Database.ctx -> t -> bool Lwt.t

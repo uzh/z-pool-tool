@@ -12,7 +12,8 @@ let reminder_settings database_label =
 
 let run database_label =
   let open Utils.Lwt_result.Infix in
-  Database.connection_ctx database_label @@ fun db_ctx ->
+  Database.connection_ctx database_label
+  @@ fun db_ctx ->
   let%lwt import_message =
     let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_or_failwith in
     Message_template.UserImport.prepare db_ctx tenant

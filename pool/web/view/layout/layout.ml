@@ -16,7 +16,9 @@ module Tenant = struct
   open Layout_utils
 
   let make_footer ({ language; query_parameters; user; _ } as context) title_text =
-    let%lwt privacy_policy_is_set = I18n.privacy_policy_is_set (Pool_context.on_demand context) language in
+    let%lwt privacy_policy_is_set =
+      I18n.privacy_policy_is_set (Pool_context.on_demand context) language
+    in
     let open Pool_common in
     let of_nav = Utils.nav_link_to_string language in
     let of_field = Utils.field_to_string_capitalized language in
@@ -45,14 +47,7 @@ module Tenant = struct
 
   let create
         ?active_navigation
-        ({ csrf
-         ; language
-         ; query_parameters
-         ; message
-         ; user
-         ; notifications
-         ; _
-         } as context)
+        ({ csrf; language; query_parameters; message; user; notifications; _ } as context)
         Tenant.{ tenant_languages; tenant }
         children
     =

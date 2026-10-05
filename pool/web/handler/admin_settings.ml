@@ -25,11 +25,10 @@ let settings_page ?open_tab req =
            >>= CCFun.(Settings.action_of_param %> of_result))
     in
     let languages = Pool_context.Tenant.get_tenant_languages_exn req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt email_suffixes = Settings.find_email_suffixes db_ctx in
-    let%lwt system_email_templates =
-      Settings.find_system_email_templates db_ctx
-    in
+    let%lwt system_email_templates = Settings.find_system_email_templates db_ctx in
     let%lwt contact_email = Settings.find_contact_email db_ctx in
     let%lwt inactive_user_disable_after =
       Settings.find_inactive_user_disable_after db_ctx
@@ -159,7 +158,8 @@ let update_settings req =
       in
       command_handler urlencoded action
     in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let handle = Pool_event.handle_events ~tags db_ctx user in
     let return_to_settings () =
       Http_utils.redirect_to_with_actions
@@ -206,7 +206,8 @@ let open_changelog_modal req =
     let key =
       Http_utils.get_field_router_param req Pool_message.Field.Key |> Settings.Key.read
     in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt id = Settings.id_by_key db_ctx key in
     let%lwt changelogs =
       let open Changelog in
@@ -231,8 +232,8 @@ module PageScripts = struct
       let location = location req in
       let url = Http_utils.Url.Admin.page_script_changelog_path location in
       let%lwt id =
-        Pool_context.connection context @@
-        CCFun.flip Settings.PageScript.find_id location in
+        Pool_context.connection context @@ CCFun.flip Settings.PageScript.find_id location
+      in
       Lwt_result.ok @@ Helpers.Changelog.htmx_handler ~url id req
     in
     Response.Htmx.handle ~error_as_notification:true req result
@@ -241,7 +242,8 @@ module PageScripts = struct
   let open_changelog_modal req =
     let result context =
       let location = location req in
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       let%lwt id = Settings.PageScript.find_id db_ctx location in
       let%lwt changelogs =
         let open Changelog in

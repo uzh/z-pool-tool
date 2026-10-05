@@ -137,7 +137,8 @@ let check_migration_status pool () =
   let open Utils.Lwt_result.Infix in
   let open Database in
   let migrations = steps () in
-  transaction_ctx pool @@ fun db_ctx ->
+  transaction_ctx pool
+  @@ fun db_ctx ->
   let%lwt () =
     let%lwt up_to_date =
       Migration.pending_migrations db_ctx ~migrations () ||> CCList.is_empty

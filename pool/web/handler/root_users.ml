@@ -13,8 +13,8 @@ let active_navigation = "/root/users"
 let index req =
   let context = Pool_context.find_exn req in
   let%lwt root_list =
-    Database.(connection_ctx Pool.Root.label) @@
-    Admin.all ~query:Admin.default_query in
+    Database.(connection_ctx Pool.Root.label) @@ Admin.all ~query:Admin.default_query
+  in
   Page.Root.Users.list root_list context
   |> General.create_root_layout ~active_navigation context
   ||> Sihl.Web.Response.of_html
@@ -39,14 +39,18 @@ let create req =
       let open CCResult.Infix in
       RootCommand.Create.(urlencoded |> decode >>= handle ~tags)
     in
-    let handle = Pool_event.handle_events ~tags Database.(label_ctx Pool.Root.label) user in
+    let handle =
+      Pool_event.handle_events ~tags Database.(label_ctx Pool.Root.label) user
+    in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         (pool_path ())
         [ Message.set ~success:[ Success.Created Field.Root ] ]
     in
     Pool_context.connection context create_user
-    >== events |>> handle |>> return_to_overview
+    >== events
+    |>> handle
+    |>> return_to_overview
   in
   Response.handle ~src req result
 ;;
@@ -60,14 +64,19 @@ let toggle_status req =
     let id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
     let events = RootCommand.ToggleStatus.handle ~tags %> Lwt_result.lift in
     let handle evts =
-      Pool_context.connection context @@ fun db_ctx ->
-      Pool_event.handle_events ~tags db_ctx user evts in
+      Pool_context.connection context
+      @@ fun db_ctx -> Pool_event.handle_events ~tags db_ctx user evts
+    in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         (pool_path ())
         [ Message.set ~success:[ Success.Updated Field.Root ] ]
     in
-    id |> Admin.find Database.(label_ctx Pool.Root.label) >>= events |>> handle |>> return_to_overview
+    id
+    |> Admin.find Database.(label_ctx Pool.Root.label)
+    >>= events
+    |>> handle
+    |>> return_to_overview
   in
   Response.handle ~src req result
 ;;

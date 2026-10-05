@@ -33,16 +33,17 @@ module Label = struct
   let schema () = schema field ()
   let of_string m = m
   let hash = CCString.hash
-
   let to_ctx (pool : t) = [ "pool", value pool ]
 
   let of_ctx_opt : (string * string) list -> t option =
     CCList.assoc_opt ~eq:( = ) "pool" %> CCOption.map of_string
-  
+  ;;
+
   let of_ctx_exn =
     of_ctx_opt
-    %> CCOption.get_exn_or Pool_message.(Error.Undefined Field.DatabaseLabel |> Error.show)
-
+    %> CCOption.get_exn_or
+         Pool_message.(Error.Undefined Field.DatabaseLabel |> Error.show)
+  ;;
 end
 
 module Status = struct
@@ -125,23 +126,41 @@ type transaction = [ `transaction ]
 
 (*
    let find db_ctx =  Database.find db_ctx do_the_find
- *)
+*)
 
 type !_ ctx =
-  | Label : { label : Label.t; tags : Logs.Tag.set } -> no_transaction ctx
-  | Connection : { connection : Caqti_lwt.connection; label : Label.t; tags : Logs.Tag.set } -> no_transaction ctx
-  | TransactionalConnection : { connection : Caqti_lwt.connection; label : Label.t; tags : Logs.Tag.set } -> transaction ctx
+  | Label :
+      { label : Label.t
+      ; tags : Logs.Tag.set
+      }
+      -> no_transaction ctx
+  | Connection :
+      { connection : Caqti_lwt.connection
+      ; label : Label.t
+      ; tags : Logs.Tag.set
+      }
+      -> no_transaction ctx
+  | TransactionalConnection :
+      { connection : Caqti_lwt.connection
+      ; label : Label.t
+      ; tags : Logs.Tag.set
+      }
+      -> transaction ctx
 
 type _ txn =
   | Yes : transaction txn
   | No : no_transaction txn
 
 let label_of_ctx (type maybe_transaction) : maybe_transaction ctx -> Label.t = function
-  | Label { label; _ } | Connection { label; _ } | TransactionalConnection { label; _ } -> label
+  | Label { label; _ } | Connection { label; _ } | TransactionalConnection { label; _ } ->
+    label
+;;
 
 let to_ctx db_ctx = Label.to_ctx (label_of_ctx db_ctx)
 
-let txn_of_ctx (type maybe_transaction) : maybe_transaction ctx -> maybe_transaction txn = function
+let txn_of_ctx (type maybe_transaction) : maybe_transaction ctx -> maybe_transaction txn
+  = function
   | Label _ -> No
   | Connection _ -> No
   | TransactionalConnection _ -> Yes
+;;

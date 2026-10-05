@@ -17,9 +17,7 @@ let templates_disabled urlencoded =
 ;;
 
 let find_all_templates db_ctx templates_disabled =
-  if templates_disabled
-  then Lwt.return []
-  else Filter.find_all_templates db_ctx ()
+  if templates_disabled then Lwt.return [] else Filter.find_all_templates db_ctx ()
 ;;
 
 let create_layout req = General.create_tenant_layout req
@@ -48,8 +46,7 @@ let index req =
     req
   @@ fun context query ->
   let%lwt filter_list, query =
-    Pool_context.connection context @@
-    Filter.find_templates_by query
+    Pool_context.connection context @@ Filter.find_templates_by query
   in
   let open Page.Admin.Filter in
   (if HttpUtils.Htmx.is_hx_request req then list else index) context filter_list query
@@ -59,7 +56,8 @@ let index req =
 let form is_edit req =
   let open Utils.Lwt_result.Infix in
   let result context =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* filter =
       if is_edit
       then
@@ -79,12 +77,9 @@ let form is_edit req =
           filter
           |> Filter.all_query_experiments
           |> Experiment.search_multiple_by_id db_ctx
-        and query_tags =
-          filter |> Filter.all_query_tags |> Tags.find_multiple db_ctx
+        and query_tags = filter |> Filter.all_query_tags |> Tags.find_multiple db_ctx
         and query_tagged_experiments =
-          filter
-          |> Filter.all_query_tagged_experiments
-          |> Tags.find_multiple db_ctx
+          filter |> Filter.all_query_tagged_experiments |> Tags.find_multiple db_ctx
         in
         Lwt.return (query_experiments, query_tags, query_tagged_experiments)
     in
@@ -117,7 +112,8 @@ let write action req =
       >>= Filter.query_of_string
       |> Lwt_result.lift
     in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt key_list = Filter.all_keys db_ctx in
     let%lwt template_list = Filter.find_templates_of_query db_ctx query in
     let events =
@@ -184,7 +180,8 @@ let handle_toggle_predicate_type action req =
   let result ({ Pool_context.language; _ } as context) =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let templates_disabled = templates_disabled urlencoded in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt key_list = Filter.all_keys db_ctx in
     let%lwt template_list = find_all_templates db_ctx templates_disabled in
     let* query =
@@ -203,12 +200,9 @@ let handle_toggle_predicate_type action req =
       query
       |> Filter.Human.all_query_experiments
       |> Experiment.search_multiple_by_id db_ctx
-    and query_tags =
-      query |> Filter.Human.all_query_tags |> Tags.find_multiple db_ctx
+    and query_tags = query |> Filter.Human.all_query_tags |> Tags.find_multiple db_ctx
     and query_tagged_experiments =
-      query
-      |> Filter.Human.all_query_tagged_experiments
-      |> Tags.find_multiple db_ctx
+      query |> Filter.Human.all_query_tagged_experiments |> Tags.find_multiple db_ctx
     in
     Component.Filter.(
       predicate_form
@@ -234,7 +228,8 @@ let handle_toggle_key _ req =
   let result ({ Pool_context.language; _ } as context) =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* key =
-      Pool_context.connection context @@ fun db_ctx ->
+      Pool_context.connection context
+      @@ fun db_ctx ->
       HttpUtils.find_in_urlencoded Field.Key urlencoded
       |> Lwt_result.lift
       >>= Filter.key_of_string db_ctx
@@ -252,10 +247,9 @@ let handle_add_predicate action req =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let templates_disabled = templates_disabled urlencoded in
     let%lwt key_list, template_list =
-      Pool_context.connection context @@ fun db_ctx ->
-      Lwt.both
-        (Filter.all_keys db_ctx)
-        (find_all_templates db_ctx templates_disabled)
+      Pool_context.connection context
+      @@ fun db_ctx ->
+      Lwt.both (Filter.all_keys db_ctx) (find_all_templates db_ctx templates_disabled)
     in
     let* identifier = find_identifier urlencoded |> Lwt_result.lift in
     let rec increment_identifier identifier =
@@ -294,7 +288,8 @@ let filter_statistics req =
   let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment req in
   let result ({ Pool_context.language; _ } as context) =
     let open Utils.Lwt_result.Infix in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* experiment = Experiment.find db_ctx experiment_id in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* query =
@@ -305,9 +300,7 @@ let filter_statistics req =
         str |> Filter.query_of_string >|= CCOption.pure)
       |> Lwt_result.lift
     in
-    let* statistics =
-      Statistics.ExperimentFilter.create db_ctx experiment query
-    in
+    let* statistics = Statistics.ExperimentFilter.create db_ctx experiment query in
     Component.Statistics.ExperimentFilter.create language statistics
     |> Response.Htmx.of_html
     |> Lwt_result.return
@@ -346,8 +339,8 @@ let changelog req =
   let id = filter_id req in
   let url = HttpUtils.Url.Admin.filter_path ~suffix:"changelog" ~id () in
   let to_human ({ Pool_context.language; _ } as context) changelog =
-    Pool_context.connection context @@ fun db_ctx ->
-    Custom_field.changelog_to_human db_ctx language changelog
+    Pool_context.connection context
+    @@ fun db_ctx -> Custom_field.changelog_to_human db_ctx language changelog
   in
   Helpers.Changelog.htmx_handler ~to_human ~url (Id.to_common id) req
 ;;

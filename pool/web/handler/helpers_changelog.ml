@@ -22,7 +22,8 @@ let htmx_handler
       req
   in
   let%lwt changelogs =
-    Pool_context.connection context @@ CCFun.flip (Changelog.all_by_entity ~query) entity_id
+    Pool_context.connection context
+    @@ CCFun.flip (Changelog.all_by_entity ~query) entity_id
     >|> fun (changelogs, query) ->
     let%lwt changelogs =
       match to_human with

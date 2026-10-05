@@ -82,7 +82,8 @@ let handle_events db_ctx message =
 ;;
 
 let run_by_tenant pool =
-  Database.connection_ctx pool @@ fun db_ctx ->
+  Database.connection_ctx pool
+  @@ fun db_ctx ->
   let open Settings in
   let%lwt service_disabled =
     find_inactive_user_service_disabled db_ctx ||> InactiveUser.ServiceDisabled.value

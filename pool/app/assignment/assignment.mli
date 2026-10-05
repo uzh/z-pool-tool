@@ -147,12 +147,7 @@ val find_by_contact_and_experiment
 val find_by_contact : _ Database.ctx -> Contact.Id.t -> t list Lwt.t
 val find_not_deleted_by_session : _ Database.ctx -> Session.Id.t -> t list Lwt.t
 val find_all_by_session : _ Database.ctx -> Session.Id.t -> t list Lwt.t
-
-val find_multiple_by_session
-  :  _ Database.ctx
-  -> Session.Id.t
-  -> Id.t list
-  -> t list Lwt.t
+val find_multiple_by_session : _ Database.ctx -> Session.Id.t -> Id.t list -> t list Lwt.t
 
 val find_by_contact_to_merge
   :  _ Database.ctx

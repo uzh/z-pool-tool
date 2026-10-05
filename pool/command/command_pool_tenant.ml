@@ -80,7 +80,9 @@ Example: %s econ-uzh mariadb://user:pw@localhost:3306/dev_econ
       in
       (match%lwt result with
        | Ok events ->
-         let%lwt () = Pool_event.handle_system_events Database.(label_ctx Pool.Root.label) events in
+         let%lwt () =
+           Pool_event.handle_system_events Database.(label_ctx Pool.Root.label) events
+         in
          Lwt.return_some ()
        | Error err ->
          let open Pool_common in

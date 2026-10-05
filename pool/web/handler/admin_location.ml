@@ -30,10 +30,9 @@ let index req =
     ~create_layout
     req
   @@ fun ({ Pool_context.user; _ } as context) query ->
-  Pool_context.connection context @@ fun db_ctx ->
-  let* actor =
-    Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user
-  in
+  Pool_context.connection context
+  @@ fun db_ctx ->
+  let* actor = Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user in
   let%lwt location_list, query = Pool_location.list_by_user ~query db_ctx actor in
   let open Page.Admin.Location in
   (if HttpUtils.Htmx.is_hx_request req then list else index) context location_list query
@@ -75,8 +74,8 @@ let create req =
     in
     let handle events =
       let%lwt () =
-        Pool_context.connection context @@ fun db_ctx ->
-        Pool_event.handle_events ~tags db_ctx user events
+        Pool_context.connection context
+        @@ fun db_ctx -> Pool_event.handle_events ~tags db_ctx user events
       in
       Http_utils.redirect_to_with_actions
         (location_path ())
@@ -110,19 +109,16 @@ let add_file req =
     Response.bad_request_on_error new_file
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* location = Pool_location.find db_ctx id in
     let%lwt multipart_encoded = Sihl.Web.Request.to_multipart_form_data_exn req in
-    let* files =
-      HttpUtils.File.upload_files db_ctx [ Field.(FileMapping |> show) ] req
-    in
+    let* files = HttpUtils.File.upload_files db_ctx [ Field.(FileMapping |> show) ] req in
     let finalize = function
       | Ok resp -> Lwt.return_ok resp
       | Error err ->
         let%lwt () =
-          Lwt_list.iter_s
-            (fun (_, asset_id) -> asset_id |> Storage.delete db_ctx)
-            files
+          Lwt_list.iter_s (fun (_, asset_id) -> asset_id |> Storage.delete db_ctx) files
         in
         Logs.err (fun m -> m ~tags "One of the events failed while adding a file");
         Lwt.return_error err
@@ -155,7 +151,8 @@ let detail edit req =
     Response.bad_request_render_error context
     @@
     let id = id req Field.Location Id.of_string in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* location = find db_ctx id in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let states = Status.all in
@@ -196,7 +193,8 @@ let statistics req =
           CCInt.of_string %> CCOption.to_result Pool_message.(Error.Invalid Field.Year))
       |> Lwt_result.lift
     in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt statistics = Statistics.create ~year db_ctx id in
     let%lwt statistics_year_range = Statistics.year_select db_ctx in
     Page.Admin.Location.make_statistics ~year statistics_year_range language id statistics
@@ -214,7 +212,8 @@ let update req =
       ||> HttpUtils.format_request_boolean_values [ Field.(Virtual |> show) ]
       ||> HttpUtils.remove_empty_values
     in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* location = Pool_location.find db_ctx id >|- Response.not_found in
     Response.bad_request_on_error ~urlencoded edit
     @@
@@ -247,8 +246,8 @@ let delete req =
       file_id |> Cqrs_command.Location_command.DeleteFile.handle ~tags |> Lwt_result.lift
     in
     let%lwt () =
-      Pool_context.connection context @@ fun db_ctx ->
-      Pool_event.handle_events ~tags db_ctx user events
+      Pool_context.connection context
+      @@ fun db_ctx -> Pool_event.handle_events ~tags db_ctx user events
     in
     Http_utils.redirect_to_with_actions
       (location_path ~id:location_id ())
@@ -262,7 +261,8 @@ let session req =
   let location_id = id req Field.Location Pool_location.Id.of_string in
   Response.Htmx.index_handler ~create_layout ~query:(module Assignment) req
   @@ fun context query ->
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   let* location = Pool_location.find db_ctx location_id in
   let session_id = id req Field.Session Session.Id.of_string in
   let* session = Session.find db_ctx session_id in

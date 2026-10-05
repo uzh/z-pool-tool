@@ -12,7 +12,8 @@ let find_roles database_label = function
 ;;
 
 let find_roles_of_ctx ({ Pool_context.user; _ } as context) =
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   user
   |> Pool_context.Utils.find_authorizable_opt db_ctx
   >|> CCOption.map_or ~default:(Lwt.return []) (fun { Guard.Actor.uuid; _ } ->
@@ -48,8 +49,8 @@ let can_access_contact_profile context id =
 ;;
 
 let can_manage_duplicate_contacts ({ Pool_context.user; _ } as context) =
-  Pool_context.connection context @@ fun db_ctx ->
-  has_permission db_ctx user Duplicate_contacts.Access.index
+  Pool_context.connection context
+  @@ fun db_ctx -> has_permission db_ctx user Duplicate_contacts.Access.index
 ;;
 
 let target_model_for_actor_role pool ({ Guard.ActorRole.target_uuid; _ } as role) =
@@ -63,7 +64,8 @@ let target_model_for_actor_role pool ({ Guard.ActorRole.target_uuid; _ } as role
 ;;
 
 let can_send_direct_message id ({ Pool_context.user; _ } as context) =
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   id
   |> Experiment.Id.to_common
   |> Contact.Guard.Access.send_direct_message
@@ -75,7 +77,8 @@ let can_rerun_session_filter
       experiment_id
       session_id
   =
-  Pool_context.connection context @@ fun db_ctx ->
+  Pool_context.connection context
+  @@ fun db_ctx ->
   has_permission
     db_ctx
     user
@@ -195,10 +198,9 @@ let search_role_entities target req =
   let result ({ Pool_context.language; user; _ } as context) =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let target_id = target.Guard.Target.uuid in
-    Pool_context.connection context @@ fun db_ctx ->
-    let* actor =
-      Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let* actor = Pool_context.Utils.find_authorizable ~admin_only:true db_ctx user in
     let query = Http_utils.find_in_urlencoded_opt Field.Search urlencoded in
     let* search_role =
       let open CCOption in

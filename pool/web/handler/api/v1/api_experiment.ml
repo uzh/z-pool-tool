@@ -8,8 +8,8 @@ let src = Logs.Src.create "handler.api.v1.experiment"
 let index req =
   let open Experiment in
   let result context actor query =
-    Pool_context.Api.connection context @@ fun db_ctx ->
-    list_by_user ~query db_ctx actor |> Lwt_result.ok
+    Pool_context.Api.connection context
+    @@ fun db_ctx -> list_by_user ~query db_ctx actor |> Lwt_result.ok
   in
   result |> Response.index_handler ~query:(module Experiment) ~yojson_of_t ~src req
 ;;
@@ -17,7 +17,8 @@ let index req =
 let show req =
   let open Experiment in
   let result context =
-    Pool_context.Api.connection context @@ fun db_ctx ->
+    Pool_context.Api.connection context
+    @@ fun db_ctx ->
     ApiUtils.find_id Id.validate Field.Experiment req
     |> Lwt_result.lift
     >>= find db_ctx

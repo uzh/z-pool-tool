@@ -196,7 +196,8 @@ let execute_migration db_ctx migration =
 
 let execute label migrations =
   let open Utils.Lwt_result.Infix in
-  Service.transaction_ctx label @@ fun db_ctx ->
+  Service.transaction_ctx label
+  @@ fun db_ctx ->
   let tags = Logger.Tags.of_db_ctx db_ctx in
   let n = CCList.length migrations in
   if n > 0

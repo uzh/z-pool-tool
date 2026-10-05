@@ -13,8 +13,8 @@ let index req =
     Response.bad_request_render_error context
     @@
     let%lwt contact_fields =
-      Pool_context.connection context @@
-      Custom_field.(CCFun.flip find_by_model Model.Contact)
+      Pool_context.connection context
+      @@ Custom_field.(CCFun.flip find_by_model Model.Contact)
     in
     Page.Admin.CustomFieldSettings.show context contact_fields
     |> create_layout ~active_navigation:settings_path req context
@@ -33,7 +33,8 @@ let update setting req =
     let%lwt selected =
       Sihl.Web.Request.urlencoded_list Pool_message.Field.(array_key CustomField) req
     in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let%lwt contact_fields = find_by_model db_ctx Model.Contact in
     let events =
       Cqrs_command.Custom_field_settings_command.UpdateVisibilitySettings.handle

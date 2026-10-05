@@ -105,9 +105,7 @@ module PendingWaitingLists = struct
     in
     let%lwt res =
       let open CCFun in
-      Experiment.find_pending_waitinglists_by_contact
-        Test_utils.Data.db_ctx
-        contact
+      Experiment.find_pending_waitinglists_by_contact Test_utils.Data.db_ctx contact
       |> Lwt.map (CCList.find_opt (Experiment.Public.equal experiment) %> CCOption.is_some)
     in
     let () = Alcotest.(check bool "succeeds" true res) in
@@ -149,9 +147,7 @@ module PendingWaitingLists = struct
     in
     let%lwt res =
       let open CCFun in
-      Experiment.find_pending_waitinglists_by_contact
-        Test_utils.Data.db_ctx
-        contact
+      Experiment.find_pending_waitinglists_by_contact Test_utils.Data.db_ctx contact
       |> Lwt.map (CCList.find_opt (Experiment.Public.equal experiment) %> CCOption.is_some)
     in
     let () = Alcotest.(check bool "succeeds" true res) in

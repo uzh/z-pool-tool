@@ -533,9 +533,7 @@ module NotificationTemplate = struct
     in
     Lwt.finalize
       (fun () ->
-         let%lwt import_message =
-           Message_template.UserImport.prepare db_ctx tenant
-         in
+         let%lwt import_message = Message_template.UserImport.prepare db_ctx tenant in
          let%lwt dispatch = import_message user false Data.token in
          let actual_label = Email.message_template dispatch in
          Alcotest.(
@@ -630,9 +628,7 @@ module Repo = struct
   let import_of_contact contact_id =
     Lwt.both
       (Contact.find db_ctx contact_id ||> get_exn)
-      (User_import.find_pending_by_user_id_opt
-         db_ctx
-         (contact_id |> Contact.Id.to_user)
+      (User_import.find_pending_by_user_id_opt db_ctx (contact_id |> Contact.Id.to_user)
        ||> CCOption.get_exn_or "Import not found")
   ;;
 
@@ -651,9 +647,7 @@ module Repo = struct
       |> Lwt_list.iter_s (User_import.handle_event db_ctx)
     in
     (* Expect list to be empty *)
-    let%lwt contacts_to_notify =
-      User_import.find_contacts_to_notify db_ctx limit ()
-    in
+    let%lwt contacts_to_notify = User_import.find_contacts_to_notify db_ctx limit () in
     let () = Alcotest.(check (list user_import) "succeeds" [] contacts_to_notify) in
     Lwt.return_unit
   ;;
@@ -667,8 +661,7 @@ module Repo = struct
     let () = Alcotest.(check (list user_import) "succeeds" [] contacts_to_remind) in
     let%lwt () =
       [ contact_id_1; contact_id_2 ]
-      |> Lwt_list.iter_s
-           (Contact.Id.to_user %> set_import_timestamp_to_past db_ctx 8)
+      |> Lwt_list.iter_s (Contact.Id.to_user %> set_import_timestamp_to_past db_ctx 8)
     in
     (* Expect both imports to be returned *)
     let%lwt contacts_to_remind =
@@ -758,9 +751,7 @@ module Unsubscribe = struct
         (Pool_user.ImportPending.value contact.Contact.import_pending)
     in
     let%lwt pending_import =
-      User_import.find_pending_by_user_id_opt
-        db_ctx
-        (contact_id |> Contact.Id.to_user)
+      User_import.find_pending_by_user_id_opt db_ctx (contact_id |> Contact.Id.to_user)
     in
     let () =
       Alcotest.(check bool)

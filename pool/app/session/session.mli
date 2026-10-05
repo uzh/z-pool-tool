@@ -255,11 +255,7 @@ val find_contact_is_assigned_by_experiment
   -> Experiment.Id.t
   -> t list Lwt.t
 
-val find_public
-  :  _ Database.ctx
-  -> Id.t
-  -> (Public.t, Pool_message.Error.t) Lwt_result.t
-
+val find_public : _ Database.ctx -> Id.t -> (Public.t, Pool_message.Error.t) Lwt_result.t
 val find_all_for_experiment : _ Database.ctx -> Experiment.Id.t -> t list Lwt.t
 val find_upcoming_for_experiment : _ Database.ctx -> Experiment.Id.t -> t list Lwt.t
 
@@ -295,11 +291,7 @@ val find_by_contact_and_experiment
   -> Public.t list Lwt.t
 
 val has_upcoming_sessions : _ Database.ctx -> Contact.Id.t -> bool Lwt.t
-
-val find_by_assignment
-  :  _ Database.ctx
-  -> Id.t
-  -> (t, Pool_message.Error.t) Lwt_result.t
+val find_by_assignment : _ Database.ctx -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_experiment_id_and_title
   :  _ Database.ctx

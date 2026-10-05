@@ -523,7 +523,8 @@ module Sql = struct
   ;;
 
   let find_sessions_to_remind { Pool_tenant.database_label; _ } =
-    Database.connection_ctx database_label @@ fun db_ctx ->
+    Database.connection_ctx database_label
+    @@ fun db_ctx ->
     let%lwt text_messages_enabled = Gtx_config.text_messages_enabled db_ctx in
     let email_default_lead_time =
       Settings.default_email_session_reminder_lead_time_key_yojson

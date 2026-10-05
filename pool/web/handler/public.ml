@@ -25,17 +25,14 @@ let index req =
     let result ({ Pool_context.language; _ } as context) =
       let open Utils.Lwt_result.Infix in
       Response.bad_request_render_error context
-      @@ Pool_context.connection context @@ fun db_ctx ->
-         let* tenant = Pool_tenant.find_by_db_ctx db_ctx in
-         let%lwt welcome_text =
-           I18n.find_by_key db_ctx I18n.Key.WelcomeText language
-         in
-         let%lwt signup_cta =
-           I18n.find_by_key db_ctx I18n.Key.SignUpCTA language
-         in
-         Page.Public.index tenant context welcome_text signup_cta
-         |> create_layout req context
-         >|+ Sihl.Web.Response.of_html
+      @@ Pool_context.connection context
+      @@ fun db_ctx ->
+      let* tenant = Pool_tenant.find_by_db_ctx db_ctx in
+      let%lwt welcome_text = I18n.find_by_key db_ctx I18n.Key.WelcomeText language in
+      let%lwt signup_cta = I18n.find_by_key db_ctx I18n.Key.SignUpCTA language in
+      Page.Public.index tenant context welcome_text signup_cta
+      |> create_layout req context
+      >|+ Sihl.Web.Response.of_html
     in
     Response.handle ~src req result)
 ;;
@@ -58,9 +55,7 @@ let index_css req =
         db_ctx
         (styles |> Pool_tenant.Styles.id |> Common.Id.value)
     in
-    let%lwt content =
-      Storage.download_data_base64 db_ctx file ||> Base64.decode_exn
-    in
+    let%lwt content = Storage.download_data_base64 db_ctx file ||> Base64.decode_exn in
     Sihl.Web.Response.of_plain_text content
     |> Sihl.Web.Response.set_content_type
          (styles |> Pool_tenant.Styles.mime_type |> Common.File.Mime.to_string)
@@ -156,9 +151,9 @@ let credits req =
     @@
     let open Utils.Lwt_result.Infix in
     let%lwt html =
-      Pool_context.connection context @@ fun db_ctx ->
-      I18n.find_by_key db_ctx I18n.Key.CreditsText language
-      ||> Page.Utils.i18n_page
+      Pool_context.connection context
+      @@ fun db_ctx ->
+      I18n.find_by_key db_ctx I18n.Key.CreditsText language ||> Page.Utils.i18n_page
     in
     html |> create_layout req context >|+ Sihl.Web.Response.of_html
   in
@@ -172,8 +167,8 @@ let privacy_policy req =
     let redirect_path = Http_utils.url_with_field_params query_parameters "/" in
     let open Utils.Lwt_result.Infix in
     let%lwt policy =
-      Pool_context.connection context @@ fun db_ctx ->
-      I18n.find_by_key_opt db_ctx I18n.Key.PrivacyPolicy language
+      Pool_context.connection context
+      @@ fun db_ctx -> I18n.find_by_key_opt db_ctx I18n.Key.PrivacyPolicy language
     in
     match policy with
     | None -> Http_utils.redirect_to redirect_path ||> CCResult.return
@@ -191,10 +186,9 @@ let terms_and_conditions req =
     Response.bad_request_render_error context
     @@
     let open Utils.Lwt_result.Infix in
-    Pool_context.connection context @@ fun db_ctx ->
-    let%lwt terms =
-      I18n.find_by_key db_ctx I18n.Key.TermsAndConditions language
-    in
+    Pool_context.connection context
+    @@ fun db_ctx ->
+    let%lwt terms = I18n.find_by_key db_ctx I18n.Key.TermsAndConditions language in
     let%lwt terms_last_updated = I18n.terms_and_conditions_last_updated db_ctx in
     Page.Public.terms_and_conditions language terms terms_last_updated
     |> create_layout req context

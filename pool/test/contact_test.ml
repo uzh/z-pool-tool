@@ -504,9 +504,7 @@ let should_not_send_registration_notification _ () =
       |> Test_utils.get_or_failwith
       |> Pool_event.handle_events db_ctx current_user
     in
-    let%lwt res =
-      Contact.should_send_registration_attempt_notification db_ctx contact
-    in
+    let%lwt res = Contact.should_send_registration_attempt_notification db_ctx contact in
     let expected = false in
     Alcotest.(check bool "succeeds" expected res) |> Lwt.return
   in

@@ -9,8 +9,7 @@ module Make (Config : Pools_sig.ConfigSig) : Guardian_backend.Pools.Sig = struct
     |> Entity.Label.of_string
   ;;
 
-  let db_ctx_of_ctx ctx =
-    label_ctx (label_of_ctx ctx)
+  let db_ctx_of_ctx ctx = label_ctx (label_of_ctx ctx)
 
   let initialize ?additional_pools =
     let additional_pools =
@@ -37,8 +36,10 @@ module Make (Config : Pools_sig.ConfigSig) : Guardian_backend.Pools.Sig = struct
   let collect ?ctx = collect (db_ctx_of_ctx ctx)
   let exec ?ctx = exec (db_ctx_of_ctx ctx)
   let populate ?ctx = populate (db_ctx_of_ctx ctx)
+
   let transaction ?ctx ?setup ?cleanup f =
     transaction (db_ctx_of_ctx ctx) ?setup ?cleanup f
-  let transaction_iter ?ctx fs =
-    transaction_iter (db_ctx_of_ctx ctx) fs
+  ;;
+
+  let transaction_iter ?ctx fs = transaction_iter (db_ctx_of_ctx ctx) fs
 end

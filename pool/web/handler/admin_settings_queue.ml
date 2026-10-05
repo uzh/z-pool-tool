@@ -16,7 +16,8 @@ let detail req =
     let open Pool_queue in
     let open JobName in
     let id = job_id req in
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* instance = find db_ctx id >|- Response.not_found in
     Response.bad_request_render_error context
     @@
@@ -38,7 +39,8 @@ let resend req =
   let id = job_id req in
   let path = Format.asprintf "%s/%s" base_path (Id.value id) in
   let result ({ Pool_context.user; _ } as context) =
-    Pool_context.connection context @@ fun db_ctx ->
+    Pool_context.connection context
+    @@ fun db_ctx ->
     let* job = find db_ctx id >|- Response.not_found in
     Response.bad_request_on_error show
     @@

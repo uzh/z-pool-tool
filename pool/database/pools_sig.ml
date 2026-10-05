@@ -98,7 +98,18 @@ module type Sig = sig
     -> unit Lwt.t
 
   (**/**)
-  val label_ctx : ?tags: Logs.Tag.set -> Entity.Label.t -> Entity.no_transaction Entity.ctx
-  val connection_ctx : ?tags: Logs.Tag.set -> Entity.Label.t -> (Entity.no_transaction Entity.ctx -> 'a Lwt.t) -> 'a Lwt.t
-  val transaction_ctx : ?tags: Logs.Tag.set -> Entity.Label.t -> (Entity.transaction Entity.ctx -> 'a Lwt.t) -> 'a Lwt.t
+
+  val label_ctx : ?tags:Logs.Tag.set -> Entity.Label.t -> Entity.no_transaction Entity.ctx
+
+  val connection_ctx
+    :  ?tags:Logs.Tag.set
+    -> Entity.Label.t
+    -> (Entity.no_transaction Entity.ctx -> 'a Lwt.t)
+    -> 'a Lwt.t
+
+  val transaction_ctx
+    :  ?tags:Logs.Tag.set
+    -> Entity.Label.t
+    -> (Entity.transaction Entity.ctx -> 'a Lwt.t)
+    -> 'a Lwt.t
 end
