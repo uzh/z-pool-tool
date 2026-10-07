@@ -107,16 +107,30 @@ module Repo : sig
   val t : t Caqti_type.t
 end
 
-type no_transaction = private [ `no_transaction ]
 (** Phantom type signaling the connection is not in a transaction *)
+type no_transaction = private [ `no_transaction ]
 
-type transaction = private [ `transaction ]
 (** Phantom type signaling the connection is in a transaction *)
+type transaction = private [ `transaction ]
 
 type !_ ctx = private
-  | Label : { label : Label.t; tags : Logs.Tag.set } -> no_transaction ctx
-  | Connection : { connection : Caqti_lwt.connection; label : Label.t; tags : Logs.Tag.set } -> no_transaction ctx
-  | TransactionalConnection : { connection : Caqti_lwt.connection; label : Label.t; tags : Logs.Tag.set } -> transaction ctx
+  | Label :
+      { label : Label.t
+      ; tags : Logs.Tag.set
+      }
+      -> no_transaction ctx
+  | Connection :
+      { connection : Caqti_lwt.connection
+      ; label : Label.t
+      ; tags : Logs.Tag.set
+      }
+      -> no_transaction ctx
+  | TransactionalConnection :
+      { connection : Caqti_lwt.connection
+      ; label : Label.t
+      ; tags : Logs.Tag.set
+      }
+      -> transaction ctx
   (** ['maybe_transaction ctx] is either a [Label _] where a fresh database
       connection from the pool is used for each query, a [Connection _] where
       the same database connection is used for all queries, or
@@ -131,21 +145,33 @@ type !_ ctx = private
 
 type _ txn = private
   | Yes : transaction txn
-  | No : no_transaction txn
-  (** Runtime witness. See {!txn_of_ctx}. *)
+  | No : no_transaction txn (** Runtime witness. See {!txn_of_ctx}. *)
 
 type any_ctx = Any : 'maybe_txn ctx -> any_ctx [@@ocaml.unboxed]
 
 val label_of_ctx : _ ctx -> Label.t
 val to_ctx : _ ctx -> (string * string) list
 
+(** [label_ctx ?tags database_label] is a database context where a database
+    connection is pulled from the database connection pool for every query. *)
+val label_ctx : ?tags:Logs.Tag.set -> Label.t -> no_transaction ctx
 
-val label_ctx : ?tags: Logs.Tag.set -> Label.t -> no_transaction ctx
-(** [label_ctx database_label] is a database context where a database connection is pulled from the database connection pool for every query. *)
-val connection_ctx : ?tags: Logs.Tag.set -> Label.t -> (no_transaction ctx -> 'a Lwt.t) -> 'a Lwt.t
-val transaction_ctx : ?tags: Logs.Tag.set -> Label.t -> (transaction ctx -> 'a Lwt.t) -> 'a Lwt.t
+(** [connection_ctx ?tags database_label fcn] calls [fcn] with a database
+    context that represents a live database conenction. *)
+val connection_ctx
+  :  ?tags:Logs.Tag.set
+  -> Label.t
+  -> (no_transaction ctx -> 'a Lwt.t)
+  -> 'a Lwt.t
 
-val txn_of_ctx : 'txn ctx -> 'txn txn
+(** [transaction_ctx ?tags database_label fcn] calls [fcn] with a database
+    context that represents a live database conenction in a transaction. *)
+val transaction_ctx
+  :  ?tags:Logs.Tag.set
+  -> Label.t
+  -> (transaction ctx -> 'a Lwt.t)
+  -> 'a Lwt.t
+
 (** [txn_of_ctx ctx] is [Yes] if [ctx] is a transactional context; otherwise
     [No]. Can be matched on:
     {[
@@ -153,14 +179,15 @@ val txn_of_ctx : 'txn ctx -> 'txn txn
     | Yes -> Repo.create_user u ctx (* [ctx : transaction ctx] here *)
     | No -> Lwt.return_error `Needs_transaction
     ]} *)
+val txn_of_ctx : 'txn ctx -> 'txn txn
 
-val resolve_ctx : ?db_ctx:_ ctx -> Label.t -> any_ctx
 (** [resolve_ctx ?db_ctx database_label] asserts that [~db_ctx] corresponds to
     [database_label] or creates a [Label database_label] ctx if [db_ctx] is
     [None].
     {em Warning:} This will cast a [transaction ctx] into a [no_transaction
     ctx]! Do not use this if this breaks assumptions such as database updates
     being observable outside the transaction. *)
+val resolve_ctx : ?db_ctx:_ ctx -> Label.t -> any_ctx
 
 module Logger : sig
   module Tags : sig
@@ -199,23 +226,17 @@ val find_opt
   -> 'a
   -> 'b option Lwt.t
 
-val populate
-  :  _ ctx
-  -> string
-  -> string list
-  -> 'a Caqti_type.t
-  -> 'a list
-  -> unit Lwt.t
+val populate : _ ctx -> string -> string list -> 'a Caqti_type.t -> 'a list -> unit Lwt.t
 
 val transaction
-  : _ ctx
+  :  _ ctx
   -> ?setup:(Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list
   -> ?cleanup:(Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list
   -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
   -> 'a Lwt.t
 
 val transaction_iter
-  : _ ctx
+  :  _ ctx
   -> ?setup:(Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list
   -> ?cleanup:(Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list
   -> (Caqti_lwt.connection -> (unit, Caqti_error.t) Lwt_result.t) list
