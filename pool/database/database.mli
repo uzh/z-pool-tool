@@ -119,18 +119,30 @@ type !_ ctx = private
       ; tags : Logs.Tag.set
       }
       -> no_transaction ctx
+  [@ocaml.alert
+    abstract
+      "This type is meant to be abstract, but is not in order to allow unboxing in a \
+       different type."]
   | Connection :
       { connection : Caqti_lwt.connection
       ; label : Label.t
       ; tags : Logs.Tag.set
       }
       -> no_transaction ctx
+  [@ocaml.alert
+    abstract
+      "This type is meant to be abstract, but is not in order to allow unboxing in a \
+       different type."]
   | TransactionalConnection :
       { connection : Caqti_lwt.connection
       ; label : Label.t
       ; tags : Logs.Tag.set
       }
       -> transaction ctx
+  [@ocaml.alert
+    abstract
+      "This type is meant to be abstract, but is not in order to allow unboxing in a \
+       different type."]
   (** ['maybe_transaction ctx] is either a [Label _] where a fresh database
       connection from the pool is used for each query, a [Connection _] where
       the same database connection is used for all queries, or
@@ -141,7 +153,6 @@ type !_ ctx = private
    [[@@ocaml.unboxed]] annotation below in [type any_ctx]. If the type is
    abstract the compiler cannot know that [type _ ctx] does not contain floats
    (which would prevent unboxing due to flat float array hack). *)
-(* TODO(reynir): check if we can generate warnings if the type is destructured/record fields accessed *)
 
 type _ txn = private
   | Yes : transaction txn
