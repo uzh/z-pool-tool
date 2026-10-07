@@ -32,13 +32,13 @@ module Navigation : sig
   module NavElements : sig
     module Profile : sig
       val dropdown_items
-        :  Database.Label.t
+        :  _ Database.ctx
         -> ?contact:bool
         -> unit
         -> (string * Pool_common.I18n.nav_link) list Lwt.t
 
       val nav
-        :  Database.Label.t
+        :  _ Database.ctx
         -> ?contact:bool
         -> ?prefix:string
         -> unit
@@ -50,7 +50,7 @@ module Navigation : sig
       val settings : NavElement.t
       val user : NavElement.t
       val experiments : NavElement.t
-      val all : Database.Label.t -> NavElement.t list Lwt.t
+      val all : _ Database.ctx -> NavElement.t list Lwt.t
     end
   end
 end

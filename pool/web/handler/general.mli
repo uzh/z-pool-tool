@@ -4,12 +4,12 @@ val user_from_session
   :  ?cookie_key:string
   -> ?secret:string
   -> ?key:string
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Rock.Request.t
   -> Pool_user.t option Lwt.t
 
 val admin_from_session
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Rock.Request.t
   -> (Admin.t, Pool_message.Error.t) Lwt_result.t
 

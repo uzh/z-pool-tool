@@ -46,7 +46,7 @@ let show _ =
     let default = "" in
     let%lwt root_job_count =
       let label = Database.Pool.Root.label in
-      Pool_queue.count_all_workable label
+      Database.connection_ctx label Pool_queue.count_all_workable
       ||> CCResult.map_or CCInt.to_string ~default
       ||> fun count -> label, count
     in
@@ -57,7 +57,7 @@ let show _ =
            let%lwt count =
              match status with
              | Active ->
-               Pool_queue.count_all_workable database_label
+               Database.connection_ctx database_label Pool_queue.count_all_workable
                >|+ CCInt.to_string
                ||> CCResult.to_opt
              | ConnectionIssue

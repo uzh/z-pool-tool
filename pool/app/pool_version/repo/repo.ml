@@ -31,7 +31,7 @@ let insert_request =
   |> Repo_entity.Write.t ->. Caqti_type.unit
 ;;
 
-let insert = Database.exec Database.Pool.Root.label insert_request
+let insert = Database.exec Database.(label_ctx Pool.Root.label) insert_request
 
 let update_request =
   let open Caqti_request.Infix in
@@ -47,7 +47,7 @@ let update_request =
   |> Repo_entity.Write.t ->. Caqti_type.unit
 ;;
 
-let update = Database.exec Database.Pool.Root.label update_request
+let update = Database.exec Database.(label_ctx Pool.Root.label) update_request
 
 let find_request_sql ?(count = false) where_fragment =
   let columns = if count then "COUNT(*)" else CCString.concat ", " sql_select_columns in
@@ -65,13 +65,13 @@ let find_request =
 
 let find id =
   let open Utils.Lwt_result.Infix in
-  Database.find_opt Database.Pool.Root.label find_request id
+  Database.find_opt Database.(label_ctx Pool.Root.label) find_request id
   ||> CCOption.to_result Pool_message.(Error.NotFound Field.Announcement)
 ;;
 
 let all ?query () =
   Query.collect_and_count
-    Database.Pool.Root.label
+    Database.(label_ctx Pool.Root.label)
     query
     ~select:find_request_sql
     Repo_entity.t
@@ -79,7 +79,7 @@ let all ?query () =
 
 let all_on_tenant ?query () =
   Query.collect_and_count
-    Database.Pool.Root.label
+    Database.(label_ctx Pool.Root.label)
     query
     ~where:"published_at IS NOT NULL"
     ~select:find_request_sql

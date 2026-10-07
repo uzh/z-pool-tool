@@ -25,8 +25,8 @@ let find_of_contact ?(required = false) pool user id =
   | Admin _ -> find true
 ;;
 
-let find_all_by_contact = find_of_contact ~required:false
-let find_all_required_by_contact = find_of_contact ~required:true
+let find_all_by_contact db_ctx = find_of_contact ~required:false db_ctx
+let find_all_required_by_contact db_ctx = find_of_contact ~required:true db_ctx
 let find_to_merge_contact pool id = Repo_public.Sql.find_to_merge_contact pool id
 
 let find_unanswered_required_by_contact database_label user id =

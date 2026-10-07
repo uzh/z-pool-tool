@@ -1,4 +1,4 @@
-let pool = Test_utils.Data.database_label
+let pool = Test_utils.Data.db_ctx
 let to_role (admin, role, target_uuid) = Guard.ActorRole.create ?target_uuid admin role
 let admin_target admin = admin |> Admin.id |> Guard.Uuid.target_of Admin.Id.value
 

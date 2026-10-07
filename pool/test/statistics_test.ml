@@ -26,7 +26,7 @@ let invitation_statistics _ () =
   let open Statistics in
   let n_contacts = 10 in
   let testable = ExperimentInvitations.(testable pp equal) in
-  let pool = Test_utils.Data.database_label in
+  let pool = Test_utils.Data.db_ctx in
   let%lwt current_user = create_admin_user () in
   let title = Pool_common.Id.(create () |> value) in
   let%lwt experiment = ExperimentRepo.create ~title () in

@@ -74,7 +74,7 @@ val create
 type admin = t * Pool_tenant.t list
 
 val find : Id.t -> (t, Pool_message__Pool_message_error.t) Lwt_result.t
-val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+val all : ?query:Query.t -> _ Database.ctx -> (t list * Query.t) Lwt.t
 val find_admin : Id.t -> (admin, Pool_message.Error.t) Lwt_result.t
 
 val find_by_user
@@ -96,7 +96,7 @@ type event =
   | Updated of (t * Pool_tenant.Id.t list)
   | Hidden of (t * Pool_common.Id.t)
 
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val handle_event : _ Database.ctx -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 

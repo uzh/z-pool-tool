@@ -121,10 +121,10 @@ let notify_all_invited pool tenant experiment =
 ;;
 
 let events_of_mailings ?invitation_ids pool limited_mailings =
-  let tags = Database.Logger.Tags.create pool in
+  let tags = Database.Logger.Tags.of_db_ctx pool in
   let open Lwt_result.Syntax in
   let%lwt events =
-    let* tenant = Pool_tenant.find_by_label pool in
+    let* tenant = Pool_tenant.find_by_db_ctx pool in
     limited_mailings
     |> Lwt_list.map_s (fun (mailing, limit) ->
       find_contacts_by_mailing pool mailing limit
@@ -292,7 +292,7 @@ let match_invitations interval database_label =
   let%lwt events = create_invitation_events interval database_label in
   Logs.info ~src (fun m ->
     m
-      ~tags:(Database.Logger.Tags.create database_label)
+      ~tags:(Database.Logger.Tags.of_db_ctx database_label)
       "Sending %4d invitation emails"
       (count_mails events));
   Pool_event.handle_system_events database_label events
@@ -311,7 +311,7 @@ let start_matcher () =
         label
         (Every (interval |> ScheduledTimeSpan.of_span))
         (Some database_label)
-        (fun () -> match_invitations interval database_label)
+        (fun () -> Database.connection_ctx database_label (match_invitations interval))
     in
     Schedule.add_and_start schedule)
 ;;

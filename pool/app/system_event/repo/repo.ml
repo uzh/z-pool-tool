@@ -1,4 +1,3 @@
-open CCFun
 module RepoEntity = Repo_entity
 
 module Sql = struct
@@ -56,7 +55,7 @@ module Sql = struct
     |> RepoEntity.t ->. Caqti_type.unit
   ;;
 
-  let insert = flip Database.exec insert_request
+  let insert db_ctx = Database.exec db_ctx insert_request
 
   module EventLog = struct
     let select_sql =
@@ -120,7 +119,7 @@ module Sql = struct
       |> RepoEntity.EventLog.t ->. Caqti_type.unit
     ;;
 
-    let insert = flip Database.exec insert_request
+    let insert db_ctx = Database.exec db_ctx insert_request
   end
 
   let find_pending_request =
@@ -144,7 +143,7 @@ module Sql = struct
 
   let find_pending identifier =
     Entity.EventLog.ServiceIdentifier.get identifier
-    |> Database.collect Pool.Root.label find_pending_request
+    |> Database.collect (label_ctx Pool.Root.label) find_pending_request
   ;;
 end
 

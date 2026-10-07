@@ -29,11 +29,11 @@ val create_2fa_login
        , Pool_message.Error.t )
        Lwt_result.t
 
-(** [decode_2fa_confirmation database_label req ~tags] decodes the submitted
+(** [decode_2fa_confirmation db_ctx req ~tags] decodes the submitted
     authentication id and token and looks up the corresponding (still valid)
     authentication and user. *)
 val decode_2fa_confirmation
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Rock.Request.t
   -> tags:Logs.Tag.set
   -> ( Pool_user.t * Authentication.t * Authentication.Token.t

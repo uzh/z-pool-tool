@@ -377,7 +377,7 @@ module SelectField = struct
 
   let init current_user =
     save () :: save_options field options
-    |> Pool_event.handle_events Test_utils.Data.database_label current_user
+    |> Pool_event.handle_events Test_utils.Data.db_ctx current_user
   ;;
 end
 

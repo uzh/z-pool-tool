@@ -19,15 +19,15 @@ let role_message msg (role, uuid) =
 
 let check_result = Alcotest.(check (result unit Test_utils.error))
 
-let to_actor database_label admin =
+let to_actor db_ctx admin =
   Admin.id admin
   |> Guard.Uuid.actor_of Admin.Id.value
-  |> Guard.Persistence.Actor.find database_label
+  |> Guard.Persistence.Actor.find db_ctx
   ||> CCResult.get_or_failwith
 ;;
 
 module Data = struct
-  let create_admin database_label firstname roles =
+  let create_admin db_ctx firstname roles =
     let open Cqrs_command.Admin_command.CreateAdmin in
     let id = Admin.Id.create () in
     let email =
@@ -42,22 +42,22 @@ module Data = struct
     |> Lwt.return
     ||> decode
     >== handle ~id ~roles
-    |>> Pool_event.handle_events database_label current_user
-    >>= (fun () -> Admin.find database_label id)
+    |>> Pool_event.handle_events db_ctx current_user
+    >>= (fun () -> Admin.find db_ctx id)
     ||> Pool_common.Utils.get_or_failwith
   ;;
 
-  let create_assistant database_label firstname { Experiment.id; _ } =
+  let create_assistant db_ctx firstname { Experiment.id; _ } =
     [ `Assistant, Some (Guard.Uuid.target_of Experiment.Id.value id) ]
-    |> create_admin database_label firstname
+    |> create_admin db_ctx firstname
   ;;
 
-  let create_operator ?(firstname = "Operator") database_label =
-    [ `Operator, None ] |> create_admin database_label firstname
+  let create_operator ?(firstname = "Operator") db_ctx =
+    [ `Operator, None ] |> create_admin db_ctx firstname
   ;;
 
-  let create_recruiter ?(firstname = "Recruiter") database_label =
-    [ `Recruiter, None ] |> create_admin database_label firstname
+  let create_recruiter ?(firstname = "Recruiter") db_ctx =
+    [ `Recruiter, None ] |> create_admin db_ctx firstname
   ;;
 end
 
@@ -98,7 +98,7 @@ let handle_delete_role_permission_events db role_permission =
 
 let assignable_roles _ () =
   let open Guard in
-  let db = Test_utils.Data.database_label in
+  let db = Test_utils.Data.db_ctx in
   let%lwt exp1, exp2 = Experiment.all db ||> CCList.(fun e -> hd e, nth e 1) in
   let%lwt recruiter =
     Data.create_recruiter ~firstname:"RecruiterAssignable" db >|> to_actor db
@@ -142,7 +142,7 @@ let assignable_roles _ () =
 
 let grant_roles _ () =
   let open Guard in
-  let db = Test_utils.Data.database_label in
+  let db = Test_utils.Data.db_ctx in
   let%lwt exp1, exp2 = Experiment.all db ||> CCList.(fun e -> hd e, nth e 1) in
   let%lwt operator = Data.create_operator db >|> to_actor db in
   let%lwt actor = Data.create_assistant db "Assistant1" exp1 >|> to_actor db in

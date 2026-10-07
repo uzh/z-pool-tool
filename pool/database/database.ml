@@ -85,7 +85,8 @@ module Pool = struct
 
     let setup () =
       let start_tenant = tap (label %> log_start) %> add in
-      match%lwt Repo.find_all_by_status root with
+      let db_ctx = label_ctx root in
+      match%lwt Repo.find_all_by_status db_ctx with
       | [] ->
         Logs.warn (fun m -> m "%s" Pool_message.Error.(NoTenantsRegistered |> show));
         Lwt.return []
@@ -113,7 +114,8 @@ module Pool = struct
 
     let reset database_label =
       let open Utils.Lwt_result.Infix in
-      Repo.find root database_label
+      let db_ctx = label_ctx root in
+      Repo.find db_ctx database_label
       >|> function
       | Ok database ->
         let () = Pool.reset ~required:false database in
@@ -125,13 +127,15 @@ module Pool = struct
     ;;
 
     let update_status label status =
-      let%lwt () = Repo.update_status root label status in
+      let db_ctx = label_ctx root in
+      let%lwt () = Repo.update_status db_ctx label status in
       reset label
     ;;
 
     let test_connection database_label =
       let open Utils.Lwt_result.Infix in
-      let* database = Repo.find root database_label in
+      let db_ctx = label_ctx root in
+      let* database = Repo.find db_ctx database_label in
       match%lwt database |> url |> test_connection with
       | Ok () -> Lwt.return_ok ()
       | Error (_ : Caqti_error.load_or_connect) ->

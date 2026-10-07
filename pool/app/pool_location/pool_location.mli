@@ -263,7 +263,7 @@ val filedeleted : File.Id.t -> event
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
+val handle_event : ?user_uuid:Pool_common.Id.t -> _ Database.ctx -> event -> unit Lwt.t
 
 module Repo : sig
   module Id : sig
@@ -278,17 +278,17 @@ module Repo : sig
   val t : t Caqti_type.t
 end
 
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
-val all : Database.Label.t -> t list Lwt.t
+val find : _ Database.ctx -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val all : _ Database.ctx -> t list Lwt.t
 
 val list_by_user
   :  ?query:Query.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Guard.Actor.t
   -> (t list * Query.t) Lwt.t
 
 val find_location_file
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Pool_common.Repo.Id.t
   -> (File.t, Pool_message.Error.t) Lwt_result.t
 
@@ -298,16 +298,16 @@ val search
   -> ?exclude:Id.t list
   -> ?joins:string
   -> ?limit:int
-  -> Database.Label.t
+  -> _ Database.ctx
   -> string
   -> (Id.t * Name.t) list Lwt.t
 
-val search_multiple_by_id : Database.Label.t -> Id.t list -> (Id.t * Name.t) list Lwt.t
-val files_by_location : Database.Label.t -> Id.t -> File.t list Lwt.t
+val search_multiple_by_id : _ Database.ctx -> Id.t list -> (Id.t * Name.t) list Lwt.t
+val files_by_location : _ Database.ctx -> Id.t -> File.t list Lwt.t
 
 val find_targets_grantable_by_target
   :  ?exclude:Id.t list
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Guard.Uuid.Target.t
   -> string
   -> (Id.t * Name.t) list Lwt.t
@@ -348,8 +348,8 @@ module Statistics : sig
   val showup_count : t -> ShowUpCount.t
   val noshow_count : t -> NoShowCount.t
   val participation_count : t -> ParticipationCount.t
-  val create : ?year:int -> Database.Label.t -> Id.t -> t Lwt.t
-  val year_select : Database.Label.t -> int list Lwt.t
+  val create : ?year:int -> _ Database.ctx -> Id.t -> t Lwt.t
+  val year_select : _ Database.ctx -> int list Lwt.t
 end
 
 module Guard : sig
