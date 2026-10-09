@@ -113,6 +113,12 @@ type no_transaction = private [ `no_transaction ]
 (** Phantom type signaling the connection is in a transaction *)
 type transaction = private [ `transaction ]
 
+(** ['maybe_transaction ctx] is either a [Label _] where a fresh database
+    connection from the pool is used for each query, a [Connection _] where
+    the same database connection is used for all queries, or
+    [TransactionalConnection _] where a transaction is run the same database
+    connection for all queries. See the constructors {!label_ctx},
+    {!connection_ctx} and {!transaction_ctx}. *)
 type !_ ctx = private
   | Label :
       { label : Label.t
@@ -143,12 +149,6 @@ type !_ ctx = private
     abstract
       "This type is meant to be abstract, but is not in order to allow unboxing in a \
        different type."]
-  (** ['maybe_transaction ctx] is either a [Label _] where a fresh database
-      connection from the pool is used for each query, a [Connection _] where
-      the same database connection is used for all queries, or
-      [TransactionalConnection _] where a transaction is run the same database
-      connection for all queries. See the constructors {!label_ctx},
-      {!connection_ctx} and {!transaction_ctx}. *)
 (* NOTE(reynir): the type is exposed as private so that we can add
    [[@@ocaml.unboxed]] annotation below in [type any_ctx]. If the type is
    abstract the compiler cannot know that [type _ ctx] does not contain floats
