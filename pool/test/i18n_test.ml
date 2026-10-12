@@ -90,3 +90,82 @@ let extract_by_key_exn_filters_by_language () =
   Alcotest.(
     check bool "extracts entry for requested language" true (I18n.equal extracted en))
 ;;
+
+let about_page_renders_title_and_text () =
+  let i18n key content =
+    I18n.create key Pool_common.Language.En (Some (I18n.Content.of_string content))
+  in
+  let html =
+    Page.Public.about_page
+      ~title:(i18n I18n.Key.AboutPageTitle "R&D <Lab>")
+      ~text:(i18n I18n.Key.AboutPageText "<p>We run <strong>experiments</strong>.</p>")
+    |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
+  in
+  let contains sub = CCString.find ~sub html >= 0 in
+  let open Alcotest in
+  check bool "renders escaped title" true (contains "R&amp;D &lt;Lab&gt;</h1>");
+  check
+    bool
+    "renders rich text"
+    true
+    (contains "<p>We run <strong>experiments</strong>.</p>")
+;;
+
+module AboutPage = struct
+  let current_user = Test_utils.Model.create_admin ()
+
+  let update ?(language = Pool_common.Language.En) key content =
+    let%lwt i18n = I18n.find_by_key database_label key language in
+    let%lwt () =
+      let open CCResult in
+      let open I18nCommand.Update in
+      [ Pool_message.Field.(show Translation), [ CCOption.get_or ~default:"" content ] ]
+      |> decode
+      >>= handle i18n
+      |> Test_utils.get_or_failwith
+      |> Pool_event.handle_events database_label current_user
+    in
+    (* the cache is cleared asynchronously by the system event service *)
+    I18n.I18nCache.clear () |> Lwt.return
+  ;;
+
+  let reset () =
+    let open Pool_common.Language in
+    Lwt_list.iter_s
+      (fun (language, key) -> update ~language key None)
+      [ En, I18n.Key.AboutPageTitle
+      ; En, I18n.Key.AboutPageText
+      ; De, I18n.Key.AboutPageTitle
+      ; De, I18n.Key.AboutPageText
+      ]
+  ;;
+
+  let check_configured ?(language = Pool_common.Language.En) msg expected =
+    let%lwt configured = I18n.is_about_page_configured database_label language in
+    Alcotest.(check bool msg expected configured) |> Lwt.return
+  ;;
+
+  let hidden_by_default _ () =
+    let%lwt () = reset () in
+    let%lwt () = check_configured ~language:Pool_common.Language.En "en hidden" false in
+    check_configured ~language:Pool_common.Language.De "de hidden" false
+  ;;
+
+  let requires_title_and_text _ () =
+    let open I18n.Key in
+    let%lwt () = reset () in
+    let%lwt () = update AboutPageTitle (Some "About us") in
+    let%lwt () = check_configured "hidden with title only" false in
+    let%lwt () = update AboutPageTitle None in
+    let%lwt () = update AboutPageText (Some "<p>About us</p>") in
+    let%lwt () = check_configured "hidden with text only" false in
+    let%lwt () = update AboutPageTitle (Some "About us") in
+    let%lwt () = check_configured "shown with title and text" true in
+    let%lwt () =
+      check_configured ~language:Pool_common.Language.De "other language hidden" false
+    in
+    let%lwt () = update AboutPageText None in
+    let%lwt () = check_configured "hidden again after clearing text" false in
+    reset ()
+  ;;
+end

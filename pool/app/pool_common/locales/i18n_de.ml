@@ -234,6 +234,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
 ;;
 
 let nav_link_to_string = function
+  | About -> "About"
   | ActorPermissions -> "Persönliche Berechtigungen"
   | Admins -> "Administratoren"
   | Announcements -> "Ankündigungen"

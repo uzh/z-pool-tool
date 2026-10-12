@@ -150,6 +150,7 @@ type t =
   | WaitingListIsDisabled
 
 type nav_link =
+  | About
   | ActorPermissions
   | Admins
   | Announcements

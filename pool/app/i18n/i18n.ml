@@ -12,6 +12,7 @@ let terms_and_conditions_last_updated = Repo.terms_and_conditions_last_updated
 module I18nCache = struct
   open Hashtbl
 
+  let about_page : (Database.Label.t * Pool_common.Language.t, bool) t = create 5
   let privacy_policy : (Database.Label.t * Pool_common.Language.t, bool) t = create 5
 
   let tbl : (Database.Label.t * Entity.Key.t * Pool_common.Language.t, Entity.t) t =
@@ -26,9 +27,32 @@ module I18nCache = struct
 
   let clear () =
     let () = clear tbl in
+    let () = clear about_page in
     clear privacy_policy
   ;;
 end
+
+let is_about_page_configured database_label language =
+  let open Utils.Lwt_result.Infix in
+  Hashtbl.find_opt I18nCache.about_page (database_label, language)
+  |> function
+  | Some bool -> Lwt.return bool
+  | None ->
+    let has_content key =
+      find_by_key_opt database_label key language
+      ||> CCOption.(
+            flat_map content
+            %> map_or
+                 ~default:false
+                 (Content.value %> CCString.trim %> CCString.is_empty %> not))
+    in
+    let%lwt configured =
+      let%lwt title_is_set = has_content Key.AboutPageTitle in
+      if title_is_set then has_content Key.AboutPageText else Lwt.return_false
+    in
+    let () = Hashtbl.replace I18nCache.about_page (database_label, language) configured in
+    Lwt.return configured
+;;
 
 let privacy_policy_is_set database_label language =
   let open Utils.Lwt_result.Infix in
