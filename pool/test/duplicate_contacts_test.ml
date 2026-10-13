@@ -207,7 +207,9 @@ module MergeData = struct
     let open Pool_user in
     let pool = Test_utils.Data.database_label in
     let%lwt current_user = Integration_utils.create_admin_user () in
-    let make_field name = CustomFieldRepo.create name (fun a -> Custom_field.Text a) in
+    let make_field name =
+      CustomFieldRepo.create ~current_user name (fun a -> Custom_field.Text a)
+    in
     let%lwt field_1 = make_field "F1" in
     let%lwt field_2 = make_field "F2" in
     let%lwt field_3 = make_field "F3" in

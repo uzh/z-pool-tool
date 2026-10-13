@@ -89,11 +89,11 @@ module CustomFieldRepo = struct
 
   open Custom_field_utils
 
-  let create name encoder =
+  let create ?(current_user = default_current_user) name encoder =
     let field = create_custom_field name encoder in
     let%lwt () =
       [ save_custom_field field; Custom_field.Published field |> Pool_event.custom_field ]
-      |> Pool_event.handle_events pool default_current_user
+      |> Pool_event.handle_events pool current_user
     in
     Custom_field.find pool (Custom_field.id field) |> Lwt.map get_or_failwith
   ;;
