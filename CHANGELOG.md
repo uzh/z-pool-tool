@@ -10,6 +10,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
   Text". The page is linked in the footer before the credits when both texts are set for 
   the current language
 
+### Changed
+
+- Respond with `400 Bad Request` instead of an error report to malformed 
+  `multipart/form-data` requests
+
 ## [0.13.10](https://github.com/uzh/z-pool-tool/tree/0.13.10)
 
 ### Added

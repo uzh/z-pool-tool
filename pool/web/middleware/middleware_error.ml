@@ -87,32 +87,57 @@ let reporter req ({ Report.exn; _ } as excn) =
      | Error err -> failwith err)
 ;;
 
+(* The multipart parser raises [Lwt_stream.Empty] when the body ends in the
+   middle of a boundary (e.g. truncated uploads or malformed requests from
+   scanners). This is a client error, not a bug worth reporting. *)
+let is_malformed_multipart exn req =
+  match[@warning "-4"] exn with
+  | Lwt_stream.Empty ->
+    req
+    |> Opium.Request.content_type
+    |> CCOption.map_or ~default:false (CCString.prefix ~pre:"multipart/form-data")
+  | _ -> false
+;;
+
+let bad_request_handler req =
+  Logs.warn (fun m ->
+    m
+      "Request id %s: Malformed multipart/form-data body"
+      (Sihl.Web.Id.find req |> CCOption.value ~default:"-"));
+  Opium.Response.of_plain_text ~status:`Bad_request "Bad Request" |> Lwt.return
+;;
+
 let middleware ?error_handler () =
+  let handle exn req =
+    let report = Report.create exn req in
+    Logs.err (fun m -> m "%s" (Report.to_string report));
+    let () =
+      Lwt.dont_wait
+        (fun () -> reporter req report)
+        (fun exn ->
+           let msg = Printexc.to_string exn in
+           Logs.err (fun m -> m "Failed to run custom error reporter: %s" msg))
+    in
+    match error_handler with
+    | Some error_handler -> error_handler req
+    | None ->
+      req
+      |> Opium.Request.header "Content-Type"
+      |> CCOption.map (CCString.split_on_char ';')
+      |> CCFun.flip CCOption.bind CCList.head_opt
+      |> (function
+       | Some "application/json" -> json_error_handler req
+       (* Default to text/html *)
+       | Some _ | None -> site_error_handler req)
+  in
   let filter handler req =
     (* Make sure to Lwt.catch everything that might go wrong. *)
     Lwt.catch
       (fun () -> handler req)
       (fun exn ->
-         let report = Report.create exn req in
-         Logs.err (fun m -> m "%s" (Report.to_string report));
-         let () =
-           Lwt.dont_wait
-             (fun () -> reporter req report)
-             (fun exn ->
-                let msg = Printexc.to_string exn in
-                Logs.err (fun m -> m "Failed to run custom error reporter: %s" msg))
-         in
-         match error_handler with
-         | Some error_handler -> error_handler req
-         | None ->
-           req
-           |> Opium.Request.header "Content-Type"
-           |> CCOption.map (CCString.split_on_char ';')
-           |> CCFun.flip CCOption.bind CCList.head_opt
-           |> (function
-            | Some "application/json" -> json_error_handler req
-            (* Default to text/html *)
-            | Some _ | None -> site_error_handler req))
+         if is_malformed_multipart exn req
+         then bad_request_handler req
+         else handle exn req)
   in
   (* In a production setting we don't want to use the built in debugger middleware of
      opium. It is useful for development but it exposed too much information. *)
