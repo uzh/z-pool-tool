@@ -167,6 +167,59 @@ let update_password_fails =
   Lwt.return_ok ()
 ;;
 
+let malformed_password_hash_does_not_raise =
+  Test_utils.case
+  @@ fun () ->
+  let open Pool_user in
+  let set_stored_password =
+    let request =
+      let open Caqti_request.Infix in
+      {sql|
+        UPDATE user_users
+        SET password = $2
+        WHERE uuid = UNHEX(REPLACE($1, '-', ''))
+      |sql}
+      |> Caqti_type.(t2 string string ->. unit)
+    in
+    fun id hash -> Database.exec database_label request (Id.value id, hash)
+  in
+  let email_address = EmailAddress.of_string "malformed-hash@example.com" in
+  let%lwt user =
+    create_user
+      database_label
+      email_address
+      (Lastname.of_string "Star")
+      (Firstname.of_string "Jane")
+      created_password
+      created_password_confirmation
+    ||> Pool_common.Utils.get_or_failwith
+  in
+  (* Bcrypt raises [Bcrypt_error] for each of these instead of returning false *)
+  let malformed_hashes = [ ""; "legacy-placeholder"; "$2a$10$truncated" ] in
+  let check_hash hash =
+    let%lwt () = set_stored_password user.id hash in
+    let%lwt login_result = login database_label email_address created_password in
+    Alcotest.(
+      check
+        (result alcotest Test_utils.error)
+        [%string "login fails for stored hash %{hash}"]
+        (Error Pool_message.Error.LoginInvalidEmailPassword)
+        login_result);
+    let%lwt is_valid =
+      Password.validate_current database_label user.id created_password
+    in
+    Alcotest.(
+      check
+        bool
+        [%string "current password invalid for stored hash %{hash}"]
+        false
+        is_valid);
+    Lwt.return_unit
+  in
+  let%lwt () = Lwt_list.iter_s check_hash malformed_hashes in
+  Lwt.return_ok ()
+;;
+
 let find_by_email_is_case_insensitive =
   Test_utils.case
   @@ fun () ->
@@ -324,6 +377,10 @@ let suite =
       ; test_case "update details" `Quick update_details
       ; test_case "update password" `Quick update_password
       ; test_case "update password fails" `Quick update_password_fails
+      ; test_case
+          "malformed password hash does not raise"
+          `Quick
+          malformed_password_hash_does_not_raise
       ; test_case
           "find by email is case insensitive"
           `Quick
