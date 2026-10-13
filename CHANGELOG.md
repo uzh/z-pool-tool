@@ -4,6 +4,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+### Changed
+
+- Respond with `400 Bad Request` instead of an error report to malformed 
+  `multipart/form-data` requests
+
 ## [0.13.10](https://github.com/uzh/z-pool-tool/tree/0.13.10)
 
 ### Added
