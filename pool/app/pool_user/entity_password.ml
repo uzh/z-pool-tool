@@ -108,7 +108,14 @@ module Hashing = struct
     | None, false -> Ok (Bcrypt.hash ~count:10 plain |> Bcrypt.string_of_hash)
   ;;
 
-  let matches ~hash ~plain = Bcrypt.verify plain (Bcrypt.hash_of_string hash)
+  (* Bcrypt raises [Bcrypt_error] if the stored value is not a valid bcrypt
+     hash (e.g. empty or legacy placeholder), treat it as a mismatch *)
+  let matches ~hash ~plain =
+    try Bcrypt.verify plain (Bcrypt.hash_of_string hash) with
+    | Bcrypt.Bcrypt_error ->
+      Logs.warn (fun m -> m "Stored password is not a valid bcrypt hash");
+      false
+  ;;
 end
 
 include Pool_model.Base.String
