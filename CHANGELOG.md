@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
 
 - Optional custom about page using the new texts "About Page Title" and "About Page 
-  Text". The page is linked in the footer before the credits when both texts are  set for 
+  Text". The page is linked in the footer before the credits when both texts are set for 
   the current language
 
 ## [0.13.10](https://github.com/uzh/z-pool-tool/tree/0.13.10)
