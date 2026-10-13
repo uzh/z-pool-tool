@@ -1,5 +1,7 @@
 module Key : sig
   type t =
+    | AboutPageText
+    | AboutPageTitle
     | ActorPermissionCreateHint
     | ActorPermissionHint
     | AssistantRoleHint
@@ -81,6 +83,10 @@ val extract_by_key_exn : t list -> Key.t -> Pool_common.Language.t -> t
 module I18nCache : sig
   val clear : unit -> unit
 end
+
+(** [is_about_page_configured database_label language] is true if both the about page
+    title and text are set for [language]. *)
+val is_about_page_configured : Database.Label.t -> Pool_common.Language.t -> bool Lwt.t
 
 val privacy_policy_is_set : Database.Label.t -> Pool_common.Language.t -> bool Lwt.t
 

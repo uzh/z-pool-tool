@@ -17,6 +17,7 @@ module Tenant = struct
 
   let make_footer { database_label; language; query_parameters; user; _ } title_text =
     let%lwt privacy_policy_is_set = I18n.privacy_policy_is_set database_label language in
+    let%lwt is_about_configured = I18n.is_about_page_configured database_label language in
     let open Pool_common in
     let of_nav = Utils.nav_link_to_string language in
     let of_field = Utils.field_to_string_capitalized language in
@@ -29,15 +30,17 @@ module Tenant = struct
         | Admin _ -> [ Http_utils.Url.Admin.version_path (), of_nav I18n.Versions ]
         | Contact _ | Guest -> []
       in
-      let links =
-        release_note_fragment
-        @ [ "/credits", of_nav I18n.Credits
-          ; "/terms-and-conditions", of_field Pool_message.Field.TermsAndConditions
-          ]
+      let about = if is_about_configured then [ "/about", of_nav I18n.About ] else [] in
+      let credits = [ "/credits", of_nav I18n.Credits ] in
+      let terms_and_conditions =
+        [ "/terms-and-conditions", of_field Pool_message.Field.TermsAndConditions ]
       in
-      (if privacy_policy_is_set
-       then links @ [ "/privacy-policy", of_nav I18n.PrivacyPolicy ]
-       else links)
+      let privacy_policy =
+        if privacy_policy_is_set
+        then [ "/privacy-policy", of_nav I18n.PrivacyPolicy ]
+        else []
+      in
+      release_note_fragment @ about @ credits @ terms_and_conditions @ privacy_policy
       |> CCList.map (fun (url, label) -> a ~a:[ a_href (externalize url) ] [ txt label ])
     in
     App.create_footer ~app_name:title_text ~fragments () |> Lwt.return

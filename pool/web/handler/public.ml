@@ -148,6 +148,25 @@ let error req =
   |> Lwt.return
 ;;
 
+let about req =
+  let result (Pool_context.{ language; database_label; _ } as context) =
+    let%lwt is_configured = I18n.is_about_page_configured database_label language in
+    if is_configured
+    then
+      Response.bad_request_render_error context
+      @@
+      let open Utils.Lwt_result.Infix in
+      let find key = I18n.find_by_key database_label key language in
+      let%lwt title = find I18n.Key.AboutPageTitle in
+      let%lwt text = find I18n.Key.AboutPageText in
+      Page.Public.about_page ~title ~text
+      |> create_layout req context
+      >|+ Sihl.Web.Response.of_html
+    else Lwt_result.fail Response.generic_not_found
+  in
+  Response.handle ~src req result
+;;
+
 let credits req =
   let result ({ Pool_context.language; database_label; _ } as context) =
     Response.bad_request_render_error context

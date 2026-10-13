@@ -32,6 +32,11 @@ let suite =
               can_delete_smtp_when_multiple
           ; test_case "update gtx settings" `Slow update_gtx_settings
           ] )
+    ; ( "i18n"
+      , I18n_test.AboutPage.
+          [ test_case "about page hidden by default" `Slow hidden_by_default
+          ; test_case "about page requires title and text" `Slow requires_title_and_text
+          ] )
     ; "dev/test", [ test_case "intercept email" `Slow Common_test.validate_email ]
     ; ( "authentication"
       , Authentication_test.
@@ -501,6 +506,10 @@ let suite =
           ; test_case "due contacts are prioritized" `Slow due_contacts_are_prioritized
           ; test_case "periodic check after one week" `Slow periodic_check_after_one_week
           ; test_case "service processes due contact" `Slow service_processes_due_contact
+          ; test_case
+              "delete unverified removes possible duplicates"
+              `Slow
+              delete_unverified_removes_possible_duplicates
           ] )
     ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]

@@ -496,8 +496,19 @@ let delete_unverified_authentication_request =
   |> Id.t ->. Caqti_type.unit
 ;;
 
+let delete_unverified_possible_duplicates_request =
+  let open Caqti_request.Infix in
+  {sql|
+    DELETE FROM pool_contacts_possible_duplicates
+    WHERE contact_a = UNHEX(REPLACE($1, '-', ''))
+    OR contact_b = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> Id.t ->. Caqti_type.unit
+;;
+
 let delete_unverified pool id =
   [ delete_unverified_contact_request, id
+  ; delete_unverified_possible_duplicates_request, id
   ; delete_unverified_email_verifications_request, id
   ; delete_unverified_authentication_request, id
   ; delete_unverified_user_request, id

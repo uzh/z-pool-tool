@@ -97,6 +97,7 @@ module Public = struct
               ]
             [ get "/index" index
             ; get "/custom/assets/index.css" index_css
+            ; get "/about" about
             ; get "/credits" credits
             ; get "/privacy-policy" privacy_policy
             ; get "/terms-and-conditions" terms_and_conditions

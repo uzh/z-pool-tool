@@ -7,6 +7,8 @@ module Key = struct
     let field = Pool_message.Field.Key
 
     type t =
+      | AboutPageText [@name "about_page_text"] [@printer print "about_page_text"]
+      | AboutPageTitle [@name "about_page_title"] [@printer print "about_page_title"]
       | ActorPermissionCreateHint [@name "actor_permission_create_hint"]
       [@printer print "actor_permission_create_hint"]
       | ActorPermissionHint [@name "actor_permission_hint"]
@@ -45,6 +47,7 @@ module Key = struct
   include Core
 
   let input_type = function
+    | AboutPageText
     | ActorPermissionCreateHint
     | ActorPermissionHint
     | AssistantRoleHint
@@ -63,6 +66,7 @@ module Key = struct
     | DashboardExperimentHistory
     | ExperimentNavigationTitle
     | DashboardWaitingList
+    | AboutPageTitle
     | UnsubscribeTitle -> `TextInput
   ;;
 end
