@@ -612,3 +612,54 @@ let service_processes_due_contact _ () =
   check bool "due date is reset after the run" false due_set;
   Lwt.return_unit
 ;;
+
+let delete_unverified_removes_possible_duplicates _ () =
+  let open Alcotest in
+  let open Pool_user in
+  let open Contact in
+  let current_user = Integration_utils.default_current_user in
+  let firstname = Firstname.of_string "Duplicheck" in
+  let lastname = Lastname.of_string "Unverified" in
+  let involves contact { Duplicate_contacts.contact_a; contact_b; _ } =
+    Id.equal (id contact_a) (id contact) || Id.equal (id contact_b) (id contact)
+  in
+  let%lwt verified = ContactRepo.create ~firstname ~lastname () in
+  let%lwt unverified =
+    let contact = Test_utils.Model.create_contact ~firstname ~lastname () in
+    let%lwt () =
+      Created
+        { user_id = id contact
+        ; email = email_address contact
+        ; password = Test_utils.Model.password
+        ; firstname = Contact.firstname contact
+        ; lastname = Contact.lastname contact
+        ; terms_accepted_at = None
+        ; language = contact.language
+        }
+      |> Pool_event.contact
+      |> Pool_event.handle_event pool current_user
+    in
+    find pool (id contact) ||> get_exn
+  in
+  let%lwt () = Duplicate_contacts.Service.run pool (id verified |> Id.to_common) in
+  let%lwt duplicate =
+    Duplicate_contacts.find_by_contact pool verified
+    ||> fst
+    ||> CCList.find_opt (involves unverified)
+  in
+  let duplicate =
+    CCOption.get_exn_or "possible duplicate with unverified contact exists" duplicate
+  in
+  let%lwt () =
+    UnverifiedDeleted unverified
+    |> Pool_event.contact
+    |> Pool_event.handle_event pool current_user
+  in
+  let%lwt contact_deleted = find pool (id unverified) ||> CCResult.is_error in
+  check bool "unverified contact is deleted" true contact_deleted;
+  let%lwt duplicate_deleted =
+    Duplicate_contacts.find pool duplicate.Duplicate_contacts.id ||> CCResult.is_error
+  in
+  check bool "possible duplicate is deleted" true duplicate_deleted;
+  Lwt.return_unit
+;;

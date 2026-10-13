@@ -501,6 +501,10 @@ let suite =
           ; test_case "due contacts are prioritized" `Slow due_contacts_are_prioritized
           ; test_case "periodic check after one week" `Slow periodic_check_after_one_week
           ; test_case "service processes due contact" `Slow service_processes_due_contact
+          ; test_case
+              "delete unverified removes possible duplicates"
+              `Slow
+              delete_unverified_removes_possible_duplicates
           ] )
     ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]
