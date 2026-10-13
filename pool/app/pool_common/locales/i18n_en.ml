@@ -229,6 +229,7 @@ let to_string = function
 ;;
 
 let nav_link_to_string = function
+  | About -> "About"
   | ActorPermissions -> "Personal Permissions"
   | Admins -> "Admins"
   | Announcements -> "Announcements"

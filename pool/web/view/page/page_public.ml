@@ -214,6 +214,14 @@ let reset_password
     ]
 ;;
 
+let about_page ~title ~text =
+  div
+    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    [ h1 ~a:[ a_class [ "heading-1"; "has-gap" ] ] [ txt (I18n.content_to_string title) ]
+    ; div [ Unsafe.data (I18n.content_to_string text) ]
+    ]
+;;
+
 let terms_and_conditions language terms terms_last_updated =
   let terms = terms |> I18n.content_to_string in
   let title =

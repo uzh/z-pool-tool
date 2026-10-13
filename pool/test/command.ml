@@ -142,6 +142,10 @@ let () =
             "extract by key filters by language"
             `Quick
             I18n_test.extract_by_key_exn_filters_by_language
+        ; test_case
+            "about page renders title and text"
+            `Quick
+            I18n_test.about_page_renders_title_and_text
         ] )
     ; ( "assignment"
       , Assignment_test.

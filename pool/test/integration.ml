@@ -32,6 +32,11 @@ let suite =
               can_delete_smtp_when_multiple
           ; test_case "update gtx settings" `Slow update_gtx_settings
           ] )
+    ; ( "i18n"
+      , I18n_test.AboutPage.
+          [ test_case "about page hidden by default" `Slow hidden_by_default
+          ; test_case "about page requires title and text" `Slow requires_title_and_text
+          ] )
     ; "dev/test", [ test_case "intercept email" `Slow Common_test.validate_email ]
     ; ( "authentication"
       , Authentication_test.
