@@ -15,7 +15,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Respond with `400 Bad Request` instead of an error report to malformed 
   `multipart/form-data` requests
 
-## [0.13.10](https://github.com/uzh/z-pool-tool/tree/0.13.10)
+### Fixed
+
+- Deleting an unverified contact also removes it from the possible duplicates list
+- Logging in to an account with an empty or invalid stored password hash fails as a
+  regular password mismatch instead of raising an error
+
+## [0.13.10](https://github.com/uzh/z-pool-tool/tree/0.13.10) - 2026-09-28
 
 ### Added
 
@@ -28,7 +34,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
   successfully unsubscribed from e-mail communication
 - Fix long e-mail subjects being cut off in the middle of words
 
-## [0.13.9](https://github.com/uzh/z-pool-tool/tree/0.13.9)
+## [0.13.9](https://github.com/uzh/z-pool-tool/tree/0.13.9) - 2026-08-31
 
 ### Changed
 
@@ -36,13 +42,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
   the other way round
 - Add unsubscribe link to all unsolicited e-mails
 
-## [0.13.8](https://github.com/uzh/z-pool-tool/tree/0.13.8)
+## [0.13.8](https://github.com/uzh/z-pool-tool/tree/0.13.8) - 2026-08-24
 
 ### Fixed
 
 - package dependency
 
-## [0.13.7](https://github.com/uzh/z-pool-tool/tree/0.13.7)
+## [0.13.7](https://github.com/uzh/z-pool-tool/tree/0.13.7) - 2026-08-17
 
 ### Changed
 
