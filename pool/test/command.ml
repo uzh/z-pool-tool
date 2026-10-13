@@ -142,6 +142,19 @@ let () =
             "extract by key filters by language"
             `Quick
             I18n_test.extract_by_key_exn_filters_by_language
+        ; test_case "sanitize rich text" `Quick I18n_test.sanitize_rich_text
+        ; test_case
+            "update rich text sanitizes content"
+            `Quick
+            I18n_test.update_rich_text_sanitizes_content
+        ; test_case
+            "update plain text keeps content"
+            `Quick
+            I18n_test.update_plain_text_keeps_content
+        ; test_case
+            "content to html sanitizes stored content"
+            `Quick
+            I18n_test.content_to_html_sanitizes_stored_content
         ] )
     ; ( "assignment"
       , Assignment_test.
@@ -300,7 +313,13 @@ let () =
         ] )
     ; ( "user"
       , [ test_case "validate email addresses" `Quick User_test.validate_email_adress ] )
-    ; "location", [ test_case "create location" `Quick Location_test.create ]
+    ; ( "location"
+      , [ test_case "create location" `Quick Location_test.create
+        ; test_case
+            "create description sanitizes html"
+            `Quick
+            Location_test.create_description_sanitizes_html
+        ] )
     ; ( "mailing"
       , [ test_case "create mailing" `Quick Mailing_test.create
         ; test_case

@@ -406,7 +406,7 @@ let pause_account
     [ h1 [ txt (I18n.content_to_string title) ]
     ; div
         ~a:[ a_class [ "rich-text" ] ]
-        [ I18n.content_to_string text
+        [ I18n.content_to_html text
           |> CCString.replace
                ~which:`All
                ~sub:"{email}"

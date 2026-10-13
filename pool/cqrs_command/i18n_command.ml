@@ -25,8 +25,9 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) ?system_event_id property (command : t) =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
+    let content = I18n.(sanitize_content (key property) command) in
     Ok
-      [ I18n.Updated (property, command) |> Pool_event.i18n
+      [ I18n.Updated (property, content) |> Pool_event.i18n
       ; System_event.(
           Job.I18nPageUpdated
           |> create ?id:system_event_id

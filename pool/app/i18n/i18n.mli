@@ -54,6 +54,12 @@ val language : t -> Pool_common.Language.t
 val content : t -> Content.t option
 val content_to_string : t -> string
 
+(** Sanitized content, safe to render with [Unsafe.data] *)
+val content_to_html : t -> string
+
+(** Strips unsafe markup from the content of rich text keys *)
+val sanitize_content : Key.t -> Content.t option -> Content.t option
+
 type event =
   | Created of create
   | Updated of t * Content.t option

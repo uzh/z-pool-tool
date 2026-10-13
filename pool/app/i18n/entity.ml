@@ -1,3 +1,4 @@
+open CCFun.Infix
 module Common = Pool_common
 
 let print = Utils.ppx_printer
@@ -89,4 +90,14 @@ let id m = m.id
 let key m = m.key
 let language m = m.language
 let content m = m.content
-let content_to_string m = m.content |> CCOption.map_or ~default:"" Content.value
+let content_to_string = content %> CCOption.map_or ~default:"" Content.value
+let content_to_html = content_to_string %> Utils.Html.sanitize
+
+let sanitize_content key content =
+  match Key.input_type key with
+  | `RichText ->
+    content
+    |> CCOption.flat_map
+         (Content.(value %> Utils.Html.sanitize %> create) %> CCResult.to_opt)
+  | `TextArea | `TextInput -> content
+;;

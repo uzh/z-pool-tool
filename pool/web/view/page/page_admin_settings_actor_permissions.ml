@@ -116,9 +116,7 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
     actor_permissions
 ;;
 
-let hint_to_html =
-  CCOption.map_or ~default:(txt "") (I18n.content_to_string %> Unsafe.data)
-;;
+let hint_to_html = CCOption.map_or ~default:(txt "") (I18n.content_to_html %> Unsafe.data)
 
 let index ?hint (Pool_context.{ language; _ } as context) rules query =
   let open Pool_common in

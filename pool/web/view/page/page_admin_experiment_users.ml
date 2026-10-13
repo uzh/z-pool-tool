@@ -148,7 +148,7 @@ let role_assignment
   let main_hint =
     CCOption.map_or
       ~default:(txt "")
-      (I18n.content_to_string %> Unsafe.data %> CCList.return %> div)
+      (I18n.content_to_html %> Unsafe.data %> CCList.return %> div)
       hint
   in
   div

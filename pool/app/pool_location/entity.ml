@@ -39,7 +39,11 @@ module Description = struct
 
   let find_opt = CCList.assoc_opt ~eq:Pool_common.Language.equal
 
+  (* Descriptions are rich text, rendered as HTML on pages and in emails *)
+  let sanitize = CCList.map (CCPair.map_snd Utils.Html.sanitize)
+
   let create sys_languages descriptions =
+    let descriptions = sanitize descriptions in
     CCList.filter
       (fun lang ->
          CCList.assoc_opt ~eq:Pool_common.Language.equal lang descriptions
@@ -51,7 +55,7 @@ module Description = struct
   ;;
 
   let read yojson =
-    try Ok (yojson |> Yojson.Safe.from_string |> t_of_yojson) with
+    try Ok (yojson |> Yojson.Safe.from_string |> t_of_yojson |> sanitize) with
     | _ -> Error Pool_message.(Error.Invalid field)
   ;;
 

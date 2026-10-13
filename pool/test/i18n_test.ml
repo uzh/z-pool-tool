@@ -90,3 +90,113 @@ let extract_by_key_exn_filters_by_language () =
   Alcotest.(
     check bool "extracts entry for requested language" true (I18n.equal extracted en))
 ;;
+
+let sanitize_rich_text () =
+  let check msg expected input =
+    Alcotest.(check string msg expected (Utils.Html.sanitize input))
+  in
+  check
+    "keeps allowed markup"
+    {|<h2>Title</h2><p><strong>bold</strong> <a href="https://example.com">link</a></p>|}
+    {|<h2>Title</h2><p><strong>bold</strong> <a href="https://example.com">link</a></p>|};
+  check
+    "keeps relative links"
+    {|<a href="/terms#top">x</a>|}
+    {|<a href="/terms#top">x</a>|};
+  check "escapes text" "a &lt; b &amp;" "a < b &";
+  check "removes script" "<p>hi</p>" "<p>hi<script>alert(1)</script></p>";
+  check "removes uppercase script" "" "<SCRIPT>alert(1)</SCRIPT>";
+  check "removes style" "" "<style>body{display:none}</style>";
+  check "removes iframe" "" {|<iframe src="https://evil.example"></iframe>|};
+  check "removes svg" "" {|<svg onload="alert(1)"><script>alert(1)</script></svg>|};
+  check "removes math" "" {|<math><mtext><img src=x onerror=alert(1)></mtext></math>|};
+  check "removes comments" "<p>a</p>" "<p>a<!-- <script>alert(1)</script> --></p>";
+  check "removes event attributes" "<img>" {|<img src=x:y onerror="alert(1)">|};
+  check "removes onclick" "<p>x</p>" {|<p onclick="alert(1)">x</p>|};
+  check "removes style attribute" "<p>x</p>" {|<p style="background:url(x)">x</p>|};
+  check "unwraps unknown elements" "<p>text</p>" "<p><blink>text</blink></p>";
+  check "removes javascript urls" "<a>x</a>" {|<a href="javascript:alert(1)">x</a>|};
+  check
+    "removes obfuscated javascript urls"
+    "<a>x</a><a>y</a><a>z</a>"
+    ({|<a href=" JaVaScRiPt:alert(1)">x</a>|}
+     ^ {|<a href="java&#x09;script:alert(1)">y</a>|}
+     ^ {|<a href="javascript&colon;alert(1)">z</a>|});
+  check "removes vbscript urls" "<a>x</a>" {|<a href="vbscript:msgbox(1)">x</a>|};
+  check
+    "removes data urls on links"
+    "<a>x</a>"
+    {|<a href="data:text/html;base64,PHNjcmlwdD4=">x</a>|};
+  check
+    "removes non image data urls on images"
+    "<img>"
+    {|<img src="data:image/svg+xml;base64,PHN2Zz4=">|};
+  check
+    "keeps raster data urls on images"
+    {|<img src="data:image/png;base64,AAAA" alt="a">|}
+    {|<img src="data:image/png;base64,AAAA" alt="a">|};
+  check
+    "keeps mailto links"
+    {|<a href="mailto:a@b.ch">x</a>|}
+    {|<a href="mailto:a@b.ch">x</a>|};
+  check
+    "adds rel to links with target"
+    {|<a href="https://a.ch" target="_blank" rel="noopener noreferrer">x</a>|}
+    {|<a href="https://a.ch" target="_blank" rel="opener">x</a>|};
+  check "removes unknown targets" {|<a>x</a>|} {|<a target="evil">x</a>|};
+  check
+    "keeps otp div"
+    {|<div class="otp apple-otp">123</div>|}
+    {|<div class="otp apple-otp">123</div>|}
+;;
+
+(* Only the I18n event is compared, the system event carries a creation timestamp *)
+let handle_update i18n input =
+  let open CCResult in
+  let open I18nCommand.Update in
+  [ Pool_message.Field.(show Translation), [ input ] ]
+  |> decode
+  >>= handle i18n
+  |> map (CCList.take 1)
+;;
+
+let update_rich_text_sanitizes_content () =
+  let i18n = I18n.create I18n.Key.WelcomeText Pool_common.Language.En None in
+  let check msg content input =
+    Alcotest.(
+      check
+        (result (list Test_utils.event) Test_utils.error)
+        msg
+        (Ok [ I18n.Updated (i18n, content) |> Pool_event.i18n ])
+        (handle_update i18n input))
+  in
+  check
+    "strips script and event handler"
+    (Some (I18n.Content.of_string {|<p>Welcome</p><img src="x">|}))
+    {|<p>Welcome<script>alert(1)</script></p><img src=x onerror="alert(1)">|};
+  check "drops content that is empty after sanitizing" None "<script>alert(1)</script>"
+;;
+
+let update_plain_text_keeps_content () =
+  let i18n = I18n.create I18n.Key.UnsubscribeTitle Pool_common.Language.En None in
+  let content = "Tom & Jerry <3" in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "unchanged"
+      (Ok
+         [ I18n.Updated (i18n, Some (I18n.Content.of_string content)) |> Pool_event.i18n ])
+      (handle_update i18n content))
+;;
+
+let content_to_html_sanitizes_stored_content () =
+  let i18n =
+    I18n.create
+      I18n.Key.TermsAndConditions
+      Pool_common.Language.En
+      (Some
+         (I18n.Content.of_string
+            {|<p onmouseover="alert(1)">Terms</p><script>x</script>|}))
+  in
+  Alcotest.(check string "sanitized" "<p>Terms</p>" (I18n.content_to_html i18n))
+;;

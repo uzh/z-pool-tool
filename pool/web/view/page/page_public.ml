@@ -80,7 +80,7 @@ let index
           [ txt (text_to_string Pool_common.I18n.DontHaveAnAccount) ]
       ; div
           ~a:[ a_class [ "stack" ] ]
-          [ div [ signup_cta |> I18n.content_to_string |> Unsafe.data ]
+          [ div [ signup_cta |> I18n.content_to_html |> Unsafe.data ]
           ; div
               ~a:[ a_class [ "flexrow" ] ]
               [ link_as_button
@@ -117,7 +117,7 @@ let index
             ~a:[ a_class [ "bg-grey-lightest"; "border"; "border-radius"; "inset-lg" ] ]
             ((div
                 ~a:[ a_class [ "rich-text" ] ]
-                [ welcome_text |> I18n.content_to_string |> Unsafe.data ]
+                [ welcome_text |> I18n.content_to_html |> Unsafe.data ]
               :: sign_up_cta)
              @ partner_html)
         ; div
@@ -215,7 +215,7 @@ let reset_password
 ;;
 
 let terms_and_conditions language terms terms_last_updated =
-  let terms = terms |> I18n.content_to_string in
+  let terms = terms |> I18n.content_to_html in
   let title =
     Pool_common.(
       Utils.field_to_string_capitalized language Pool_message.Field.TermsAndConditions)

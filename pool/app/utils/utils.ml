@@ -157,4 +157,7 @@ module Html = struct
     in
     elements |> CCList.rev |> folder []
   ;;
+
+  (* Use before rendering user provided rich text with [Unsafe.data] *)
+  let sanitize = Html_sanitizer.sanitize
 end

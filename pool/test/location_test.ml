@@ -48,3 +48,23 @@ let create () =
   let expected = Ok [ Pool_location.Created location |> Pool_event.pool_location ] in
   Test_utils.check_result expected events
 ;;
+
+let create_description_sanitizes_html () =
+  let open Pool_location in
+  let languages = Pool_common.Language.[ En; De ] in
+  let description =
+    Description.create
+      languages
+      Pool_common.Language.
+        [ En, {|<p onclick="alert(1)">Room <b>42</b></p><script>alert(1)</script>|}
+        ; De, {|<a href="javascript:alert(1)">Raum</a>|}
+        ]
+    |> Pool_message.Error.get_or_failwith
+  in
+  Alcotest.(
+    check
+      (list (pair Test_utils.language string))
+      "sanitized"
+      Pool_common.Language.[ En, "<p>Room <b>42</b></p>"; De, "<a>Raum</a>" ]
+      (Description.value description))
+;;

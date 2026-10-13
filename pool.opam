@@ -23,6 +23,7 @@ depends: [
   "guardian" {= "0.5.0"}
   "logs" {>= "0.7.0"}
   "lwt" {>= "5.7.0"}
+  "markup" {>= "1.0.3"}
   "mariadb" {>= "1.2.0" & < "2.0.0"}
   "ocaml" {>= "4.14.0"}
   "ocaml-lsp-server" {with-dev-setup}

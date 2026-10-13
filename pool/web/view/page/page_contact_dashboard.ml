@@ -88,7 +88,7 @@ let create Pool_context.{ language; _ } dashboard_intro custom_fields_answered c
   let intro =
     div
       ~a:[ a_class [ "rich-text" ] ]
-      [ dashboard_intro |> I18n.content_to_string |> Unsafe.data ]
+      [ dashboard_intro |> I18n.content_to_html |> Unsafe.data ]
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]

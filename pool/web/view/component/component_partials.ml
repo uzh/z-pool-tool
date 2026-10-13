@@ -116,7 +116,7 @@ let terms_and_conditions_label language id =
 let terms_and_conditions_checkbox ?(modal_id = "terms-modal") language terms =
   let terms_accepted_name = Pool_message.Field.(show TermsAccepted) in
   div
-    [ I18n.content_to_string terms
+    [ I18n.content_to_html terms
       |> Unsafe.data
       |> Component_modal.create
            language
