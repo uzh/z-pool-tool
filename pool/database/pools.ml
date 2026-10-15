@@ -259,7 +259,7 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       | Error (#t as err) ->
         let () = disconnect' ~error:err label in
         let () = Cache.log_pools () in
-        raise (Exn err)
+        raise (Database_error.Failed (Database_error.create label err))
     ;;
 
     let rec fetch ?(retries = 2) label =
@@ -289,12 +289,10 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       | None -> raise Pool_message.Error.(Exn (DatabaseAddPoolFirst label))
     ;;
 
-    let disconnect_and_raise_on_error connection label m =
+    let raise_on_error label m =
       match%lwt m with
       | Ok x -> Lwt.return x
       | Error error ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let%lwt () = Connection.disconnect () in
         Lwt.fail (Database_error.Failed (Database_error.create label error))
     ;;
 
@@ -306,18 +304,11 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       =
       match ctx with
       | Label { label; tags = _ } ->
-        let%lwt connection = fetch ?retries label in
-        let fcn connection =
-          fcn connection
-          |> disconnect_and_raise_on_error connection label
-          |> Lwt_result.ok
-        in
-        let%lwt r = Caqti_lwt_unix.Pool.use fcn connection in
-        (* [get_ok r] is safe because only [fcn] above can return the [Error _] case *)
-        Lwt.return (Result.get_ok r)
+        let%lwt pool = fetch ?retries label in
+        Caqti_lwt_unix.Pool.use fcn pool |> raise_caqti_error_labelled label
       | Connection { connection; label; tags = _ }
       | TransactionalConnection { connection; label; tags = _ } ->
-        fcn connection |> disconnect_and_raise_on_error connection label
+        fcn connection |> raise_on_error label
     ;;
 
     let raise_caqti_error
@@ -409,47 +400,52 @@ module Make (Config : Pools_sig.ConfigSig) = struct
   let connection_ctx ?tags label fcn =
     let tags = Logger.Tags.extend label tags in
     let%lwt pool = Pool.fetch label in
-    Caqti_lwt_unix.Pool.use
-      (fun connection ->
-         let ctx = Entity.Connection { connection; label; tags } in
-         fcn ctx |> Lwt_result.ok)
-      pool
-    |> Lwt.map Result.get_ok
+    try%lwt
+      Caqti_lwt_unix.Pool.use
+        (fun connection ->
+           let ctx = Entity.Connection { connection; label; tags } in
+           fcn ctx |> Lwt_result.ok)
+        pool
+      |> Lwt.map Result.get_ok
+    with
+    | Database_error.Failed { Database_error.error; label } as exn ->
+      let () = Pool.disconnect' ~error label in
+      let () = Pool.Cache.log_pools () in
+      Lwt.reraise exn
   ;;
-
-  (* XXX(reynir): This is safe because we always return [Ok _] or raise an
-     exception . The type of [Caqti_lwt_unix.Pool.use] forces us to return a [_ result Lwt.t], but the type also tells us that it doesn't return errors
-     other than what [fcn] returns. *)
 
   let transaction_ctx ?tags label fcn =
     let tags = Logger.Tags.extend label tags in
     let%lwt pool = Pool.fetch label in
-    Caqti_lwt_unix.Pool.use
-      (fun connection ->
-         let open Lwt_result.Syntax in
-         let (module Connection : Caqti_lwt.CONNECTION) = connection in
-         let ctx = Entity.TransactionalConnection { connection; label; tags } in
-         Pool.raise_caqti_error ctx
-         @@
-         let* () = Connection.start () in
-         Lwt.catch
-           (fun () ->
-              let%lwt result = fcn ctx in
-              let* () = Connection.commit () in
-              Lwt.return_ok result)
-           (fun exn ->
-              let%lwt () =
-                Pool.raise_caqti_error ctx
-                @@
-                let+ () = Connection.rollback () in
-                Logs.debug (fun m -> m "Successfully rolled back transaction")
-              in
-              Lwt.reraise exn)
-         |> Lwt_result.ok)
-      pool
-    |> Lwt.map Result.get_ok
+    try%lwt
+      Caqti_lwt_unix.Pool.use
+        (fun connection ->
+           let open Lwt_result.Syntax in
+           let (module Connection : Caqti_lwt.CONNECTION) = connection in
+           let ctx = Entity.TransactionalConnection { connection; label; tags } in
+           Pool.raise_caqti_error ctx
+           @@
+           let* () = Connection.start () in
+           Lwt.catch
+             (fun () ->
+                let%lwt result = fcn ctx in
+                let* () = Connection.commit () in
+                Lwt.return_ok result)
+             (fun exn ->
+                let%lwt () =
+                  Pool.raise_caqti_error ctx
+                  @@
+                  let+ () = Connection.rollback () in
+                  Logs.debug (fun m -> m "Successfully rolled back transaction")
+                in
+                Lwt.reraise exn)
+           |> Lwt_result.ok)
+        pool
+      |> Lwt.map Result.get_ok
+    with
+    | Database_error.Failed { Database_error.error; label } as exn ->
+      let () = Pool.disconnect' ~error label in
+      let () = Pool.Cache.log_pools () in
+      Lwt.reraise exn
   ;;
-  (* XXX(reynir): This is safe because we always return [Ok _] or raise an
-     exception . The type of [Caqti_lwt_unix.Pool.use] forces us to return a [_ result Lwt.t], but the type also tells us that it doesn't return errors
-     other than what [fcn] returns. *)
 end
