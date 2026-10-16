@@ -136,7 +136,6 @@ module Make (Config : Pools_sig.ConfigSig) = struct
     let find_all = Cache.all
     let find_by_status = Cache.find_by_status
     let find_by_url = Cache.find_by_url
-    let clear = Cache.clear
 
     let print_usage ?tags =
       connection
@@ -162,6 +161,12 @@ module Make (Config : Pools_sig.ConfigSig) = struct
                "Draining pool '%s' failed: %s"
                (database_label pool)
                (Printexc.to_string exn)))
+    ;;
+
+    let clear () =
+      let pools = Cache.Hashtbl.values_list Cache.pools in
+      let () = Cache.clear () in
+      CCList.iter drain_opt pools
     ;;
 
     let add ?required database =
@@ -250,6 +255,25 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       create ?required database |> Cache.replace
     ;;
 
+    (* Client errors (2xxx, e.g. 2006 server gone away, 2013 lost connection) and
+       server-side connection terminations (1053 shutdown, 1927 killed, 4031 idle
+       timeout) *)
+    let is_connection_errno errno =
+      (errno >= 2000 && errno < 3000) || CCList.mem errno [ 1053; 1927; 4031 ]
+    ;;
+
+    (* Only a broken connection invalidates the whole pool. *)
+    let is_connection_error : Caqti_error.t -> bool = function
+      | #Caqti_error.load_or_connect -> true
+      | `Request_failed { Caqti_error.msg; _ } | `Response_failed { Caqti_error.msg; _ }
+        ->
+        (match[@warning "-4"] msg with
+         | Caqti_driver_mariadb.Error_msg { errno; _ } -> is_connection_errno errno
+         | _ -> false)
+      | `Encode_rejected _ | `Encode_failed _ | `Decode_rejected _ | `Response_rejected _
+        -> false
+    ;;
+
     let raise_caqti_error (label : Entity.Label.t) input =
       let open Caqti_error in
       match%lwt input with
@@ -257,10 +281,11 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       | Error `Unsupported ->
         let () = disconnect' ~note:(`Error "Unsupported") label in
         raise Pool_message.Error.(Exn (Unsupported "Caqti error"))
-      | Error (#t as err) ->
+      | Error (#t as err) when is_connection_error err ->
         let () = disconnect' ~error:err label in
         let () = Cache.log_pools () in
         raise (Exn err)
+      | Error (#t as err) -> raise (Exn err)
     ;;
 
     let rec fetch ?(retries = 2) label =
