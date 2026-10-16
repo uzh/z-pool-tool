@@ -22,9 +22,8 @@ _opam/
 .opam/
 
 # local environment file
-.env
-.env.test
-.env.development
+.env*
+!.env.example
 .dotenv
 
 # devcontainer
