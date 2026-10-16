@@ -24,6 +24,7 @@ let worker_services =
   ; Contact_job.Inactivity.register ()
   ; System_event.Service.ConnectionWatcher.register ()
   ; Duplicate_contacts.Service.register ()
+  ; Gc_compaction.register ()
   ]
 ;;
 
