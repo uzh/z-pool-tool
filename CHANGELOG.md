@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Upgrade to OCaml 5.5.1 and opam 2.6.1 (base images `ocaml:{8,9}-5.5-2.6`), with
   tyxml 5.0, ppxlib 0.39 and ppx_deriving 6.2
 - Upgrade canary to 0.0.4 (fixes URI encoding of GitLab issue requests)
+- Upgrade GitHub Actions `actions/checkout` to v7 and `actions/setup-node` to v7
 
 ### Removed
 

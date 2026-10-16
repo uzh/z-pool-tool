@@ -39,7 +39,7 @@ opam install --deps-only --with-test ./pool.opam.locked
 
 #### Environment variables for running locally
 
-The .env.sample is written for running with devcontainers where ports are
+The .env.example is written for running with devcontainers where ports are
 remapped. Thus `PUBLIC_HOST_TENANT_ONE` needs to be modified as the application
 will only be listening on port 3000. As the root `PUBLIC_URL` is using
 <http://localhost:3000> we need a different name. You can either use e.g.
