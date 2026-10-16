@@ -160,13 +160,15 @@ module Instance = struct
     }
   ;;
 
+  (* Release the job, otherwise it stays invisible to the polling until the stale
+     reset picks it up *)
   let retry (retry_delay : Ptime.Span.t) (job : t) =
     let run_at =
       match Ptime.add_span job.run_at retry_delay with
       | Some date -> date
       | None -> failwith "Can not determine next run date of job"
     in
-    { job with run_at }
+    { job with run_at; polled_at = None; handled_at = None }
   ;;
 
   let increment_tries ({ tries; _ } as job) = { job with tries = tries + 1 }
@@ -358,6 +360,18 @@ let config force_async process_queue batch_size job_timeout =
   { force_async; process_queue; batch_size; job_timeout }
 ;;
 
+(* Covers the database work around each job which isn't part of [job_timeout]
+   (handle, persist result, archive, notify) *)
+let stale_margin = 5 * 60
+
+(* A batch is worked sequentially, so the last polled job waits for up to
+   [batch_size - 1] jobs ahead of it, each running until [job_timeout] at most.
+   Resetting it earlier would hand it to another batch while the first one still
+   holds it, which runs it twice. *)
+let stale_after { batch_size; job_timeout; _ } =
+  (CCInt.max 1 batch_size * job_timeout) + stale_margin
+;;
+
 let schema =
   let open Conformist in
   make
@@ -378,7 +392,7 @@ let schema =
           ~meta:
             "Seconds after which a running job is aborted and retried later, so a \
              hanging job (e.g. an unresponsive SMTP server) can't block the queue."
-          ~default:300
+          ~default:60
           "QUEUE_JOB_TIMEOUT"
       ]
     config
