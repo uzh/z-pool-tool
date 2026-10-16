@@ -73,10 +73,18 @@ let user_import events = UserImport events
 let user events = User events
 let waiting_list events = WaitingList events
 
+(* Sources are registered globally and never released by [Logs], so create each one once *)
+let event_src =
+  let sources = Hashtbl.create 64 in
+  fun model ->
+    CCHashtbl.get_or_add sources ~k:model ~f:(fun model ->
+      Logs.Src.create [%string "%{model}.events"])
+;;
+
 let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
   let info model pp event =
     let tags = tags |> Database.Logger.Tags.add pool in
-    let src = Logs.Src.create [%string "%{model}.events"] in
+    let src = event_src model in
     Logs.info ~src (fun m -> m ~tags "Handle event %a" pp event)
   in
   function
@@ -93,7 +101,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     info "assignment" Assignment.pp_event event;
     Assignment.handle_event ?user_uuid pool event
   | AssignmentJob event ->
-    let src = Logs.Src.create "assignment.events" in
+    let src = event_src "assignment" in
     Logs.info ~src (fun m -> m "Handle event %s" (Assignment_job.show_event event) ~tags);
     Assignment_job.handle_event pool event
   | Authentication event ->
@@ -173,7 +181,7 @@ let handle ?(tags = Logs.Tag.empty) ?user_uuid pool =
     info "text_message" Text_message.pp_event event;
     Text_message.handle_event pool event
   | TimeWindow event ->
-    let src = Logs.Src.create "time_window.events" in
+    let src = event_src "time_window" in
     Logs.info ~src (fun m -> m "Handle event %s" (Time_window.show_event event) ~tags);
     Time_window.handle_event pool event
   | UserImport event ->
