@@ -4,6 +4,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+### Changed
+
+- Upgrade to OCaml 5.5.1 and opam 2.6.1 (base images `ocaml:{8,9}-5.5-2.6`), with
+  tyxml 5.0, ppxlib 0.39 and ppx_deriving 6.2
+- Upgrade canary to 0.0.4 (fixes URI encoding of GitLab issue requests)
+
+### Removed
+
+- esy setup (`esy.json`, `esy.lock`): unmaintained since 2024 and esy ships no Linux arm64
+  binaries; opam is the only supported setup
+- Upgrade to Yarn 4.18.1
+
 ## [0.13.11](https://github.com/uzh/z-pool-tool/tree/0.13.11) - 2026-10-15
 
 ### Added
