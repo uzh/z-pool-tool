@@ -49,8 +49,8 @@
    (>= 5.7.0))
   (mariadb
    (and
-    (>= 1.2.0)
-    (< 2.0.0)))
+    (>= 2.0.0)
+    (< 3.0.0)))
   (ocaml
    (>= 4.14.0))
   (ocaml-lsp-server :with-dev-setup)
@@ -64,9 +64,9 @@
   (ppx_string
    (= v0.17.0))
   (ppx_variants_conv
-   (= v0.17.0))
+   (>= v0.17.1))
   (ppx_yojson_conv
-   (= v0.17.0))
+   (>= v0.17.1))
   (sihl
    (and
     (>= 4.0.0)

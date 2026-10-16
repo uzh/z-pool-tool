@@ -106,14 +106,14 @@ module List = struct
              ~a:
                [ a_name Input.Field.(show Role)
                ; a_value ([%show: Role.Role.t] role)
-               ; a_hidden ()
+               ; a_hidden `Hidden
                ]
              ()
          ; input
              ~a:
                [ a_name Input.Field.(show Actor)
                ; a_value ([%show: Guard.Uuid.Actor.t] actor_uuid)
-               ; a_hidden ()
+               ; a_hidden `Hidden
                ]
              ()
          ]
@@ -124,7 +124,7 @@ module List = struct
                     ~a:
                       [ a_name Input.Field.(show Target)
                       ; a_value ([%show: Guard.Uuid.Target.t] uuid)
-                      ; a_hidden ()
+                      ; a_hidden `Hidden
                       ]
                     ()
                 ])

@@ -2,7 +2,7 @@
   "name": "pool",
   "version": "0.13.11",
   "license": "GPL-2.0-or-later",
-  "packageManager": "yarn@3.8.7",
+  "packageManager": "yarn@4.18.1",
   "scripts": {
     "build": "NODE_OPTIONS=--trace-warnings parcel build resources/index.js resources/images/** --dist-dir public --public-url \"${PREFIX_PATH:-}/assets/\" && parcel build resources/admin.js --dist-dir public --public-url \"${PREFIX_PATH:-}/assets/\"",
     "watch": "NODE_OPTIONS=--trace-warnings parcel watch resources/index.js resources/admin.js --dist-dir public",
