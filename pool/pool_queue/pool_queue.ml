@@ -243,7 +243,9 @@ let work_queue (job : AnyJob.t) (database_label : Database.Label.t) =
                (Printexc.to_string exn));
            Lwt.return_unit)
     in
-    (* [work_job] aborts it after QUEUE_JOB_TIMEOUT and does cleanup (fail, archive, notify) *)
+    (* Not awaited, so a slow batch doesn't hold back polling. [work_job] aborts
+       each job after QUEUE_JOB_TIMEOUT and does cleanup (fail, archive, notify),
+       and [stale_after] keeps the stale reset from releasing jobs of a running batch. *)
     let () = Lwt.async (fun () -> Lwt_list.iter_s work_job instances) in
     Lwt.return_unit
 ;;
@@ -328,6 +330,8 @@ let start () =
     in
     (* Release jobs that were polled but never completed, e.g. because the
        database connection dropped while they were being processed. *)
+    let stale_after = Sihl.Configuration.read schema |> stale_after in
+    Logs.info (fun m -> m ~tags "Reset stale jobs polled more than %ds ago" stale_after);
     all_database_labels
     |> Lwt_list.iter_s (fun database_label ->
       let tags = Database.Logger.Tags.create database_label in
@@ -338,7 +342,7 @@ let start () =
         [%string "queue [%{Database.Label.value database_label}]: reset stale jobs"]
         interval
         (Some database_label)
-        (fun () -> Repo.reset_stale_pending_jobs database_label)
+        (fun () -> Repo.reset_stale_pending_jobs database_label stale_after)
       |> Schedule.add_and_start ~tags)
 ;;
 
