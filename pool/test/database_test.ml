@@ -62,3 +62,50 @@ let check_session_time_zone_utc _ () =
   let%lwt () = check Pool.Root.label in
   check Data.database_label
 ;;
+
+let select_one_request =
+  let open Caqti_request.Infix in
+  "SELECT 1" |> Caqti_type.(unit ->! int)
+;;
+
+(* A query error is no connection problem: the pool must be kept instead of
+   being disconnected and reconnected (churning all of its connections) *)
+let check_query_error_keeps_pool _ () =
+  let open Caqti_request.Infix in
+  let failing_request =
+    "SELECT 1 FROM table_that_does_not_exist" |> Caqti_type.(unit ->! int)
+  in
+  let label = Data.database_label in
+  let%lwt pool = Pool.fetch label in
+  let%lwt failed =
+    Lwt.catch
+      (fun () ->
+         Database.find label failing_request () |> Lwt.map (fun (_ : int) -> false))
+      (function
+        | Caqti_error.Exn _ -> Lwt.return_true
+        | exn -> Lwt.reraise exn)
+  in
+  let%lwt pool_after_error = Pool.fetch label in
+  let%lwt (_ : int) = Database.find label select_one_request () in
+  Alcotest.(check bool "query failed" true failed);
+  Alcotest.(check bool "pool kept" true (pool == pool_after_error)) |> Lwt.return
+;;
+
+(* Clearing the pool cache (event [TenantDatabaseCacheCleared]) must close the
+   connections of the dropped pools instead of leaving them open *)
+let check_clear_drains_pools _ () =
+  let label = Data.database_label in
+  let%lwt (_ : int) = Database.find label select_one_request () in
+  let%lwt pool = Pool.fetch label in
+  let%lwt () = Pool.initialize ~clear:true () in
+  let rec wait_until_drained attempts =
+    if Caqti_lwt_unix.Pool.size pool = 0 || attempts = 0
+    then Lwt.return_unit
+    else Lwt.bind (Lwt_unix.sleep 0.05) (fun () -> wait_until_drained (attempts - 1))
+  in
+  let%lwt () = wait_until_drained 100 in
+  let%lwt new_pool = Pool.fetch label in
+  let%lwt (_ : int) = Database.find label select_one_request () in
+  Alcotest.(check int "old pool drained" 0 (Caqti_lwt_unix.Pool.size pool));
+  Alcotest.(check bool "new pool in use" true (pool != new_pool)) |> Lwt.return
+;;
