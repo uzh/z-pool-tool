@@ -25,9 +25,9 @@ let location urlencoded db_ctx =
 ;;
 
 let default_lead_time_settings db_ctx =
-  Lwt.both
-    (Settings.find_default_reminder_lead_time db_ctx)
-    (Settings.find_default_text_msg_reminder_lead_time db_ctx)
+  let%lwt drlt = Settings.find_default_reminder_lead_time db_ctx in
+  let%lwt dtmrlt = Settings.find_default_text_msg_reminder_lead_time db_ctx in
+  Lwt.return (drlt, dtmrlt)
 ;;
 
 let can_access_session_assistants pool actor experiment_id =

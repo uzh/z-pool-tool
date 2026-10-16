@@ -111,8 +111,10 @@ let index entity role req =
       | None -> Lwt.return (false, false)
       | Some actor ->
         let open Guard in
-        let check = has_permission_on_role db_ctx actor current_roles in
-        Lwt.both (check Permission.Create) (check Permission.Delete)
+        let check db_ctx = has_permission_on_role db_ctx actor current_roles in
+        let%lwt can_assign = check db_ctx Permission.Create in
+        let%lwt can_unassign = check db_ctx Permission.Delete in
+        Lwt.return (can_assign, can_unassign)
     in
     Page.Admin.Experiments.users
       ~hint

@@ -249,7 +249,9 @@ let handle_add_predicate action req =
     let%lwt key_list, template_list =
       Pool_context.connection context
       @@ fun db_ctx ->
-      Lwt.both (Filter.all_keys db_ctx) (find_all_templates db_ctx templates_disabled)
+      let%lwt key_list = Filter.all_keys db_ctx in
+      let%lwt template_list = find_all_templates db_ctx templates_disabled in
+      Lwt.return (key_list, template_list)
     in
     let* identifier = find_identifier urlencoded |> Lwt_result.lift in
     let rec increment_identifier identifier =

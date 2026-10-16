@@ -201,9 +201,13 @@ let unsubscribe req =
       let%lwt title, text =
         Pool_context.connection context
         @@ fun db_ctx ->
-        Lwt.both
-          (I18n.find_by_key db_ctx I18n.Key.UnsubscribeTitle language)
-          (I18n.find_by_key db_ctx I18n.Key.UnsubscribeText language)
+        let%lwt unsubscribe_title =
+          I18n.find_by_key db_ctx I18n.Key.UnsubscribeTitle language
+        in
+        let%lwt unsubscribe_text =
+          I18n.find_by_key db_ctx I18n.Key.UnsubscribeText language
+        in
+        Lwt.return (unsubscribe_title, unsubscribe_text)
       in
       Page.Contact.pause_account context ?token:token_opt ~email ~title ~text ()
       |> General.create_tenant_layout req context

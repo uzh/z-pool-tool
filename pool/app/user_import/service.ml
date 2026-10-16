@@ -3,11 +3,11 @@ let get_or_failwith = Pool_common.Utils.get_or_failwith
 let interval_s = 15 * 60
 let limit = 50 (* equals 4'800 emails a day *)
 
-let reminder_settings database_label =
+let reminder_settings db_ctx =
   let open Settings in
-  Lwt.both
-    (find_user_import_first_reminder_after database_label)
-    (find_user_import_second_reminder_after database_label)
+  let%lwt first = find_user_import_first_reminder_after db_ctx in
+  let%lwt second = find_user_import_second_reminder_after db_ctx in
+  Lwt.return (first, second)
 ;;
 
 let run database_label =
