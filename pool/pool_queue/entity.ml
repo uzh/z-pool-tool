@@ -351,10 +351,11 @@ type config =
   { force_async : bool
   ; process_queue : bool
   ; batch_size : int
+  ; job_timeout : int
   }
 
-let config force_async process_queue batch_size =
-  { force_async; process_queue; batch_size }
+let config force_async process_queue batch_size job_timeout =
+  { force_async; process_queue; batch_size; job_timeout }
 ;;
 
 let schema =
@@ -373,6 +374,12 @@ let schema =
           ~meta:"Number of jobs which are pulled and handled at once."
           ~default:10
           "QUEUE_BATCH_SIZE"
+      ; int
+          ~meta:
+            "Seconds after which a running job is aborted and retried later, so a \
+             hanging job (e.g. an unresponsive SMTP server) can't block the queue."
+          ~default:300
+          "QUEUE_JOB_TIMEOUT"
       ]
     config
 ;;

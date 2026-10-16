@@ -151,7 +151,11 @@ let run_job
     CCOption.map_or ~default:(create database_label) (add database_label) tags
   in
   let log_reraise message exn =
-    Logs.err (fun m -> m ~tags "%s:\n'%s'" message (Printexc.to_string exn));
+    let () =
+      match[@warning "-4"] exn with
+      | Lwt.Canceled -> ()
+      | exn -> Logs.err (fun m -> m ~tags "%s:\n'%s'" message (Printexc.to_string exn))
+    in
     Lwt.reraise exn
   in
   let%lwt result =
@@ -186,7 +190,11 @@ let work_job job instance =
       Lwt.catch
         (fun () ->
            let%lwt instance = handle database_label instance in
-           match%lwt[@warning "-4"] run_job ~tags job instance with
+           let { job_timeout; _ } = Sihl.Configuration.read schema in
+           match%lwt[@warning "-4"]
+             Lwt_unix.with_timeout (float_of_int job_timeout) (fun () ->
+               run_job ~tags job instance)
+           with
            | Error (Pool_message.Error.SmtpRecipientNotFound _ as msg) ->
              (* Recipient does not exist — cancelling immediately without retrying *)
              let%lwt () = (AnyJob.failed job) database_label msg instance in
@@ -235,6 +243,7 @@ let work_queue (job : AnyJob.t) (database_label : Database.Label.t) =
                (Printexc.to_string exn));
            Lwt.return_unit)
     in
+    (* [work_job] aborts it after QUEUE_JOB_TIMEOUT and does cleanup (fail, archive, notify) *)
     let () = Lwt.async (fun () -> Lwt_list.iter_s work_job instances) in
     Lwt.return_unit
 ;;
