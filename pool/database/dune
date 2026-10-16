@@ -4,6 +4,7 @@
   containers
   caqti.classic
   caqti-lwt.unix
+  caqti-driver-mariadb
   lwt
   guardian.backend
   pool.conformist
