@@ -4,7 +4,7 @@
 
 A guide to setup the project with devcontainers can be found
 [here](./.devcontainer/README.md). If you prefer to [run the project
-locally](#running-locally-with-Esy), you can do that with [esy][esy] or with [opam].
+locally](#running-locally-with-opam), you can do that with [opam].
 
 The project executable can be run via command line `make sihl` and shows the information of the executable.
 
@@ -12,25 +12,12 @@ The project executable can be run via command line `make sihl` and shows the inf
 1. Seed root database `make sihl seed.root`
 1. Migrate tenant database with `make sihl migrate.tenant`
 1. Seed tenant database `make sihl seed.tenant`
-1. Run development server `make dev`
+1. Run development server `make dev` (also builds the CSS/JS assets)
 1. See `pool/seed/seed_user.ml` for default users or `make sihl admin.create ...` (see [Application Commands](#application-commands)) to generate one
 
-### Running locally with Esy
+### Running locally with opam
 
-Esy is a reproducible package manager for OCaml with heavy emphasis on
-usability. You can get it installed with `npm install --global esy`, and then
-run `esy` inside the project.
-
-Once `esy` finishes running, you can prefix any command with `esy ...` to
-execute it within the project's sandbox, or you can start a new development
-shell within it by running `esy shell`.
-
-[esy]: https://esy.sh
-
-#### Running locally with opam
-
-Opam is a source-based package manager for OCaml. Esy produces opam and opam
-lock files that can be consumed by opam. This can be useful if you don't wish
+Opam is a source-based package manager for OCaml. Running locally can be useful if you don't wish
 to use `npm` or `yarn` on your machine and don't need to change the frontend
 code or CSS. In that case you can run `yarn install` and `yarn build` in a VM
 or docker container and copy the `public/` directory over.
@@ -52,7 +39,7 @@ opam install --deps-only --with-test ./pool.opam.locked
 
 #### Environment variables for running locally
 
-The .env.sample is written for running with devcontainers where ports are
+The .env.example is written for running with devcontainers where ports are
 remapped. Thus `PUBLIC_HOST_TENANT_ONE` needs to be modified as the application
 will only be listening on port 3000. As the root `PUBLIC_URL` is using
 <http://localhost:3000> we need a different name. You can either use e.g.
@@ -67,7 +54,7 @@ address for your mariadb database instance.
 ### Commands
 
 - `make install` - to install all the dependencies. Under the hood, `dune` is used for package management.
-- `make dev` - runs build in watch mode and the web application on port `3016` (default). You typically have that process running in one shell. Changing code will recompile and restart the server automatically. Changing JS code that is not embedded in `.ml` files (libraries) requires restarting the server.
+- `make dev` - runs build in watch mode and the web application on port `3016` (default). You typically have that process running in one shell. Changing code will recompile and restart the server automatically. Other `dune` commands (e.g. `make format`) are forwarded to the running watch instance. CSS/JS assets are built on start and rebuilt whenever a file in `resources/` changes.
 - `make test-clean` - clean prepare and run all tests. This requires a running MariaDB instance for integration tests.
 - `make sihl` - runs the executable and shows the list of commands (when at least one argument is missing or `-h` is used, the help is printed)
 - `make sihl <ARGS>` - runs the executable with the provided arguments

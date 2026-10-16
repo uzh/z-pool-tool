@@ -7,6 +7,8 @@ module Database = Database
 module Response = Http_response
 
 let src = Logs.Src.create "handler.public"
+let style_src = Logs.Src.create "handler.public.style"
+let asset_src = Logs.Src.create "handler.public.asset"
 let create_layout req = General.create_tenant_layout req
 let root_label = Database.Pool.Root.label
 
@@ -68,9 +70,7 @@ let index_css req =
   match result with
   | Ok res -> Lwt.return res
   | Error error ->
-    let (_ : Error.t) =
-      Common.Utils.with_log_error ~src:(Logs.Src.create "handler.public.style") error
-    in
+    let (_ : Error.t) = Common.Utils.with_log_error ~src:style_src error in
     Lwt.return Response.empty_not_found
 ;;
 
@@ -130,9 +130,7 @@ let asset req =
   |> function
   | Ok response -> Lwt.return response
   | Error error ->
-    let (_ : Error.t) =
-      Common.Utils.with_log_error ~src:(Logs.Src.create "handler.public.asset") error
-    in
+    let (_ : Error.t) = Common.Utils.with_log_error ~src:asset_src error in
     Lwt.return Response.empty_not_found
 ;;
 

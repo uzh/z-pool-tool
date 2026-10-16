@@ -34,7 +34,7 @@ install: all ## Install the packages on the system
 
 .PHONY: update
 update:
-	yarn upgrade
+	yarn up --recursive '*'
 	opam update
 
 .PHONY: sihl
@@ -71,25 +71,7 @@ format: ## Format the codebase with ocamlformat
 .SILENT:
 .ONESHELL:
 dev:: ## Run the Sihl app, watch files and restart on change
-	sigint_handler()
-	{
-	[[ $$(jobs -pr) = "" ]] || kill $$(jobs -pr)
-	exit
-	}
-	trap sigint_handler SIGINT
-	yarn build --log-level warn
-	while true; do
-	dune build
-	if [ $$? -eq 0 ]
-	then
-		SIHL_ENV=development ./_build/default/pool/run/run.exe server &
-		PID=$$!
-	fi
-	echo
-	inotifywait -e modify -e move -e create -e delete -e attrib -r `pwd` --exclude "(_build|public|.parcel-cache|logs|Makefile|.vscode|.devcontainer|.git|.DS_Store|node_modules|resources)" -qq
-	[[ $$(jobs -pr) = "" ]] || kill $$(jobs -pr)
-	echo
-	done
+	./scripts/dev.sh
 
 .PHONY: utop
 utop: ## Run a REPL and link with the project's libraries

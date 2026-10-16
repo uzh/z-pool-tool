@@ -18,18 +18,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - rhel: "8"
-            dockerfile: docker/Dockerfile.build.rhel8
-            tag: "8-5.3-2.3"
           - rhel: "9"
             dockerfile: docker/Dockerfile.build
-            tag: "9-5.3-2.3"
+            tag: "9-5.5-2.6"
     permissions:
       contents: read
       packages: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Check for Docker changes
         uses: dorny/paths-filter@v4
@@ -38,7 +35,6 @@ jobs:
           filters: |
             docker:
               - 'docker/Dockerfile.build'
-              - 'docker/Dockerfile.build.rhel8'
               - 'scripts/opam-install.sh'
               - '.github/workflows/ci.yml'
 
@@ -74,10 +70,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - rhel: "8"
-            tag: "8-5.3-2.3"
           - rhel: "9"
-            tag: "9-5.3-2.3"
+            tag: "9-5.5-2.6"
     permissions:
       packages: read
     env:
@@ -100,7 +94,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Log in to Container Registry
         uses: docker/login-action@v4
@@ -137,8 +131,6 @@ jobs:
             -e TEST_EMAIL \
             -e SMTP_SENDER \
             -e SIHL_ENV \
-            -e EMAIL_RATE_LIMIT \
-            -e MATCHER_MAX_CAPACITY \
             -e SKIP_SYS_DEPS=1 \
             --user root \
             "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}" \
@@ -174,21 +166,18 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Enable Corepack
         run: corepack enable
 
       - name: Use Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: "lts/*"
 
-      - name: Install latest Yarn
-        run: corepack prepare yarn@stable --activate
-
       - name: install yarn packages
-        run: yarn
+        run: yarn install --immutable
 
       - name: build yarn package
         run: yarn build
@@ -216,10 +205,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - rhel: "8"
-            dockerfile: docker/Dockerfile.app.rhel8
-            artifact: run.exe-rhel8
-            image_suffix: "-rhel8"
           - rhel: "9"
             dockerfile: docker/Dockerfile.app
             artifact: run.exe-rhel9
@@ -229,7 +214,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Download executable artifact (RHEL ${{ matrix.rhel }})
         uses: actions/download-artifact@v8
@@ -293,7 +278,7 @@ jobs:
     if: github.ref_name == 'main'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Trigger deploy
         uses: ./.github/actions/trigger-deploy
@@ -310,13 +295,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Download executable artifact (RHEL 8)
-        uses: actions/download-artifact@v8
-        with:
-          name: run.exe-rhel8
-          path: run.exe-rhel8
+        uses: actions/checkout@v7
 
       - name: Download executable artifact (RHEL 9)
         uses: actions/download-artifact@v8
@@ -336,7 +315,6 @@ jobs:
       - name: Compress assets and executables
         run: |
           tar -zcf assets.tar.gz assets
-          tar -zcf executable-rhel8.tar.gz run.exe-rhel8/run.exe
           tar -zcf executable-rhel9.tar.gz run.exe-rhel9/run.exe
 
       - name: Create release
@@ -346,7 +324,6 @@ jobs:
           body_path: changes.md
           files: |
             assets.tar.gz
-            executable-rhel8.tar.gz
             executable-rhel9.tar.gz
 
       - name: Notify about failure
@@ -361,7 +338,7 @@ jobs:
     needs: release
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Trigger deploy
         uses: ./.github/actions/trigger-deploy
