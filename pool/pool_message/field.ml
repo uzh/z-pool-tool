@@ -8,9 +8,7 @@ let custom _ fmt t =
   Format.pp_print_string fmt name
 ;;
 
-let nested name show fmt t =
-  Format.pp_print_string fmt (Format.asprintf "%s[%s]" name (show t))
-;;
+let nested name pp fmt t = Format.fprintf fmt "%s[%a]" name pp t
 
 type t =
   | Action [@name "action"] [@printer go "action"]
@@ -294,7 +292,7 @@ type t =
   | ScheduledTimeSpan [@name "scheduled_time_span"] [@printer go "scheduled_time_span"]
   | Score [@name "score"] [@printer go "score"]
   | Search [@name "search"] [@printer go "search"]
-  | SearchOf of t [@name "search_of"] [@printer nested "search_of" show]
+  | SearchOf of t [@name "search_of"] [@printer nested "search_of" pp]
   | SecondReminder [@name "second_reminder"] [@printer go "second_reminder"]
   | Sender [@name "sender"] [@printer go "sender"]
   | SendingInvitations [@name "sending_invitations"] [@printer go "sending_invitations"]
@@ -368,7 +366,7 @@ type t =
   | Time [@name "time"] [@printer go "time"]
   | TimeSpan [@name "timespan"] [@printer go "timespan"]
   | TimeUnit [@name "timeunit"] [@printer go "timeunit"]
-  | TimeUnitOf of t [@name "timeunit_of"] [@printer nested "timeunit_of" show]
+  | TimeUnitOf of t [@name "timeunit_of"] [@printer nested "timeunit_of" pp]
   | TimeWindow [@name "time_window"] [@printer go "time_window"]
   | Title [@name "title"] [@printer go "title"]
   | ToHandle [@name "to_handle"] [@printer go "to_handle"]
@@ -383,7 +381,7 @@ type t =
   | User [@name "user"] [@printer go "user"]
   | Validation [@name "validation"] [@printer go "validation"]
   | Value [@name "value"] [@printer go "value"]
-  | ValueOf of t [@name "value_of"] [@printer nested "value_of" show]
+  | ValueOf of t [@name "value_of"] [@printer nested "value_of" pp]
   | VerificationCode [@name "verification_code"] [@printer go "verification_code"]
   | VerificationCount [@name "verification_count"] [@printer go "verification_count"]
   | Verified [@name "verified"] [@printer go "verified"]

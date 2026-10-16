@@ -18,12 +18,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - rhel: "8"
-            dockerfile: docker/Dockerfile.build.rhel8
-            tag: "8-5.3-2.3"
           - rhel: "9"
             dockerfile: docker/Dockerfile.build
-            tag: "9-5.3-2.3"
+            tag: "9-5.5-2.6"
     permissions:
       contents: read
       packages: write
@@ -38,7 +35,6 @@ jobs:
           filters: |
             docker:
               - 'docker/Dockerfile.build'
-              - 'docker/Dockerfile.build.rhel8'
               - 'scripts/opam-install.sh'
               - '.github/workflows/ci.yml'
 
@@ -74,10 +70,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - rhel: "8"
-            tag: "8-5.3-2.3"
           - rhel: "9"
-            tag: "9-5.3-2.3"
+            tag: "9-5.5-2.6"
     permissions:
       packages: read
     env:
@@ -137,8 +131,6 @@ jobs:
             -e TEST_EMAIL \
             -e SMTP_SENDER \
             -e SIHL_ENV \
-            -e EMAIL_RATE_LIMIT \
-            -e MATCHER_MAX_CAPACITY \
             -e SKIP_SYS_DEPS=1 \
             --user root \
             "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}" \
@@ -184,11 +176,8 @@ jobs:
         with:
           node-version: "lts/*"
 
-      - name: Install latest Yarn
-        run: corepack prepare yarn@stable --activate
-
       - name: install yarn packages
-        run: yarn
+        run: yarn install --immutable
 
       - name: build yarn package
         run: yarn build
@@ -216,10 +205,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - rhel: "8"
-            dockerfile: docker/Dockerfile.app.rhel8
-            artifact: run.exe-rhel8
-            image_suffix: "-rhel8"
           - rhel: "9"
             dockerfile: docker/Dockerfile.app
             artifact: run.exe-rhel9
@@ -312,12 +297,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Download executable artifact (RHEL 8)
-        uses: actions/download-artifact@v8
-        with:
-          name: run.exe-rhel8
-          path: run.exe-rhel8
-
       - name: Download executable artifact (RHEL 9)
         uses: actions/download-artifact@v8
         with:
@@ -336,7 +315,6 @@ jobs:
       - name: Compress assets and executables
         run: |
           tar -zcf assets.tar.gz assets
-          tar -zcf executable-rhel8.tar.gz run.exe-rhel8/run.exe
           tar -zcf executable-rhel9.tar.gz run.exe-rhel9/run.exe
 
       - name: Create release
@@ -346,7 +324,6 @@ jobs:
           body_path: changes.md
           files: |
             assets.tar.gz
-            executable-rhel8.tar.gz
             executable-rhel9.tar.gz
 
       - name: Notify about failure
