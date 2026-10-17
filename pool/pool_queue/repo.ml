@@ -157,6 +157,7 @@ let count_all_workable label =
   Lwt.catch
     (fun () -> Database.find_opt label count_all_workable_request ())
     (function
+      | Database.Error.(Failed { error = #Caqti_error.load_or_connect; _ })
       | Caqti_error.(Exn #load_or_connect) -> Lwt.return_none
       | exn -> Lwt.reraise exn)
   ||> CCOption.get_or ~default:0
@@ -198,6 +199,7 @@ let count_recently_failed job_name label =
   Lwt.catch
     (fun () -> Database.find_opt label count_recently_failed_request job_name)
     (function
+      | Database.Error.(Failed { error = #Caqti_error.load_or_connect; _ })
       | Caqti_error.(Exn #load_or_connect) -> Lwt.return_none
       | exn -> Lwt.reraise exn)
   ||> CCOption.get_or ~default:0
