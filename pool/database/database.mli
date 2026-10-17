@@ -194,9 +194,7 @@ val txn_of_ctx : 'txn ctx -> 'txn txn
 
 (** [resolve_ctx ?db_ctx database_label] asserts that [~db_ctx] corresponds to
     [database_label] or creates a [Label database_label] ctx if [db_ctx] is
-    [None].
-    {e Warning:} This will cast a [transaction ctx] into a [no_transaction ctx]! Do not use this if this breaks assumptions such as database updates
-    being observable outside the transaction. *)
+    [None]. Either way the result is packed inside a [Any _]. *)
 val resolve_ctx : ?db_ctx:_ ctx -> Label.t -> any_ctx
 
 module Logger : sig
