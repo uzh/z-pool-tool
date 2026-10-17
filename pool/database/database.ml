@@ -4,6 +4,7 @@ include Service
 module Logger = Logger
 module Caqti_encoders = Caqti_encoders
 module Migration = Migration
+module Error = Database_error
 
 module Repo = struct
   include Repo_entity
