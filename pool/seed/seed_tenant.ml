@@ -3,7 +3,7 @@ module File = Pool_common.File
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
-let create () =
+let create db_ctx =
   let styles = Assets.dummy_css () in
   let icon = Assets.dummy_icon () in
   let tenant_logo = Assets.dummy_tenant_logo () in
@@ -20,7 +20,7 @@ let create () =
              }
          in
          let base64 = Base64.encode_exn file.body in
-         let%lwt _ = Storage.upload_base64 Database.Pool.Root.label stored_file base64 in
+         let%lwt _ = Storage.upload_base64 db_ctx stored_file base64 in
          Lwt.return_unit)
       [ styles; icon; tenant_logo ]
   in
@@ -109,7 +109,7 @@ let create () =
             [ Pool_tenant.Created (tenant, database)
             ; Pool_tenant.LogosUploaded logo_mappings
             ]
-            |> Lwt_list.iter_s (Pool_tenant.handle_event Database.Pool.Root.label))
+            |> Lwt_list.iter_s (Pool_tenant.handle_event db_ctx))
   in
   Lwt.return_unit
 ;;

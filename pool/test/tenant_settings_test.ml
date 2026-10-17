@@ -3,7 +3,7 @@ open Settings
 module Command = Cqrs_command.Settings_command
 
 let get_or_failwith = Test_utils.get_or_failwith
-let database_label = Test_utils.Data.database_label
+let db_ctx = Test_utils.Data.db_ctx
 let current_user = Test_utils.Model.create_admin ()
 let days_to_timespan days = days * 60 * 60 * 24 |> Ptime.Span.of_int_s
 
@@ -26,7 +26,7 @@ let check_events ?(message = "succeeds") expected generated =
 ;;
 
 let handle_result ?(current_user = current_user) result =
-  result |> get_or_failwith |> Pool_event.handle_events database_label current_user
+  result |> get_or_failwith |> Pool_event.handle_events db_ctx current_user
 ;;
 
 let check_contact_email _ () =
@@ -45,7 +45,7 @@ let check_contact_email _ () =
   let expected = Ok [ ContactEmailUpdated expected_email |> Pool_event.settings ] in
   let () = check_events ~message:"valid contact email" expected result in
   let%lwt () = handle_result ~current_user result in
-  let%lwt contact_email = Settings.find_contact_email database_label in
+  let%lwt contact_email = Settings.find_contact_email db_ctx in
   let () =
     Alcotest.(
       check Testable.contact_email "contact email address" contact_email expected_email)
@@ -73,7 +73,7 @@ let check_email_suffix _ () =
   in
   let () = check_events expected result in
   let%lwt () = handle_result ~current_user result in
-  let%lwt suffixes = find_email_suffixes database_label in
+  let%lwt suffixes = find_email_suffixes db_ctx in
   let expected = EmailSuffix.of_string suffix |> CCList.return in
   let () =
     Alcotest.(check (list Testable.email_suffix) "created email suffix" suffixes expected)
@@ -91,7 +91,7 @@ let check_email_suffix _ () =
   in
   let () = check_events expected result in
   let%lwt () = handle_result ~current_user result in
-  let%lwt suffixes = find_email_suffixes database_label in
+  let%lwt suffixes = find_email_suffixes db_ctx in
   let expected = EmailSuffix.of_string updated |> CCList.return in
   let () =
     Alcotest.(check (list Testable.email_suffix) "updated email suffix" suffixes expected)
@@ -129,7 +129,7 @@ let check_inactive_user_disable_after _ () =
   in
   let () = check_events expected result in
   let%lwt () = handle_result ~current_user result in
-  let%lwt disable_after = Settings.find_inactive_user_disable_after database_label in
+  let%lwt disable_after = Settings.find_inactive_user_disable_after db_ctx in
   let expected =
     days_to_timespan valid |> InactiveUser.DisableAfter.create |> get_or_failwith
   in
@@ -172,7 +172,7 @@ let check_inactive_user_warning _ () =
   in
   let () = check_events expected result in
   let%lwt () = handle_result ~current_user result in
-  let%lwt warning_after = Settings.find_inactive_user_warning database_label in
+  let%lwt warning_after = Settings.find_inactive_user_warning db_ctx in
   let expected =
     valid
     |> days_to_timespan
@@ -211,7 +211,7 @@ let disable_inactive_user_service _ () =
     |> Pool_event.settings
   in
   let handle_events events =
-    events |> get_or_failwith |> Pool_event.handle_events database_label current_user
+    events |> get_or_failwith |> Pool_event.handle_events db_ctx current_user
   in
   let open Utils.Lwt_result.Infix in
   let run_test disable =
@@ -225,7 +225,7 @@ let disable_inactive_user_service _ () =
     in
     let%lwt () = handle_events events in
     let%lwt disabled =
-      Settings.find_inactive_user_service_disabled database_label
+      Settings.find_inactive_user_service_disabled db_ctx
       ||> InactiveUser.ServiceDisabled.value
     in
     Alcotest.(check bool) (Format.asprintf "Service is %s" msg) disable disabled
@@ -237,7 +237,7 @@ let disable_inactive_user_service _ () =
 ;;
 
 let check_languages _ () =
-  let%lwt language = Settings.find_languages database_label in
+  let%lwt language = Settings.find_languages db_ctx in
   Alcotest.(
     check (list Testable.language) "languages" language Pool_common.Language.[ En; De ])
   |> Lwt.return
@@ -246,7 +246,7 @@ let check_languages _ () =
 let check_terms_and_conditions _ () =
   let%lwt terms =
     Lwt_list.map_s
-      (I18n.find_by_key database_label I18n.Key.TermsAndConditions)
+      (I18n.find_by_key db_ctx I18n.Key.TermsAndConditions)
       Pool_common.Language.all
   in
   let has_terms = terms |> CCList.is_empty |> not in
@@ -257,9 +257,9 @@ let login_after_terms_update _ () =
   let open Utils.Lwt_result.Infix in
   let%lwt user = Integration_utils.ContactRepo.create () in
   let accepted =
-    let contact = Contact.find_by_email database_label (Contact.email_address user) in
+    let contact = Contact.find_by_email db_ctx (Contact.email_address user) in
     let terms_agreed contact =
-      let%lwt accepted = Contact.has_terms_accepted database_label contact in
+      let%lwt accepted = Contact.has_terms_accepted db_ctx contact in
       match accepted with
       | true -> Lwt.return_ok contact
       | false -> Lwt.return_error Error.TermsAndConditionsNotAccepted
@@ -279,7 +279,7 @@ let create_smtp_auth =
   @@ fun () ->
   let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f in
   let ( let& ) = Lwt_result.bind in
-  let test_db = Test_utils.Data.database_label in
+  let test_db = Test_utils.Data.db_ctx in
   let open Email.SmtpAuth in
   (* create an smtp auth instance *)
   let id = Id.create () in
@@ -323,7 +323,7 @@ let delete_smtp_auth =
   let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f in
   let ( let& ) = Lwt_result.bind in
   let ( let^ ) = Lwt.bind in
-  let test_db = Test_utils.Data.database_label in
+  let test_db = Test_utils.Data.db_ctx in
   let open Email.SmtpAuth in
   (* create an smtp auth instance *)
   let id = Id.create () in
@@ -396,7 +396,7 @@ let create_temp_smtp test_db =
 
 (* Test: guard fires when only one SMTP record exists *)
 let cannot_delete_last_smtp =
-  let test_db = Test_utils.Data.database_label in
+  let test_db = Test_utils.Data.db_ctx in
   let saved_writes : Email.SmtpAuth.Write.t list ref = ref [] in
   let temp_id : Email.SmtpAuth.Id.t ref = ref (Email.SmtpAuth.Id.create ()) in
   Test_utils.case
@@ -445,7 +445,7 @@ let cannot_delete_last_smtp =
 
 (* Test: guard passes when two or more SMTP records exist *)
 let can_delete_smtp_when_multiple =
-  let test_db = Test_utils.Data.database_label in
+  let test_db = Test_utils.Data.db_ctx in
   let saved_writes : Email.SmtpAuth.Write.t list ref = ref [] in
   let temp_id1 : Email.SmtpAuth.Id.t ref = ref (Email.SmtpAuth.Id.create ()) in
   let temp_id2 : Email.SmtpAuth.Id.t ref = ref (Email.SmtpAuth.Id.create ()) in

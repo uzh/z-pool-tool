@@ -15,7 +15,7 @@ val schema : unit -> (Pool_conformist.error_msg, t) Pool_conformist.Field.t
 val create
   :  ?secret:string
   -> ?expires_in:Sihl.Time.duration
-  -> Database.Label.t
+  -> _ Database.ctx
   -> (string * string) list
   -> t Lwt.t
 
@@ -28,7 +28,7 @@ val create
 val read
   :  ?secret:string
   -> ?force:unit
-  -> Database.Label.t
+  -> _ Database.ctx
   -> t
   -> k:string
   -> string option Lwt.t
@@ -42,50 +42,50 @@ val read
 val read_all
   :  ?secret:string
   -> ?force:unit
-  -> Database.Label.t
+  -> _ Database.ctx
   -> t
   -> (string * string) list option Lwt.t
 
 (** [verify ?secret database_label token] returns true if the token has a valid
     structure and the signature is valid, false otherwise. An optional secret
     [secret] can be provided to override the default `SIHL_SECRET`. *)
-val verify : ?secret:string -> Database.Label.t -> t -> bool Lwt.t
+val verify : ?secret:string -> _ Database.ctx -> t -> bool Lwt.t
 
 (** [deactivate database_label token] deactivates the token. Depending on the backend of
     the token service a blacklist is used to store the token. *)
-val deactivate : Database.Label.t -> t -> unit Lwt.t
+val deactivate : _ Database.ctx -> t -> unit Lwt.t
 
 (** [deactivate_all_by_data database_label data] deactivates all active tokens
     whose data matches [data]. This ensures no stale tokens remain active after
     a new token is issued for the same key. *)
-val deactivate_all_by_data : Database.Label.t -> (string * string) list -> unit Lwt.t
+val deactivate_all_by_data : _ Database.ctx -> (string * string) list -> unit Lwt.t
 
 (** [activate database_label token] re-activates the token. Depending on the backend of
     the token service a blacklist is used to store the token. *)
-val activate : Database.Label.t -> t -> unit Lwt.t
+val activate : _ Database.ctx -> t -> unit Lwt.t
 
 (** [is_active database_label token] returns true if the token is active, false if the
     token was deactivated. An expired token or a token that has an invalid
     signature is not necessarily inactive.*)
-val is_active : Database.Label.t -> t -> bool Lwt.t
+val is_active : _ Database.ctx -> t -> bool Lwt.t
 
 (** [is_expired database_label token] returns true if the token is expired, false
     otherwise. An optional secret [secret] can be provided to override the
     default `SIHL_SECRET`. *)
-val is_expired : ?secret:string -> Database.Label.t -> t -> bool Lwt.t
+val is_expired : ?secret:string -> _ Database.ctx -> t -> bool Lwt.t
 
 (** [is_valid database_label token] returns true if the token is not expired, active and
     the signature is valid and false otherwise. A valid token can safely be
     used. An optional secret [secret] can be provided to override the default
     `SIHL_SECRET`. *)
-val is_valid : ?secret:string -> Database.Label.t -> t -> bool Lwt.t
+val is_valid : ?secret:string -> _ Database.ctx -> t -> bool Lwt.t
 
-val find_active_by_data : Database.Label.t -> (string * string) list -> t option Lwt.t
+val find_active_by_data : _ Database.ctx -> (string * string) list -> t option Lwt.t
 
 (** [extend_expiry database_label token duration] extends the expiry of [token] to
     [duration] from now. Does nothing if the token cannot be found or is no
     longer valid. *)
-val extend_expiry : Database.Label.t -> t -> Sihl.Time.duration -> unit Lwt.t
+val extend_expiry : _ Database.ctx -> t -> Sihl.Time.duration -> unit Lwt.t
 
 val lifecycle : Sihl.Container.lifecycle
 val register : unit -> Sihl.Container.Service.t

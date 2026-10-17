@@ -17,11 +17,11 @@ let trigger_text =
 let make_messages
       ?current_user
       context
-      database_label
+      db_ctx
       ({ Experiment.id; _ } as experiment)
       sessions
   =
-  let* tenant = Pool_tenant.find_by_label database_label in
+  let* tenant = Pool_tenant.find_by_db_ctx db_ctx in
   let make_mail assignments admin =
     let assignments =
       let open CCList in
@@ -51,7 +51,7 @@ let make_messages
     let%lwt admins =
       current_user
       |> CCOption.map_or
-           ~default:(admins_to_notify database_label id)
+           ~default:(admins_to_notify db_ctx id)
            (CCList.return %> Lwt.return)
     in
     admins |> Lwt_list.map_s (make_mail sessions) |> Lwt_result.ok

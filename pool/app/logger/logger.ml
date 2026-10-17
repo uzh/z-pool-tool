@@ -157,6 +157,8 @@ let log_exception ?prefix ~src ~tags =
       m ~tags "%s%s caught: %s, Backtrace: %s" prefix error_type error_name backtrace)
   in
   function
+  | Database.Error.Failed { Database.Error.error = #Caqti_error.load_or_connect; _ } as
+    exn -> print ~error_type:"Caqti error" (Printexc.to_string exn)
   | Caqti_error.(Exn #load_or_connect as exn) ->
     print ~error_type:"Caqti error" (Printexc.to_string exn)
   | Pool_message.Error.(Exn exn) -> print (Pool_message.Error.show exn)

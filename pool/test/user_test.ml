@@ -48,7 +48,7 @@ let failed_login_attempts _ () =
   let open Test_utils in
   let open Pool_user.FailedLoginAttempt in
   let testable = option failed_login_attempt in
-  let pool = Data.database_label in
+  let pool = Data.db_ctx in
   let%lwt contact = Integration_utils.ContactRepo.create () in
   let email = Contact.email_address contact in
   let%lwt result = Repo.find_current pool email in
@@ -94,7 +94,7 @@ let failed_login_attempts _ () =
 (** Resending verification via [Email.renew_token] must produce a new distinct
     token. The old token must no longer be active. *)
 let resend_verification_deactivates_old_token _ () =
-  let pool = Test_utils.Data.database_label in
+  let pool = Test_utils.Data.db_ctx in
   let email =
     Format.asprintf "resend-test+%s@econ.uzh.ch" Pool_common.Id.(create () |> value)
     |> Pool_user.EmailAddress.of_string
@@ -119,7 +119,7 @@ let resend_verification_deactivates_old_token _ () =
 (** Each call to [Email.Created] must replace the previous unverified email
     record for the same user so that only one pending verification exists. *)
 let email_created_event_replaces_unverified_record _ () =
-  let pool = Test_utils.Data.database_label in
+  let pool = Test_utils.Data.db_ctx in
   let current_user = Test_utils.Model.create_admin () in
   (* Create an admin user to hang the unverified email on *)
   let%lwt admin = Integration_utils.AdminRepo.create () in

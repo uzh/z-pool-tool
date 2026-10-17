@@ -3,10 +3,10 @@ include Handler
 module Job = struct
   open CCFun
 
-  let handle ?id:_ pool _ =
+  let handle ?id:_ (Database.Any db_ctx) _ =
     let open Utils.Lwt_result.Infix in
     Lwt.catch
-      (fun () -> update_upcoming_assignments pool ||> CCResult.return)
+      (fun () -> update_upcoming_assignments db_ctx ||> CCResult.return)
       (Printexc.to_string %> Pool_message.Error.unsupported %> Lwt.return_error)
   ;;
 
@@ -25,17 +25,19 @@ module Job = struct
   ;;
 
   let dispatch pool =
+    let label = Database.label_of_ctx pool in
     Logs.debug ~src (fun m ->
       m
-        ~tags:(Database.Logger.Tags.create pool)
+        ~tags:(Database.Logger.Tags.of_db_ctx pool)
         "Dispatch 'update assignments' of %s"
-        (Database.Label.value pool));
-    Pool_queue.dispatch pool pool job
+        (Database.Label.value label));
+    Pool_queue.dispatch pool label job
   ;;
 end
 
 let run_all () =
-  Database.(Pool.Tenant.all ()) |> Lwt_list.iter_s update_upcoming_assignments
+  Database.(Pool.Tenant.all ())
+  |> Lwt_list.iter_s (CCFun.flip Database.connection_ctx update_upcoming_assignments)
 ;;
 
 let start () =

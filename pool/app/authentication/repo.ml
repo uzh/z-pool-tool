@@ -141,4 +141,4 @@ let reset_expired_request =
   |> Caqti_type.(unit ->. unit)
 ;;
 
-let reset_expired pool = Database.exec pool reset_expired_request
+let reset_expired db_ctx = Database.exec db_ctx reset_expired_request

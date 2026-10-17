@@ -89,7 +89,7 @@ module Job : sig
 
   val failed
     :  'a t
-    -> Database.Label.t
+    -> Database.any_ctx
     -> Pool_message.Error.t
     -> Instance.t
     -> unit Lwt.t
@@ -97,7 +97,7 @@ module Job : sig
   val handle
     :  'a t
     -> ?id:Id.t
-    -> Database.Label.t
+    -> Database.any_ctx
     -> 'a
     -> (unit, Pool_message.Error.t) Lwt_result.t
 
@@ -108,8 +108,8 @@ module Job : sig
   val create
     :  ?max_tries:int
     -> ?retry_delay:Ptime.span
-    -> ?failed:(Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t)
-    -> (?id:Id.t -> Database.Label.t -> 'a -> (unit, Pool_message.Error.t) Lwt_result.t)
+    -> ?failed:(Database.any_ctx -> Pool_message.Error.t -> Instance.t -> unit Lwt.t)
+    -> (?id:Id.t -> Database.any_ctx -> 'a -> (unit, Pool_message.Error.t) Lwt_result.t)
     -> ('a -> string)
     -> (string -> ('a, Pool_message.Error.t) result)
     -> JobName.t
@@ -133,12 +133,12 @@ module AnyJob : sig
   val show : t -> string
   val retry_delay : t -> Ptime.span
   val max_tries : t -> int
-  val failed : t -> Database.Label.t -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
+  val failed : t -> Database.any_ctx -> Pool_message.Error.t -> Instance.t -> unit Lwt.t
 
   val handle
     :  t
     -> ?id:Id.t
-    -> Database.Label.t
+    -> Database.any_ctx
     -> string
     -> (unit, Pool_message.Error.t) Lwt_result.t
 
@@ -161,42 +161,42 @@ module History : sig
   val sort : item list -> item list
 end
 
-val find : Database.Label.t -> Id.t -> (Instance.t, Pool_message.Error.t) Lwt_result.t
+val find : _ Database.ctx -> Id.t -> (Instance.t, Pool_message.Error.t) Lwt_result.t
 
 val find_last_login_token_sent_at
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Pool_common.Id.t
   -> Ptime.t option Lwt.t
 
 val find_by
   :  [< `Current | `History ]
   -> ?query:Query.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> (Instance.t list * Query.t) Lwt.t
 
 val find_instances_by_entity
   :  [< `Current | `History ]
   -> ?query:Query.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> History.item
   -> (Instance.t list * Query.t) Lwt.t
 
 val find_related
-  :  Database.Label.t
+  :  _ Database.ctx
   -> Instance.t
   -> History.model
   -> Pool_common.Id.t option Lwt.t
 
 val count_workable
   :  JobName.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> (int, Pool_message.Error.t) result Lwt.t
 
-val count_all_workable : Database.Label.t -> (int, Pool_message.Error.t) result Lwt.t
+val count_all_workable : _ Database.ctx -> (int, Pool_message.Error.t) result Lwt.t
 
 (** Count jobs of the given name that reported an error within the last 24
     hours, including terminally failed ones from the history table. *)
-val count_recently_failed : JobName.t -> Database.Label.t -> int Lwt.t
+val count_recently_failed : JobName.t -> _ Database.ctx -> int Lwt.t
 
 include Repo.ColumnsSig
 
@@ -218,7 +218,7 @@ val dispatch
   -> ?message_template:Pool_common.MessageTemplateLabel.t
   -> ?job_ctx:job_ctx
   -> ?run_at:run_at
-  -> Database.Label.t
+  -> _ Database.ctx
   -> 'a
   -> 'a Job.t
   -> unit Lwt.t
@@ -226,7 +226,7 @@ val dispatch
 val dispatch_all
   :  ?callback:(Instance.t -> unit Lwt.t)
   -> ?run_at:run_at
-  -> Database.Label.t
+  -> _ Database.ctx
   -> (Id.t * 'a * Pool_common.MessageTemplateLabel.t option * job_ctx) list
   -> 'a Job.t
   -> unit Lwt.t

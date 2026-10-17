@@ -26,26 +26,26 @@ type merge =
   ; custom_fields : Custom_field.Public.t list
   }
 
-val find : Database.Label.t -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
-val all : ?query:Query.t -> Database.Label.t -> (t list * Query.t) Lwt.t
+val find : _ Database.ctx -> Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val all : ?query:Query.t -> _ Database.ctx -> (t list * Query.t) Lwt.t
 
 val find_by_contact
   :  ?query:Query.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Contact.t
   -> (t list * Query.t) Lwt.t
 
-val count : Database.Label.t -> int Lwt.t
+val count : _ Database.ctx -> int Lwt.t
 
 (** Contacts eligible for a duplicates check: due (`duplicates_check_due_at` in
     the past), never checked, or last checked more than a week ago. Due
     contacts are returned first. *)
-val find_to_check : ?limit:int -> Database.Label.t -> Contact.t list Lwt.t
+val find_to_check : ?limit:int -> _ Database.ctx -> Contact.t list Lwt.t
 
-val mark_as_checked : Database.Label.t -> Contact.t -> unit Lwt.t
+val mark_as_checked : _ Database.ctx -> Contact.t -> unit Lwt.t
 
 val merge
-  :  Database.Label.t
+  :  _ Database.ctx
   -> ?user_uuid:Pool_common.Id.t
   -> merge
   -> (unit, Pool_message.Error.t) Lwt_result.t
@@ -58,7 +58,7 @@ type event = Ignored of t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val handle_event : _ Database.ctx -> event -> unit Lwt.t
 val column_ignore : Query.Column.t
 val column_score : Query.Column.t
 
@@ -80,7 +80,7 @@ val default_query : Query.t
 module Service : sig
   val run
     :  ?fields:Custom_field.t list
-    -> Database.Label.t
+    -> _ Database.ctx
     -> Pool_common.Id.t
     -> unit Lwt.t
 

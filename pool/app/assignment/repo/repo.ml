@@ -607,10 +607,10 @@ let contact_participation_in_other_assignments =
   Sql.contact_participation_in_other_assignments
 ;;
 
-let find_uncanceled_by_session = find_by_session `Uncanceled
-let find_deleted_by_session = find_by_session `Deleted
-let find_all_by_session = find_by_session `All
-let find_not_deleted_by_session = find_by_session `NotDeleted
+let find_uncanceled_by_session db_ctx = find_by_session `Uncanceled db_ctx
+let find_deleted_by_session db_ctx = find_by_session `Deleted db_ctx
+let find_all_by_session db_ctx = find_by_session `All db_ctx
+let find_not_deleted_by_session db_ctx = find_by_session `NotDeleted db_ctx
 let query_by_session = Sql.query_by_session
 
 let enrich_with_customfield_data table_view pool assignments =

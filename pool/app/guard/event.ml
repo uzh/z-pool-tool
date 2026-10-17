@@ -23,10 +23,10 @@ type event =
   | ActorPermissionDeleted of ActorPermission.t
 [@@deriving eq, show, variants]
 
-let handle_event database_label : event -> unit Lwt.t =
+let handle_event db_ctx : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
-  let tags = Database.Logger.Tags.create database_label in
-  let ctx = [ "pool", Database.Label.value database_label ] in
+  let tags = Database.Logger.Tags.of_db_ctx db_ctx in
+  let ctx = Database.Label.to_ctx (Database.label_of_ctx db_ctx) in
   function
   | DefaultRestored permissions ->
     let%lwt (_ : (RolePermission.t list, RolePermission.t list) result) =
@@ -34,7 +34,7 @@ let handle_event database_label : event -> unit Lwt.t =
       |> log_role_permission ~decode:[%show: RolePermission.t list] ~tags
     in
     Lwt.return_unit
-  | RolePermissionsCleared -> Repo.RolePermission.delete_all database_label
+  | RolePermissionsCleared -> Repo.RolePermission.delete_all db_ctx
   | RolesGranted actor_roles -> Lwt_list.iter_s (Repo.ActorRole.upsert ~ctx) actor_roles
   | RolesRevoked actor_roles -> Lwt_list.iter_s (Repo.ActorRole.delete ~ctx) actor_roles
   | RolePermissionSaved permissions ->

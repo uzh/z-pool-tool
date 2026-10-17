@@ -214,14 +214,15 @@ let migration () =
 let register_migration () = Database.Migration.register_migration (migration ())
 
 let register_cleaner () =
-  let cleaner label () =
-    let%lwt () = clean_handles label () in
-    clean_blobs label ()
+  let cleaner db_ctx () =
+    let%lwt () = clean_handles db_ctx () in
+    clean_blobs db_ctx ()
   in
   Sihl.Cleaner.register_cleaner (fun ?ctx () ->
     cleaner
       CCOption.(
-        map Database.of_ctx_exn ctx
+        map Database.Label.of_ctx_exn ctx
+        |> map Database.label_ctx
         |> get_exn_or Pool_message.(Error.(NotFound Field.Context |> show)))
       ())
 ;;
