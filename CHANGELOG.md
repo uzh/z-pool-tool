@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Added
 
+- `db.backup` dumps the root database and every tenant database registered in it
+  (one consistent SQL dump per database, written over a database connection) into `DATABASE_BACKUP_DIR` (default
+  `<ROOT_PATH>/backups`); `db.backup <database_label>` dumps a single database,
+  `--max-allowed-packet=<size>` sets the maximum INSERT length,
+  `db.backup.clean` removes all dumps again
 - `QUEUE_JOB_TIMEOUT` (default 60s): running jobs are aborted and retried after it, so a
   hanging SMTP server can't hold jobs (and their memory) forever
 
