@@ -96,7 +96,7 @@ depends: [
   "jwto" {= "0.4.0"}
   "kdf" {= "1.1.2"}
   "ke" {= "0.6"}
-  "letters" {= "0.4.1"}
+  "letters" {= "0.4.2"}
   "logs" {= "0.10.0"}
   "lru" {= "0.3.1"}
   "lsp" {= "1.27.0" & with-dev-setup}
@@ -241,8 +241,8 @@ pin-depends: [
   ]
   ["guardian.0.5.0" "git+https://github.com/uzh/guardian.git#0.5.0"]
   [
-    "letters.0.4.1"
-    "git+https://github.com/uzh/letters.git#0.4.1"
+    "letters.0.4.2"
+    "git+https://github.com/uzh/letters.git#0.4.2"
   ]
   [
     "opium.0.20.0-master+da1b22e"
