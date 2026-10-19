@@ -52,6 +52,9 @@ Tooling on top of it is installed with [devcontainer features](https://container
 - `common-utils`: common CLI utilities (via `dnf`), zsh, Oh My Zsh and passwordless `sudo` for the `opam` user
 - `node`: Node.js and yarn (via corepack)
 
+The `Dockerfile` adds `hadolint` and the [GitButler CLI](https://docs.gitbutler.com/cli-overview) (`but`, latest
+release in `~/.local/bin`).
+
 `make dev` (`scripts/dev.sh`) uses dune's watch mode for rebuilds, so no extra file watcher is installed
 (dune 3 has a built-in inotify backend; the dune docs still mention `inotifywait`/`fswatch`, which is outdated).
 Watch mode needs inotify, which 9p mounts (a Windows repository under `/mnt/c`) don't provide. There `make dev` polls the
