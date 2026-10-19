@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
 
 - `db.backup` dumps the root database and every tenant database registered in it
-  (one consistent SQL dump per database, written over a database connection) into `DATABASE_BACKUP_DIR` (default
+  (one consistent, gzipped SQL dump per database, written over a database connection) into `DATABASE_BACKUP_DIR` (default
   `<ROOT_PATH>/backups`); `db.backup <database_label>` dumps a single database,
   `--max-allowed-packet=<size>` sets the maximum INSERT length,
   `db.backup.clean` removes all dumps again

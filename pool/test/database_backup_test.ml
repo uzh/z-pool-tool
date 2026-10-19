@@ -62,6 +62,7 @@ let remove_all_only_removes_dumps () =
   CCList.iter (fun name -> Sys.mkdir (path name) 0o700) [ run; foreign; "other" ];
   touch (path (Format.asprintf "%s/root.sql" run));
   touch (path (Format.asprintf "%s/econ-test.sql.partial" run));
+  touch (path (Format.asprintf "%s/econ-uzh_20261019T090507.sql.gz" run));
   touch (path (Format.asprintf "%s/root.sql" foreign));
   touch (path (Format.asprintf "%s/notes.txt" foreign));
   touch (path "other/root.sql");
@@ -162,8 +163,19 @@ let source_statements =
 
 (* Splits a dump into statements the way the mariadb client would for it:
    values never contain raw newlines, so ";\n" only ends statements *)
+(* Unpacks with the system's gunzip, as an operator restoring a dump would *)
+let gunzip file =
+  let input = Unix.open_process_args_in "gunzip" [| "gunzip"; "-c"; file |] in
+  let content = CCIO.read_all input in
+  match Unix.close_process_in input with
+  | Unix.WEXITED 0 -> content
+  | Unix.WEXITED _ | Unix.WSIGNALED _ | Unix.WSTOPPED _ ->
+    failwith (Format.asprintf "gunzip %s failed" file)
+;;
+
 let statements_of_dump file =
-  CCIO.with_in file CCIO.read_lines_l
+  gunzip file
+  |> CCString.lines
   |> CCList.filter (CCString.prefix ~pre:"--" %> not)
   |> CCString.concat "\n"
   |> CCString.split ~by:";\n"
@@ -222,13 +234,17 @@ let create_dumps_all_registered_databases _ () =
       "run version"
       (Some "1.2.3")
       (Run.version (Filename.basename run_directory)));
+  let timestamp =
+    Filename.basename run_directory |> CCString.Split.left_exn ~by:"_" |> fst
+  in
+  let file label = Format.asprintf "%s_%s.sql.gz" label timestamp in
   Alcotest.(
     check
       (list string)
-      "one dump per database"
-      [ "econ-test.sql"; "root.sql" ]
+      "one gzipped dump per database, named with the run's timestamp"
+      [ file "econ-test"; file "root" ]
       (readdir run_directory));
-  let root_dump = CCIO.with_in (Filename.concat run_directory "root.sql") CCIO.read_all in
+  let root_dump = Filename.concat run_directory (file "root") |> gunzip in
   Alcotest.(
     check
       bool

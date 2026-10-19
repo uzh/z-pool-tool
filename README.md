@@ -94,6 +94,43 @@ run.exe admin.create tenant1 experimenter@mail.com password Firstname Lastname E
 run.exe admin.grant_role tenant1 experimenter@mail.com RecruiterAll
 ```
 
+<<<<<<< New base: add changelog
+||||||| Common ancestor
+### Database backups
+
+Before updating production, dump the databases manually:
+
+```bash
+run.exe db.backup                                    # root and all registered tenants
+run.exe db.backup econ-uzh                           # a single database (root or tenant label)
+run.exe db.backup --max-allowed-packet=16M econ-uzh  # max. INSERT length (default ~1MB)
+run.exe db.backup.clean                              # remove all dumps
+```
+
+Dumps are written to `DATABASE_BACKUP_DIR/<UTC timestamp>_<version>/<label>.sql` (default
+`<ROOT_PATH>/backups`); failed runs are renamed to `..._incomplete`. In a container, use a mounted
+volume. Restore with `mariadb <database> < <label>.sql`; the server's `max_allowed_packet` must be at
+least as large as the one used for the dump (rows exceeding it are logged as a warning).
+
+=======
+### Database backups
+
+Before updating production, dump the databases manually:
+
+```bash
+run.exe db.backup                                    # root and all registered tenants
+run.exe db.backup econ-uzh                           # a single database (root or tenant label)
+run.exe db.backup --max-allowed-packet=16M econ-uzh  # max. INSERT length (default ~1MB)
+run.exe db.backup.clean                              # remove all dumps
+```
+
+Dumps are gzipped and written to `DATABASE_BACKUP_DIR/<timestamp>_<version>/<label>_<timestamp>.sql.gz`
+(default `<ROOT_PATH>/backups`, timestamps in UTC); failed runs are renamed to `..._incomplete`. In a
+container, use a mounted volume. Restore with `gunzip -c <file>.sql.gz | mariadb <database>`; the
+server's `max_allowed_packet` must be at least as large as the one used for the dump (rows exceeding
+it are logged as a warning).
+
+>>>>>>> Current commit: compress backup sql files
 ### Environment files
 
 For completeness, these environment files are handled with priority from SIHL.

@@ -1,0 +1,15 @@
+(library
+ (name database_backup)
+ (libraries
+  caqti
+  caqti-lwt
+  containers
+  database
+  decompress.de
+  decompress.gz
+  lwt
+  ptime
+  ptime.clock.os
+  sihl)
+ (preprocess
+  (pps lwt_ppx ppx_string)))

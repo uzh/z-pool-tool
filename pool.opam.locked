@@ -33,6 +33,7 @@ depends: [
   "caqti" {= "3.0.0"}
   "caqti-driver-mariadb" {= "3.0.1"}
   "caqti-lwt" {= "3.0.0"}
+  "checkseum" {= "0.5.4"}
   "chrome-trace" {= "3.24.2" & with-dev-setup}
   "cmdliner" {= "2.1.1"}
   "cohttp" {= "6.3.0"}
@@ -58,6 +59,7 @@ depends: [
   "csexp" {= "1.5.2"}
   "cstruct" {= "6.3.0"}
   "ctypes" {= "0.24.0"}
+  "decompress" {= "1.6.1"}
   "digestif" {= "1.4.0"}
   "domain-name" {= "0.5.0"}
   "dune" {= "3.24.2"}
@@ -145,6 +147,7 @@ depends: [
   "odoc-parser" {= "3.2.1" & with-doc}
   "ohex" {= "0.2.0"}
   "opium" {= "0.20.0-master+da1b22e"}
+  "optint" {= "0.3.0"}
   "ordering" {= "3.24.2"}
   "parsexp" {= "v0.17.0"}
   "pecu" {= "0.7"}

@@ -40,6 +40,8 @@
    (>= 3.14))
   (containers-data
    (>= 3.14))
+  (decompress
+   (>= 1.5.0))
   digestif
   (guardian
    (= 0.5.0))
