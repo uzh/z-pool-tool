@@ -17,7 +17,7 @@ if [ -n "${GIT_AUTHOR_EMAIL:-}" ]; then
 fi
 
 # use HTTPS + PAT for SSH-style GitHub remotes (no ssh-agent in the container)
-if [ -n "${GIT_REMOTE_PAT:-}" ]; then
+if [ -n "${GIT_REMOTE_PAT:+set}" ]; then
   git config --global --replace-all url."https://github.com/".insteadOf "git@github.com:"
   git config --global --add url."https://github.com/".insteadOf "ssh://git@github.com/"
   # read the PAT from the environment at call time, so it's never written to disk
