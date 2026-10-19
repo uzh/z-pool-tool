@@ -121,7 +121,7 @@ Before updating production, dump the databases manually:
 run.exe db.backup                                    # root and all registered tenants
 run.exe db.backup econ-uzh                           # a single database (root or tenant label)
 run.exe db.backup --max-allowed-packet=16M econ-uzh  # max. INSERT length (default ~1MB)
-run.exe db.backup.clean                              # remove all dumps
+run.exe db.backup.cleanup                            # remove all dumps
 ```
 
 Dumps are gzipped and written to `DATABASE_BACKUP_DIR/<timestamp>_<version>/<label>_<timestamp>.sql.gz`
@@ -180,3 +180,9 @@ Update/upgrade all package versions for ocaml and yarn packages.
 1. Commit your changes.
 1. Release version using `make version-[patch|minor|major]`
 1. Push changes and Git tag.
+<<<<<<< New base: compress backup sql files
+||||||| Common ancestor
+1. Once the release is verified, remove the dumps with `run.exe db.backup.clean`.
+=======
+1. Once the release is verified, remove the dumps with `run.exe db.backup.cleanup`.
+>>>>>>> Current commit: rename clean command

@@ -46,6 +46,14 @@ let commands =
   [ Migrate.root
   ; Migrate.tenants
   ; Migrate.tenant_migration_pending
+<<<<<<< New base: compress backup sql files
+||||||| Common ancestor
+  ; Backup.create
+  ; Backup.clean
+=======
+  ; Backup.create
+  ; Backup.cleanup
+>>>>>>> Current commit: rename clean command
   ; Seed.root_data
   ; Seed.root_data_clean
   ; Seed.tenant_data
