@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - `QUEUE_JOB_TIMEOUT` (default 60s): running jobs are aborted and retried after it, so a
   hanging SMTP server can't hold jobs (and their memory) forever
+- Hourly heap compaction in the worker: OCaml 5 never returns memory freed after a burst
+  (e.g. a large mailing) to the OS on its own
 
 ### Fixed
 
