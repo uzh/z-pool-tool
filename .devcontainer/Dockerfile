@@ -10,3 +10,6 @@ RUN mkdir -p /workspace/_build /workspace/node_modules /home/opam/.cache \
   && chown -R opam:opam /workspace/_build /workspace/node_modules /home/opam/.cache
 
 USER opam
+
+# GitButler CLI (`but`), installed to ~/.local/bin (the installer verifies the binary's signature)
+RUN curl -fsSL https://gitbutler.com/install.sh | sh > /dev/null
