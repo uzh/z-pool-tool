@@ -4,6 +4,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+### Added
+
+- `QUEUE_JOB_TIMEOUT` (default 60s): running jobs are aborted and retried after it, so a
+  hanging SMTP server can't hold jobs (and their memory) forever
+
+### Fixed
+
+- Failed jobs are released for their retry right away instead of relying on the stale job
+  reset (before 0.13.10 they were only retried after a worker restart)
+- Stale job reset threshold is derived from `QUEUE_BATCH_SIZE × QUEUE_JOB_TIMEOUT` (+ 5
+  minutes), so jobs still queued in a running batch are no longer handed out (and sent)
+  twice
+
 ### Changed
 
 - Upgrade to OCaml 5.5.1 and opam 2.6.1 (base images `ocaml:{8,9}-5.5-2.6`), with
