@@ -5,6 +5,12 @@ let () =
   run
     "cqrs commands"
     [ ("announcement", Announcement_test.[ test_case "create" `Quick create ])
+    ; ( "database backup"
+      , Database_backup_test.
+          [ test_case "parse sizes" `Quick parse_sizes
+          ; test_case "run names" `Quick run_names
+          ; test_case "remove all only removes dumps" `Quick remove_all_only_removes_dumps
+          ] )
     ; ( "changelog"
       , Changelog_test.
           [ test_case "create unchanged" `Quick create_unchanged

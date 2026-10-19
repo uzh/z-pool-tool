@@ -11,6 +11,18 @@ let suite =
           ; test_case "query error keeps pool" `Slow check_query_error_keeps_pool
           ; test_case "clear drains pools" `Slow check_clear_drains_pools
           ] )
+    ; ( "database backup"
+      , Database_backup_test.
+          [ test_case "dump restores identical data" `Slow dump_restores_identical_data
+          ; test_case
+              "create dumps all registered databases"
+              `Slow
+              create_dumps_all_registered_databases
+          ; test_case
+              "create marks failed run incomplete"
+              `Slow
+              create_marks_failed_run_incomplete
+          ] )
     ; ("api_key", Api_key_test.[ test_case "get current api_key" `Slow get_current ])
     ; ( "settings"
       , Tenant_settings_test.
