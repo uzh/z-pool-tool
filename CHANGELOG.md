@@ -4,15 +4,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.13.11](https://github.com/uzh/z-pool-tool/tree/0.13.11) - 2026-10-15
+
 ### Added
 
-- Optional custom about page using the new texts "About Page Title" and "About Page 
-  Text". The page is linked in the footer before the credits when both texts are set for 
+- Optional custom about page using the new texts "About Page Title" and "About Page
+  Text". The page is linked in the footer before the credits when both texts are set for
   the current language
 
 ### Changed
 
-- Respond with `400 Bad Request` instead of an error report to malformed 
+- Respond with `400 Bad Request` instead of an error report to malformed
   `multipart/form-data` requests
 
 ### Fixed
@@ -25,12 +27,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Added
 
-- Option to customize the text on the unsubscribe page using the new texts "Unsubscribe 
+- Option to customize the text on the unsubscribe page using the new texts "Unsubscribe
   Title" and "Unsubscribe Text"
 
 ### Changed
 
-- Clarify the unsubscribe confirmation banner text to indicate that the user has 
+- Clarify the unsubscribe confirmation banner text to indicate that the user has
   successfully unsubscribed from e-mail communication
 - Fix long e-mail subjects being cut off in the middle of words
 
