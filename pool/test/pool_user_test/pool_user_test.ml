@@ -5,7 +5,7 @@ module PasswordReset = Password_reset_test
 let testable_plain_password = Pool_user.Password.Plain.(Alcotest.testable pp equal)
 let testable_email = Pool_user.EmailAddress.(Alcotest.testable pp equal)
 let alcotest = Pool_user.(Alcotest.testable pp equal)
-let db_ctx = Test_utils.Data.db_ctx
+let connection = Test_utils.Data.connection
 let created_password = Pool_user.Password.Plain.create "CD&*BA8txf3mRuGF"
 let created_password_confirmation = Pool_user.Password.to_confirmed created_password
 
@@ -60,6 +60,8 @@ let json_serialization =
   @@ fun () ->
   let%lwt user =
     let open Pool_user in
+    connection
+    @@ fun db_ctx ->
     create_user
       db_ctx
       (EmailAddress.of_string "foobar@example.com")
@@ -80,6 +82,8 @@ let update_details =
   Test_utils.case
   @@ fun () ->
   let open Pool_user in
+  connection
+  @@ fun db_ctx ->
   let%lwt user =
     create_user
       db_ctx
@@ -106,6 +110,8 @@ let update_password =
   let open Pool_user in
   let email_address = EmailAddress.of_string "foobar3@example.com" in
   let new_password = Password.Plain.create "Password1!" in
+  connection
+  @@ fun db_ctx ->
   let%lwt user =
     create_user
       db_ctx
@@ -140,6 +146,8 @@ let update_password_fails =
   let open Pool_user in
   let email_address = EmailAddress.of_string "foobar4@example.com" in
   let new_password = Password.Plain.create "Password1!" in
+  connection
+  @@ fun db_ctx ->
   let%lwt user =
     create_user
       db_ctx
@@ -171,6 +179,8 @@ let malformed_password_hash_does_not_raise =
   Test_utils.case
   @@ fun () ->
   let open Pool_user in
+  connection
+  @@ fun db_ctx ->
   let set_stored_password =
     let request =
       let open Caqti_request.Infix in
@@ -225,6 +235,8 @@ let find_by_email_is_case_insensitive =
   let email_addresses =
     [ "user1@example.com"; "user2@example.com" ] |> CCList.map EmailAddress.of_string
   in
+  connection
+  @@ fun db_ctx ->
   let%lwt (_ : t list) =
     Lwt_list.map_s
       (fun email ->
@@ -254,6 +266,8 @@ let filter_users_by_email_returns_single_user =
     [ "foo@example.com"; "fooz@example.com"; "bar@example.com" ]
     |> CCList.map EmailAddress.of_string
   in
+  connection
+  @@ fun db_ctx ->
   let%lwt (users : t list) =
     Lwt_list.map_s
       (fun email ->
@@ -293,6 +307,8 @@ module Web = struct
     @@ fun () ->
     let open Pool_user in
     let email_address = EmailAddress.of_string "foo2@example.com" in
+    connection
+    @@ fun db_ctx ->
     let%lwt user =
       create_user
         db_ctx
@@ -329,6 +345,8 @@ module Web = struct
     @@ fun () ->
     let open Pool_user in
     let email_address = EmailAddress.of_string "foo3@example.com" in
+    connection
+    @@ fun db_ctx ->
     let%lwt user =
       create_user
         db_ctx

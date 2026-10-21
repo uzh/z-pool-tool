@@ -375,9 +375,8 @@ module SelectField = struct
     create None query
   ;;
 
-  let init current_user =
-    save () :: save_options field options
-    |> Pool_event.handle_events Test_utils.Data.db_ctx current_user
+  let init db_ctx current_user =
+    save () :: save_options field options |> Pool_event.handle_events db_ctx current_user
   ;;
 end
 

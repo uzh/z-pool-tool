@@ -870,9 +870,15 @@ let swap_session_to_past_session () =
 let cancel_assignment_with_follow_ups _ () =
   let open Utils.Lwt_result.Infix in
   let%lwt experiment = Integration_utils.ExperimentRepo.create () in
-  let%lwt current_user = Integration_utils.AdminRepo.create () ||> Pool_context.admin in
-  let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:true () in
-  let%lwt location = Repo.first_location () in
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
+  let%lwt current_user =
+    Integration_utils.AdminRepo.create db_ctx ||> Pool_context.admin
+  in
+  let%lwt contact =
+    Integration_utils.ContactRepo.create ~with_terms_accepted:true db_ctx
+  in
+  let%lwt location = Repo.first_location db_ctx in
   (* Save sessions in Database *)
   let create_session ?parent_id start =
     let session =
@@ -880,20 +886,18 @@ let cancel_assignment_with_follow_ups _ () =
     in
     Session.Created session
     |> Pool_event.session
-    |> Pool_event.handle_event Data.db_ctx current_user
+    |> Pool_event.handle_event db_ctx current_user
   in
   let%lwt parent_session =
     let%lwt () = create_session (Model.in_an_hour ()) in
-    Session.find_all_for_experiment Data.db_ctx experiment.Experiment.id ||> CCList.hd
+    Session.find_all_for_experiment db_ctx experiment.Experiment.id ||> CCList.hd
   in
   let%lwt () =
     create_session ~parent_id:parent_session.Session.id (Model.in_two_hours ())
   in
   let%lwt sessions =
-    let%lwt session =
-      Session.find Data.db_ctx parent_session.Session.id ||> get_or_failwith
-    in
-    let%lwt follow_ups = Session.find_follow_ups Data.db_ctx session.Session.id in
+    let%lwt session = Session.find db_ctx parent_session.Session.id ||> get_or_failwith in
+    let%lwt follow_ups = Session.find_follow_ups db_ctx session.Session.id in
     Lwt.return (session :: follow_ups)
   in
   (* Create assignments *)
@@ -903,25 +907,25 @@ let cancel_assignment_with_follow_ups _ () =
     |> CCList.map (fun session ->
       Assignment.(Created (create contact, session.Session.Public.id))
       |> Pool_event.assignment)
-    |> Pool_event.handle_events Data.db_ctx current_user
+    |> Pool_event.handle_events db_ctx current_user
   in
   (* Cancel assignments *)
   let%lwt () =
     let open Assignment in
     let%lwt assignment_id =
-      Public.find_all_by_experiment Data.db_ctx experiment.Experiment.id contact
+      Public.find_all_by_experiment db_ctx experiment.Experiment.id contact
       ||> CCList.hd
       ||> fun ({ Public.id; _ } : Public.t) -> id |> Id.value |> Id.of_string
     in
-    let%lwt assignments = find_with_follow_ups Data.db_ctx assignment_id in
+    let%lwt assignments = find_with_follow_ups db_ctx assignment_id in
     let notification_email = Model.create_email_job () in
     AssignmentCommand.Cancel.handle notification_email (assignments, parent_session)
     |> get_or_failwith
-    |> Pool_event.handle_events Data.db_ctx current_user
+    |> Pool_event.handle_events db_ctx current_user
   in
   (* Expect all assigments to be canceled *)
   let%lwt res =
-    Assignment.Public.find_all_by_experiment Data.db_ctx experiment.Experiment.id contact
+    Assignment.Public.find_all_by_experiment db_ctx experiment.Experiment.id contact
     ||> CCList.filter (fun { Assignment.Public.canceled_at; _ } ->
       CCOption.is_none canceled_at)
     ||> CCList.is_empty
@@ -932,9 +936,10 @@ let cancel_assignment_with_follow_ups _ () =
 
 let has_upcoming_sessions _ () =
   let open Integration_utils in
-  let pool = Test_utils.Data.db_ctx in
   let%lwt experiment = ExperimentRepo.create () in
-  let%lwt contact = ContactRepo.create ~with_terms_accepted:true () in
+  Test_utils.Data.connection
+  @@ fun pool ->
+  let%lwt contact = ContactRepo.create ~with_terms_accepted:true pool in
   let session_id = Session.Id.of_string "c7128f4f-5689-4434-97af-bd19a151d648" in
   let create_session ?id start = SessionRepo.create ?id ~start experiment () in
   let%lwt upcoming_session =

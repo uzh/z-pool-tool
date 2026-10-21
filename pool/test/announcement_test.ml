@@ -105,11 +105,15 @@ let find_current _ () =
   let tenand_db = tenant.Pool_tenant.database_label in
   let%lwt as_contat =
     let open Contact in
-    ContactRepo.create () ||> id ||> Id.to_common ||> CCPair.make `Contact
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
+    ContactRepo.create db_ctx ||> id ||> Id.to_common ||> CCPair.make `Contact
   in
   let%lwt as_admin =
     let open Admin in
-    AdminRepo.create () ||> id ||> Id.to_common ||> CCPair.make `Admin
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
+    AdminRepo.create db_ctx ||> id ||> Id.to_common ||> CCPair.make `Admin
   in
   let tenant_id = tenant.Pool_tenant.id in
   let id = Id.create () in

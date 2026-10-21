@@ -1,19 +1,18 @@
 open Utils.Lwt_result.Infix
 open Integration_utils
 
-let pool = Test_utils.Data.db_ctx
 let get_exn = Test_utils.get_or_failwith
 
 module Utils = struct
-  let init () =
+  let init pool =
     let open ContactRepo in
     let open Pool_user in
-    let%lwt c1 = create ~firstname:(Firstname.of_string "C1") () in
-    let%lwt c2 = create ~firstname:(Firstname.of_string "C2") () in
+    let%lwt c1 = create ~firstname:(Firstname.of_string "C1") pool in
+    let%lwt c2 = create ~firstname:(Firstname.of_string "C2") pool in
     Lwt.return (c1, c2)
   ;;
 
-  let update_sign_in_at contact timestamp =
+  let update_sign_in_at pool contact timestamp =
     let request =
       let open Caqti_request.Infix in
       {sql|
@@ -41,10 +40,12 @@ let find_contacts_to_remind _ () =
          (list Contact.(testable pp_event equal_event)))
       Test_utils.error
   in
+  Test_utils.Data.connection
+  @@ fun pool ->
   let find_to_warn = Contact_job.find_to_warn_about_inactivity pool in
   let%lwt make_warning_msg = InactiveContactWarning.prepare pool ||> get_exn in
   let%lwt _ = InactiveContactDeactivation.prepare pool ||> get_exn in
-  let%lwt c1, c2 = init () in
+  let%lwt c1, c2 = init pool in
   let n_days n = 60 * 60 * 24 * n |> Ptime.Span.of_int_s in
   let time_ago span =
     Ptime.(sub_span (Ptime_clock.now ()) span) |> CCOption.get_exn_or "Invalid ptime"
@@ -57,8 +58,8 @@ let find_contacts_to_remind _ () =
   in
   Alcotest.check testable "No contact found to deactivate" (Ok ([], [])) events;
   (* Expect contact 2 to be notified *)
-  let%lwt () = update_sign_in_at c1 (time_ago (n_days 1)) in
-  let%lwt () = update_sign_in_at c2 (time_ago (n_days 6)) in
+  let%lwt () = update_sign_in_at pool c1 (time_ago (n_days 1)) in
+  let%lwt () = update_sign_in_at pool c2 (time_ago (n_days 6)) in
   let%lwt to_notify = find_to_warn warn_after in
   Alcotest.(
     check (list Test_utils.contact) "Contact 2 has to be notified" [ c2 ] to_notify);
@@ -79,7 +80,7 @@ let find_contacts_to_remind _ () =
   let%lwt to_notify = find_to_warn warn_after in
   Alcotest.(check (list Test_utils.contact) "Notify no one " [] to_notify);
   (* Expect contact 1 to be returned *)
-  let%lwt () = update_sign_in_at c1 (time_ago (n_days 6)) in
+  let%lwt () = update_sign_in_at pool c1 (time_ago (n_days 6)) in
   let%lwt to_notify = find_to_warn warn_after in
   Alcotest.(
     check (list Test_utils.contact) "Contact 1 has to be notified" [ c1 ] to_notify);

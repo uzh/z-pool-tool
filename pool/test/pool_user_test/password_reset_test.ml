@@ -1,4 +1,3 @@
-let db_ctx = Test_utils.Data.db_ctx
 let created_password = Pool_user.Password.Plain.create "CD&*BA8txf3mRuGF"
 let created_password_confirmation = Pool_user.Password.to_confirmed created_password
 
@@ -8,6 +7,8 @@ let reset_password_succeeds =
     let open Utils.Lwt_result.Infix in
     let email = EmailAddress.of_string "foopass@example.com" in
     let new_password = "Password1!" in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
     let%lwt (_ : t) =
       create_user
         db_ctx
@@ -46,6 +47,8 @@ let reset_password_fail_password_policy =
       EmailAddress.of_string "reset_password_fail_password_policy@example.com"
     in
     let new_password = "password1!" in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
     let%lwt (_ : t) =
       create_user
         db_ctx
@@ -85,6 +88,8 @@ let reset_password_events =
     let open Utils.Lwt_result.Infix in
     let email = EmailAddress.of_string "reset_password_with_notification@example.com" in
     let new_password = "Password1!" in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
     let%lwt _ =
       create_user
         db_ctx

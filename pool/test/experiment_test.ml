@@ -4,7 +4,6 @@ module ExperimentCommand = Cqrs_command.Experiment_command
 module Model = Test_utils.Model
 
 let get_exn = Test_utils.get_or_failwith
-let db_ctx = Test_utils.Data.db_ctx
 let current_user = Model.create_admin ()
 let experiment_boolean_fields = Experiment.boolean_fields |> CCList.map Field.show
 let boolean_fields = Experiment.boolean_fields |> CCList.map Field.show
@@ -365,6 +364,8 @@ let autofill_public_title _ () =
     Alcotest.(check tesetable msg res expected)
   in
   (* Create with public title *)
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let%lwt default_public_title = Experiment.get_default_public_title db_ctx in
   let get_result urlencoded =
     let open CCResult in
@@ -405,7 +406,11 @@ module AvailableExperiments = struct
   let list_available_experiments _ () =
     let open Utils.Lwt_result.Infix in
     let open Integration_utils in
-    let%lwt contact = ContactRepo.create ~id:contact_id ~with_terms_accepted:true () in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
+    let%lwt contact =
+      ContactRepo.create ~id:contact_id ~with_terms_accepted:true db_ctx
+    in
     let%lwt on_site_experiment = ExperimentRepo.create ~id:experiment_id () in
     let%lwt online_experiment =
       ExperimentRepo.create ~online_experiment:Data.online_experiment ()
@@ -459,6 +464,8 @@ module AvailableExperiments = struct
 
   let exclude_experiment_after_registration_for_session _ () =
     let open Utils.Lwt_result.Infix in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
     let%lwt experiment = Experiment.find db_ctx experiment_id ||> get_exn in
     let%lwt contact = Contact.find db_ctx contact_id ||> get_exn in
     let%lwt session = Session.find db_ctx session_id ||> get_exn in
@@ -488,7 +495,11 @@ module AvailableExperiments = struct
 
   let cancel_session _ () =
     let open Utils.Lwt_result.Infix in
-    let%lwt current_user = Integration_utils.AdminRepo.create () ||> Pool_context.admin in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
+    let%lwt current_user =
+      Integration_utils.AdminRepo.create db_ctx ||> Pool_context.admin
+    in
     let%lwt experiment = Experiment.find db_ctx experiment_id ||> get_exn in
     let%lwt contact = Contact.find db_ctx contact_id ||> get_exn in
     let%lwt session = Session.find db_ctx session_id ||> get_exn in
@@ -529,9 +540,13 @@ module AvailableExperiments = struct
 
   let mark_assignment_as_deleted _ () =
     let open Utils.Lwt_result.Infix in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
     let%lwt contact = Contact.find db_ctx contact_id ||> get_exn in
     let%lwt session = Session.find db_ctx session_id ||> get_exn in
-    let%lwt current_user = Integration_utils.AdminRepo.create () ||> Pool_context.admin in
+    let%lwt current_user =
+      Integration_utils.AdminRepo.create db_ctx ||> Pool_context.admin
+    in
     let%lwt () =
       let open Assignment in
       find_not_deleted_by_session db_ctx session_id

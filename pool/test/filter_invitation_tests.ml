@@ -2,9 +2,8 @@ let ( let@ ) = CCResult.( >>= )
 let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f
 let ( let& ) = Lwt_result.bind
 let current_user = Test_utils.Model.create_admin ()
-let test_db = Test_utils.Data.db_ctx
 
-let experiment () =
+let experiment test_db =
   let open Experiment in
   let experiment_id = Id.create () in
   let* title = Title.create "an-experiment-title" in
@@ -32,7 +31,7 @@ let experiment () =
   Experiment.find test_db experiment_id
 ;;
 
-let contact ~prefix () =
+let contact ~prefix test_db =
   let open Contact in
   let invited_contact_id = Contact.Id.create () in
   let* email =
@@ -86,7 +85,7 @@ let contact ~prefix () =
   Lwt_result.lift (Ok contact)
 ;;
 
-let invitation ~experiment ~contacts =
+let invitation test_db ~experiment ~contacts =
   let open Cqrs_command.Invitation_command in
   let* events =
     Create.(
@@ -128,12 +127,14 @@ let finds_uninvited_contacts =
   Test_utils.case
   @@ fun () ->
   (* 1. creating an experiment *)
-  let& experiment = experiment () in
+  Test_utils.Data.connection
+  @@ fun test_db ->
+  let& experiment = experiment test_db in
   (* 2. creating a contact that is invited to the experiment *)
-  let& invited_contact = contact ~prefix:"invited" () in
-  let& () = invitation ~experiment ~contacts:[ invited_contact ] in
+  let& invited_contact = contact ~prefix:"invited" test_db in
+  let& () = invitation test_db ~experiment ~contacts:[ invited_contact ] in
   (* 3. creating a contact that is NOT invited to the experiment *)
-  let& expected_contact = contact ~prefix:"probe" () in
+  let& expected_contact = contact ~prefix:"probe" test_db in
   (* 4. create a filter that for invitations that includes our experiment *)
   let invitation_filter =
     let open Filter in
@@ -190,10 +191,12 @@ let filters_out_invited_contacts =
   Test_utils.case
   @@ fun () ->
   (* 1. creating an experiment *)
-  let& experiment = experiment () in
+  Test_utils.Data.connection
+  @@ fun test_db ->
+  let& experiment = experiment test_db in
   (* 2. creating a contact that is invited to the experiment *)
-  let& invited_contact = contact ~prefix:"invited" () in
-  let& () = invitation ~experiment ~contacts:[ invited_contact ] in
+  let& invited_contact = contact ~prefix:"invited" test_db in
+  let& () = invitation test_db ~experiment ~contacts:[ invited_contact ] in
   (* 3. create a filter that for invitations that includes our experiment *)
   let invitation_filter =
     let open Filter in

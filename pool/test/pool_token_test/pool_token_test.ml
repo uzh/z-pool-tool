@@ -1,7 +1,5 @@
 open Alcotest_lwt
 
-let db_ctx = Test_utils.Data.db_ctx
-
 let case =
   Test_utils.case ~preparation:(fun () ->
     (* let%lwt () = Database.clean_all db_ctx in *)
@@ -11,6 +9,8 @@ let case =
 let create_and_read_token =
   case
   @@ fun () ->
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let%lwt token = Pool_token.create db_ctx [ "foo", "bar"; "fooz", "baz" ] in
   let%lwt value = Pool_token.read db_ctx token ~k:"foo" in
   Alcotest.(check (option string) "reads value" (Some "bar") value);
@@ -28,6 +28,8 @@ let create_and_read_token =
 let deactivate_and_reactivate_token =
   case
   @@ fun () ->
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let%lwt token = Pool_token.create db_ctx [ "foo", "bar" ] in
   let%lwt value = Pool_token.read db_ctx token ~k:"foo" in
   Alcotest.(check (option string) "reads value" (Some "bar") value);
@@ -45,6 +47,8 @@ let deactivate_and_reactivate_token =
 let forge_token =
   case
   @@ fun () ->
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let%lwt token = Pool_token.create db_ctx [ "foo", "bar" ] in
   let%lwt value = Pool_token.read db_ctx token ~k:"foo" in
   Alcotest.(check (option string) "reads value" (Some "bar") value);
@@ -65,6 +69,8 @@ let forge_token =
 let extend_expiry_of_expired_token =
   case
   @@ fun () ->
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let%lwt token =
     Pool_token.create ~expires_in:Sihl.Time.OneSecond db_ctx [ "foo", "expired" ]
   in

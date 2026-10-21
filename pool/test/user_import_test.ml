@@ -416,18 +416,21 @@ let unsubscribe_page_escapes_email () =
 
 let confirm_as_contact_integration _ () =
   let with_terms_accepted, expected_fcn = false, CCOption.is_none in
-  let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted () in
+  let%lwt contact =
+    Integration_utils.ContactRepo.create ~with_terms_accepted
+    |> Test_utils.Data.connection
+  in
   let user = contact |> Pool_context.contact in
   let user_import = create_user_import user in
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let%lwt () =
     let open CCResult in
     Cqrs_command.User_import_command.ConfirmImport.handle (user, user_import)
     |> get_exn
-    |> Pool_event.handle_events Test_utils.Data.db_ctx user
+    |> Pool_event.handle_events db_ctx user
   in
-  let%lwt contact =
-    Contact.find Test_utils.Data.db_ctx (Contact.id contact) |> Lwt.map get_exn
-  in
+  let%lwt contact = Contact.find db_ctx (Contact.id contact) |> Lwt.map get_exn in
   let () =
     Alcotest.(
       check
@@ -444,17 +447,20 @@ let confirm_as_contact_integration _ () =
 ;;
 
 let disable_as_contact_integration _ () =
-  let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:false () in
+  let%lwt contact =
+    Integration_utils.ContactRepo.create ~with_terms_accepted:false
+    |> Test_utils.Data.connection
+  in
   let user = contact |> Pool_context.contact in
   let user_import = create_user_import user in
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let%lwt () =
     Cqrs_command.User_import_command.DisableImport.handle (user, user_import)
     |> get_exn
-    |> Pool_event.handle_events Test_utils.Data.db_ctx user
+    |> Pool_event.handle_events db_ctx user
   in
-  let%lwt contact =
-    Contact.find Test_utils.Data.db_ctx (Contact.id contact) |> Lwt.map get_exn
-  in
+  let%lwt contact = Contact.find db_ctx (Contact.id contact) |> Lwt.map get_exn in
   let () =
     Alcotest.(
       check
@@ -475,11 +481,13 @@ let disable_as_contact_integration _ () =
 ;;
 
 module NotificationTemplate = struct
-  let db_ctx = Test_utils.Data.db_ctx
-
   let import_message_for active_after_import =
     let open Utils.Lwt_result.Infix in
-    let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:true () in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
+    let%lwt contact =
+      Integration_utils.ContactRepo.create ~with_terms_accepted:true db_ctx
+    in
     let user = `Contact contact in
     let%lwt tenant = Pool_tenant.find_by_db_ctx db_ctx ||> get_exn in
     let%lwt import_message = Message_template.UserImport.prepare db_ctx tenant in
@@ -512,8 +520,13 @@ module NotificationTemplate = struct
 
   let inactive_fallback _ () =
     let open Utils.Lwt_result.Infix in
-    let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:true () in
+    let%lwt contact =
+      Integration_utils.ContactRepo.create ~with_terms_accepted:true
+      |> Test_utils.Data.connection
+    in
     let user = `Contact contact in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
     let%lwt tenant = Pool_tenant.find_by_db_ctx db_ctx ||> get_exn in
     (* Remove UserImportInactive templates from DB to test the fallback *)
     let%lwt inactive_templates =
@@ -588,22 +601,23 @@ module Repo = struct
   let user_import = Alcotest.testable pp_testable_import equal_testable_import
   let create_contact = Integration_utils.ContactRepo.create ~with_terms_accepted:true
   let limit = 5
-  let db_ctx = Test_utils.Data.db_ctx
   let contact_id_1 = Contact.Id.create ()
   let contact_id_2 = Contact.Id.create ()
   let sort_testable = CCList.stable_sort (fun (c1, _) (c2, _) -> Contact.compare c1 c2)
 
   let reminder_settings db_ctx =
     let open Settings in
-    Lwt.both
-      (find_user_import_first_reminder_after db_ctx)
-      (find_user_import_second_reminder_after db_ctx)
+    let%lwt first = find_user_import_first_reminder_after db_ctx in
+    let%lwt second = find_user_import_second_reminder_after db_ctx in
+    Lwt.return (first, second)
   ;;
 
   let init () =
     let token () = Pool_common.Id.(() |> create |> value) in
-    let%lwt contact1 = create_contact ~id:contact_id_1 () in
-    let%lwt contact2 = create_contact ~id:contact_id_2 () in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
+    let%lwt contact1 = create_contact ~id:contact_id_1 db_ctx in
+    let%lwt contact2 = create_contact ~id:contact_id_2 db_ctx in
     let active_after_import = User_import.ActiveAfterImport.create false in
     let import1 =
       create_user_import
@@ -626,14 +640,20 @@ module Repo = struct
   ;;
 
   let import_of_contact contact_id =
-    Lwt.both
-      (Contact.find db_ctx contact_id ||> get_exn)
-      (User_import.find_pending_by_user_id_opt db_ctx (contact_id |> Contact.Id.to_user)
-       ||> CCOption.get_exn_or "Import not found")
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
+    let%lwt contact = Contact.find db_ctx contact_id ||> get_exn in
+    let%lwt pending =
+      User_import.find_pending_by_user_id_opt db_ctx (contact_id |> Contact.Id.to_user)
+      ||> CCOption.get_exn_or "Import not found"
+    in
+    Lwt.return (contact, pending)
   ;;
 
   let find_contacts_to_notify _ () =
     let%lwt () = init () in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
     let%lwt contacts_to_notify =
       User_import.find_contacts_to_notify db_ctx limit () ||> sort_testable
     in
@@ -653,6 +673,8 @@ module Repo = struct
   ;;
 
   let find_contacts_to_remind _ () =
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
     let%lwt reminder_settings = reminder_settings db_ctx in
     let%lwt contacts_to_remind =
       User_import.find_contacts_to_remind reminder_settings db_ctx limit ()
@@ -699,15 +721,18 @@ end
 module Unsubscribe = struct
   open Utils.Lwt_result.Infix
 
-  let db_ctx = Test_utils.Data.db_ctx
-
   let unsubscribe_token contact =
     let user_id = Contact.id contact |> Contact.Id.value in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
     Pool_token.create db_ctx [ "user_id", user_id; "type", "unsubscribe" ]
   ;;
 
   let post_unsubscribe token =
-    let%lwt tenant = Pool_tenant.find_by_db_ctx db_ctx ||> get_exn in
+    let%lwt tenant =
+      Test_utils.Data.connection
+      @@ fun db_ctx -> Pool_tenant.find_by_db_ctx db_ctx ||> get_exn
+    in
     Test_request.mock_post_request
       ~context_tenant:tenant
       ~target:
@@ -725,7 +750,11 @@ module Unsubscribe = struct
   ;;
 
   let with_pending_import _ () =
-    let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:true () in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
+    let%lwt contact =
+      Integration_utils.ContactRepo.create ~with_terms_accepted:true db_ctx
+    in
     let contact_id = Contact.id contact in
     let%lwt () = Repo.set_contact_import_pending db_ctx contact_id in
     let import =
@@ -765,12 +794,18 @@ module Unsubscribe = struct
   ;;
 
   let without_pending_import _ () =
-    let%lwt contact = Integration_utils.ContactRepo.create ~with_terms_accepted:true () in
+    let%lwt contact =
+      Integration_utils.ContactRepo.create ~with_terms_accepted:true
+      |> Test_utils.Data.connection
+    in
     let contact_id = Contact.id contact in
     let%lwt token = unsubscribe_token contact in
     let%lwt res = post_unsubscribe token in
     let () = check_redirected "without pending import" res in
-    let%lwt contact = Contact.find db_ctx contact_id ||> get_exn in
+    let%lwt contact =
+      Test_utils.Data.connection
+      @@ fun db_ctx -> Contact.find db_ctx contact_id ||> get_exn
+    in
     let () =
       Alcotest.(check bool)
         "contact is paused"

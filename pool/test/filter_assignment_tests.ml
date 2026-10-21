@@ -1,10 +1,9 @@
 let ( let@ ) = CCResult.( >>= )
 let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f
 let ( let& ) = Lwt_result.bind
-let test_db = Test_utils.Data.db_ctx
 let current_user = Test_utils.Model.create_admin ()
 
-let session ~experiment =
+let session test_db ~experiment =
   let open Session in
   let sid = Id.create () in
   let now = Ptime_clock.now () in
@@ -45,7 +44,7 @@ let session ~experiment =
   Lwt_result.lift (Ok session)
 ;;
 
-let experiment () =
+let experiment test_db =
   let open Experiment in
   let experiment_id = Id.create () in
   let* title = Title.create "an-experiment-title" in
@@ -73,7 +72,7 @@ let experiment () =
   Experiment.find test_db experiment_id
 ;;
 
-let contact ~prefix () =
+let contact ~prefix test_db =
   let open Contact in
   let user_id = Contact.Id.create () in
   let* email =
@@ -117,7 +116,7 @@ let contact ~prefix () =
   Lwt_result.lift (Ok contact)
 ;;
 
-let assignment ~experiment ~session ~contact =
+let assignment test_db ~experiment ~session ~contact =
   let open Cqrs_command.Assignment_command in
   let already_enrolled = false in
   let* events =
@@ -138,7 +137,7 @@ let assignment ~experiment ~session ~contact =
   Lwt_result.lift (Ok ())
 ;;
 
-let invitation ~experiment ~contacts =
+let invitation test_db ~experiment ~contacts =
   let open Cqrs_command.Invitation_command in
   let* events =
     Create.(
@@ -179,17 +178,21 @@ let invitation ~experiment ~contacts =
 let finds_unassigned_contacts =
   Test_utils.case
   @@ fun () ->
+  Test_utils.Data.connection
+  @@ fun test_db ->
   (* 1. creating an experiment *)
-  let& experiment = experiment () in
+  let& experiment = experiment test_db in
   (* 2. creating an session *)
-  let& session = session ~experiment in
+  let& session = session test_db ~experiment in
   (* 2. creating contacts *)
-  let& assigned_contact = contact ~prefix:"invited" () in
-  let& unassigned_contact = contact ~prefix:"probe" () in
+  let& assigned_contact = contact ~prefix:"invited" test_db in
+  let& unassigned_contact = contact ~prefix:"probe" test_db in
   (* 3. send invitations *)
-  let& () = invitation ~experiment ~contacts:[ assigned_contact; unassigned_contact ] in
+  let& () =
+    invitation test_db ~experiment ~contacts:[ assigned_contact; unassigned_contact ]
+  in
   (* 4. only accept one of the invitations, creating the assignment *)
-  let& () = assignment ~experiment ~contact:assigned_contact ~session in
+  let& () = assignment test_db ~experiment ~contact:assigned_contact ~session in
   (* 5. create a filter that for assignments that includes our experiment *)
   let assignment_filter =
     let open Filter in
@@ -246,15 +249,17 @@ let finds_unassigned_contacts =
 let filters_out_assigned_contacts =
   Test_utils.case
   @@ fun () ->
+  Test_utils.Data.connection
+  @@ fun test_db ->
   (* 1. creating an experiment *)
-  let& experiment = experiment () in
+  let& experiment = experiment test_db in
   (* 2. creating an session *)
-  let& session = session ~experiment in
+  let& session = session test_db ~experiment in
   (* 2. creating a contact that is invited to the experiment *)
-  let& assigned_contact = contact ~prefix:"invited" () in
-  let& () = invitation ~experiment ~contacts:[ assigned_contact ] in
+  let& assigned_contact = contact ~prefix:"invited" test_db in
+  let& () = invitation test_db ~experiment ~contacts:[ assigned_contact ] in
   (* 4. only accept one of the invitations, creating the assignment *)
-  let& () = assignment ~experiment ~contact:assigned_contact ~session in
+  let& () = assignment test_db ~experiment ~contact:assigned_contact ~session in
   (* 3. create a filter that for assignments that includes our experiment *)
   let assignment_filter =
     let open Filter in

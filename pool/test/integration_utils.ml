@@ -34,13 +34,15 @@ module AssignmentRepo = struct
   let create ?(current_user = default_current_user) ?id session contact =
     let open Utils.Lwt_result.Infix in
     let assignment = Assignment.create ?id contact in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
     let%lwt () =
       Assignment.(Created (assignment, session.Session.id))
       |> Pool_event.assignment
-      |> Pool_event.handle_event Data.db_ctx current_user
+      |> Pool_event.handle_event db_ctx current_user
     in
     Assignment.find_by_contact_and_experiment
-      Data.db_ctx
+      db_ctx
       session.Session.experiment.Experiment.id
       contact
     ||> CCList.find (fun ({ Session.id; _ }, _) -> Session.Id.equal id session.Session.id)
@@ -57,7 +59,7 @@ module ContactRepo = struct
         ?language
         ?(with_terms_accepted = false)
         ?(password = Model.password)
-        ()
+        db_ctx
     =
     let open Utils.Lwt_result.Infix in
     let contact =
@@ -78,19 +80,19 @@ module ContactRepo = struct
       ]
       @ confirm
       |> Pool_event.(map contact)
-      |> Pool_event.handle_events Data.db_ctx current_user
+      |> Pool_event.handle_events db_ctx current_user
     in
-    contact |> id |> find Data.db_ctx ||> get_or_failwith
+    contact |> id |> find db_ctx ||> get_or_failwith
   ;;
 end
 
 module CustomFieldRepo = struct
-  let pool = Data.db_ctx
-
   open Custom_field_utils
 
   let create ?(current_user = default_current_user) name encoder =
     let field = create_custom_field name encoder in
+    Test_utils.Data.connection
+    @@ fun pool ->
     let%lwt () =
       [ save_custom_field field; Custom_field.Published field |> Pool_event.custom_field ]
       |> Pool_event.handle_events pool current_user
@@ -102,11 +104,11 @@ end
 module AdminRepo = struct
   open Pool_user
 
-  let create ?(current_user = default_current_user) ?id ?email () =
+  let create ?(current_user = default_current_user) ?id ?email db_ctx =
     let admin_id = id |> CCOption.value ~default:(Admin.Id.create ()) in
     let open Admin in
     let open Utils.Lwt_result.Infix in
-    let tags = Database.Logger.Tags.of_db_ctx Data.db_ctx in
+    let tags = Database.Logger.Tags.of_db_ctx db_ctx in
     let email =
       email
       |> CCOption.value
@@ -125,9 +127,9 @@ module AdminRepo = struct
     in
     let%lwt () =
       [ Created admin |> Pool_event.admin ]
-      |> Pool_event.handle_events ~tags Data.db_ctx current_user
+      |> Pool_event.handle_events ~tags db_ctx current_user
     in
-    admin_id |> find Data.db_ctx ||> get_or_failwith
+    admin_id |> find db_ctx ||> get_or_failwith
   ;;
 end
 
@@ -141,9 +143,11 @@ module ExperimentRepo = struct
     =
     let experiment = Model.create_experiment ~id ?title ?online_experiment () in
     let%lwt () =
+      Test_utils.Data.connection
+      @@ fun db_ctx ->
       Experiment.Created experiment
       |> Pool_event.experiment
-      |> Pool_event.handle_event Data.db_ctx current_user
+      |> Pool_event.handle_event db_ctx current_user
     in
     experiment |> Lwt.return
   ;;
@@ -153,9 +157,11 @@ module LocationRepo = struct
   let create ?(current_user = default_current_user) ?(id = Pool_location.Id.create ()) () =
     let location = Model.create_location ~id () in
     let%lwt () =
+      Test_utils.Data.connection
+      @@ fun db_ctx ->
       Pool_location.Created location
       |> Pool_event.pool_location
-      |> Pool_event.handle_event Data.db_ctx current_user
+      |> Pool_event.handle_event db_ctx current_user
     in
     location |> Lwt.return
   ;;
@@ -171,8 +177,10 @@ module MailingRepo = struct
         experiment_id
     =
     let mailing = Model.create_mailing ~id ?start ?duration ?distribution ?limit () in
-    let%lwt () = Mailing.(Created (mailing, experiment_id) |> handle_event Data.db_ctx) in
-    Mailing.find Data.db_ctx id |> Lwt.map get_or_failwith
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
+    let%lwt () = Mailing.(Created (mailing, experiment_id) |> handle_event db_ctx) in
+    Mailing.find db_ctx id |> Lwt.map get_or_failwith
   ;;
 end
 
@@ -180,14 +188,16 @@ module WaitingListRepo = struct
   (* TODO: Is there a case where admins create waiting list entries? Or will it always be
      the contact *)
   let create experiment contact () =
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
     let%lwt () =
       Waiting_list.Created { Waiting_list.experiment; contact }
       |> Pool_event.waiting_list
-      |> Pool_event.handle_event Data.db_ctx (Pool_context.Contact contact)
+      |> Pool_event.handle_event db_ctx (Pool_context.Contact contact)
     in
     experiment
     |> Experiment.Public.id
-    |> Waiting_list.find_by_contact_and_experiment Data.db_ctx contact
+    |> Waiting_list.find_by_contact_and_experiment db_ctx contact
   ;;
 end
 
@@ -217,13 +227,15 @@ module SessionRepo = struct
         ~experiment
         ()
     in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
     let%lwt () =
       Session.(Created session)
       |> Pool_event.session
-      |> Pool_event.handle_event Data.db_ctx current_user
+      |> Pool_event.handle_event db_ctx current_user
     in
     (* To compare the start time it is required to read the session from the database again *)
-    Session.find Data.db_ctx session.Session.id |> Lwt.map get_or_failwith
+    Session.find db_ctx session.Session.id |> Lwt.map get_or_failwith
   ;;
 end
 
@@ -231,8 +243,10 @@ module TagRepo = struct
   let create ?(id = Tags.Id.create ()) ?(name = "Tag") model =
     let open Tags in
     let tag = Tags.create ~id (Title.of_string name) model |> get_or_failwith in
-    let%lwt () = Tags.(Created tag |> handle_event Data.db_ctx) in
-    Tags.find Data.db_ctx id |> Lwt.map get_or_failwith
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
+    let%lwt () = Tags.(Created tag |> handle_event db_ctx) in
+    Tags.find db_ctx id |> Lwt.map get_or_failwith
   ;;
 end
 
@@ -240,29 +254,35 @@ module TimeWindowRepo = struct
   let create ?(current_user = default_current_user) ?id start duration experiment () =
     let time_window = Time_window.create ?id start duration experiment in
     let%lwt () =
+      Test_utils.Data.connection
+      @@ fun db_ctx ->
       Time_window.(Created time_window)
       |> Pool_event.time_window
-      |> Pool_event.handle_event Data.db_ctx current_user
+      |> Pool_event.handle_event db_ctx current_user
     in
     Lwt.return time_window
   ;;
 end
 
-let create_admin_user () = AdminRepo.create () |> Lwt.map Pool_context.admin
-let create_contact_user () = ContactRepo.create () |> Lwt.map Pool_context.contact
+let create_admin_user db_ctx = AdminRepo.create db_ctx |> Lwt.map Pool_context.admin
+let create_contact_user db_ctx = ContactRepo.create db_ctx |> Lwt.map Pool_context.contact
 
 let create_admin_actor () =
   let open Utils.Lwt_result.Infix in
-  AdminRepo.create ()
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
+  AdminRepo.create db_ctx
   ||> Pool_context.admin
-  >|> Pool_context.Utils.find_authorizable Test_utils.Data.db_ctx
+  >|> Pool_context.Utils.find_authorizable db_ctx
   ||> Test_utils.get_or_failwith
 ;;
 
 let create_contact_actor () =
   let open Utils.Lwt_result.Infix in
-  ContactRepo.create ()
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
+  ContactRepo.create db_ctx
   ||> Pool_context.contact
-  >|> Pool_context.Utils.find_authorizable Test_utils.Data.db_ctx
+  >|> Pool_context.Utils.find_authorizable db_ctx
   ||> Test_utils.get_or_failwith
 ;;

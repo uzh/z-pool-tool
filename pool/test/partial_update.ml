@@ -1,10 +1,11 @@
 open Pool_message
 module Language = Pool_common.Language
 
-let current_user () = Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
-let db_ctx = Test_utils.Data.db_ctx
+let current_user db_ctx =
+  Integration_utils.AdminRepo.create db_ctx |> Lwt.map Pool_context.admin
+;;
 
-let save_custom_fields current_user custom_field contact =
+let save_custom_fields db_ctx current_user custom_field contact =
   let public =
     Custom_field_test.Data.to_public Contact.(contact |> id |> Id.to_common) custom_field
   in
@@ -51,13 +52,15 @@ let update_custom_field _ () =
   let%lwt () =
     let open CCResult in
     let open Custom_field in
-    let%lwt current_user = current_user () in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
+    let%lwt current_user = current_user db_ctx in
     let contact = Test_utils.Model.create_contact () in
     let custom_field = Custom_field_test.Data.custom_text_field () in
     let public =
       Custom_field_test.Data.to_public Contact.(id contact |> Id.to_common) custom_field
     in
-    let%lwt () = save_custom_fields current_user custom_field contact in
+    let%lwt () = save_custom_fields db_ctx current_user custom_field contact in
     let language = Pool_common.Language.En in
     let field = Public.to_common_field language public in
     let new_value = "new value" in
@@ -100,12 +103,14 @@ let partial_update_exec
   =
   let%lwt () =
     let open Custom_field in
-    let%lwt current_user = current_user () in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
+    let%lwt current_user = current_user db_ctx in
     let contact = Test_utils.Model.create_contact () in
     let public =
       Custom_field_test.Data.to_public Contact.(id contact |> Id.to_common) custom_field
     in
-    let%lwt () = save_custom_fields current_user custom_field contact in
+    let%lwt () = save_custom_fields db_ctx current_user custom_field contact in
     let language = Pool_common.Language.En in
     let field = Public.to_common_field language public in
     let%lwt partial_update =
@@ -228,8 +233,10 @@ let some_answer entity_uuid =
 (* A boolean without an answer is an open question, an answer of 'false' is not *)
 let unanswered_boolean_is_an_open_question _ () =
   let open Custom_field in
-  let%lwt current_user = current_user () in
-  let%lwt contact = Integration_utils.ContactRepo.create () in
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
+  let%lwt current_user = current_user db_ctx in
+  let%lwt contact = Integration_utils.ContactRepo.create db_ctx in
   let contact_id = Contact.id contact in
   let entity_uuid = Contact.Id.to_common contact_id in
   let user = Pool_context.Contact contact in

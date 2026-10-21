@@ -2,7 +2,6 @@ module ContactRepo = Integration_utils.ContactRepo
 module Command = Cqrs_command.Duplicate_contacts_command
 open Utils.Lwt_result.Infix
 
-let pool = Test_utils.Data.db_ctx
 let get_exn = Test_utils.get_or_failwith
 let testable_score = Alcotest.(testable CCFloat.pp CCFloat.equal)
 
@@ -13,11 +12,13 @@ let check_similarity _ () =
   let check ~result ~expected msg =
     Alcotest.check (Alcotest.option testable_score) msg result expected
   in
+  Test_utils.Data.connection
+  @@ fun pool ->
   let create_contact ~firstname ~lastname =
     ContactRepo.create
       ~firstname:(Firstname.of_string firstname)
       ~lastname:(Lastname.of_string lastname)
-      ()
+      pool
   in
   let find_duplicate ~target ~comparison =
     let open Contact in
@@ -195,26 +196,25 @@ module MergeData = struct
     | _, _ -> failwith "Custom field answer types do not match"
   ;;
 
-  let make_contact ~firstname ~lastname =
+  let make_contact pool ~firstname ~lastname =
     ContactRepo.create
       ~firstname:(Pool_user.Firstname.of_string firstname)
       ~lastname:(Pool_user.Lastname.of_string lastname)
-      ()
+      pool
   ;;
 
-  let setup_merge_contacts () =
+  let setup_merge_contacts pool =
     let open Integration_utils in
     let open Pool_user in
-    let pool = Test_utils.Data.db_ctx in
-    let%lwt current_user = Integration_utils.create_admin_user () in
+    let%lwt current_user = Integration_utils.create_admin_user pool in
     let make_field name =
       CustomFieldRepo.create ~current_user name (fun a -> Custom_field.Text a)
     in
     let%lwt field_1 = make_field "F1" in
     let%lwt field_2 = make_field "F2" in
     let%lwt field_3 = make_field "F3" in
-    let%lwt contact_a = make_contact ~firstname:"John" ~lastname:"Doe" in
-    let%lwt contact_b = make_contact ~firstname:"Jane" ~lastname:"Doe" in
+    let%lwt contact_a = make_contact pool ~firstname:"John" ~lastname:"Doe" in
+    let%lwt contact_b = make_contact pool ~firstname:"Jane" ~lastname:"Doe" in
     let duplicate =
       Duplicate_contacts.
         { id = Id.create ()
@@ -253,7 +253,7 @@ module MergeData = struct
     Lwt.return (duplicate, [ field_1; field_2; field_3 ])
   ;;
 
-  let fields_by_contact fields contact =
+  let fields_by_contact pool fields contact =
     let open Custom_field in
     find_to_merge_contact pool (Contact.id contact)
     ||> CCList.filter (fun field ->
@@ -280,7 +280,8 @@ module MergeData = struct
 
   module T = Testable
 
-  let compare contact ~email ~firstname ~lastname ~cell_phone ~language public_fields =
+  let compare pool contact ~email ~firstname ~lastname ~cell_phone ~language public_fields
+    =
     let%lwt contact = Contact.find pool (Contact.id contact) ||> get_exn in
     let open Alcotest in
     let run_check testable msg decode expected =
@@ -311,9 +312,11 @@ end
 let override_a_with_b _ () =
   let open Duplicate_contacts in
   let open MergeData in
-  let%lwt duplicate, fields = setup_merge_contacts () in
+  Test_utils.Data.connection
+  @@ fun pool ->
+  let%lwt duplicate, fields = setup_merge_contacts pool in
   let { contact_a; contact_b; _ } = duplicate in
-  let fields_by_contact = fields_by_contact fields in
+  let fields_by_contact = fields_by_contact pool fields in
   let%lwt fields_a = fields_by_contact contact_a in
   let%lwt fields_b = fields_by_contact contact_b in
   let urlencoded =
@@ -334,6 +337,7 @@ let override_a_with_b _ () =
   in
   let%lwt () =
     compare
+      pool
       contact_a
       ~email:contact_a
       ~firstname:contact_b
@@ -348,9 +352,11 @@ let override_a_with_b _ () =
 let override_b_with_a _ () =
   let open Duplicate_contacts in
   let open MergeData in
-  let%lwt duplicate, fields = setup_merge_contacts () in
+  Test_utils.Data.connection
+  @@ fun pool ->
+  let%lwt duplicate, fields = setup_merge_contacts pool in
   let { contact_a; contact_b; _ } = duplicate in
-  let fields_by_contact = fields_by_contact fields in
+  let fields_by_contact = fields_by_contact pool fields in
   let%lwt fields_a = fields_by_contact contact_a in
   let%lwt fields_b = fields_by_contact contact_b in
   let urlencoded =
@@ -371,6 +377,7 @@ let override_b_with_a _ () =
   in
   let%lwt () =
     compare
+      pool
       contact_b
       ~email:contact_b
       ~firstname:contact_a
@@ -385,9 +392,11 @@ let override_b_with_a _ () =
 let override_with_participations _ () =
   let open Duplicate_contacts in
   let open MergeData in
-  let%lwt current_user = Integration_utils.create_contact_user () in
-  let%lwt contact_a = make_contact ~firstname:"John11" ~lastname:"Doe11" in
-  let%lwt contact_b = make_contact ~firstname:"Jane22" ~lastname:"Doe22" in
+  Test_utils.Data.connection
+  @@ fun pool ->
+  let%lwt current_user = Integration_utils.create_contact_user pool in
+  let%lwt contact_a = make_contact pool ~firstname:"John11" ~lastname:"Doe11" in
+  let%lwt contact_b = make_contact pool ~firstname:"Jane22" ~lastname:"Doe22" in
   let%lwt experiment = Integration_utils.ExperimentRepo.create () in
   let%lwt session = Integration_utils.SessionRepo.create experiment () in
   let%lwt tag = Integration_utils.TagRepo.create Tags.Model.Contact in
@@ -480,14 +489,14 @@ let override_with_participations _ () =
    timezone. *)
 module CheckSchedule = struct
   (* high enough to cover all eligible contacts in the test database *)
-  let find_all_to_check () = Duplicate_contacts.find_to_check ~limit:10_000 pool
+  let find_all_to_check pool = Duplicate_contacts.find_to_check ~limit:10_000 pool
 
-  let is_eligible contact =
-    find_all_to_check ()
+  let is_eligible pool contact =
+    find_all_to_check pool
     ||> CCList.exists (fun c -> Contact.(Id.equal (id c) (id contact)))
   ;;
 
-  let set_due_at_in_past contact =
+  let set_due_at_in_past pool contact =
     let request =
       let open Caqti_request.Infix in
       {sql|
@@ -500,7 +509,7 @@ module CheckSchedule = struct
     Database.exec pool request (Contact.id contact)
   ;;
 
-  let set_last_checked_days_ago contact days =
+  let set_last_checked_days_ago pool contact days =
     let request =
       let open Caqti_request.Infix in
       {sql|
@@ -514,7 +523,7 @@ module CheckSchedule = struct
   ;;
 
   (* (last_checked set, due_at set, due_at in the future) *)
-  let check_timestamps contact =
+  let check_timestamps pool contact =
     let request =
       let open Caqti_request.Infix in
       {sql|
@@ -534,17 +543,19 @@ end
 let mark_check_due_defers_check _ () =
   let open CheckSchedule in
   let open Alcotest in
-  let%lwt contact = ContactRepo.create () in
-  let%lwt eligible = is_eligible contact in
+  Test_utils.Data.connection
+  @@ fun pool ->
+  let%lwt contact = ContactRepo.create pool in
+  let%lwt eligible = is_eligible pool contact in
   check bool "new contact is eligible for a check" true eligible;
   let%lwt () = Duplicate_contacts.mark_as_checked pool contact in
-  let%lwt eligible = is_eligible contact in
+  let%lwt eligible = is_eligible pool contact in
   check bool "recently checked contact is not eligible" false eligible;
   let%lwt () = Contact.mark_duplicates_check_due pool (Contact.id contact) in
-  let%lwt _, due_set, due_in_future = check_timestamps contact in
+  let%lwt _, due_set, due_in_future = check_timestamps pool contact in
   check bool "due date is set" true due_set;
   check bool "due date lies in the future (grace period)" true due_in_future;
-  let%lwt eligible = is_eligible contact in
+  let%lwt eligible = is_eligible pool contact in
   check bool "contact is not eligible during the grace period" false eligible;
   Lwt.return_unit
 ;;
@@ -552,10 +563,12 @@ let mark_check_due_defers_check _ () =
 let due_contacts_are_prioritized _ () =
   let open CheckSchedule in
   let open Alcotest in
-  let%lwt contact = ContactRepo.create () in
+  Test_utils.Data.connection
+  @@ fun pool ->
+  let%lwt contact = ContactRepo.create pool in
   let%lwt () = Duplicate_contacts.mark_as_checked pool contact in
   let%lwt () = Contact.mark_duplicates_check_due pool (Contact.id contact) in
-  let%lwt () = set_due_at_in_past contact in
+  let%lwt () = set_due_at_in_past pool contact in
   let%lwt to_check = Duplicate_contacts.find_to_check pool in
   let first_is_contact =
     match to_check with
@@ -564,9 +577,9 @@ let due_contacts_are_prioritized _ () =
   in
   check bool "due contact is returned before never checked contacts" true first_is_contact;
   let%lwt () = Duplicate_contacts.mark_as_checked pool contact in
-  let%lwt _, due_set, _ = check_timestamps contact in
+  let%lwt _, due_set, _ = check_timestamps pool contact in
   check bool "due date is reset when marked as checked" false due_set;
-  let%lwt eligible = is_eligible contact in
+  let%lwt eligible = is_eligible pool contact in
   check bool "contact is no longer eligible" false eligible;
   Lwt.return_unit
 ;;
@@ -574,13 +587,15 @@ let due_contacts_are_prioritized _ () =
 let periodic_check_after_one_week _ () =
   let open CheckSchedule in
   let open Alcotest in
-  let%lwt contact = ContactRepo.create () in
+  Test_utils.Data.connection
+  @@ fun pool ->
+  let%lwt contact = ContactRepo.create pool in
   let%lwt () = Duplicate_contacts.mark_as_checked pool contact in
-  let%lwt () = set_last_checked_days_ago contact 6 in
-  let%lwt eligible = is_eligible contact in
+  let%lwt () = set_last_checked_days_ago pool contact 6 in
+  let%lwt eligible = is_eligible pool contact in
   check bool "contact checked 6 days ago is not eligible" false eligible;
-  let%lwt () = set_last_checked_days_ago contact 8 in
-  let%lwt eligible = is_eligible contact in
+  let%lwt () = set_last_checked_days_ago pool contact 8 in
+  let%lwt eligible = is_eligible pool contact in
   check bool "contact checked 8 days ago is eligible again" true eligible;
   Lwt.return_unit
 ;;
@@ -589,17 +604,19 @@ let service_processes_due_contact _ () =
   let open CheckSchedule in
   let open Alcotest in
   let open Pool_user in
+  Test_utils.Data.connection
+  @@ fun pool ->
   let create_contact () =
     ContactRepo.create
       ~firstname:(Firstname.of_string "Duplicheck")
       ~lastname:(Lastname.of_string "Scheduling")
-      ()
+      pool
   in
   let%lwt contact = create_contact () in
   let%lwt duplicate = create_contact () in
   let%lwt () = Duplicate_contacts.mark_as_checked pool contact in
   let%lwt () = Duplicate_contacts.mark_as_checked pool duplicate in
-  let%lwt () = set_due_at_in_past contact in
+  let%lwt () = set_due_at_in_past pool contact in
   let%lwt () = Duplicate_contacts.Service.run_by_tenant (Database.label_of_ctx pool) in
   let%lwt found =
     Duplicate_contacts.find_by_contact pool contact
@@ -609,7 +626,7 @@ let service_processes_due_contact _ () =
         Id.equal (id contact_a) (id duplicate) || Id.equal (id contact_b) (id duplicate)))
   in
   check bool "duplicate of due contact was found" true found;
-  let%lwt last_checked_set, due_set, _ = check_timestamps contact in
+  let%lwt last_checked_set, due_set, _ = check_timestamps pool contact in
   check bool "last checked is set after the run" true last_checked_set;
   check bool "due date is reset after the run" false due_set;
   Lwt.return_unit
@@ -625,7 +642,9 @@ let delete_unverified_removes_possible_duplicates _ () =
   let involves contact { Duplicate_contacts.contact_a; contact_b; _ } =
     Id.equal (id contact_a) (id contact) || Id.equal (id contact_b) (id contact)
   in
-  let%lwt verified = ContactRepo.create ~firstname ~lastname () in
+  Test_utils.Data.connection
+  @@ fun pool ->
+  let%lwt verified = ContactRepo.create ~firstname ~lastname pool in
   let%lwt unverified =
     let contact = Test_utils.Model.create_contact ~firstname ~lastname () in
     let%lwt () =

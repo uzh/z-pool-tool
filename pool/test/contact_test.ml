@@ -484,10 +484,11 @@ let accept_terms_and_conditions () =
 ;;
 
 let should_not_send_registration_notification _ () =
-  let db_ctx = Test_utils.Data.db_ctx in
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let%lwt () =
     let contact_data = Test_seed.Contacts.create_contact 12 |> CCList.pure in
-    let%lwt () = Test_seed.Contacts.create ~contact_data Test_utils.Data.db_ctx in
+    let%lwt () = Test_seed.Contacts.create ~contact_data db_ctx in
     let%lwt contact = Test_seed.Contacts.find_contact_by_id db_ctx 12 in
     let%lwt () =
       Sihl_email.
@@ -512,7 +513,8 @@ let should_not_send_registration_notification _ () =
 ;;
 
 let save_cell_phone_persists_without_verified_at _ () =
-  let db_ctx = Test_utils.Data.db_ctx in
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let contact_data = Test_seed.Contacts.create_contact 13 |> CCList.pure in
   let%lwt () = Test_seed.Contacts.create ~contact_data db_ctx in
   let%lwt contact = Test_seed.Contacts.find_contact_by_id db_ctx 13 in
@@ -541,7 +543,8 @@ let save_cell_phone_persists_without_verified_at _ () =
 ;;
 
 let verify_cell_phone_sets_verified_at _ () =
-  let db_ctx = Test_utils.Data.db_ctx in
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let contact_data = Test_seed.Contacts.create_contact 14 |> CCList.pure in
   let%lwt () = Test_seed.Contacts.create ~contact_data db_ctx in
   let%lwt contact = Test_seed.Contacts.find_contact_by_id db_ctx 14 in
@@ -578,7 +581,8 @@ let verify_cell_phone_sets_verified_at _ () =
 ;;
 
 let save_cell_phone_clears_verified_at _ () =
-  let db_ctx = Test_utils.Data.db_ctx in
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let contact_data = Test_seed.Contacts.create_contact 15 |> CCList.pure in
   let%lwt () = Test_seed.Contacts.create ~contact_data db_ctx in
   let%lwt contact = Test_seed.Contacts.find_contact_by_id db_ctx 15 in

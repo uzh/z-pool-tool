@@ -4,7 +4,6 @@ module Command = Cqrs_command.Api_key_command
 module ExpiresAt = Pool_common.ExpiresAt
 
 let get_exn = Test_utils.get_or_failwith
-let db_ctx = Test_utils.Data.db_ctx
 
 module Data = struct
   let name = "API Key Name"
@@ -66,6 +65,8 @@ let get_current _ () =
   let open Api_key in
   let testable_key = Alcotest.(option Test_utils.api_key) in
   let hour = Test_utils.Time.hour in
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let create_api_key token expires_at =
     let api_key = Model.create_api_key ~id:(Id.create ()) ~token ~expires_at () in
     let%lwt () = Created api_key |> handle_event db_ctx in

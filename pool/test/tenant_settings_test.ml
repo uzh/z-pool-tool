@@ -3,7 +3,6 @@ open Settings
 module Command = Cqrs_command.Settings_command
 
 let get_or_failwith = Test_utils.get_or_failwith
-let db_ctx = Test_utils.Data.db_ctx
 let current_user = Test_utils.Model.create_admin ()
 let days_to_timespan days = days * 60 * 60 * 24 |> Ptime.Span.of_int_s
 
@@ -25,14 +24,16 @@ let check_events ?(message = "succeeds") expected generated =
     check (result (list Test_utils.event) Test_utils.error) message expected generated)
 ;;
 
-let handle_result ?(current_user = current_user) result =
+let handle_result db_ctx ?(current_user = current_user) result =
   result |> get_or_failwith |> Pool_event.handle_events db_ctx current_user
 ;;
 
 let check_contact_email _ () =
   let open CCResult.Infix in
   let open Command.UpdateContactEmail in
-  let%lwt current_user = Integration_utils.create_admin_user () in
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
+  let%lwt current_user = Integration_utils.create_admin_user db_ctx in
   let field = Field.ContactEmail in
   let handle email = [ Field.show field, [ email ] ] |> decode >>= handle in
   let invalid_email = "email.example.com" in
@@ -44,7 +45,7 @@ let check_contact_email _ () =
   let expected_email = ContactEmail.of_string valid_email in
   let expected = Ok [ ContactEmailUpdated expected_email |> Pool_event.settings ] in
   let () = check_events ~message:"valid contact email" expected result in
-  let%lwt () = handle_result ~current_user result in
+  let%lwt () = handle_result db_ctx ~current_user result in
   let%lwt contact_email = Settings.find_contact_email db_ctx in
   let () =
     Alcotest.(
@@ -56,8 +57,10 @@ let check_contact_email _ () =
 let check_email_suffix _ () =
   let open CCResult.Infix in
   let open Command in
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let%lwt current_user =
-    Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+    Integration_utils.AdminRepo.create db_ctx |> Lwt.map Pool_context.admin
   in
   let field = Field.EmailSuffix in
   let suffix = "econ.uzh.ch" in
@@ -72,7 +75,7 @@ let check_email_suffix _ () =
       ]
   in
   let () = check_events expected result in
-  let%lwt () = handle_result ~current_user result in
+  let%lwt () = handle_result db_ctx ~current_user result in
   let%lwt suffixes = find_email_suffixes db_ctx in
   let expected = EmailSuffix.of_string suffix |> CCList.return in
   let () =
@@ -90,7 +93,7 @@ let check_email_suffix _ () =
       ]
   in
   let () = check_events expected result in
-  let%lwt () = handle_result ~current_user result in
+  let%lwt () = handle_result db_ctx ~current_user result in
   let%lwt suffixes = find_email_suffixes db_ctx in
   let expected = EmailSuffix.of_string updated |> CCList.return in
   let () =
@@ -102,8 +105,10 @@ let check_email_suffix _ () =
 let check_inactive_user_disable_after _ () =
   let open CCResult.Infix in
   let open Command.InactiveUser in
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let%lwt current_user =
-    Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+    Integration_utils.AdminRepo.create db_ctx |> Lwt.map Pool_context.admin
   in
   let field = Field.InactiveUserDisableAfter in
   let handle nr =
@@ -128,7 +133,7 @@ let check_inactive_user_disable_after _ () =
       ]
   in
   let () = check_events expected result in
-  let%lwt () = handle_result ~current_user result in
+  let%lwt () = handle_result db_ctx ~current_user result in
   let%lwt disable_after = Settings.find_inactive_user_disable_after db_ctx in
   let expected =
     days_to_timespan valid |> InactiveUser.DisableAfter.create |> get_or_failwith
@@ -146,8 +151,10 @@ let check_inactive_user_disable_after _ () =
 
 let check_inactive_user_warning _ () =
   let open Command.InactiveUser in
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let%lwt current_user =
-    Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+    Integration_utils.AdminRepo.create db_ctx |> Lwt.map Pool_context.admin
   in
   let handle nr =
     let values = [ CCInt.to_string nr ] in
@@ -171,7 +178,7 @@ let check_inactive_user_warning _ () =
       ]
   in
   let () = check_events expected result in
-  let%lwt () = handle_result ~current_user result in
+  let%lwt () = handle_result db_ctx ~current_user result in
   let%lwt warning_after = Settings.find_inactive_user_warning db_ctx in
   let expected =
     valid
@@ -193,8 +200,10 @@ let check_inactive_user_warning _ () =
 
 let disable_inactive_user_service _ () =
   let open Command.InactiveUser in
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let%lwt current_user =
-    Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
+    Integration_utils.AdminRepo.create db_ctx |> Lwt.map Pool_context.admin
   in
   let command disabled =
     let open CCResult.Infix in
@@ -237,6 +246,8 @@ let disable_inactive_user_service _ () =
 ;;
 
 let check_languages _ () =
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
   let%lwt language = Settings.find_languages db_ctx in
   Alcotest.(
     check (list Testable.language) "languages" language Pool_common.Language.[ En; De ])
@@ -245,6 +256,8 @@ let check_languages _ () =
 
 let check_terms_and_conditions _ () =
   let%lwt terms =
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
     Lwt_list.map_s
       (I18n.find_by_key db_ctx I18n.Key.TermsAndConditions)
       Pool_common.Language.all
@@ -255,7 +268,9 @@ let check_terms_and_conditions _ () =
 
 let login_after_terms_update _ () =
   let open Utils.Lwt_result.Infix in
-  let%lwt user = Integration_utils.ContactRepo.create () in
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
+  let%lwt user = Integration_utils.ContactRepo.create db_ctx in
   let accepted =
     let contact = Contact.find_by_email db_ctx (Contact.email_address user) in
     let terms_agreed contact =
@@ -279,7 +294,6 @@ let create_smtp_auth =
   @@ fun () ->
   let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f in
   let ( let& ) = Lwt_result.bind in
-  let test_db = Test_utils.Data.db_ctx in
   let open Email.SmtpAuth in
   (* create an smtp auth instance *)
   let id = Id.create () in
@@ -303,6 +317,8 @@ let create_smtp_auth =
       protocol
       default
   in
+  Test_utils.Data.connection
+  @@ fun test_db ->
   (* feed the event into the event handler to affect the database *)
   let& () =
     [ Email.SmtpCreated write_event |> Pool_event.email ]
@@ -323,7 +339,6 @@ let delete_smtp_auth =
   let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f in
   let ( let& ) = Lwt_result.bind in
   let ( let^ ) = Lwt.bind in
-  let test_db = Test_utils.Data.db_ctx in
   let open Email.SmtpAuth in
   (* create an smtp auth instance *)
   let id = Id.create () in
@@ -347,6 +362,8 @@ let delete_smtp_auth =
       protocol
       default
   in
+  Test_utils.Data.connection
+  @@ fun test_db ->
   (* feed the event into the event handler to affect the database *)
   let& () =
     [ Email.SmtpCreated write_event |> Pool_event.email
@@ -396,11 +413,12 @@ let create_temp_smtp test_db =
 
 (* Test: guard fires when only one SMTP record exists *)
 let cannot_delete_last_smtp =
-  let test_db = Test_utils.Data.db_ctx in
   let saved_writes : Email.SmtpAuth.Write.t list ref = ref [] in
   let temp_id : Email.SmtpAuth.Id.t ref = ref (Email.SmtpAuth.Id.create ()) in
   Test_utils.case
     ~preparation:(fun () ->
+      Test_utils.Data.connection
+      @@ fun test_db ->
       (* Gather full write objects before deleting so cleanup can restore them *)
       let%lwt all = Email.SmtpAuth.find_all test_db in
       let%lwt writes =
@@ -422,6 +440,8 @@ let cannot_delete_last_smtp =
       temp_id := id;
       Lwt_result.return ())
     ~cleanup:(fun () ->
+      Test_utils.Data.connection
+      @@ fun test_db ->
       (* Remove the temp SMTP *)
       let%lwt () =
         [ Email.SmtpDeleted !temp_id |> Pool_event.email ]
@@ -433,6 +453,8 @@ let cannot_delete_last_smtp =
       |> Pool_event.handle_events test_db current_user
       |> Lwt_result.ok)
   @@ fun () ->
+  Test_utils.Data.connection
+  @@ fun test_db ->
   let%lwt actual = Email.SmtpAuth.check_can_delete test_db in
   Alcotest.(
     check
@@ -445,12 +467,13 @@ let cannot_delete_last_smtp =
 
 (* Test: guard passes when two or more SMTP records exist *)
 let can_delete_smtp_when_multiple =
-  let test_db = Test_utils.Data.db_ctx in
   let saved_writes : Email.SmtpAuth.Write.t list ref = ref [] in
   let temp_id1 : Email.SmtpAuth.Id.t ref = ref (Email.SmtpAuth.Id.create ()) in
   let temp_id2 : Email.SmtpAuth.Id.t ref = ref (Email.SmtpAuth.Id.create ()) in
   Test_utils.case
     ~preparation:(fun () ->
+      Test_utils.Data.connection
+      @@ fun test_db ->
       (* Save existing records so we can restore them after the test *)
       let%lwt all = Email.SmtpAuth.find_all test_db in
       let%lwt writes =
@@ -474,6 +497,8 @@ let can_delete_smtp_when_multiple =
       temp_id2 := id2;
       Lwt_result.return ())
     ~cleanup:(fun () ->
+      Test_utils.Data.connection
+      @@ fun test_db ->
       let%lwt () =
         [ Email.SmtpDeleted !temp_id1 |> Pool_event.email
         ; Email.SmtpDeleted !temp_id2 |> Pool_event.email
@@ -485,6 +510,8 @@ let can_delete_smtp_when_multiple =
       |> Pool_event.handle_events test_db current_user
       |> Lwt_result.ok)
   @@ fun () ->
+  Test_utils.Data.connection
+  @@ fun test_db ->
   let%lwt actual = Email.SmtpAuth.check_can_delete test_db in
   Alcotest.(
     check

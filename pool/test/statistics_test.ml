@@ -26,8 +26,9 @@ let invitation_statistics _ () =
   let open Statistics in
   let n_contacts = 10 in
   let testable = ExperimentInvitations.(testable pp equal) in
-  let pool = Test_utils.Data.db_ctx in
-  let%lwt current_user = create_admin_user () in
+  Test_utils.Data.connection
+  @@ fun pool ->
+  let%lwt current_user = create_admin_user pool in
   let title = Pool_common.Id.(create () |> value) in
   let%lwt experiment = ExperimentRepo.create ~title () in
   let%lwt experiment = make_filter pool current_user experiment title in
@@ -35,7 +36,7 @@ let invitation_statistics _ () =
     Lwt_list.fold_left_s
       (fun acc _ ->
          let%lwt contact =
-           ContactRepo.create ~firstname:(Pool_user.Firstname.of_string title) ()
+           ContactRepo.create ~firstname:(Pool_user.Firstname.of_string title) pool
          in
          Lwt.return (contact :: acc))
       []
