@@ -70,7 +70,7 @@ let multi_search
              ; a_value (to_value item)
              ; a_name (Pool_message.Field.array_key tag_name)
              ; a_checked ()
-             ; a_hidden ()
+             ; a_hidden `Hidden
              ]
              @ filter_selected_attributes)
           ()

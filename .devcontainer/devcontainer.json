@@ -11,10 +11,31 @@
   "runServices": [
     "dev",
     "database-root",
-    "database-tenant",
+    "database-tenant"
     // "phpmyadmin"
   ],
   "workspaceFolder": "/workspace",
+  "remoteUser": "opam",
+  // NOTE: Dev Containers forwards the host's SSH agent into every terminal and extension,
+  // clear it so remote access only works with the scoped PAT from .env (see postCreate.sh)
+  "remoteEnv": {
+    "SSH_AUTH_SOCK": ""
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "username": "opam",
+      "installZsh": true,
+      "configureZshAsDefaultShell": true,
+      "installOhMyZsh": true,
+      "installOhMyZshConfig": true,
+      // base image is already updated, keep the build reproducible
+      "upgradePackages": false
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      // NOTE: Node >= 25 doesn't ship corepack anymore
+      "version": "24"
+    }
+  },
   "postCreateCommand": "/bin/bash .devcontainer/wait-for-database.sh -d db-root/test -d db-tenant/dev_zhaw -d db-tenant/test_econ .devcontainer/postCreate.sh",
   // Use 'settings' to set *default* container specific settings.json values on container create.
   // You can edit these settings after create using File > Preferences > Settings > Remote.
@@ -36,18 +57,19 @@
         },
         "ocaml.sandbox": {
           "kind": "opam",
-          "switch": "5.3.0"
+          "switch": "5.5.1"
         }
       },
       // Add the IDs of extensions you want installed when the container is created in the array below.
       "extensions": [
+        "Anthropic.claude-code",
+        "DavidAnson.vscode-markdownlint",
         "donjayamanne.githistory",
         "eamodio.gitlens",
         "exiasr.hadolint",
         "irongeek.vscode-env",
-        "ocamllabs.ocaml-platform",
-        "DavidAnson.vscode-markdownlint",
-        "ms-vscode.makefile-tools"
+        "ms-vscode.makefile-tools",
+        "ocamllabs.ocaml-platform"
       ]
     }
   }

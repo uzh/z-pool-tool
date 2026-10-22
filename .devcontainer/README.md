@@ -19,10 +19,16 @@ This project is setup to run in a DevContainer. Ensure requirements to run in a 
 1. [Visual Studio Code](https://code.visualstudio.com/) (VS Code) installed
 1. VS Code Extension [Remote Container](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) installed
 
-Your SSH folder and Git config gets mapped to the container. You should be able to use SSH and Git inside the
-container. Please ensure `~/.gitconfig` doesn't contain absolute paths (you may use the `~` profile prefix, i.e.
+Neither `~/.gitconfig` nor `~/.ssh` are mounted by the compose setup. VS Code Dev Containers copies your Git config on
+its own; please ensure `~/.gitconfig` doesn't contain absolute paths (you may use the `~` profile prefix, i.e.
 `excludesfile = ~/.gitignore_global`). **Please note:** You probably have to update Sourcetree settings. In its
 settings "General" tab uncheck "Allow Sourcetree to modify your global Mercurial and Git configuration files".
+
+The forwarded SSH agent is cleared (`remoteEnv.SSH_AUTH_SOCK` in `devcontainer.json`), so neither you nor an agent
+running in the container can use your SSH keys. Remote access goes over HTTPS with the PAT from `.devcontainer/.env`
+(`postCreate.sh` rewrites `git@github.com:` remotes to HTTPS), so scope that PAT to what the container may do.
+Clearing the variable is not a hard boundary: VS Code still creates the agent socket in `/tmp/vscode-ssh-auth-*.sock`,
+and a process that looks for it can use it while your host agent has keys loaded.
 
 ## Start
 
@@ -30,16 +36,33 @@ settings "General" tab uncheck "Allow Sourcetree to modify your global Mercurial
 > GitHub Actions only build the `linux/amd64` image, use the build command on step 2 for `linux/arm64`
 
 1. If needed, edit `.devcontainer/docker-compose.override.yml` to suit your needs.
-1. If not logged in to GitHub's container registry, the base image can be built with the following command: `docker build -f ./docker/Dockerfile.build -t ghcr.io/uzh/z-pool-tool/ocaml:9-5.3-2.3 .`
+1. Copy `.devcontainer/.env.example` to `.devcontainer/.env` (git ignored) and fill in your values (git identity, signing key, PAT). Only `.env` is loaded into the container; the container won't start without it.
+1. If not logged in to GitHub's container registry, the base image can be built with the following command: `docker build -f ./docker/Dockerfile.build -t ghcr.io/uzh/z-pool-tool/ocaml:9-5.5-2.6 .`
 1. Mark devcontainer workspace as safe: `git config --global --add safe.directory /workspace`
 1. Click on the icon similar to "><" in the bottom left corner and select `Remote-Containers: Reopen in Container`.
     - If any changes were made to files in `.devcontainer` folder the Container should be rebuilt (`Remote-Containers: Rebuild Container`)
 
 > **NOTE**: When the setup is fully installed, select `View` -> `Command Palette...` and run the command `OCaml: Restart Language Server`
 
+## Image and Features
+
+The image is based on `ghcr.io/uzh/z-pool-tool/ocaml:9-5.5-2.6` (built from `docker/Dockerfile.build`, RHEL 9 UBI).
+Tooling on top of it is installed with [devcontainer features](https://containers.dev/features) (see `devcontainer.json`):
+
+- `common-utils`: common CLI utilities (via `dnf`), zsh, Oh My Zsh and passwordless `sudo` for the `opam` user
+- `node`: Node.js and yarn (via corepack)
+
+The `Dockerfile` adds `hadolint` and the [GitButler CLI](https://docs.gitbutler.com/cli-overview) (`but`, latest
+release in `~/.local/bin`).
+
+`make dev` (`scripts/dev.sh`) uses dune's watch mode for rebuilds, so no extra file watcher is installed
+(dune 3 has a built-in inotify backend; the dune docs still mention `inotifywait`/`fswatch`, which is outdated).
+Watch mode needs inotify, which 9p mounts (a Windows repository under `/mnt/c`) don't provide. There `make dev` polls the
+sources every 2s instead; set `DEV_POLL=1` in `.devcontainer/.env` to force it if rebuilds don't trigger. Cloning the
+repository inside the WSL file system is faster and keeps watch mode.
+
 ## Running Dev Container
 
-- The Makefile used in the DevContainer is located in the `.devcontainer` folder
 - Ports from outside (e.g. localhost)
   - webserver
     - root `3016`
