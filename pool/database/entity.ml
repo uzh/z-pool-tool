@@ -124,10 +124,6 @@ let pool_size () =
 type no_transaction = [ `no_transaction ]
 type transaction = [ `transaction ]
 
-(*
-   let find db_ctx =  Database.find db_ctx do_the_find
-*)
-
 type !_ ctx =
   | Label :
       { label : Label.t
