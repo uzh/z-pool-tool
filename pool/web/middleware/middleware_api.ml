@@ -42,11 +42,13 @@ let context () =
         |> with_status `Internal_server_error
         |> Lwt_result.lift
       in
-      let* api_key = find_api_key database_label req ||> with_status `Unauthorized in
+      Database.connection_ctx database_label
+      @@ fun db_ctx ->
+      let* api_key = find_api_key db_ctx req ||> with_status `Unauthorized in
       let%lwt guardian =
         api_key.Api_key.id
         |> Guard.Uuid.actor_of Api_key.Id.value
-        |> Guard.Persistence.ActorRole.permissions_of_actor database_label
+        |> Guard.Persistence.ActorRole.permissions_of_actor db_ctx
       in
       create api_key database_label guardian |> Lwt_result.return
     in

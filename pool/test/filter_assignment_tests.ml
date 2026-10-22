@@ -1,7 +1,7 @@
 let ( let@ ) = CCResult.( >>= )
 let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f
 let ( let& ) = Lwt_result.bind
-let test_db = Test_utils.Data.database_label
+let test_db = Test_utils.Data.db_ctx
 let current_user = Test_utils.Model.create_admin ()
 
 let session ~experiment =

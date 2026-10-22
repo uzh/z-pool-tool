@@ -157,6 +157,7 @@ let count_all_workable label =
   Lwt.catch
     (fun () -> Database.find_opt label count_all_workable_request ())
     (function
+      | Database.Error.(Failed { error = #Caqti_error.load_or_connect; _ })
       | Caqti_error.(Exn #load_or_connect) -> Lwt.return_none
       | exn -> Lwt.reraise exn)
   ||> CCOption.get_or ~default:0
@@ -198,6 +199,7 @@ let count_recently_failed job_name label =
   Lwt.catch
     (fun () -> Database.find_opt label count_recently_failed_request job_name)
     (function
+      | Database.Error.(Failed { error = #Caqti_error.load_or_connect; _ })
       | Caqti_error.(Exn #load_or_connect) -> Lwt.return_none
       | exn -> Lwt.reraise exn)
   ||> CCOption.get_or ~default:0
@@ -353,7 +355,8 @@ let archive_insert_request =
 
 let archive { Entity.Instance.id; database_label; _ } =
   let open Lwt_result.Syntax in
-  Database.query database_label (fun connection ->
+  let db_ctx = Database.label_ctx database_label in
+  Database.query db_ctx (fun connection ->
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     let* () = Connection.start () in
     Lwt.catch

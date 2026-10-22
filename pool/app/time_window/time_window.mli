@@ -55,15 +55,15 @@ type event =
 val created : t -> event
 val updated : t -> event
 val deleted : t -> event
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val handle_event : _ Database.ctx -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val find : Database.Label.t -> Session.Id.t -> (t, Pool_message.Error.t) Lwt_result.t
+val find : _ Database.ctx -> Session.Id.t -> (t, Pool_message.Error.t) Lwt_result.t
 
 val find_overlapping
   :  ?exclude:Session.Id.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Experiment.Id.t
   -> start:Session.Start.t
   -> end_at:Session.End.t
@@ -71,9 +71,9 @@ val find_overlapping
 
 val query_by_experiment
   :  ?query:Query.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Experiment.Id.t
   -> (t list * Query.t) Lwt.t
 
-val find_current_by_experiment : Database.Label.t -> Experiment.Id.t -> t option Lwt.t
-val find_upcoming_by_experiment : Database.Label.t -> Experiment.Id.t -> t option Lwt.t
+val find_current_by_experiment : _ Database.ctx -> Experiment.Id.t -> t option Lwt.t
+val find_upcoming_by_experiment : _ Database.ctx -> Experiment.Id.t -> t option Lwt.t

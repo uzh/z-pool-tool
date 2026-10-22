@@ -115,7 +115,7 @@ module AboutPage = struct
   let current_user = Test_utils.Model.create_admin ()
 
   let update ?(language = Pool_common.Language.En) key content =
-    let%lwt i18n = I18n.find_by_key database_label key language in
+    let%lwt i18n = I18n.find_by_key Test_utils.Data.db_ctx key language in
     let%lwt () =
       let open CCResult in
       let open I18nCommand.Update in
@@ -123,7 +123,7 @@ module AboutPage = struct
       |> decode
       >>= handle i18n
       |> Test_utils.get_or_failwith
-      |> Pool_event.handle_events database_label current_user
+      |> Pool_event.handle_events Test_utils.Data.db_ctx current_user
     in
     (* the cache is cleared asynchronously by the system event service *)
     I18n.I18nCache.clear () |> Lwt.return
@@ -141,7 +141,7 @@ module AboutPage = struct
   ;;
 
   let check_configured ?(language = Pool_common.Language.En) msg expected =
-    let%lwt configured = I18n.is_about_page_configured database_label language in
+    let%lwt configured = I18n.is_about_page_configured Test_utils.Data.db_ctx language in
     Alcotest.(check bool msg expected configured) |> Lwt.return
   ;;
 

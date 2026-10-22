@@ -8,7 +8,7 @@ let confirmed_and_terms_agreed () =
     let open Pool_context in
     match find req with
     | Error _ -> redirect_to "/error"
-    | Ok { Pool_context.database_label; user; query_parameters; _ } ->
+    | Ok ({ Pool_context.user; query_parameters; _ } as context) ->
       let%lwt confirmed_and_terms_agreed =
         let* contact =
           let error = NotFound Pool_message.Field.Contact in
@@ -30,7 +30,7 @@ let confirmed_and_terms_agreed () =
              | false -> Error ContactUnconfirmed)
         in
         let terms_agreed contact =
-          let%lwt accepted = Contact.has_terms_accepted database_label contact in
+          let%lwt accepted = Contact.has_terms_accepted (on_demand context) contact in
           match accepted with
           | true -> Lwt.return_ok contact
           | false -> Lwt.return_error TermsAndConditionsNotAccepted

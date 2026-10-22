@@ -8,7 +8,7 @@ module JobHistory = Message_template.History
 
 let limit = 10
 let get_or_failwith = Test_utils.get_or_failwith
-let pool = Test_utils.Data.database_label
+let pool = Test_utils.Data.db_ctx
 let sort_events = Test_utils.sort_events
 let current_user () = Integration_utils.AdminRepo.create () |> Lwt.map Pool_context.admin
 let invitation_mail = Message_template.ExperimentInvitation.prepare
@@ -21,7 +21,7 @@ let create_contact_ids n_ids =
 
 let create_no_match_found_events experiment =
   let open Experiment in
-  let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
+  let%lwt tenant = Pool_tenant.find_by_db_ctx pool ||> get_or_failwith in
   let%lwt emails =
     find_admins_to_notify_about_invitations pool experiment.id
     >|> Lwt_list.map_s
@@ -522,7 +522,7 @@ let expected_resend_events contacts mailing experiment invitation_mail =
 
 let send_invitations _ () =
   let open MatcherTestUtils in
-  let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
+  let%lwt tenant = Pool_tenant.find_by_db_ctx pool ||> get_or_failwith in
   let%lwt current_user = current_user () in
   let%lwt experiment, contacts =
     setup_with_contacts ~title_suffix:"send_invitations" current_user
@@ -546,7 +546,7 @@ let send_invitations _ () =
 ;;
 
 let reset_invitations _ () =
-  let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
+  let%lwt tenant = Pool_tenant.find_by_db_ctx pool ||> get_or_failwith in
   let%lwt current_user = current_user () in
   let%lwt experiment, contacts =
     MatcherTestUtils.setup_with_invitations ~title_suffix:"reset_invitations" current_user
@@ -572,7 +572,7 @@ let reset_invitations _ () =
 
 let matcher_notification _ () =
   let open MatcherTestUtils in
-  let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
+  let%lwt tenant = Pool_tenant.find_by_db_ctx pool ||> get_or_failwith in
   let%lwt current_user = current_user () in
   let%lwt experiment, _ =
     setup_with_contacts ~title_suffix:"matcher_notification" current_user
@@ -626,7 +626,7 @@ let deduplicate_contacts_by_id _ () =
 let create_invitations_for_online_experiment _ () =
   let open MatcherTestUtils in
   let%lwt current_user = current_user () in
-  let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
+  let%lwt tenant = Pool_tenant.find_by_db_ctx pool ||> get_or_failwith in
   let contact_ids = [ Contact.Id.create () ] in
   let invitation_ids = CCList.map (fun _ -> Pool_common.Id.create ()) contact_ids in
   let%lwt experiment =

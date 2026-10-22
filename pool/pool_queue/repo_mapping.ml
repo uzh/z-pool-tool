@@ -35,15 +35,15 @@ let exists_request model =
   |> Pool_common.Repo.Id.t ->? Pool_common.Repo.Id.t
 ;;
 
-let insert pool ({ entity; entity_uuid; queue_uuid; _ } as t) =
+let insert db_ctx ({ entity; entity_uuid; queue_uuid; _ } as t) =
   let open Lwt.Infix in
-  Database.find_opt pool (exists_request entity) entity_uuid
+  Database.find_opt db_ctx (exists_request entity) entity_uuid
   >>= function
-  | Some _ -> Database.exec pool (insert_request t) t
+  | Some _ -> Database.exec db_ctx (insert_request t) t
   | None ->
     Logs.warn ~src (fun m ->
       m
-        ~tags:(Database.Logger.Tags.create pool)
+        ~tags:(Database.Logger.Tags.of_db_ctx db_ctx)
         "Skipping queue mapping insert for missing %s uuid=%s (queue_uuid=%s)"
         (Entity.History.show_model entity)
         (Pool_common.Id.value entity_uuid)

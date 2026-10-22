@@ -7,7 +7,7 @@ module SmtpAuth = struct
 
   let defalut_is_set pool =
     let open Utils.Lwt_result.Infix in
-    Email_service.Cache.find_default pool
+    Email_service.Cache.find_default (Database.label_of_ctx pool)
     |> function
     | Some _ -> Lwt.return_true
     | None ->
@@ -15,7 +15,7 @@ module SmtpAuth = struct
       ||> (function
        | Error _ -> false
        | Ok smtp ->
-         let () = Email_service.Cache.add pool smtp in
+         let () = Email_service.Cache.add (Database.label_of_ctx pool) smtp in
          true)
   ;;
 

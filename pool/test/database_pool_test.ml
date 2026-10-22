@@ -52,6 +52,7 @@ let unreachable_database_settles_every_query _ () =
   let get_exn = Pool_message.Error.get_or_failwith in
   let%lwt port, close_server = start_unresponsive_server () in
   let label = Label.create "database-pool-test" |> get_exn in
+  let db_ctx = label_ctx label in
   let url =
     Format.asprintf "mariadb://root@127.0.0.1:%d/test" port |> Url.create |> get_exn
   in
@@ -62,7 +63,7 @@ let unreachable_database_settles_every_query _ () =
   in
   let query () =
     Lwt.catch
-      (fun () -> find label request () |> Lwt.map (fun (_ : int) -> ()))
+      (fun () -> find db_ctx request () |> Lwt.map (fun (_ : int) -> ()))
       (fun (_ : exn) -> Lwt.return_unit)
   in
   let queries = CCList.init concurrent_queries (fun (_ : int) -> query ()) in

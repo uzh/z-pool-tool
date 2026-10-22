@@ -1,7 +1,7 @@
 open Test_utils
 module Command = Cqrs_command.Session_command
 
-let database_label = Data.database_label
+let db_ctx = Data.db_ctx
 let date_to_ptime date = date |> Ptime.of_date |> CCOption.get_exn_or "Invalid date"
 let create_start date = date |> date_to_ptime |> Session.Start.create
 let create_end date = date |> date_to_ptime |> Session.End.create
@@ -46,7 +46,7 @@ let find_overlapping _ () =
     let start = create_start start in
     let end_at = create_end end_at in
     let%lwt result =
-      Time_window.find_overlapping database_label experiment.Experiment.id ~start ~end_at
+      Time_window.find_overlapping db_ctx experiment.Experiment.id ~start ~end_at
     in
     Alcotest.(check (list time_window_testable) "succeeds") expected result |> Lwt.return
   in

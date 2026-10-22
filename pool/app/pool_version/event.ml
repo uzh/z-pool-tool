@@ -13,7 +13,7 @@ let handle_event =
     let%lwt () = Repo.insert m in
     let%lwt () =
       Entity_guard.Target.to_authorizable
-        ~ctx:(Database.to_ctx Database.Pool.Root.label)
+        ~ctx:(Database.Label.to_ctx Database.Pool.Root.label)
         m
       ||> Pool_common.Utils.get_or_failwith
       ||> fun (_ : Guard.Target.t) -> ()

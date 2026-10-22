@@ -3,7 +3,7 @@ open Integration_utils
 open Utils.Lwt_result.Infix
 open Assignment_job
 
-let pool = Data.database_label
+let pool = Data.db_ctx
 let get_exn = get_or_failwith
 let contact_id_1 = Contact.Id.create ()
 let contact_id_2 = Contact.Id.create ()
@@ -25,7 +25,7 @@ let get_assignment_by_contact contact_id =
 ;;
 
 let create_notification experiment assignments admin =
-  let%lwt tenant = Pool_tenant.find_by_label pool ||> get_exn in
+  let%lwt tenant = Pool_tenant.find_by_db_ctx pool ||> get_exn in
   Message_template.MatchFilterUpdateNotification.create
     tenant
     Pool_common.I18n.MatchesFilterChangeReasonWorker
