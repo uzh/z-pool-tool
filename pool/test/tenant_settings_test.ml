@@ -422,7 +422,7 @@ let cannot_delete_last_smtp =
       (* Gather full write objects before deleting so cleanup can restore them *)
       let%lwt all = Email.SmtpAuth.find_all test_db in
       let%lwt writes =
-        Lwt_list.filter_map_p
+        Lwt_list.filter_map_s
           (fun ({ Email.SmtpAuth.id; _ } : Email.SmtpAuth.t) ->
              Email.SmtpAuth.find_full test_db id |> Lwt.map CCResult.to_opt)
           all
