@@ -133,6 +133,7 @@ type !_ ctx = private
       { connection : Caqti_lwt.connection
       ; label : Label.t
       ; tags : Logs.Tag.set
+      ; mutex : Lwt_mutex.t
       }
       -> no_transaction ctx
   [@ocaml.alert
@@ -143,6 +144,7 @@ type !_ ctx = private
       { connection : Caqti_lwt.connection
       ; label : Label.t
       ; tags : Logs.Tag.set
+      ; mutex : Lwt_mutex.t
       }
       -> transaction ctx
   [@ocaml.alert

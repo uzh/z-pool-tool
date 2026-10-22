@@ -138,12 +138,14 @@ type !_ ctx =
       { connection : Caqti_lwt.connection
       ; label : Label.t
       ; tags : Logs.Tag.set
+      ; mutex : Lwt_mutex.t
       }
       -> no_transaction ctx
   | TransactionalConnection :
       { connection : Caqti_lwt.connection
       ; label : Label.t
       ; tags : Logs.Tag.set
+      ; mutex : Lwt_mutex.t
       }
       -> transaction ctx
 

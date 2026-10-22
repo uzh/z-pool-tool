@@ -306,9 +306,9 @@ module Make (Config : Pools_sig.ConfigSig) = struct
       | Label { label; tags = _ } ->
         let%lwt pool = fetch ?retries label in
         Caqti_lwt_unix.Pool.use fcn pool |> raise_caqti_error_labelled label
-      | Connection { connection; label; tags = _ }
-      | TransactionalConnection { connection; label; tags = _ } ->
-        fcn connection |> raise_on_error label
+      | Connection { connection; label; mutex; tags = _ }
+      | TransactionalConnection { connection; label; mutex; tags = _ } ->
+        Lwt_mutex.with_lock mutex @@ fun () -> fcn connection |> raise_on_error label
     ;;
 
     let raise_caqti_error
@@ -403,7 +403,8 @@ module Make (Config : Pools_sig.ConfigSig) = struct
     try%lwt
       Caqti_lwt_unix.Pool.use
         (fun connection ->
-           let ctx = Entity.Connection { connection; label; tags } in
+           let mutex = Lwt_mutex.create () in
+           let ctx = Entity.Connection { connection; label; mutex; tags } in
            fcn ctx |> Lwt_result.ok)
         pool
       |> Lwt.map Result.get_ok
@@ -422,7 +423,8 @@ module Make (Config : Pools_sig.ConfigSig) = struct
         (fun connection ->
            let open Lwt_result.Syntax in
            let (module Connection : Caqti_lwt.CONNECTION) = connection in
-           let ctx = Entity.TransactionalConnection { connection; label; tags } in
+           let mutex = Lwt_mutex.create () in
+           let ctx = Entity.TransactionalConnection { connection; label; mutex; tags } in
            Pool.raise_caqti_error ctx
            @@
            let* () = Connection.start () in
