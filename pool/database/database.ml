@@ -141,7 +141,14 @@ module Pool = struct
   end
 
   let initialize ?(clear = false) () =
-    let () = if clear then Pool.clear () else () in
+    let%lwt () =
+      if clear
+      then (
+        let labels = find_all ~exclude:[] () |> CCList.map Entity.label in
+        let () = Pool.clear () in
+        Lwt_list.iter_s (Entity.Label.value %> Guard.drop_pool) labels)
+      else Lwt.return_unit
+    in
     let () = Root.add () in
     let%lwt (_ : Label.t list) = Tenant.setup () in
     Lwt.return_unit

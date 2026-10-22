@@ -605,7 +605,10 @@ let () =
           ; test_case "publish" `Quick publish
           ] )
     ; ( "queue"
-      , [ test_case "create delivery report" `Quick Queue_test.create_text_message_dlr ] )
+      , Queue_test.
+          [ test_case "create delivery report" `Quick create_text_message_dlr
+          ; test_case "retry releases polled job" `Quick retry_releases_polled_job
+          ] )
     ; ( "system settings"
       , [ test_case "update page scripts" `Quick Tenant_settings_test.update_page_scripts
         ] )
