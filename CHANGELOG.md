@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.13.12](https://github.com/uzh/z-pool-tool/tree/0.13.12) - 2026-10-23
+
 ### Added
 
 - `QUEUE_JOB_TIMEOUT` (default 60s): running jobs are aborted and retried after it, so a
