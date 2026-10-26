@@ -394,7 +394,6 @@ module Job = struct
       && CCString.find ~sub:"RESOLVER.ADR.RecipientNotFound" msg >= 0
     in
     let handle ?id:_ (Database.Any db_ctx) (job : t) =
-      (* TODO(reynir): we want transaction here? *)
       let email_data = email job in
       let smtp_auth_id = smtp_auth_id job in
       Lwt.catch
