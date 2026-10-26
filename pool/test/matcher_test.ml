@@ -22,31 +22,6 @@ let create_contact_ids n_ids =
   aux [] n_ids
 ;;
 
-(* (* XXX(reynir): dead code?! *)
-let create_no_match_found_events experiment =
-  let open Experiment in
-  let%lwt tenant = Pool_tenant.find_by_db_ctx pool ||> get_or_failwith in
-  let%lwt emails =
-    find_admins_to_notify_about_invitations pool experiment.id
-    >|> Lwt_list.map_s
-          (Message_template.MatcherNotification.create
-             tenant
-             Pool_common.Language.En
-             experiment)
-    ||> Email.bulksent
-    ||> Pool_event.email
-  in
-  let updated =
-    Updated
-      ( experiment
-      , { experiment with
-          matcher_notification_sent = MatcherNotificationSent.create true
-        } )
-    |> Pool_event.experiment
-  in
-  Lwt.return [ emails; updated ]
-;;*)
-
 let expected_events ?(ids = []) experiment mailing contacts create_message =
   let invitations =
     CCList.mapi
