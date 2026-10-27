@@ -33,7 +33,8 @@ let handle_event ?user_uuid db_ctx : event -> unit Lwt.t = function
     Repo.TenantContactEmail.update ?user_uuid db_ctx contact_email
   (* Using the database label passed through the event, as this event has the root context *)
   | ContactEmailCreated (contact_email, tenant_db) ->
-    (* XXX(reynir): can [tenant_db] be different from [db_ctx]? *)
+    (* NOTE(reynir): At call sites [db_ctx] is the root database so [tenant_db]
+       may be different a different database. *)
     Repo.TenantContactEmail.update (Database.label_ctx tenant_db) contact_email
   | InactiveUserDisableAfterUpdated disable_after ->
     Repo.InactiveUserDisableAfter.update ?user_uuid db_ctx disable_after
