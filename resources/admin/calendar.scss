@@ -1,76 +1,43 @@
 @use "@econ/frontend-framework/dist/sass/colors" as c;
 @use "@econ/frontend-framework/dist/sass/variables" as vars;
 @use "@econ/frontend-framework/dist/sass/breakpoints";
+@use "fullcalendar/skeleton.css";
+@use "fullcalendar/themes/classic/theme.css";
+@use "fullcalendar/themes/classic/palette.css";
 
 
 :root {
-    --fc-today-bg-color: #fefad1;
+    --fc-classic-today: #fefad1;
 }
 
-.fc {
-    [class*=grid-] {
-        gap: 0;
-    }
+.calendar-toolbar-title {
+    @extend .heading-3 !optional
+}
 
-    .fc-scrollgrid-liquid,
-    .fc-scrollgrid-section,
-    .fc-scrollgrid-section-header {
-        display: inherit;
-    }
+// Doubled to outrank the theme's single-class rules regardless of load order
+.calendar-event.calendar-event {
+    background-color: color-mix(in srgb, var(--fc-event-color) 20%, transparent);
+}
 
-    table[class*=grid-] {
-        display: table;
-    }
+.calendar-event-time {
+    overflow: visible;
+}
 
-    tr[class*=grid-] {
-        display: table-row;
-    }
+.calendar-event-inner {
+    cursor: pointer;
+}
 
-    td[class*=grid-] {
-        display: table-cell;
-    }
+.calendar-list-event-title>*:last-child {
+    float: inline-end;
+    margin-inline-start: auto;
+}
 
-    .fc-daygrid-event,
-    .fc-daygrid-event-harness {
-        display: block;
-    }
-
-    .fc-daygrid-dot-event {
-        display: flex;
-    }
-
-    .fc-daygrid-day-frame {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .fc-daygrid-day-events {
-        display: block;
-    }
-
-    .fc-toolbar-title {
-        @extend .heading-3 !optional
-    }
-
-    .fc-event-time {
-        overflow: visible;
-    }
-
-    .fc-event-main {
-        cursor: pointer;
-    }
-
-    .fc-list-event-title>*:last-child {
-        float: inline-end;
-    }
-
-    .fc-list-sticky .fc-list-day.fc-day-today>th {
-        background-color: var(--fc-today-bg-color);
-    }
+.calendar-list-day-today {
+    background-color: var(--fc-classic-today);
 }
 
 // Week view
-.fc-timegrid-event-harness .fc-event {
+.calendar-timegrid-event {
     max-width: 100%;
     overflow: hidden;
 }
@@ -102,36 +69,34 @@
 }
 
 :root {
-    --fc-button-bg-color: #{c.$color-primary};
-    --fc-button-border-color: #{c.$color-primary-dark};
-    --fc-button-hover-bg-color: #{c.$color-primary-light};
-    --fc-button-hover-border-color: #{c.$color-primary-dark};
-    --fc-button-active-bg-color: #{c.$color-primary-light};
-    --fc-button-active-border-color: #{c.$color-primary-dark};
+    --fc-classic-button: #{c.$color-primary};
+    --fc-classic-button-border: #{c.$color-primary-dark};
+    --fc-classic-button-strong: #{c.$color-primary-light};
+    --fc-classic-button-strong-border: #{c.$color-primary-dark};
 }
 
 @include breakpoints.econ-until(breakpoints.$desktop-breakpoint) {
-    .fc-header-toolbar {
+    .calendar-toolbar {
         flex-direction: column;
 
-        .fc-toolbar-title {
+        .calendar-toolbar-title {
             font-size: vars.$base-font-size;
         }
 
-        .fc-button {
+        .calendar-button {
             font-size: vars.$font-size-sm;
         }
 
-        &>.fc-toolbar-chunk {
+        &>.calendar-toolbar-section {
             margin-top: vars.$space-md;
         }
 
-        &>.fc-toolbar-chunk:nth-child(2) {
+        &>.calendar-toolbar-section:nth-child(2) {
             order: -1;
         }
     }
 
-    .fc-list-day-cushion {
+    .calendar-list-day-header-inner {
         display: flex;
         gap: vars.$space-lg;
     }
@@ -144,7 +109,7 @@
         }
     }
 
-    .fc .fc-list-event[aria-expanded="true"] td {
-        background-color: var(--fc-today-bg-color);
+    .calendar-list-event[aria-expanded="true"] {
+        background-color: var(--fc-classic-today);
     }
 }
