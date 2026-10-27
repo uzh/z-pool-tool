@@ -1,6 +1,6 @@
 # ocamlbuild working directory
 _esy/
-_build/
+_build*/
 .yarn/
 public/
 guardian/
@@ -35,6 +35,7 @@ _opam/
 .cache
 .bsb.lock
 *.log
+logs/*
 !.log/.gitkeep
 .parcel-cache
 *.ctf
