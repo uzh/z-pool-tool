@@ -4,6 +4,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+### Added
+
+- memtrace (dev setup only, `opam install --with-dev-setup`): set `MEMTRACE=<file>` to record a memory trace of `run.exe` and the test executables (`%p` in the file
+  name is replaced by the pid, view it with `memtrace_viewer`)
+- `make dev-trace`, `make worker-trace` and `make test-trace` (optionally with `SANITIZER=tsan|asan|lsan`) record
+  memory traces and sanitizer logs and summarise them in `logs/trace/*/report.md`; `worker-trace` puts the worker
+  under email load and samples RSS, open fds and delivered emails
+- `test.mail` command takes an optional number of emails to dispatch
+
+### Changed
+
+- OCaml 5.5.2
+- Devcontainer creates compiler-only switches with ThreadSanitizer, AddressSanitizer, LeakSanitizer and frame pointers
+
 ## [0.13.12](https://github.com/uzh/z-pool-tool/tree/0.13.12) - 2026-10-23
 
 ### Added

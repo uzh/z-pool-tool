@@ -12,7 +12,7 @@ all:
 .PHONY: deps
 deps: ## Install development dependencies
 	opam install -y dune-release ocamlformat ocaml-lsp-server
-	opam install --deps-only --with-test --with-doc --working-dir --locked -y .
+	opam install --deps-only --with-test --with-doc --with-dev-setup --working-dir --locked -y .
 
 .PHONY: lock
 lock: ## Generate a lock file
@@ -46,6 +46,10 @@ test: ## Run the all tests
 	SIHL_ENV=test QUEUE_FORCE_ASYNC=true opam exec -- dune exec --root . pool/run/run.exe seed.tenant.test
 	SIHL_ENV=test QUEUE_FORCE_ASYNC=true opam exec -- dune build --root . @runtest
 
+.PHONY: test-trace
+test-trace: ## Run the tests with memtrace (and SANITIZER=tsan|asan|lsan), report in logs/trace
+	SANITIZER=$(SANITIZER) ./scripts/trace.sh test
+
 .PHONY: test-migrate
 test-migrate: ## Run the all tests
 	SIHL_ENV=test opam exec -- dune exec --root . pool/run/run.exe migrate.root
@@ -72,6 +76,14 @@ format: ## Format the codebase with ocamlformat
 .ONESHELL:
 dev:: ## Run the Sihl app, watch files and restart on change
 	./scripts/dev.sh
+
+.PHONY: dev-trace
+dev-trace: ## Run server and worker with memtrace (and SANITIZER=tsan|asan|lsan), report in logs/trace
+	SANITIZER=$(SANITIZER) DURATION=$(DURATION) ./scripts/trace.sh dev
+
+.PHONY: worker-trace
+worker-trace: ## Run the worker under email load with memtrace (and SANITIZER=...), report in logs/trace
+	SANITIZER=$(SANITIZER) DURATION=$(DURATION) JOBS=$(JOBS) WAVE=$(WAVE) ./scripts/trace.sh worker
 
 .PHONY: utop
 utop: ## Run a REPL and link with the project's libraries

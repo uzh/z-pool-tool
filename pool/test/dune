@@ -32,6 +32,7 @@
   pool_database
   pool_event
   pool_location
+  pool_memtrace
   pool_tenant
   reminder
   seed

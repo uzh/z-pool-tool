@@ -61,6 +61,48 @@ Watch mode needs inotify, which 9p mounts (a Windows repository under `/mnt/c`) 
 sources every 2s instead; set `DEV_POLL=1` in `.devcontainer/.env` to force it if rebuilds don't trigger. Cloning the
 repository inside the WSL file system is faster and keeps watch mode.
 
+## Debug switches
+
+`postCreate.sh` creates compiler-only opam switches next to the default one (the options conflict with each other, so
+there is one switch per option). The sanitizer runtimes (`libasan`, `liblsan`, `libtsan`, `libunwind-devel` from EPEL)
+are installed by the devcontainer `Dockerfile`.
+
+- `5.5.2+tsan`: ThreadSanitizer (`ocaml-option-tsan`), reports data races between domains
+- `5.5.2+address-sanitizer`: AddressSanitizer (`ocaml-option-address-sanitizer`), memory errors in C stubs
+- `5.5.2+leak-sanitizer`: LeakSanitizer (`ocaml-option-leak-sanitizer`), memory leaks in C stubs
+- `5.5.2+fp`: frame pointers (`ocaml-option-fp`), for `perf` call graphs
+
+The switches don't contain the project dependencies. `make dev-trace` and `make test-trace` install them on first use
+(~15 min per switch) and build into a separate build directory (`_build_<option>`), so the default `_build` and a
+running `make dev` aren't touched:
+
+```sh
+make test-trace                  # tests with memtrace, default switch
+make test-trace SANITIZER=tsan   # ... built with ThreadSanitizer (asan, lsan likewise)
+make dev-trace SANITIZER=asan DURATION=120   # server + worker, stops after 120s (or Ctrl-C)
+make worker-trace JOBS=500 WAVE=60 DURATION=600   # worker only, 500 test emails every 60s
+```
+
+`make worker-trace` sends the emails for real (`EMAIL_BYPASS_INTERCEPT=true`, the recipient is still redirected to
+`TEST_EMAIL`) through the root database's SMTP server, in the devcontainer that's Mailpit. The report adds the worker's
+RSS, open file descriptors and Mailpit's accepted count over time, and the guard LRU cache sizes when the jobs use them.
+
+memtrace is a `with-dev-setup` dependency: without it (production builds) `MEMTRACE` only prints a warning.
+
+Each run writes the memtrace files (`memtrace-<pid>.ctf`), the sanitizer logs (`<tsan|asan|lsan>.<pid>`), the process
+output and a summary (`report.md`) to `logs/trace/<mode>-<sanitizer>-<timestamp>/`.
+
+To trace every run, set `MEMTRACE` in `.env` / `.env.test` (see `.env.example`). Sihl's `.env` loader overrides the
+environment, so that file wins over the one `make dev-trace` sets; the run links it into its directory.
+
+To install the dependencies by hand, disable leak detection: the sanitized compiler itself leaks at exit, which fails
+the builds.
+
+```sh
+ASAN_OPTIONS=detect_leaks=0 LSAN_OPTIONS=detect_leaks=0 \
+  opam install --switch=5.5.2+address-sanitizer --working-dir --deps-only --with-test --with-dev-setup -y .
+```
+
 ## Running Dev Container
 
 - Ports from outside (e.g. localhost)

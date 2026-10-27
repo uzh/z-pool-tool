@@ -1,5 +1,6 @@
 let src = Logs.Src.create "run"
 let () = Printexc.record_backtrace true
+let () = Pool_memtrace.start ~context:"pool"
 
 let worker_services =
   [ Pool_database.register ()

@@ -51,6 +51,7 @@
    (and
     (>= 2.0.0)
     (< 3.0.0)))
+  (memtrace :with-dev-setup)
   (ocaml
    (>= 4.14.0))
   (ocaml-lsp-server :with-dev-setup)

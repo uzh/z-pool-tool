@@ -9,6 +9,13 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN mkdir -p /workspace/_build /workspace/node_modules /home/opam/.cache \
   && chown -R opam:opam /workspace/_build /workspace/node_modules /home/opam/.cache
 
+# sanitizer runtimes for the ocaml-option-* switches created in postCreate.sh
+# (TSan needs libunwind-devel, which UBI doesn't ship, EPEL does)
+# hadolint ignore=DL3041
+RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
+  && dnf install -y libasan liblsan libtsan libunwind-devel \
+  && dnf clean all
+
 USER opam
 
 # GitButler CLI (`but`), installed to ~/.local/bin (the installer verifies the binary's signature)

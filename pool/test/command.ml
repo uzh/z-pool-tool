@@ -1,5 +1,7 @@
 Printexc.record_backtrace true;;
 
+let () = Pool_memtrace.start ~context:"test.command"
+
 let () =
   let open Alcotest in
   run

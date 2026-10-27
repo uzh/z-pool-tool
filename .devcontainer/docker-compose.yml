@@ -8,12 +8,13 @@ services:
       - ..:/workspace:cached
       - build:/workspace/_build:cached
       - node_modules:/workspace/node_modules:cached
-      - opam-5.5-2.6:/home/opam/.opam:cached
+      - opam-5.5.2-2.6:/home/opam/.opam:cached
       - ${HOME}/.claude:/home/opam/.claude
       # Add database folders to dev container
       - db-root:/databases/db-root/:ro
       - db-tenant:/databases/db-tenant/:ro
     env_file: [.env]
+    security_opt: [seccomp:unconfined]
     depends_on:
       - database-root
       - database-tenant
@@ -84,6 +85,6 @@ services:
 volumes:
   build:
   node_modules:
-  opam-5.5-2.6:
+  opam-5.5.2-2.6:
   db-root:
   db-tenant:

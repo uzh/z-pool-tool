@@ -47,3 +47,7 @@ node_modules
 
 # Assets
 resources/font
+
+# trace runs (scripts/trace.sh)
+_build_*/
+logs/trace/

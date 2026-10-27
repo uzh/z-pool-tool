@@ -90,6 +90,8 @@ let suite =
   ]
 ;;
 
+let () = Pool_memtrace.start ~context:"test.pool_token"
+
 let () =
   let services = [ Pool_database.register (); Pool_token.register () ] in
   Lwt_main.run

@@ -1,5 +1,7 @@
 (* Pool cache tests. Kept out of [integration] on purpose: these point a pool at
    a socket of their own and need no reachable database. *)
+let () = Pool_memtrace.start ~context:"test.database_pool"
+
 let () =
   Lwt_main.run
     (Alcotest_lwt.run

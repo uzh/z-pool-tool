@@ -1,7 +1,7 @@
 FROM registry.access.redhat.com/ubi9/ubi:9.7
 
 LABEL org.opencontainers.image.title="OCaml Development Environment (RHEL 9)"
-LABEL org.opencontainers.image.description="OCaml 5.5.1 development environment with opam 2.6.1 installed, based on Red Hat Universal Base Image 9.7 (RHEL 9)"
+LABEL org.opencontainers.image.description="OCaml 5.5.2 development environment with opam 2.6.1 installed, based on Red Hat Universal Base Image 9.7 (RHEL 9)"
 LABEL org.opencontainers.image.source="https://github.com/uzh/z-pool-tool"
 LABEL org.opencontainers.image.url="https://github.com/uzh/z-pool-tool"
 LABEL org.opencontainers.image.documentation="https://github.com/uzh/z-pool-tool/blob/main/README.md"
@@ -12,7 +12,7 @@ USER root
 
 # Set up environment
 ENV OPAM_VERSION=2.6.1
-ENV OCAML_VERSION=5.5.1
+ENV OCAML_VERSION=5.5.2
 
 # Enable RHEL repositories and install packages
 RUN dnf update -y && dnf clean all

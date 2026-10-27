@@ -1,0 +1,7 @@
+; Summarises a run directory of scripts/trace.sh as markdown, needs memtrace
+; (opam install --with-dev-setup)
+
+(executable
+ (name trace_report)
+ (optional)
+ (libraries containers memtrace unix))

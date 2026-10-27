@@ -57,7 +57,7 @@
         },
         "ocaml.sandbox": {
           "kind": "opam",
-          "switch": "5.5.1"
+          "switch": "5.5.2"
         }
       },
       // Add the IDs of extensions you want installed when the container is created in the array below.

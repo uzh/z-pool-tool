@@ -527,6 +527,8 @@ let services =
   ]
 ;;
 
+let () = Pool_memtrace.start ~context:"test.integration"
+
 let () =
   Lwt_main.run
     (let open Test_utils in

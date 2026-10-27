@@ -10,6 +10,7 @@
   command
   guard
   pool_canary
+  pool_memtrace
   pool_queue
   reminder
   routes

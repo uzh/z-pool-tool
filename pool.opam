@@ -24,6 +24,7 @@ depends: [
   "logs" {>= "0.7.0"}
   "lwt" {>= "5.7.0"}
   "mariadb" {>= "2.0.0" & < "3.0.0"}
+  "memtrace" {with-dev-setup}
   "ocaml" {>= "4.14.0"}
   "ocaml-lsp-server" {with-dev-setup}
   "ocamlformat" {>= "0.18.0" & (with-dev-setup | with-test)}
@@ -70,4 +71,7 @@ pin-depends: [
     # pin custom libraries
     ["guardian.0.5.0" "git+https://github.com/uzh/guardian.git#0.5.0"]
     ["canary.0.0.4" "git+https://github.com/uzh/canary.git#0.0.4"]
+
+    # OCaml 5 port of memtrace (statmemprof is back since 5.3), not released upstream yet
+    ["memtrace.0.2.3-5_1_statmemprof+e315e21" "git+https://github.com/tmcgilchrist/memtrace.git#e315e2158b9e78d65cc9db86e2118d5e578fdf17"]
 ]

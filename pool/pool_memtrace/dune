@@ -1,0 +1,14 @@
+; memtrace is a dev-setup dependency (opam install --with-dev-setup), without it
+; tracing is a no-op
+
+(library
+ (name pool_memtrace)
+ (libraries
+  containers
+  lwt.unix
+  unix
+  (select
+   pool_memtrace.ml
+   from
+   (memtrace -> pool_memtrace.memtrace.ml)
+   (-> pool_memtrace.noop.ml))))

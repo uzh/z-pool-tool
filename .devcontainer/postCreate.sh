@@ -42,7 +42,18 @@ else
 fi
 
 opam install ocaml-lsp-server
-opam install --working-dir --with-test --with-doc --deps-only --update-invariant -y .
+opam install --working-dir --with-test --with-doc --with-dev-setup --deps-only --update-invariant -y .
+
+# compiler-only switches for debugging (sanitizers conflict with each other, so one switch each)
+# install the project deps into one when needed, see .devcontainer/README.md#debug-switches
+OCAML_VERSION="$(opam switch show)"
+for option in tsan address-sanitizer leak-sanitizer fp; do
+  switch="${OCAML_VERSION}+${option}"
+  if ! opam switch list --short | grep -qxF "$switch"; then
+    opam switch create "$switch" --no-switch -y \
+      --packages="ocaml-variants.${OCAML_VERSION}+options,ocaml-option-${option}"
+  fi
+done
 
 # install yarn packages
 yarn

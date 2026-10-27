@@ -398,6 +398,8 @@ let suite =
   @ Password_reset_test.suite
 ;;
 
+let () = Pool_memtrace.start ~context:"test.pool_user"
+
 let () =
   let services = [ Pool_database.register (); Pool_token.register () ] in
   Lwt_main.run
