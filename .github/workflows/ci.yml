@@ -163,24 +163,18 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: node:lts
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Use Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: "lts/*"
-
       - name: install yarn packages
-        run: yarn install --immutable
+        run: npx --yes corepack@0.36.0 yarn install --immutable
 
       - name: build yarn package
-        run: yarn build
+        run: npx --yes corepack@0.36.0 yarn build
 
       - name: move all assets to one folder
         run: '[ "$(ls pool/public)" ] && cp -r pool/public/* public || exit 0'
