@@ -4,6 +4,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+### Fixed
+
+- Worker memory kept a pending promise alive for the lifetime of the worker
+- The queue worker reads its configuration once instead of re-reading all environment
+  variables on every poll
+
 ## [0.13.12](https://github.com/uzh/z-pool-tool/tree/0.13.12) - 2026-10-23
 
 ### Added
