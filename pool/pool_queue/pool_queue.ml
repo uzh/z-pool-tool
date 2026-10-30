@@ -179,6 +179,10 @@ let run_job
     Lwt.return_ok ()
 ;;
 
+(* Read once: the polling schedules run every second per database and job, and
+   [Sihl.Configuration.read] re-reads the whole environment on each call. *)
+let worker_config = lazy (Sihl.Configuration.read schema)
+
 let work_job job instance =
   let database_label = Instance.database_label instance in
   let tags = Database.Logger.Tags.create database_label in
@@ -190,7 +194,7 @@ let work_job job instance =
       Lwt.catch
         (fun () ->
            let%lwt instance = handle database_label instance in
-           let { job_timeout; _ } = Sihl.Configuration.read schema in
+           let { job_timeout; _ } = Lazy.force worker_config in
            match%lwt[@warning "-4"]
              Lwt_unix.with_timeout (float_of_int job_timeout) (fun () ->
                run_job ~tags job instance)
@@ -214,7 +218,7 @@ let work_job job instance =
 let work_queue (job : AnyJob.t) (database_label : Database.Label.t) =
   let tags = Database.Logger.Tags.create database_label in
   let msg_prefix = [%string "Queue %{JobName.show job.AnyJob.name}"] in
-  let config = Sihl.Configuration.read schema in
+  let config = Lazy.force worker_config in
   match%lwt Repo.count_workable job.AnyJob.name database_label with
   | Error msg ->
     let msg = Pool_message.Error.show msg in
@@ -330,7 +334,7 @@ let start () =
     in
     (* Release jobs that were polled but never completed, e.g. because the
        database connection dropped while they were being processed. *)
-    let stale_after = Sihl.Configuration.read schema |> stale_after in
+    let stale_after = Lazy.force worker_config |> stale_after in
     Logs.info (fun m -> m ~tags "Reset stale jobs polled more than %ds ago" stale_after);
     all_database_labels
     |> Lwt_list.iter_s (fun database_label ->
