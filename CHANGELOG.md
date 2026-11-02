@@ -6,9 +6,22 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Fixed
 
-- Worker memory kept a pending promise alive for the lifetime of the worker
+- Worker memory grew steadily: every iteration of a recurring schedule kept a pending
+  promise alive for the lifetime of the worker
 - The queue worker reads its configuration once instead of re-reading all environment
   variables on every poll
+- Session calendar tooltips show start and end times in the browser's time zone instead
+  of UTC
+- Session calendar keeps the selected view on window resize and only switches between
+  month and list view when crossing the mobile breakpoint
+
+### Changed
+
+- Upgrade to OCaml 5.5.2, caqti 3.1.0 and tls 2.1.4
+- Upgrade FullCalendar to 7.1.3 (single `fullcalendar` package with the classic theme)
+  and CKEditor to 49
+- Cancel superseded CI runs of a pull request and install Yarn via pinned Corepack in the
+  asset build
 
 ## [0.13.12](https://github.com/uzh/z-pool-tool/tree/0.13.12) - 2026-10-23
 
