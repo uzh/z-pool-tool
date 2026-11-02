@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.13.13](https://github.com/uzh/z-pool-tool/tree/0.13.13) - 2026-11-02
+
 ### Fixed
 
 - Worker memory grew steadily: every iteration of a recurring schedule kept a pending
