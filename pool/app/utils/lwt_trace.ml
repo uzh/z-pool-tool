@@ -1,24 +1,26 @@
 (* This module exists to add useful monadic infix operators and to ensure all monadic
    actions are implemented using the lwt ppx to always present clean stack/back traces
    (https://ocsigen.org/lwt/latest/manual/manual and
-   https://github.com/ocsigen/lwt/blob/6ce3d557798d2b5736fb458b697cc3eaa13c461e/src/core/lwt.ml#L1694) *)
+   https://github.com/ocsigen/lwt/blob/6ce3d557798d2b5736fb458b697cc3eaa13c461e/src/core/lwt.ml#L1694)
+
+   The binds return the promise of [f] directly (tail position) instead of awaiting it
+   with another [let%lwt]: otherwise a recursive loop like [Lwt_unix.sleep d >|> loop]
+   keeps one pending promise per iteration alive. The backtrace stays complete, as [f]
+   records its own frames; only a re-raise frame pointing at this module is dropped. *)
 
 module Infix = struct
   let ( let* ) l f =
     let%lwt l' = l in
     match l' with
     | Error _ as e' -> Lwt.return e'
-    | Ok x ->
-      let%lwt res = f x in
-      Lwt.return res
+    | Ok x -> f x
   ;;
 
   (* Lwt *)
   (* Lwt.bind *)
   let ( >|> ) l f =
     let%lwt l' = l in
-    let%lwt l'' = f l' in
-    Lwt.return l''
+    f l'
   ;;
 
   (* Lwt.map *)

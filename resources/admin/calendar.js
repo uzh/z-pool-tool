@@ -1,7 +1,8 @@
-import { Calendar } from '@fullcalendar/core';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import listPlugin from '@fullcalendar/list';
+import { Calendar } from 'fullcalendar';
+import dayGridPlugin from 'fullcalendar/daygrid';
+import timeGridPlugin from 'fullcalendar/timegrid';
+import listPlugin from 'fullcalendar/list';
+import classicThemePlugin from 'fullcalendar/themes/classic';
 import tippy from 'tippy.js';
 import { notifyUser } from "./utils"
 import { generateColor } from "../utils/color"
@@ -14,17 +15,15 @@ const maxHeight = 800
 const toLocalTime = date => date.toLocaleTimeString('en',
     {
         timeStyle: 'short',
-        hour12: false,
-        timeZone: 'UTC'
+        hour12: false
     })
 
 const normalizeSession = (session) => {
     const color = generateColor(session.title)
     session.end = session.end_
     delete session.end_
-    session.textColor = "#363636"
-    session.backgroundColor = `${color}${Math.floor(0.2 * 255).toString(16)}`
-    session.borderColor = color
+    session.contrastColor = "#363636"
+    session.color = color
     session.display = "block"
     return session
 }
@@ -33,9 +32,7 @@ const isDesktop = () => window.innerWidth >= viewBreakpoint;
 
 const determineView = () => isDesktop() ? "dayGridMonth" : "listWeek";
 
-const tooltipContent = ({ _instance, _def }, hideLocation) => {
-    const { start, end } = _instance.range;
-    const { title, extendedProps } = _def;
+const tooltipContent = ({ start, end, title, extendedProps }, hideLocation) => {
     const contactEmail = extendedProps.contact_email
     const { assignment_count, max_participants, min_participants, overbook, links } = extendedProps;
     const { experiment, session } = links;
@@ -43,7 +40,7 @@ const tooltipContent = ({ _instance, _def }, hideLocation) => {
     const sessionLink = session && `<a href="${session}">Session details</a>`;
     const experimentLink = experiment && `<a href="${experiment}">Experiment details</a>`;
     var linkList = [sessionLink, experimentLink].filter(Boolean);
-    const linksHtml = !linkList.lenght ? `<p>${linkList.join(`<br/>`)}</p>` : '';
+    const linksHtml = linkList.length ? `<p>${linkList.join(`<br/>`)}</p>` : '';
     const contactPersonHtml = contactEmail ? `<a href="mailto:${contactEmail}">${contactEmail}</a><br>` : ''
     const header = `<div class="card-header">${title}</div>`
     const body = `<div class="card-body">
@@ -64,15 +61,30 @@ export const initCalendar = () => {
         try {
             const { calendar: url, hideLocation } = el.dataset
 
-            new Calendar(el, {
-                plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
-                initialView: 'dayGridMonth',
+            const calendar = new Calendar(el, {
+                plugins: [dayGridPlugin, timeGridPlugin, listPlugin, classicThemePlugin],
                 firstDay: 1,
                 height: maxHeight,
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek,listWeek'
+                },
+                headerToolbarClass: 'calendar-toolbar',
+                toolbarSectionClass: 'calendar-toolbar-section',
+                toolbarTitleClass: 'calendar-toolbar-title',
+                buttonClass: 'calendar-button',
+                eventClass: 'calendar-event',
+                eventInnerClass: 'calendar-event-inner',
+                eventTimeClass: 'calendar-event-time',
+                columnEventClass: 'calendar-timegrid-event',
+                listDayHeaderClass: info => info.isToday ? 'calendar-list-day-today' : '',
+                listDayHeaderInnerClass: 'calendar-list-day-header-inner',
+                views: {
+                    list: {
+                        listItemEventClass: 'calendar-list-event',
+                        listItemEventTitleClass: 'calendar-list-event-title',
+                    }
                 },
                 eventTimeFormat: {
                     hour: "numeric",
@@ -81,7 +93,7 @@ export const initCalendar = () => {
                     hour12: false,
                 },
                 eventDidMount: function (info) {
-                    [...info.el.querySelectorAll('.fc-list-event-title')].forEach(x => { const span = document.createElement('span'); span.textContent = info.event.extendedProps.location.name; x.appendChild(span); });
+                    [...info.el.querySelectorAll('.calendar-list-event-title')].forEach(x => { const span = document.createElement('span'); span.textContent = info.event.extendedProps.location.name; x.appendChild(span); });
                     tippy(info.el, {
                         arrow: false,
                         appendTo: el,
@@ -99,11 +111,17 @@ export const initCalendar = () => {
                     failure: e => { notifyUser(notificationId, "error", e) }
                 }],
                 initialView: determineView(),
-                windowResize: function () {
-                    this.changeView(determineView())
-                },
                 slotEventOverlap: false
-            }).render();
+            });
+            calendar.render();
+
+            let desktop = isDesktop();
+            window.addEventListener('resize', () => {
+                if (desktop !== isDesktop()) {
+                    desktop = isDesktop();
+                    calendar.changeView(determineView());
+                }
+            });
         } catch (error) {
             console.error(error)
         }

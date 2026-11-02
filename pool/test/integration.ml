@@ -8,6 +8,8 @@ let suite =
           ; test_case "find tenants" `Slow check_find_tenant_database
           ; test_case "access tenant" `Slow check_tenant_database
           ; test_case "session time zone is UTC" `Slow check_session_time_zone_utc
+          ; test_case "query error keeps pool" `Slow check_query_error_keeps_pool
+          ; test_case "clear drains pools" `Slow check_clear_drains_pools
           ] )
     ; ("api_key", Api_key_test.[ test_case "get current api_key" `Slow get_current ])
     ; ( "settings"

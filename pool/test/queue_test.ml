@@ -64,3 +64,18 @@ let create_text_message_dlr () =
   in
   Test_utils.check_result expected events
 ;;
+
+let retry_releases_polled_job () =
+  let open Pool_queue in
+  let instance =
+    Instance.create Database.Pool.Root.label JobName.SendEmail "{}" |> Instance.poll
+  in
+  let () =
+    Alcotest.(
+      check bool "polled job is not workable" false (Instance.should_run instance))
+  in
+  let retried =
+    Instance.fail Ptime.Span.zero instance Pool_message.Error.(NotHandled "test")
+  in
+  Alcotest.(check bool "retried job is workable again" true (Instance.should_run retried))
+;;

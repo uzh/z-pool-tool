@@ -62,6 +62,8 @@ module Instance : sig
   val is_pending : t -> bool
   val resendable : t -> (t, Pool_message.Error.t) result
   val should_run : ?is_polled:bool -> t -> bool
+  val poll : t -> t
+  val fail : Ptime.span -> t -> Pool_message.Error.t -> t
 
   val create
     :  ?id:Id.t

@@ -4,6 +4,56 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.13.13](https://github.com/uzh/z-pool-tool/tree/0.13.13) - 2026-11-02
+
+### Fixed
+
+- Worker memory grew steadily: every iteration of a recurring schedule kept a pending
+  promise alive for the lifetime of the worker
+- The queue worker reads its configuration once instead of re-reading all environment
+  variables on every poll
+- Session calendar tooltips show start and end times in the browser's time zone instead
+  of UTC
+- Session calendar keeps the selected view on window resize and only switches between
+  month and list view when crossing the mobile breakpoint
+
+### Changed
+
+- Upgrade to OCaml 5.5.2, caqti 3.1.0 and tls 2.1.4
+- Upgrade FullCalendar to 7.1.3 (single `fullcalendar` package with the classic theme)
+  and CKEditor to 49
+- Cancel superseded CI runs of a pull request and install Yarn via pinned Corepack in the
+  asset build
+
+## [0.13.12](https://github.com/uzh/z-pool-tool/tree/0.13.12) - 2026-10-23
+
+### Added
+
+- `QUEUE_JOB_TIMEOUT` (default 60s): running jobs are aborted and retried after it, so a
+  hanging SMTP server can't hold jobs (and their memory) forever
+
+### Fixed
+
+- Failed jobs are released for their retry right away instead of relying on the stale job
+  reset (before 0.13.10 they were only retried after a worker restart)
+- Stale job reset threshold is derived from `QUEUE_BATCH_SIZE × QUEUE_JOB_TIMEOUT` (+ 5
+  minutes), so jobs still queued in a running batch are no longer handed out (and sent)
+  twice
+
+### Changed
+
+- Upgrade to OCaml 5.5.1 and opam 2.6.1 (base images `ocaml:{8,9}-5.5-2.6`), with
+  tyxml 5.0, ppxlib 0.39 and ppx_deriving 6.2
+- Upgrade canary to 0.0.4 (fixes URI encoding of GitLab issue requests)
+- Upgrade letters to 0.4.2 (fixes a socket leak when a STARTTLS connection fails or times out)
+- Upgrade GitHub Actions `actions/checkout` to v7 and `actions/setup-node` to v7
+- Upgrade to Yarn 4.18.1
+
+### Removed
+
+- esy setup (`esy.json`, `esy.lock`): unmaintained since 2024 and esy ships no Linux arm64
+  binaries; opam is the only supported setup
+
 ## [0.13.11](https://github.com/uzh/z-pool-tool/tree/0.13.11) - 2026-10-15
 
 ### Added

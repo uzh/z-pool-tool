@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # this script is used to build the project
-# it is setup to run in a RHEL 8 or Debian-based Docker image
+# it is setup to run in a RHEL 9 or Debian-based Docker image
 
 # immediately when a command fails and print each command
 set -ex

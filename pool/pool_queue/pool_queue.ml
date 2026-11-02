@@ -168,7 +168,11 @@ let run_job
     CCOption.map_or ~default:(create database_label) (add database_label) tags
   in
   let log_reraise message exn =
-    Logs.err (fun m -> m ~tags "%s:\n'%s'" message (Printexc.to_string exn));
+    let () =
+      match[@warning "-4"] exn with
+      | Lwt.Canceled -> ()
+      | exn -> Logs.err (fun m -> m ~tags "%s:\n'%s'" message (Printexc.to_string exn))
+    in
     Lwt.reraise exn
   in
   Database.connection_ctx database_label
@@ -195,6 +199,10 @@ let run_job
     Lwt.return_ok ()
 ;;
 
+(* Read once: the polling schedules run every second per database and job, and
+   [Sihl.Configuration.read] re-reads the whole environment on each call. *)
+let worker_config = lazy (Sihl.Configuration.read schema)
+
 let work_job job instance =
   let database_label = Instance.database_label instance in
   let tags = Database.Logger.Tags.create database_label in
@@ -208,7 +216,11 @@ let work_job job instance =
       Lwt.catch
         (fun () ->
            let%lwt instance = handle db_ctx instance in
-           match%lwt[@warning "-4"] run_job ~tags job instance with
+           let { job_timeout; _ } = Lazy.force worker_config in
+           match%lwt[@warning "-4"]
+             Lwt_unix.with_timeout (float_of_int job_timeout) (fun () ->
+               run_job ~tags job instance)
+           with
            | Error (Pool_message.Error.SmtpRecipientNotFound _ as msg) ->
              (* Recipient does not exist — cancelling immediately without retrying *)
              let%lwt () = (AnyJob.failed job) (Database.Any db_ctx) msg instance in
@@ -228,7 +240,7 @@ let work_job job instance =
 let work_queue (job : AnyJob.t) (db_ctx : _ Database.ctx) =
   let tags = Database.Logger.Tags.of_db_ctx db_ctx in
   let msg_prefix = [%string "Queue %{JobName.show job.AnyJob.name}"] in
-  let config = Sihl.Configuration.read schema in
+  let config = Lazy.force worker_config in
   match%lwt Repo.count_workable job.AnyJob.name db_ctx with
   | Error msg ->
     let msg = Pool_message.Error.show msg in
@@ -255,6 +267,9 @@ let work_queue (job : AnyJob.t) (db_ctx : _ Database.ctx) =
                (Printexc.to_string exn));
            Lwt.return_unit)
     in
+    (* Not awaited, so a slow batch doesn't hold back polling. [work_job] aborts
+       each job after QUEUE_JOB_TIMEOUT and does cleanup (fail, archive, notify),
+       and [stale_after] keeps the stale reset from releasing jobs of a running batch. *)
     let () = Lwt.async (fun () -> Lwt_list.iter_s work_job instances) in
     Lwt.return_unit
 ;;
@@ -341,6 +356,8 @@ let start () =
     in
     (* Release jobs that were polled but never completed, e.g. because the
        database connection dropped while they were being processed. *)
+    let stale_after = Lazy.force worker_config |> stale_after in
+    Logs.info (fun m -> m ~tags "Reset stale jobs polled more than %ds ago" stale_after);
     all_database_labels
     |> Lwt_list.iter_s (fun database_label ->
       let tags = Database.Logger.Tags.create database_label in
@@ -351,7 +368,9 @@ let start () =
         [%string "queue [%{Database.Label.value database_label}]: reset stale jobs"]
         interval
         (Some database_label)
-        (fun () -> Database.connection_ctx database_label Repo.reset_stale_pending_jobs)
+        (fun () ->
+           Database.connection_ctx database_label
+           @@ fun db_ctx -> Repo.reset_stale_pending_jobs db_ctx stale_after)
       |> Schedule.add_and_start ~tags)
 ;;
 
