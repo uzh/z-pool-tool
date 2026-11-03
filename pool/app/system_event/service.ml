@@ -2,10 +2,12 @@ module ConnectionWatcher = Service_connections
 
 let src = Logs.Src.create "system_event.service"
 let get_or_failwith = Pool_common.Utils.get_or_failwith
+let started_at = Pool_common.CreatedAt.create_now ()
 
 let run identifier () =
   let open Utils.Lwt_result.Infix in
-  Repo.find_pending identifier >|> Lwt_list.iter_s (Event.handle_system_event identifier)
+  Repo.find_pending ~since:started_at identifier
+  >|> Lwt_list.iter_s (Event.handle_system_event identifier)
 ;;
 
 let start_handler identifier () =
