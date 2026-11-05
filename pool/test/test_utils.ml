@@ -1,5 +1,7 @@
 module Data = struct
   let database_label = "econ-test" |> Database.Label.of_string
+  let connection fcn = Database.connection_ctx database_label fcn
+  let transaction fcn = Database.transaction_ctx database_label fcn
 end
 
 (* Testable *)
@@ -71,7 +73,7 @@ let urlencoded_remove urlencoded validation =
   CCList.filter CCFun.(fst %> validation %> not) urlencoded
 ;;
 
-let file_to_storage file =
+let file_to_storage db_ctx file =
   let open Seed.Assets in
   let stored_file =
     Sihl_storage.
@@ -82,7 +84,7 @@ let file_to_storage file =
       }
   in
   let base64 = Base64.encode_exn file.body in
-  let%lwt _ = Storage.upload_base64 Data.database_label stored_file base64 in
+  let%lwt _ = Storage.upload_base64 db_ctx stored_file base64 in
   Lwt.return_unit
 ;;
 
@@ -572,24 +574,24 @@ module FilterHelper = struct
 end
 
 module Repo = struct
-  let first_contact () =
+  let first_contact db_ctx =
     let open Utils.Lwt_result.Infix in
-    Contact.all Data.database_label ||> fst ||> CCList.hd
+    Contact.all db_ctx ||> fst ||> CCList.hd
   ;;
 
-  let first_tag () =
+  let first_tag db_ctx =
     let open Utils.Lwt_result.Infix in
-    Tags.find_by Data.database_label ||> fst ||> CCList.hd
+    Tags.find_by db_ctx ||> fst ||> CCList.hd
   ;;
 
-  let first_experiment () =
+  let first_experiment db_ctx =
     let open Utils.Lwt_result.Infix in
-    Experiment.all Data.database_label ||> CCList.hd
+    Experiment.all db_ctx ||> CCList.hd
   ;;
 
-  let first_location () =
+  let first_location db_ctx =
     let open Utils.Lwt_result.Infix in
-    Pool_location.all Data.database_label ||> CCList.hd
+    Pool_location.all db_ctx ||> CCList.hd
   ;;
 end
 

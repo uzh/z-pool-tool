@@ -169,7 +169,7 @@ val append_query_to_sql
   -> Database.Dynparam.t * string * string option
 
 val collect_and_count
-  :  Database.Label.t
+  :  _ Database.ctx
   -> t option
   -> select:(?count:bool -> string -> string)
   -> ?where:string

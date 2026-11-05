@@ -32,14 +32,14 @@ module I18nCache = struct
   ;;
 end
 
-let is_about_page_configured database_label language =
+let is_about_page_configured db_ctx language =
   let open Utils.Lwt_result.Infix in
-  Hashtbl.find_opt I18nCache.about_page (database_label, language)
+  Hashtbl.find_opt I18nCache.about_page (Database.label_of_ctx db_ctx, language)
   |> function
   | Some bool -> Lwt.return bool
   | None ->
     let has_content key =
-      find_by_key_opt database_label key language
+      find_by_key_opt db_ctx key language
       ||> CCOption.(
             flat_map content
             %> map_or
@@ -50,31 +50,41 @@ let is_about_page_configured database_label language =
       let%lwt title_is_set = has_content Key.AboutPageTitle in
       if title_is_set then has_content Key.AboutPageText else Lwt.return_false
     in
-    let () = Hashtbl.replace I18nCache.about_page (database_label, language) configured in
+    let () =
+      Hashtbl.replace
+        I18nCache.about_page
+        (Database.label_of_ctx db_ctx, language)
+        configured
+    in
     Lwt.return configured
 ;;
 
-let privacy_policy_is_set database_label language =
+let privacy_policy_is_set db_ctx language =
   let open Utils.Lwt_result.Infix in
-  Hashtbl.find_opt I18nCache.privacy_policy (database_label, language)
+  Hashtbl.find_opt I18nCache.privacy_policy (Database.label_of_ctx db_ctx, language)
   |> function
   | Some bool -> Lwt.return bool
   | None ->
     let%lwt existing =
-      find_by_key_opt database_label Key.PrivacyPolicy language
+      find_by_key_opt db_ctx Key.PrivacyPolicy language
       ||> CCOption.map_or ~default:false (content %> CCOption.is_some)
     in
-    let () = Hashtbl.add I18nCache.privacy_policy (database_label, language) existing in
+    let () =
+      Hashtbl.add
+        I18nCache.privacy_policy
+        (Database.label_of_ctx db_ctx, language)
+        existing
+    in
     Lwt.return existing
 ;;
 
-let find_by_key database_label key language =
-  I18nCache.find (database_label, key, language)
+let find_by_key db_ctx key language =
+  I18nCache.find (Database.label_of_ctx db_ctx, key, language)
   |> function
   | Some i18n -> Lwt.return i18n
   | None ->
-    let%lwt i18n = Repo.find_by_key database_label key language in
-    let () = I18nCache.add database_label key language i18n in
+    let%lwt i18n = Repo.find_by_key db_ctx key language in
+    let () = I18nCache.add (Database.label_of_ctx db_ctx) key language i18n in
     Lwt.return i18n
 ;;
 

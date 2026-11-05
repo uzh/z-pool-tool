@@ -105,15 +105,15 @@ module Password = struct
   ;;
 
   module Reset = struct
-    let create_token label email =
-      let%lwt user = Repo.find_by_email_opt label email in
+    let create_token db_ctx email =
+      let%lwt user = Repo.find_by_email_opt db_ctx email in
       match user with
       | Some { id; _ } ->
         let expires_in = Sihl.Time.OneDay in
-        Pool_token.create label ~expires_in [ "user_id", Id.value id ]
+        Pool_token.create db_ctx ~expires_in [ "user_id", Id.value id ]
         |> Lwt.map CCOption.return
       | None ->
-        let tags = Database.Logger.Tags.create label in
+        let tags = Database.Logger.Tags.of_db_ctx db_ctx in
         Logs.warn (fun m -> m ~tags "No user found with email %a" EmailAddress.pp email);
         Lwt.return_none
     ;;

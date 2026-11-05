@@ -34,8 +34,8 @@ type event =
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : ?user_uuid:Pool_common.Id.t -> Database.Label.t -> event -> unit Lwt.t
-val find_exn : Database.Label.t -> t Lwt.t
-val find_opt : Database.Label.t -> t option Lwt.t
-val text_messages_enabled : Database.Label.t -> bool Lwt.t
+val handle_event : ?user_uuid:Pool_common.Id.t -> _ Database.ctx -> event -> unit Lwt.t
+val find_exn : _ Database.ctx -> t Lwt.t
+val find_opt : _ Database.ctx -> t option Lwt.t
+val text_messages_enabled : _ Database.ctx -> bool Lwt.t
 val clear_cache : unit -> unit

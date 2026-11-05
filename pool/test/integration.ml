@@ -532,6 +532,6 @@ let () =
     (let open Test_utils in
      let%lwt () = setup_test () in
      let%lwt _ = Sihl.Container.start_services services in
-     let%lwt () = Test_seed.create Data.database_label () in
+     let%lwt () = Data.connection @@ fun db_ctx -> Test_seed.create db_ctx () in
      Alcotest_lwt.run "integration" @@ suite)
 ;;

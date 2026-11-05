@@ -9,6 +9,7 @@ end
 
 module Data = struct
   let database_label = "econ-test" |> Label.create |> get_exn
+  let db_ctx = label_ctx database_label
 
   let database =
     let url =
@@ -35,7 +36,7 @@ let check_find_tenant_database _ () =
 ;;
 
 let check_tenant_database _ () =
-  let ctx = Data.database_label |> Database.to_ctx in
+  let ctx = Data.db_ctx |> Database.to_ctx in
   let _ = Sihl.Database.fetch_pool ~ctx () in
   Lwt.return_unit
 ;;
@@ -51,7 +52,9 @@ let check_session_time_zone_utc _ () =
     "SELECT ABS(TIMESTAMPDIFF(SECOND, NOW(), ?))" |> Caqti_type.(ptime ->! int)
   in
   let check label =
-    let name suffix = Format.asprintf "%s: %s" (Label.value label) suffix in
+    let name suffix =
+      Format.asprintf "%s: %s" (Label.value (label_of_ctx label)) suffix
+    in
     let%lwt session_offset = Database.find label session_offset_request () in
     let%lwt clock_drift = Database.find label clock_drift_request (Ptime_clock.now ()) in
     Alcotest.(check int (name "session time_zone is UTC") 0 session_offset);
@@ -59,8 +62,8 @@ let check_session_time_zone_utc _ () =
       check bool (name "DB clock agrees with Ptime_clock") true (clock_drift <= 2))
     |> Lwt.return
   in
-  let%lwt () = check Pool.Root.label in
-  check Data.database_label
+  let%lwt () = check (label_ctx Pool.Root.label) in
+  check Data.db_ctx
 ;;
 
 let select_one_request =
@@ -80,13 +83,18 @@ let check_query_error_keeps_pool _ () =
   let%lwt failed =
     Lwt.catch
       (fun () ->
-         Database.find label failing_request () |> Lwt.map (fun (_ : int) -> false))
+         Database.connection_ctx label
+         @@ fun db_ctx ->
+         Database.find db_ctx failing_request () |> Lwt.map (fun (_ : int) -> false))
       (function
-        | Caqti_error.Exn _ -> Lwt.return_true
+        | Caqti_error.Exn _ | Database.Error.Failed _ -> Lwt.return_true
         | exn -> Lwt.reraise exn)
   in
   let%lwt pool_after_error = Pool.fetch label in
-  let%lwt (_ : int) = Database.find label select_one_request () in
+  let%lwt (_ : int) =
+    Database.connection_ctx label
+    @@ fun db_ctx -> Database.find db_ctx select_one_request ()
+  in
   Alcotest.(check bool "query failed" true failed);
   Alcotest.(check bool "pool kept" true (pool == pool_after_error)) |> Lwt.return
 ;;
@@ -95,7 +103,10 @@ let check_query_error_keeps_pool _ () =
    connections of the dropped pools instead of leaving them open *)
 let check_clear_drains_pools _ () =
   let label = Data.database_label in
-  let%lwt (_ : int) = Database.find label select_one_request () in
+  let%lwt (_ : int) =
+    Database.connection_ctx label
+    @@ fun db_ctx -> Database.find db_ctx select_one_request ()
+  in
   let%lwt pool = Pool.fetch label in
   let%lwt () = Pool.initialize ~clear:true () in
   let rec wait_until_drained attempts =
@@ -105,7 +116,10 @@ let check_clear_drains_pools _ () =
   in
   let%lwt () = wait_until_drained 100 in
   let%lwt new_pool = Pool.fetch label in
-  let%lwt (_ : int) = Database.find label select_one_request () in
+  let%lwt (_ : int) =
+    Database.connection_ctx label
+    @@ fun db_ctx -> Database.find db_ctx select_one_request ()
+  in
   Alcotest.(check int "old pool drained" 0 (Caqti_lwt_unix.Pool.size pool));
   Alcotest.(check bool "new pool in use" true (pool != new_pool)) |> Lwt.return
 ;;

@@ -1,4 +1,3 @@
-let database_label = Test_utils.Data.database_label
 let created_password = Pool_user.Password.Plain.create "CD&*BA8txf3mRuGF"
 let created_password_confirmation = Pool_user.Password.to_confirmed created_password
 
@@ -8,9 +7,11 @@ let reset_password_succeeds =
     let open Utils.Lwt_result.Infix in
     let email = EmailAddress.of_string "foopass@example.com" in
     let new_password = "Password1!" in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
     let%lwt (_ : t) =
       create_user
-        database_label
+        db_ctx
         email
         (Lastname.of_string "Star")
         (Firstname.of_string "Jane")
@@ -19,7 +20,7 @@ let reset_password_succeeds =
       ||> Pool_common.Utils.get_or_failwith
     in
     let%lwt token =
-      Pool_user.Password.Reset.create_token database_label email
+      Pool_user.Password.Reset.create_token db_ctx email
       ||> CCOption.get_exn_or "User with email not found"
     in
     let* events =
@@ -32,11 +33,9 @@ let reset_password_succeeds =
       in
       command_data |> decode |> Lwt_result.lift >== handle
     in
-    let%lwt () = Pool_event.handle_events database_label Pool_context.Guest events in
+    let%lwt () = Pool_event.handle_events db_ctx Pool_context.Guest events in
     let validated_password = Pool_user.Password.Plain.create new_password in
-    let%lwt (_ : t) =
-      login database_label email validated_password ||> CCResult.get_exn
-    in
+    let%lwt (_ : t) = login db_ctx email validated_password ||> CCResult.get_exn in
     Lwt.return_ok ())
 ;;
 
@@ -48,9 +47,11 @@ let reset_password_fail_password_policy =
       EmailAddress.of_string "reset_password_fail_password_policy@example.com"
     in
     let new_password = "password1!" in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
     let%lwt (_ : t) =
       create_user
-        database_label
+        db_ctx
         email
         (Lastname.of_string "Star")
         (Firstname.of_string "Jane")
@@ -59,7 +60,7 @@ let reset_password_fail_password_policy =
       ||> Pool_common.Utils.get_or_failwith
     in
     let%lwt token =
-      Pool_user.Password.Reset.create_token database_label email
+      Pool_user.Password.Reset.create_token db_ctx email
       ||> CCOption.get_exn_or "User with email not found"
     in
     let%lwt result =
@@ -87,9 +88,11 @@ let reset_password_events =
     let open Utils.Lwt_result.Infix in
     let email = EmailAddress.of_string "reset_password_with_notification@example.com" in
     let new_password = "Password1!" in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
     let%lwt _ =
       create_user
-        database_label
+        db_ctx
         email
         (Lastname.of_string "Star")
         (Firstname.of_string "Jane")
@@ -98,7 +101,7 @@ let reset_password_events =
       ||> Pool_common.Utils.get_or_failwith
     in
     let%lwt token =
-      Pool_user.Password.Reset.create_token database_label email
+      Pool_user.Password.Reset.create_token db_ctx email
       ||> CCOption.get_exn_or "User with email not found"
     in
     let* events =

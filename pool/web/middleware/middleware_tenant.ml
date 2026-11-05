@@ -28,7 +28,7 @@ let filter ~maintenance_handler ~connection_issue_handler ~error_handler handler
   match%lwt tenant_of_request req with
   | Ok ({ Pool_tenant.database_label; status; _ } as tenant) ->
     let handle_request () =
-      Settings.find_languages database_label
+      connection_ctx database_label Settings.find_languages
       ||> Tenant.create tenant
       ||> Tenant.set req
       >|> handler

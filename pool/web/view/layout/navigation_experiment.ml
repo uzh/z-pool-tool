@@ -84,7 +84,7 @@ let create
       ?active_navigation
       ?buttons
       ?hint
-      ({ Pool_context.database_label; language; user; _ } as context)
+      ({ Pool_context.language; user; _ } as context)
       title
       experiment
       content
@@ -96,7 +96,7 @@ let create
     active_navigation |> CCOption.map (experiment_url experiment.Experiment.id)
   in
   let%lwt actor =
-    Pool_context.Utils.find_authorizable database_label user
+    Pool_context.Utils.find_authorizable (Pool_context.on_demand context) user
     ||> Pool_common.Utils.get_or_failwith
   in
   let html = make_body ?buttons ?hint language title content in

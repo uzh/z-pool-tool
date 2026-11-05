@@ -78,7 +78,7 @@ module Pool : sig
     ; emails_sent : EmailsSent.t
     }
 
-  val create : Database.Label.t -> ?period:period -> unit -> t Lwt.t
+  val create : _ Database.ctx -> ?period:period -> unit -> t Lwt.t
   val equal : t -> t -> bool
   val show : t -> string
   val pp : Format.formatter -> t -> unit
@@ -97,7 +97,7 @@ module ExperimentInvitations : sig
 
   val create
     :  ?total_match_filter:int
-    -> Database.Label.t
+    -> _ Database.ctx
     -> Experiment.t
     -> (t, Pool_message.Error.t) Lwt_result.t
 end
@@ -112,7 +112,7 @@ module ExperimentFilter : sig
     }
 
   val create
-    :  Database.Label.t
+    :  _ Database.ctx
     -> Experiment.t
     -> Filter.query option
     -> (t, Pool_message.Error.t) Lwt_result.t
@@ -160,7 +160,7 @@ module ExperimentOverview : sig
     ; participation_count : ParticipationCount.t
     }
 
-  val create : Database.Label.t -> Experiment.t -> (t, Pool_message.Error.t) result Lwt.t
+  val create : _ Database.ctx -> Experiment.t -> (t, Pool_message.Error.t) result Lwt.t
 end
 
 module Guard : sig

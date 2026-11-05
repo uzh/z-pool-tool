@@ -78,7 +78,7 @@ module type TSig = sig
     -> Write.t option
 
   val insert
-    :  Database.Label.t
+    :  _ Database.ctx
     -> ?user_uuid:Pool_common.Id.t
     -> entity_uuid:Pool_common.Id.t
     -> before:record
@@ -98,6 +98,6 @@ val sortable_by : Query.Column.t list
 
 val all_by_entity
   :  ?query:Query.t
-  -> Database.Label.t
+  -> _ Database.ctx
   -> Pool_common.Id.t
   -> (t list * Query.t) Lwt.t

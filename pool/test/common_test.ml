@@ -28,11 +28,12 @@ module Data = struct
 end
 
 let validate_email =
-  let database_label = Test_utils.Data.database_label in
   Test_utils.case ~preparation:(fun () ->
     let open Email in
     (* NOTE: An SMTP configuration is also for testing required *)
-    let%lwt () = handle_event database_label (SmtpCreated Data.smtp_account) in
+    Test_utils.Data.connection
+    @@ fun db_ctx ->
+    let%lwt () = handle_event db_ctx (SmtpCreated Data.smtp_account) in
     Lwt.return_ok ())
   @@ fun () ->
   let open Email.Service in
@@ -51,7 +52,9 @@ let validate_email =
       "intercepted recipient"
       email.Sihl_email.recipient
       (Sihl.Configuration.read_string "TEST_EMAIL" |> CCOption.get_exn_or msg));
-  let%lwt { Smtp.subject; _ } = Smtp.prepare ?smtp_auth_id database_label email in
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
+  let%lwt { Smtp.subject; _ } = Smtp.prepare ?smtp_auth_id db_ctx email in
   Alcotest.(
     check
       string

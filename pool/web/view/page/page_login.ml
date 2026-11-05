@@ -9,7 +9,7 @@ let query_params_with_intended query_parameters intended =
 ;;
 
 let login_token_confirmation
-      Pool_context.{ language; query_parameters; csrf; database_label; _ }
+      ({ Pool_context.language; query_parameters; csrf; _ } as context)
       ?authentication_id
       ~email
       ?intended
@@ -107,7 +107,7 @@ let login_token_confirmation
    | None -> Lwt.return (txt "")
    | Some id ->
      Pool_queue.find_last_login_token_sent_at
-       database_label
+       (Pool_context.on_demand context)
        (Pool_common.Id.of_string (Authentication.Id.value id))
      ||> resend_token)
   ||> fun resend_token ->

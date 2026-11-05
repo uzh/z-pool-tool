@@ -236,9 +236,9 @@ let find_by_label pool label =
   set_logos tenant logos |> Lwt.return_ok
 ;;
 
-let find_by_url ?should_cache pool url =
+let find_by_url ?should_cache db_ctx url =
   let open Utils.Lwt_result.Infix in
-  let tags = Database.Logger.Tags.create pool in
+  let tags = Database.Logger.Tags.of_db_ctx db_ctx in
   let should_cache = CCOption.get_or ~default:(fun _ -> true) should_cache in
   Cache.find_by_url url
   |> function
@@ -247,10 +247,10 @@ let find_by_url ?should_cache pool url =
     Lwt_result.return tenant
   | None ->
     let combine ({ Entity.Read.id; _ } as tenant) =
-      Database.collect pool Repo_logo_mapping.Sql.find_request id ||> set_logos tenant
+      Database.collect db_ctx Repo_logo_mapping.Sql.find_request id ||> set_logos tenant
     in
     let%lwt tenant =
-      Database.find_opt pool Sql.find_by_url_request url
+      Database.find_opt db_ctx Sql.find_by_url_request url
       >|> CCOption.map_or ~default:Lwt.return_none (fun tenant ->
         let%lwt tenant = combine tenant in
         let () = if should_cache tenant then Cache.add url tenant else () in

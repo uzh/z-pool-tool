@@ -219,16 +219,16 @@ let create_where
       ?permission
       ?(checks : (string -> string) list = [])
       ?all
-      pool
+      db_ctx
       model
   =
   let open Utils.Lwt_result.Infix in
   let open Pool_message in
-  let tags = Database.Logger.Tags.create pool in
+  let tags = Database.Logger.Tags.of_db_ctx db_ctx in
   let log_warning = Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags in
   match actor, permission with
   | Some actor, Some permission ->
-    sql_uuid_list_fragment pool permission model actor
+    sql_uuid_list_fragment db_ctx permission model actor
     ||> (function
      | Some uuid_list ->
        CCList.map (fun fcn -> fcn uuid_list) checks

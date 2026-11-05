@@ -3,7 +3,7 @@ open Entity
 type event = Created of t [@@deriving show, eq, variants]
 
 let handle_event : event -> unit Lwt.t = function
-  | Created t -> Repo.insert Database.Pool.Root.label t
+  | Created t -> Repo.insert Database.(label_ctx Pool.Root.label) t
 ;;
 
 let handle_system_event identifier system_event =
@@ -12,7 +12,7 @@ let handle_system_event identifier system_event =
   let open Job in
   let create_event_log ?message status =
     create ?message system_event.id (ServiceIdentifier.get identifier) status
-    |> Repo.EventLog.insert Root.label
+    |> Repo.EventLog.insert (Database.label_ctx Root.label)
   in
   let success_log () = create_event_log Status.Successful in
   match system_event.job with
