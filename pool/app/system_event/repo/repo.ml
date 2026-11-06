@@ -133,17 +133,37 @@ module Sql = struct
     in
     let where =
       {sql|
-        pool_system_event_logs.status IS NULL
-        OR pool_system_event_logs.status != "successful"
+        pool_system_events.created_at >= $2
+        AND (
+          pool_system_event_logs.status IS NULL
+          OR pool_system_event_logs.status != "successful"
+        )
       |sql}
     in
     Format.asprintf "%s %s WHERE %s" select_sql joins where
-    |> RepoEntity.EventLog.ServiceIdentifier.t ->! RepoEntity.t
+    |> Caqti_type.(
+         t2 RepoEntity.EventLog.ServiceIdentifier.t Pool_common.Repo.CreatedAt.t
+         ->* RepoEntity.Raw.t)
   ;;
 
-  let find_pending identifier =
-    Entity.EventLog.ServiceIdentifier.get identifier
-    |> Database.collect (label_ctx Pool.Root.label) find_pending_request
+  let find_pending ~since identifier =
+    let open Utils.Lwt_result.Infix in
+    Database.collect
+      (label_ctx Pool.Root.label)
+      find_pending_request
+      (Entity.EventLog.ServiceIdentifier.get identifier, since)
+    ||> CCList.filter_map (fun ((id, job, _, _) as raw) ->
+      match RepoEntity.Raw.to_entity raw with
+      | Ok event -> Some event
+      | Error _ ->
+        Logs.warn (fun m ->
+          m
+            ~tags:Database.(Logger.Tags.create Pool.Root.label)
+            "Skipping system event %a with unknown job: %s"
+            RepoEntity.Id.pp
+            id
+            job);
+        None)
   ;;
 end
 
