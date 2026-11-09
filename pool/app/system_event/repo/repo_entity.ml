@@ -25,6 +25,30 @@ let t =
       (t2 Id.t (t2 Job.t (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))
 ;;
 
+(* Keeps the job undecoded, so a single unknown job (e.g. a removed variant) does not
+   fail the whole query *)
+module Raw = struct
+  type t = Id.t * string * Pool_common.CreatedAt.t * Pool_common.UpdatedAt.t
+
+  let to_entity ((id, job, created_at, updated_at) : t) =
+    Job.of_string job |> CCResult.map (fun job -> { id; job; created_at; updated_at })
+  ;;
+
+  let t =
+    let open Database.Caqti_encoders in
+    let decode (id, (job, (created_at, (updated_at, ())))) =
+      Ok (id, job, created_at, updated_at)
+    in
+    let encode _ = Pool_common.Utils.failwith Pool_message.Error.ReadOnlyModel in
+    let open Schema in
+    custom
+      ~encode
+      ~decode
+      Caqti_type.
+        [ Id.t; string; Pool_common.Repo.CreatedAt.t; Pool_common.Repo.UpdatedAt.t ]
+  ;;
+end
+
 module EventLog = struct
   include Entity.EventLog
 
