@@ -66,6 +66,10 @@ let suite =
           ; test_case "deny invalid operation" `Slow guest_cannot_update_language
           ; test_case "use parametric roles" `Slow operator_works
           ; test_case
+              "find actor after failed lookup"
+              `Slow
+              find_actor_after_failed_lookup
+          ; test_case
               "test adding of role assignments"
               `Slow
               Admin_role_assignment.assignable_roles
