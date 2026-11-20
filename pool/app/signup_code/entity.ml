@@ -31,6 +31,8 @@ end
 module WebhookUrl = struct
   include Pool_model.Base.String
 
+  let pp formatter _ = Format.pp_print_string formatter "<opaque>"
+  let show _ = "<opaque>"
   let max_length = 2048
 
   let create url =
