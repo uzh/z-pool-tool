@@ -91,7 +91,7 @@ let sign_up_create req =
            signup_code_of_query
              db_ctx
              query_parameters
-             Signup_code.Webhook.Trigger.SignUpStarted
+             Signup_code.Webhook.Trigger.SignedUp
          in
          let query_language =
            Pool_context.Utils.query_language tenant_languages query_parameters
@@ -213,7 +213,7 @@ let email_verification req =
         signup_code_of_query
           db_ctx
           query_parameters
-          Signup_code.Webhook.Trigger.SignUpCompleted
+          Signup_code.Webhook.Trigger.EmailVerified
       in
       let%lwt admin = Admin.find db_ctx (email |> Email.user_id |> Admin.Id.of_user) in
       let%lwt contact = Contact.find db_ctx (Email.user_id email |> Contact.Id.of_user) in

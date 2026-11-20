@@ -7,15 +7,15 @@ let t =
         , ( code
           , ( signup_count
             , ( verification_count
-              , (signup_started_webhook_url, (signup_completed_webhook_url, ())) ) ) ) )
+              , (signed_up_webhook_url, (email_verified_webhook_url, ())) ) ) ) )
     =
     Ok
       { id
       ; code
       ; signup_count
       ; verification_count
-      ; signup_started_webhook_url
-      ; signup_completed_webhook_url
+      ; signed_up_webhook_url
+      ; email_verified_webhook_url
       }
   in
   let encode m : ('a Data.t, string) result =
@@ -25,8 +25,8 @@ let t =
         ; m.code
         ; m.signup_count
         ; m.verification_count
-        ; m.signup_started_webhook_url
-        ; m.signup_completed_webhook_url
+        ; m.signed_up_webhook_url
+        ; m.email_verified_webhook_url
         ]
   in
   let open Schema in
@@ -41,8 +41,8 @@ let sql_select_columns =
   ; "pool_signup_codes.code"
   ; "pool_signup_codes.signup_count"
   ; "pool_signup_codes.verification_count"
-  ; "pool_signup_codes.signup_started_webhook_url"
-  ; "pool_signup_codes.signup_completed_webhook_url"
+  ; "pool_signup_codes.signed_up_webhook_url"
+  ; "pool_signup_codes.email_verified_webhook_url"
   ]
 ;;
 
@@ -90,8 +90,8 @@ let insert_request =
       code,
       signup_count,
       verification_count,
-      signup_started_webhook_url,
-      signup_completed_webhook_url
+      signed_up_webhook_url,
+      email_verified_webhook_url
     ) VALUES (
       UNHEX(REPLACE($1, '-', '')),
       $2,
@@ -111,19 +111,19 @@ let update_request =
   {sql|
     UPDATE pool_signup_codes
     SET
-      signup_started_webhook_url = $2,
-      signup_completed_webhook_url = $3
+      signed_up_webhook_url = $2,
+      email_verified_webhook_url = $3
     WHERE
       uuid = UNHEX(REPLACE($1, '-', ''))
   |sql}
   |> Caqti_type.(t3 string (option string) (option string) ->. unit)
 ;;
 
-let update pool { id; signup_started_webhook_url; signup_completed_webhook_url; _ } =
+let update pool { id; signed_up_webhook_url; email_verified_webhook_url; _ } =
   Database.exec
     pool
     update_request
-    (Id.value id, signup_started_webhook_url, signup_completed_webhook_url)
+    (Id.value id, signed_up_webhook_url, email_verified_webhook_url)
 ;;
 
 let increment_request column =

@@ -739,21 +739,21 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | SettingsPageScripts ->
     "Here you can insert HTML code that is rendered on every page in the head or body \
      tag, e.g. a Matomo analytics code."
+  | SignUpCodeEmailVerifiedWebhookHint ->
+    "Called with an HTTP GET request as soon as a contact who signed up with this code \
+     verifies their email address."
   | SignUpCodeHint ->
     Format.asprintf
       "URLs with codes can be sent to track the channels through which contacts register \
        with the pool. The codes can be freely selected, but must be sent as URL \
        parameters with the key '%s'. Create a code to get the URL you can send to new \
-       contacts. Optionally, a webhook can be called when a sign up with a code is \
-       started or completed. The webhook is called with HTTP GET and receives the code \
-       and the payload as the URL parameters '%s' and '%s'."
+       contacts. Optionally, a webhook can be called when a contact signs up with a code \
+       and when they verify their email address. The webhook is called with HTTP GET and \
+       receives the code and the payload as the URL parameters '%s' and '%s'."
       Pool_message.Field.(human_url SignUpCode)
       Pool_message.Field.(human_url SignUpCode)
       Pool_message.Field.(human_url Payload)
-  | SignUpCodeSignUpCompletedWebhookHint ->
-    "Called with an HTTP GET request as soon as a contact who signed up with this code \
-     verifies the email address, i.e. when the sign up is completed."
-  | SignUpCodeSignUpStartedWebhookHint ->
+  | SignUpCodeSignedUpWebhookHint ->
     "Called with an HTTP GET request as soon as a new contact submits the sign up form \
      through a sign up URL containing this code, i.e. before the email address is \
      verified."

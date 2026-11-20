@@ -151,9 +151,8 @@ let form Pool_context.{ language; csrf; flash_fetcher; _ } ~code_section signup_
     | Some { id; _ } -> path ~id (), Control.Update (Some Field.SignUpCode)
   in
   let webhooks_enabled =
-    let has_webhook { signup_started_webhook_url; signup_completed_webhook_url; _ } =
-      CCOption.(
-        is_some signup_started_webhook_url || is_some signup_completed_webhook_url)
+    let has_webhook { signed_up_webhook_url; email_verified_webhook_url; _ } =
+      CCOption.(is_some signed_up_webhook_url || is_some email_verified_webhook_url)
     in
     CCOption.bind flash_fetcher (fun fetch -> fetch (Field.show Field.WebhooksEnabled))
     |> CCOption.map_or
@@ -211,13 +210,13 @@ let form Pool_context.{ language; csrf; flash_fetcher; _ } ~code_section signup_
             ; a_class ("stack-lg" :: (if webhooks_enabled then [] else [ "hidden" ]))
             ]
           [ webhook_input
-              Field.SignUpStartedWebhookUrl
-              I18n.SignUpCodeSignUpStartedWebhookHint
-              (fun { signup_started_webhook_url; _ } -> signup_started_webhook_url)
+              Field.SignedUpWebhookUrl
+              I18n.SignUpCodeSignedUpWebhookHint
+              (fun { signed_up_webhook_url; _ } -> signed_up_webhook_url)
           ; webhook_input
-              Field.SignUpCompletedWebhookUrl
-              I18n.SignUpCodeSignUpCompletedWebhookHint
-              (fun { signup_completed_webhook_url; _ } -> signup_completed_webhook_url)
+              Field.EmailVerifiedWebhookUrl
+              I18n.SignUpCodeEmailVerifiedWebhookHint
+              (fun { email_verified_webhook_url; _ } -> email_verified_webhook_url)
           ]
       ]
   in

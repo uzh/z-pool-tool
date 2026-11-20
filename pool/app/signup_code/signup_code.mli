@@ -40,8 +40,8 @@ type t =
   ; code : Code.t
   ; signup_count : Count.t
   ; verification_count : Count.t
-  ; signup_started_webhook_url : WebhookUrl.t option
-  ; signup_completed_webhook_url : WebhookUrl.t option
+  ; signed_up_webhook_url : WebhookUrl.t option
+  ; email_verified_webhook_url : WebhookUrl.t option
   }
 
 val equal : t -> t -> bool
@@ -50,16 +50,16 @@ val show : t -> string
 
 val create
   :  ?id:Id.t
-  -> ?signup_started_webhook_url:WebhookUrl.t
-  -> ?signup_completed_webhook_url:WebhookUrl.t
+  -> ?signed_up_webhook_url:WebhookUrl.t
+  -> ?email_verified_webhook_url:WebhookUrl.t
   -> Code.t
   -> t
 
 module Webhook : sig
   module Trigger : sig
     type t =
-      | SignUpStarted
-      | SignUpCompleted
+      | SignedUp
+      | EmailVerified
 
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit

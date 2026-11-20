@@ -364,9 +364,9 @@ type hint =
   | SettingsContactEmail
   | SettingsNoEmailSuffixes
   | SettingsPageScripts
+  | SignUpCodeEmailVerifiedWebhookHint
   | SignUpCodeHint
-  | SignUpCodeSignUpCompletedWebhookHint
-  | SignUpCodeSignUpStartedWebhookHint
+  | SignUpCodeSignedUpWebhookHint
   | SignUpCodeUrlHint
   | SignUpCodeWebhooksHint
   | SignUpForWaitingList

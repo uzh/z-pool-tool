@@ -60,23 +60,18 @@ type t =
   ; code : Code.t
   ; signup_count : Count.t
   ; verification_count : Count.t
-  ; signup_started_webhook_url : WebhookUrl.t option
-  ; signup_completed_webhook_url : WebhookUrl.t option
+  ; signed_up_webhook_url : WebhookUrl.t option
+  ; email_verified_webhook_url : WebhookUrl.t option
   }
 [@@deriving eq, show]
 
-let create
-      ?(id = Id.create ())
-      ?signup_started_webhook_url
-      ?signup_completed_webhook_url
-      code
-  =
+let create ?(id = Id.create ()) ?signed_up_webhook_url ?email_verified_webhook_url code =
   { id
   ; code
   ; signup_count = 0
   ; verification_count = 0
-  ; signup_started_webhook_url
-  ; signup_completed_webhook_url
+  ; signed_up_webhook_url
+  ; email_verified_webhook_url
   }
 ;;
 
@@ -85,10 +80,9 @@ module Webhook = struct
 
   module Trigger = struct
     type t =
-      | SignUpStarted [@name "signup_started"]
-      [@printer Utils.ppx_printer "signup_started"]
-      | SignUpCompleted [@name "signup_completed"]
-      [@printer Utils.ppx_printer "signup_completed"]
+      | SignedUp [@name "signed_up"] [@printer Utils.ppx_printer "signed_up"]
+      | EmailVerified [@name "email_verified"]
+      [@printer Utils.ppx_printer "email_verified"]
     [@@deriving eq, show { with_path = false }, yojson]
   end
 
@@ -115,12 +109,12 @@ end
 let webhook
       trigger
       ?payload
-      { code; signup_started_webhook_url; signup_completed_webhook_url; _ }
+      { code; signed_up_webhook_url; email_verified_webhook_url; _ }
   =
   let open Webhook in
   (match trigger with
-   | Trigger.SignUpStarted -> signup_started_webhook_url
-   | Trigger.SignUpCompleted -> signup_completed_webhook_url)
+   | Trigger.SignedUp -> signed_up_webhook_url
+   | Trigger.EmailVerified -> email_verified_webhook_url)
   |> CCOption.map (fun url -> { url; trigger; code; payload })
 ;;
 

@@ -85,6 +85,7 @@ type t =
   | EmailSubject
   | EmailSuffix
   | EmailText
+  | EmailVerifiedWebhookUrl
   | End
   | EnrollFromMain
   | ExampleValue
@@ -272,10 +273,9 @@ type t =
   | ShowToContacts
   | ShowUpCount
   | SignedUpAt
+  | SignedUpWebhookUrl
   | SignUpCode
-  | SignUpCompletedWebhookUrl
   | SignUpCount
-  | SignUpStartedWebhookUrl
   | SignUpUrl
   | SMS
   | SmsText

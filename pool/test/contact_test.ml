@@ -211,7 +211,7 @@ let sign_up_with_signup_code_webhook () =
   let email = email_address |> Pool_user.EmailAddress.of_string in
   let token = Pool_token.of_string "testtoken" in
   let verification_email = verification_email contact_info in
-  let webhook = signup_code_webhook Signup_code.Webhook.Trigger.SignUpStarted in
+  let webhook = signup_code_webhook Signup_code.Webhook.Trigger.SignedUp in
   let events =
     contact_info
     |> sign_up_contact
@@ -529,7 +529,7 @@ let verify_email_with_signup_code_webhook () =
       ; updated_at = Pool_common.UpdatedAt.create_now ()
       }
   in
-  let webhook = signup_code_webhook Signup_code.Webhook.Trigger.SignUpCompleted in
+  let webhook = signup_code_webhook Signup_code.Webhook.Trigger.EmailVerified in
   let events =
     let open Cqrs_command.User_command in
     email_unverified

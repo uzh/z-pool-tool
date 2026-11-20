@@ -776,26 +776,26 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
   | SettingsPageScripts ->
     "Hier können Sie HTML Code einfügen, der auf jeder Seite im Head, bzw. im Body Tag \
      gerendered wird, zum Beispiel ein Matomo Analytics Code."
+  | SignUpCodeEmailVerifiedWebhookHint ->
+    "Wird mit einer HTTP GET-Anfrage aufgerufen, sobald ein Kontakt, der sich mit diesem \
+     Code registriert hat, seine E-Mail-Adresse verifiziert."
   | SignUpCodeHint ->
     Format.asprintf
       "Um zu verfolgen, über welche Kanäle sich Kontakte beim Pool registrieren, können \
        URLs mit Codes verschickt werden. Die Codes können frei gewählt werden, müssen \
        aber als URL Parameter mit dem Key '%s' verschickt werden. Erstellen Sie einen \
        Code, um die URL zu erhalten, die Sie an neue Kontakte senden können. Optional \
-       kann ein Webhook aufgerufen werden, wenn eine Registrierung mit einem Code \
-       gestartet oder abgeschlossen wird. Der Webhook wird per HTTP GET aufgerufen und \
-       erhält den Code und die angehängten Daten als URL Parameter '%s' und '%s'."
+       kann ein Webhook aufgerufen werden, wenn sich ein Kontakt mit einem Code \
+       registriert und wenn er seine E-Mail-Adresse verifiziert. Der Webhook wird per \
+       HTTP GET aufgerufen und erhält den Code und die angehängten Daten als URL \
+       Parameter '%s' und '%s'."
       Pool_message.Field.(human_url SignUpCode)
       Pool_message.Field.(human_url SignUpCode)
       Pool_message.Field.(human_url Payload)
-  | SignUpCodeSignUpCompletedWebhookHint ->
-    "Wird mit einer HTTP GET-Anfrage aufgerufen, sobald ein Kontakt, der sich mit diesem \
-     Code registriert hat, seine E-Mail-Adresse bestätigt, d.h. wenn die Registrierung \
-     abgeschlossen ist."
-  | SignUpCodeSignUpStartedWebhookHint ->
+  | SignUpCodeSignedUpWebhookHint ->
     "Wird mit einer HTTP GET-Anfrage aufgerufen, sobald ein neuer Kontakt das \
      Registrierungsformular über eine Registrierungs-URL mit diesem Code absendet, d.h. \
-     bevor die E-Mail-Adresse bestätigt ist."
+     bevor die E-Mail-Adresse verifiziert ist."
   | SignUpCodeUrlHint ->
     Format.asprintf
       "Senden Sie diese URL an neue Kontakte. Mit dem URL Parameter '%s' können \

@@ -9,29 +9,29 @@ module Data = struct
   open Signup_code
 
   let code_string = "newsletter"
-  let signup_started_url_string = "https://example.com/hooks/signup-started"
-  let signup_completed_url_string = "https://example.com/hooks/signup-completed"
+  let signed_up_url_string = "https://example.com/hooks/signed-up"
+  let email_verified_url_string = "https://example.com/hooks/email-verified"
   let code = Code.of_string code_string
-  let signup_started_url = WebhookUrl.of_string signup_started_url_string
-  let signup_completed_url = WebhookUrl.of_string signup_completed_url_string
+  let signed_up_url = WebhookUrl.of_string signed_up_url_string
+  let email_verified_url = WebhookUrl.of_string email_verified_url_string
   let payload = Payload.of_string "click=42&campaign=autumn"
 
   let unique_code prefix =
     Format.asprintf "%s-%s" prefix Id.(create () |> value) |> Code.of_string
   ;;
 
-  let urlencoded ?signup_started ?signup_completed () =
+  let urlencoded ?signed_up ?email_verified () =
     let webhook field = CCOption.map_or ~default:[] (fun url -> [ field, [ url ] ]) in
     [ Field.(show Code), [ code_string ] ]
-    @ webhook Field.(show SignUpStartedWebhookUrl) signup_started
-    @ webhook Field.(show SignUpCompletedWebhookUrl) signup_completed
+    @ webhook Field.(show SignedUpWebhookUrl) signed_up
+    @ webhook Field.(show EmailVerifiedWebhookUrl) email_verified
   ;;
 
   let with_webhooks ?id () =
     create
       ?id
-      ~signup_started_webhook_url:signup_started_url
-      ~signup_completed_webhook_url:signup_completed_url
+      ~signed_up_webhook_url:signed_up_url
+      ~email_verified_webhook_url:email_verified_url
       code
   ;;
 end
@@ -42,8 +42,8 @@ let create_with_webhooks () =
   let events =
     let open CCResult in
     Data.urlencoded
-      ~signup_started:Data.signup_started_url_string
-      ~signup_completed:Data.signup_completed_url_string
+      ~signed_up:Data.signed_up_url_string
+      ~email_verified:Data.email_verified_url_string
       ()
     |> Command.Create.decode
     >>= Command.Create.handle ~id None
@@ -66,12 +66,12 @@ let create_without_webhooks () =
 let create_with_invalid_webhook_url () =
   let events =
     let open CCResult in
-    Data.urlencoded ~signup_started:"ftp://example.com/hook" ()
+    Data.urlencoded ~signed_up:"ftp://example.com/hook" ()
     |> Command.Create.decode
     >>= Command.Create.handle None
   in
   let expected =
-    Error Error.(Conformist [ Field.SignUpStartedWebhookUrl, Invalid Field.Url ])
+    Error Error.(Conformist [ Field.SignedUpWebhookUrl, Invalid Field.Url ])
   in
   Test_utils.check_result ~msg:"Reject non http(s) webhook url" expected events
 ;;
@@ -92,16 +92,14 @@ let update_webhooks () =
   let signup_code = create Data.code in
   let events =
     let open CCResult in
-    [ Field.(show SignUpCompletedWebhookUrl), [ Data.signup_completed_url_string ] ]
+    [ Field.(show EmailVerifiedWebhookUrl), [ Data.email_verified_url_string ] ]
     |> Command.Update.decode
     >>= Command.Update.handle signup_code
   in
   let expected =
     Ok
       [ Updated
-          { signup_code with
-            signup_completed_webhook_url = Some Data.signup_completed_url
-          }
+          { signup_code with email_verified_webhook_url = Some Data.email_verified_url }
         |> Pool_event.signupcode
       ]
   in
@@ -119,8 +117,8 @@ let remove_webhooks () =
     Ok
       [ Updated
           { signup_code with
-            signup_started_webhook_url = None
-          ; signup_completed_webhook_url = None
+            signed_up_webhook_url = None
+          ; email_verified_webhook_url = None
           }
         |> Pool_event.signupcode
       ]
@@ -130,16 +128,11 @@ let remove_webhooks () =
 
 let webhook_without_url () =
   let open Signup_code in
-  let signup_code =
-    create ~signup_started_webhook_url:Data.signup_started_url Data.code
-  in
+  let signup_code = create ~signed_up_webhook_url:Data.signed_up_url Data.code in
   Alcotest.(check (option testable_webhook))
     "no webhook when the url of the trigger is missing"
     None
-    (Signup_code.webhook
-       Webhook.Trigger.SignUpCompleted
-       ~payload:Data.payload
-       signup_code)
+    (Signup_code.webhook Webhook.Trigger.EmailVerified ~payload:Data.payload signup_code)
 ;;
 
 let webhook_with_url () =
@@ -152,25 +145,25 @@ let webhook_with_url () =
       (Signup_code.webhook trigger ?payload signup_code)
   in
   let open Webhook.Trigger in
-  check "started with payload" SignUpStarted Data.signup_started_url (Some Data.payload);
-  check "completed without payload" SignUpCompleted Data.signup_completed_url None
+  check "signed up with payload" SignedUp Data.signed_up_url (Some Data.payload);
+  check "email verified without payload" EmailVerified Data.email_verified_url None
 ;;
 
 let webhook_request_uri () =
   let open Signup_code in
-  let uri ?(url = Data.signup_started_url) payload =
-    { Webhook.url; trigger = Webhook.Trigger.SignUpStarted; code = Data.code; payload }
+  let uri ?(url = Data.signed_up_url) payload =
+    { Webhook.url; trigger = Webhook.Trigger.SignedUp; code = Data.code; payload }
     |> Webhook.request_uri
     |> Uri.to_string
   in
   let check = Alcotest.(check string) in
   check
     "with payload"
-    "https://example.com/hooks/signup-started?signup_code=newsletter&payload=click=42%26campaign=autumn"
+    "https://example.com/hooks/signed-up?signup_code=newsletter&payload=click=42%26campaign=autumn"
     (uri (Some Data.payload));
   check
     "without payload"
-    "https://example.com/hooks/signup-started?signup_code=newsletter"
+    "https://example.com/hooks/signed-up?signup_code=newsletter"
     (uri None);
   check
     "keeps the query of the configured url"
@@ -181,8 +174,8 @@ let webhook_request_uri () =
 let webhook_job_serialization () =
   let open Signup_code.Webhook in
   let job =
-    { url = Data.signup_completed_url
-    ; trigger = Trigger.SignUpCompleted
+    { url = Data.email_verified_url
+    ; trigger = Trigger.EmailVerified
     ; code = Data.code
     ; payload = Some Data.payload
     }
@@ -196,8 +189,8 @@ let webhook_job_serialization () =
 let resend_webhook_job () =
   let open Signup_code in
   let webhook =
-    { Webhook.url = Data.signup_started_url
-    ; trigger = Webhook.Trigger.SignUpStarted
+    { Webhook.url = Data.signed_up_url
+    ; trigger = Webhook.Trigger.SignedUp
     ; code = Data.code
     ; payload = Some Data.payload
     }
@@ -245,10 +238,10 @@ let edit_page_shows_signup_url_and_webhooks () =
   in
   let contains msg sub = Alcotest.(check bool) msg true (CCString.mem ~sub html) in
   contains "signup url" "pool.example.com/signup?signup-code=newsletter";
-  contains "started webhook url" Data.signup_started_url_string;
-  contains "completed webhook url" Data.signup_completed_url_string;
-  contains "started webhook input" "name=\"signup_started_webhook_url\"";
-  contains "completed webhook input" "name=\"signup_completed_webhook_url\""
+  contains "signed up webhook url" Data.signed_up_url_string;
+  contains "email verified webhook url" Data.email_verified_url_string;
+  contains "signed up webhook input" "name=\"signed_up_webhook_url\"";
+  contains "email verified webhook input" "name=\"email_verified_webhook_url\""
 ;;
 
 let persist _ () =
@@ -256,14 +249,14 @@ let persist _ () =
   Test_utils.Data.connection
   @@ fun db_ctx ->
   let code = Data.unique_code "persisted" in
-  let created = create ~signup_started_webhook_url:Data.signup_started_url code in
+  let created = create ~signed_up_webhook_url:Data.signed_up_url code in
   let%lwt () = Created created |> handle_event db_ctx in
   let%lwt found = find_by_code db_ctx code in
   Alcotest.(check (option testable_signup_code)) "find created code" (Some created) found;
   let updated =
     { created with
-      signup_started_webhook_url = None
-    ; signup_completed_webhook_url = Some Data.signup_completed_url
+      signed_up_webhook_url = None
+    ; email_verified_webhook_url = Some Data.email_verified_url
     }
   in
   let%lwt () = Updated updated |> handle_event db_ctx in
@@ -280,7 +273,7 @@ let counting_keeps_webhooks _ () =
   Test_utils.Data.connection
   @@ fun db_ctx ->
   let code = Data.unique_code "counted" in
-  let created = create ~signup_completed_webhook_url:Data.signup_completed_url code in
+  let created = create ~email_verified_webhook_url:Data.email_verified_url code in
   let%lwt () = Created created |> handle_event db_ctx in
   let%lwt () = SignedUp code |> handle_event db_ctx in
   let%lwt () = Verified code |> handle_event db_ctx in
@@ -293,8 +286,8 @@ let counting_keeps_webhooks _ () =
        Count.value signup_count, Count.value verification_count));
   Alcotest.(check (option testable_webhook))
     "webhook is still configured"
-    (Signup_code.webhook Webhook.Trigger.SignUpCompleted created)
-    (CCOption.bind found (Signup_code.webhook Webhook.Trigger.SignUpCompleted));
+    (Signup_code.webhook Webhook.Trigger.EmailVerified created)
+    (CCOption.bind found (Signup_code.webhook Webhook.Trigger.EmailVerified));
   Lwt.return_unit
 ;;
 
@@ -304,7 +297,7 @@ let unregistered_code_has_no_webhook _ () =
   @@ fun db_ctx ->
   let code = Data.unique_code "unregistered" in
   let%lwt () = SignedUp code |> handle_event db_ctx in
-  let%lwt found = find_webhook db_ctx Webhook.Trigger.SignUpStarted code in
+  let%lwt found = find_webhook db_ctx Webhook.Trigger.SignedUp code in
   Alcotest.(check (option testable_webhook))
     "no webhook for a code without urls"
     None
@@ -320,11 +313,11 @@ let triggered_webhook_is_queued _ () =
     Pool_queue.(count_workable JobName.SendWebhook) db_ctx |> Lwt.map get_exn
   in
   let code = Data.unique_code "queued" in
-  let created = create ~signup_started_webhook_url:Data.signup_started_url code in
+  let created = create ~signed_up_webhook_url:Data.signed_up_url code in
   let%lwt () = Created created |> handle_event db_ctx in
   let%lwt before = count () in
   let%lwt webhook =
-    find_webhook db_ctx Webhook.Trigger.SignUpStarted ~payload:Data.payload code
+    find_webhook db_ctx Webhook.Trigger.SignedUp ~payload:Data.payload code
     |> Lwt.map (CCOption.get_exn_or "webhook not found")
   in
   let%lwt () = WebhookTriggered webhook |> handle_event db_ctx in
@@ -380,7 +373,7 @@ let send_webhook ~status =
   @@ fun db_ctx ->
   let webhook url =
     { Webhook.url
-    ; trigger = Webhook.Trigger.SignUpCompleted
+    ; trigger = Webhook.Trigger.EmailVerified
     ; code = Data.code
     ; payload = Some Data.payload
     }
@@ -429,7 +422,7 @@ let webhook_job_fails_when_unreachable _ () =
       Webhook.Job.send
       (Database.Any db_ctx)
       { Webhook.url
-      ; trigger = Webhook.Trigger.SignUpStarted
+      ; trigger = Webhook.Trigger.SignedUp
       ; code = Data.code
       ; payload = None
       }
@@ -446,14 +439,14 @@ let signup_request_resolves_webhook _ () =
   Test_utils.Data.connection
   @@ fun db_ctx ->
   let code = Data.unique_code "requested" in
-  let created = create ~signup_started_webhook_url:Data.signup_started_url code in
+  let created = create ~signed_up_webhook_url:Data.signed_up_url code in
   let%lwt () = Created created |> handle_event db_ctx in
   let query_parameters =
     [ url_key, Code.value code; payload_url_key, Payload.value Data.payload ]
   in
   let resolve = Handler.Contact.SignUp.signup_code_of_query db_ctx query_parameters in
-  let%lwt found_code, found_payload, started = resolve Webhook.Trigger.SignUpStarted in
-  let%lwt _, _, completed = resolve Webhook.Trigger.SignUpCompleted in
+  let%lwt found_code, found_payload, signed_up = resolve Webhook.Trigger.SignedUp in
+  let%lwt _, _, email_verified = resolve Webhook.Trigger.EmailVerified in
   Alcotest.(check (option string))
     "code of the request"
     (Some (Code.value code))
@@ -463,18 +456,18 @@ let signup_request_resolves_webhook _ () =
     (Some (Payload.value Data.payload))
     (CCOption.map Payload.value found_payload);
   Alcotest.(check (option testable_webhook))
-    "started webhook carries the payload"
+    "signed up webhook carries the payload"
     (Some
-       { Webhook.url = Data.signup_started_url
-       ; trigger = Webhook.Trigger.SignUpStarted
+       { Webhook.url = Data.signed_up_url
+       ; trigger = Webhook.Trigger.SignedUp
        ; code
        ; payload = Some Data.payload
        })
-    started;
+    signed_up;
   Alcotest.(check (option testable_webhook))
-    "no completed webhook configured"
+    "no email verified webhook configured"
     None
-    completed;
+    email_verified;
   Lwt.return_unit
 ;;
 
@@ -511,31 +504,31 @@ let create_form_persists_code _ () =
   @@ fun db_ctx ->
   let%lwt tenant = Pool_tenant.find_by_db_ctx db_ctx ||> get_exn in
   let code = Data.unique_code "form" in
-  let submit signup_started_url =
+  let submit signed_up_url =
     Test_request.mock_post_request
       ~context_tenant:tenant
       ~target:"/admin/settings/signup-code"
       [ Field.(show Code), [ Code.value code ]
-      ; Field.(show SignUpStartedWebhookUrl), [ signup_started_url ]
+      ; Field.(show SignedUpWebhookUrl), [ signed_up_url ]
       ]
     |> Handler.Admin.SignupCodes.create
     ||> fun { Rock.Response.status; _ } -> Httpaf.Status.to_code status
   in
-  let find_signup_started_url () =
+  let find_signed_up_url () =
     find_by_code db_ctx code
-    ||> CCOption.map (fun { signup_started_webhook_url; _ } ->
-      CCOption.map WebhookUrl.value signup_started_webhook_url)
+    ||> CCOption.map (fun { signed_up_webhook_url; _ } ->
+      CCOption.map WebhookUrl.value signed_up_webhook_url)
   in
-  let%lwt status = submit Data.signup_started_url_string in
+  let%lwt status = submit Data.signed_up_url_string in
   Alcotest.(check int) "redirects after creating the code" 302 status;
-  let%lwt created = find_signup_started_url () in
+  let%lwt created = find_signed_up_url () in
   Alcotest.(check (option (option string)))
     "code is stored with its webhook"
-    (Some (Some Data.signup_started_url_string))
+    (Some (Some Data.signed_up_url_string))
     created;
-  let%lwt status = submit Data.signup_completed_url_string in
+  let%lwt status = submit Data.email_verified_url_string in
   Alcotest.(check int) "rejects an existing code" 400 status;
-  let%lwt unchanged = find_signup_started_url () in
+  let%lwt unchanged = find_signed_up_url () in
   Alcotest.(check (option (option string))) "existing code is unchanged" created unchanged;
   Lwt.return_unit
 ;;
