@@ -238,7 +238,7 @@ let update req =
 let delete req =
   let result ({ Pool_context.user; _ } as context) =
     let location_id = id req Field.Location Pool_location.Id.of_string in
-    let file_id = id req Field.FileMapping Pool_location.File.Id.of_string in
+    let file_id = id req Field.File Pool_location.File.Id.of_string in
     Response.bad_request_on_error edit
     @@
     let tags = Pool_context.Logger.Tags.req req in
