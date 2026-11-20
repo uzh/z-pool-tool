@@ -44,6 +44,9 @@ end = struct
       |> Pool_event.email
       |> CCList.return
       |> CCResult.return
+    | SendWebhook ->
+      let* webhook = Signup_code.Webhook.Job.decode (input instance) in
+      Ok [ Signup_code.WebhookResent (webhook, id instance) |> Pool_event.signupcode ]
     | CheckMatchesFilter -> Error Pool_message.Error.JobCannotBeRetriggered
   ;;
 

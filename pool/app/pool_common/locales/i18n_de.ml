@@ -230,6 +230,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
      'Bearbeiten', um diese Einstellung)"
   | Validation -> "Validierung"
   | VersionsListTitle -> "Versionshinweise"
+  | Webhooks -> "Webhooks"
   | WaitingListIsDisabled -> "Die Warteliste ist deaktiviert."
 ;;
 
@@ -775,13 +776,39 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
   | SettingsPageScripts ->
     "Hier können Sie HTML Code einfügen, der auf jeder Seite im Head, bzw. im Body Tag \
      gerendered wird, zum Beispiel ein Matomo Analytics Code."
+  | SignUpCodeEmailVerifiedWebhookHint ->
+    "Wird mit einer HTTP GET-Anfrage aufgerufen, sobald ein Kontakt, der sich mit diesem \
+     Code registriert hat, seine E-Mail-Adresse verifiziert."
   | SignUpCodeHint ->
     Format.asprintf
       "Um zu verfolgen, über welche Kanäle sich Kontakte beim Pool registrieren, können \
        URLs mit Codes verschickt werden. Die Codes können frei gewählt werden, müssen \
-       aber als URL Parameter mit dem Key '%s' verschickt werden. Sie können das \
-       Formular unten, um eine URL zu erstellen, die Sie an neue Kontakte senden können"
+       aber als URL Parameter mit dem Key '%s' verschickt werden. Erstellen Sie einen \
+       Code, um die URL zu erhalten, die Sie an neue Kontakte senden können. Optional \
+       kann ein Webhook aufgerufen werden, wenn sich ein Kontakt mit einem Code \
+       registriert und wenn er seine E-Mail-Adresse verifiziert. Der Webhook wird per \
+       HTTP GET aufgerufen und erhält den Code und die angehängten Daten als URL \
+       Parameter '%s' und '%s'."
       Pool_message.Field.(human_url SignUpCode)
+      Pool_message.Field.(human_url SignUpCode)
+      Pool_message.Field.(human_url Payload)
+  | SignUpCodeSignedUpWebhookHint ->
+    "Wird mit einer HTTP GET-Anfrage aufgerufen, sobald ein neuer Kontakt das \
+     Registrierungsformular über eine Registrierungs-URL mit diesem Code absendet, d.h. \
+     bevor die E-Mail-Adresse verifiziert ist."
+  | SignUpCodeUrlHint ->
+    Format.asprintf
+      "Senden Sie diese URL an neue Kontakte. Mit dem URL Parameter '%s' können \
+       beliebige Daten angehängt werden. Diese werden bei jedem Webhook-Aufruf \
+       mitgesendet."
+      Pool_message.Field.(human_url Payload)
+  | SignUpCodeWebhooksHint ->
+    "Webhooks benachrichtigen einen externen Dienst über Registrierungen mit diesem \
+     Code. Der Code und, falls die Registrierungs-URL eine enthält, die Payload werden \
+     als URL-Parameter an die Webhook-URL angehängt, wie unter dem jeweiligen Feld \
+     angezeigt. Die Aufrufe werden im Hintergrund versendet und später wiederholt, falls \
+     der Dienst nicht mit einem 2xx-Statuscode antwortet. Lassen Sie ein Feld leer, um \
+     den Webhook zu deaktivieren."
   | SignUpForWaitingList ->
     "Das Rekrutierungsteam wird sich mit Ihnen in Verbindung setzen, um Ihnen einen \
      Termin zuzuweisen, wenn ein freier Platz vorhanden ist."

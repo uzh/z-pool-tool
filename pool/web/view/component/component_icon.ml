@@ -19,6 +19,7 @@ type t =
   [@printer prt "chevron-forward-outline"]
   | ChevronForwardCircle [@name "chevron-forward-circle-outline"]
   [@printer prt "chevron-forward-circle-outline"]
+  | ClipboardOutline [@name "clipboard-outline"] [@printer prt "clipboard-outline"]
   | Close [@name "close"] [@printer prt "close"]
   | CloseCircle [@name "close-circle"] [@printer prt "close-circle"]
   | Create [@name "create"] [@printer prt "create"]

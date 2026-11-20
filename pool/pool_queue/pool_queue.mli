@@ -13,6 +13,7 @@ module JobName : sig
     | CheckMatchesFilter
     | SendEmail
     | SendTextMessage
+    | SendWebhook
 
   val equal : t -> t -> bool
   val compare : t -> t -> int

@@ -85,6 +85,7 @@ type t =
   | EmailSubject
   | EmailSuffix
   | EmailText
+  | EmailVerifiedWebhookUrl
   | End
   | EnrollFromMain
   | ExampleValue
@@ -214,6 +215,7 @@ type t =
   | Password
   | PasswordConfirmation
   | Paused
+  | Payload
   | PendingContactImports
   | Period
   | Permission
@@ -271,8 +273,10 @@ type t =
   | ShowToContacts
   | ShowUpCount
   | SignedUpAt
+  | SignedUpWebhookUrl
   | SignUpCode
   | SignUpCount
+  | SignUpUrl
   | SMS
   | SmsText
   | Smtp
@@ -342,6 +346,7 @@ type t =
   | Version
   | Virtual
   | WaitingList
+  | WebhooksEnabled
   | Year
   | Zip
 

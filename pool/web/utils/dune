@@ -14,6 +14,7 @@
   pool_version
   session
   sexplib
+  signup_code
   sihl-storage
   time_window
   user_import

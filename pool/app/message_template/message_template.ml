@@ -1299,6 +1299,7 @@ module SignUpVerification = struct
 
   let create
         ?signup_code
+        ?signup_payload
         pool
         language
         tenant
@@ -1315,8 +1316,9 @@ module SignUpVerification = struct
       let params =
         let signup_code =
           let open Signup_code in
-          signup_code
-          |> CCOption.map_or ~default:[] (fun code -> [ url_key, Code.value code ])
+          let param key value = CCOption.map_or ~default:[] (fun m -> [ key, value m ]) in
+          param url_key Code.value signup_code
+          @ param payload_url_key Payload.value signup_payload
         in
         Pool_common.
           [ ( Pool_message.Field.Language

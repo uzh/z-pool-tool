@@ -517,6 +517,37 @@ let suite =
               `Slow
               delete_unverified_removes_possible_duplicates
           ] )
+    ; ( "signup code"
+      , Signup_code_test.
+          [ test_case "persist code with webhooks" `Slow persist
+          ; test_case "counting keeps webhooks" `Slow counting_keeps_webhooks
+          ; test_case
+              "unregistered code has no webhook"
+              `Slow
+              unregistered_code_has_no_webhook
+          ; test_case "triggered webhook is queued" `Slow triggered_webhook_is_queued
+          ; test_case "create form persists code" `Slow create_form_persists_code
+          ; test_case
+              "signup request resolves webhook"
+              `Slow
+              signup_request_resolves_webhook
+          ; test_case
+              "verification mail keeps code and payload"
+              `Slow
+              verification_mail_keeps_code_and_payload
+          ; test_case
+              "webhook job gets url with query"
+              `Slow
+              webhook_job_gets_url_with_query
+          ; test_case
+              "webhook job fails on error status"
+              `Slow
+              webhook_job_fails_on_error_status
+          ; test_case
+              "webhook job fails when unreachable"
+              `Slow
+              webhook_job_fails_when_unreachable
+          ] )
     ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]
 ;;

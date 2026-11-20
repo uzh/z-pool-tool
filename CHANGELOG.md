@@ -4,6 +4,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+### Added
+
+- Signup codes are created and edited in a form and can call a webhook when a contact
+  signs up with the code and when they verify their email address. The webhook is called
+  with a GET request carrying the `signup_code` and the `payload` (data passed in the
+  `payload` URL parameter of the sign up link) as URL parameters
+
 ## [0.13.13](https://github.com/uzh/z-pool-tool/tree/0.13.13) - 2026-11-02
 
 ### Fixed

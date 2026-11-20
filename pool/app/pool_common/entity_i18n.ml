@@ -147,6 +147,7 @@ type t =
   | UserProfilePausedNote
   | Validation
   | VersionsListTitle
+  | Webhooks
   | WaitingListIsDisabled
 
 type nav_link =
@@ -363,7 +364,11 @@ type hint =
   | SettingsContactEmail
   | SettingsNoEmailSuffixes
   | SettingsPageScripts
+  | SignUpCodeEmailVerifiedWebhookHint
   | SignUpCodeHint
+  | SignUpCodeSignedUpWebhookHint
+  | SignUpCodeUrlHint
+  | SignUpCodeWebhooksHint
   | SignUpForWaitingList
   | SmtpMissing
   | SmtpSettingsDefaultFlag

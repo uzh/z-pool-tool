@@ -93,6 +93,7 @@ let rec field_to_string =
   | EmailSubject -> "email subject"
   | EmailSuffix -> "email suffix"
   | EmailText -> "email text"
+  | EmailVerifiedWebhookUrl -> "email verified webhook url"
   | End -> "end"
   | EnrollFromMain -> "enroll participants from main session"
   | ExampleValue -> "example value"
@@ -226,6 +227,7 @@ let rec field_to_string =
   | Password -> "password"
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
+  | Payload -> "payload"
   | PendingContactImports -> "pending contact imports"
   | Period -> "period"
   | Permission -> "permission"
@@ -283,8 +285,10 @@ let rec field_to_string =
   | ShowToContacts -> "Show to contacts"
   | ShowUpCount -> "show ups"
   | SignedUpAt -> "signed up at"
+  | SignedUpWebhookUrl -> "signed up webhook url"
   | SignUpCode -> "signup code"
   | SignUpCount -> "new sign ups"
+  | SignUpUrl -> "signup url"
   | SMS -> "SMS"
   | SmsText -> "SMS text"
   | Smtp -> "smtp"
@@ -354,6 +358,7 @@ let rec field_to_string =
   | Version -> "version"
   | Virtual -> "virtual"
   | WaitingList -> "waiting list"
+  | WebhooksEnabled -> "enable webhooks"
   | Year -> "year"
   | Zip -> "zip code"
 ;;
@@ -701,6 +706,7 @@ let rec error_to_string =
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
   | Uniqueness field -> field_message "" (field_to_string field) "must be unique."
   | Unsupported text -> [%string "'%{text}' is unsupported."]
+  | WebhookError error -> Format.asprintf "Webhook error: %s" error
   | WriteOnlyModel -> "Write only model!"
 ;;
 
@@ -727,6 +733,7 @@ let control_to_string =
   | ChangeSession -> format_submit "change" (Some Field.Session)
   | Choose field -> format_submit "choose" field
   | Close field -> format_submit "close" field
+  | Copy -> format_submit "copy" None
   | Create field -> format_submit "create" field
   | Decline -> format_submit "decline" None
   | Delete field -> format_submit "delete" field
@@ -739,7 +746,6 @@ let control_to_string =
   | Enroll -> format_submit "enroll" None
   | EnterNewCellPhone -> "Enter a different number"
   | Filter field -> format_submit "filter" field
-  | Generate -> format_submit "generate" None
   | Hide field -> format_submit "hide" field
   | Ignore field -> format_submit "ignore" field
   | Login -> format_submit "login" None

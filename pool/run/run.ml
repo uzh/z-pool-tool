@@ -12,6 +12,7 @@ let worker_services =
         ~jobs:
           [ hide ~execute_on_root:true Email.Service.Job.send
           ; hide Text_message.Service.Job.send
+          ; hide Signup_code.Webhook.Job.send
           ; hide Assignment_job.job
           ]
         ())

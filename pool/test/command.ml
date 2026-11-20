@@ -23,6 +23,10 @@ let () =
             `Quick
             Contact_test.sign_up_not_allowed_suffix
         ; test_case "sign up" `Quick Contact_test.sign_up
+        ; test_case
+            "sign up with signup code webhook"
+            `Quick
+            Contact_test.sign_up_with_signup_code_webhook
         ; test_case "delete with unverified email" `Quick Contact_test.delete_unverified
         ; test_case "try delete with verified email" `Quick Contact_test.delete_verified
         ; test_case "update language of user" `Quick Contact_test.update_language
@@ -64,6 +68,10 @@ let () =
             Contact_test.request_email_validation_wrong_suffix
         ; test_case "update email" `Quick Contact_test.update_email
         ; test_case "verify email" `Quick Contact_test.verify_email
+        ; test_case
+            "verify email with signup code webhook"
+            `Quick
+            Contact_test.verify_email_with_signup_code_webhook
         ; test_case "toggle verified" `Quick Contact_test.toggle_verified
         ; test_case
             "accept terms and condition"
@@ -516,6 +524,31 @@ let () =
           ; test_case "resend unchanged" `Quick resend_unchanged
           ; test_case "resend updated recipient" `Quick resend_updated_recipient
           ; test_case "resend updated smtp" `Quick resend_updated_smtp
+          ] )
+    ; ( "signup code"
+      , Signup_code_test.
+          [ test_case "create with webhooks" `Quick create_with_webhooks
+          ; test_case "create without webhooks" `Quick create_without_webhooks
+          ; test_case
+              "create with invalid webhook url"
+              `Quick
+              create_with_invalid_webhook_url
+          ; test_case "create existing code" `Quick create_existing_code
+          ; test_case "update webhooks" `Quick update_webhooks
+          ; test_case "remove webhooks" `Quick remove_webhooks
+          ; test_case "webhook without url" `Quick webhook_without_url
+          ; test_case "webhook with url" `Quick webhook_with_url
+          ; test_case "webhook request uri" `Quick webhook_request_uri
+          ; test_case "webhook job serialization" `Quick webhook_job_serialization
+          ; test_case "resend webhook job" `Quick resend_webhook_job
+          ; test_case
+              "guest query keeps code and payload"
+              `Quick
+              guest_query_keeps_code_and_payload
+          ; test_case
+              "edit page shows signup url and webhooks"
+              `Quick
+              edit_page_shows_signup_url_and_webhooks
           ] )
     ; ( "organisational unit"
       , [ test_case

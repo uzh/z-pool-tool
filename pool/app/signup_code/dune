@@ -1,6 +1,6 @@
 (library
  (name signup_code)
- (libraries guard pool_common utils)
+ (libraries cohttp-lwt-unix guard pool_common pool_queue utils)
  (preprocess
   (pps
    lwt_ppx

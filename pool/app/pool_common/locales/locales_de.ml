@@ -93,6 +93,7 @@ let rec field_to_string =
   | EmailSubject -> "E-Mail Betreff"
   | EmailSuffix -> "E-Mail Endung"
   | EmailText -> "E-Mail Text"
+  | EmailVerifiedWebhookUrl -> "E-Mail-Verifizierungs-Webhook-URL"
   | End -> "Ende"
   | EnrollFromMain -> "Teilnehmer von Hauptsession einschreiben"
   | ExampleValue -> "Beispielwert"
@@ -225,6 +226,7 @@ let rec field_to_string =
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
+  | Payload -> "Payload"
   | PendingContactImports -> "Pendente Kontaktimporte"
   | Period -> "Zeitraum"
   | Permission -> "Berechtigung"
@@ -285,8 +287,10 @@ let rec field_to_string =
   | ShowToContacts -> "Den Kontakten anzeigen"
   | ShowUpCount -> "Anwesende"
   | SignedUpAt -> "Eingeschrieben am"
+  | SignedUpWebhookUrl -> "Registrierungs-Webhook-URL"
   | SignUpCode -> "Registrierungscode"
   | SignUpCount -> "Neuregistrierungen"
+  | SignUpUrl -> "Registrierungs-URL"
   | SMS -> "SMS"
   | SmsText -> "SMS Text"
   | Smtp -> "SMTP"
@@ -356,6 +360,7 @@ let rec field_to_string =
   | Version -> "Version"
   | Virtual -> "Virtuell"
   | WaitingList -> "Warteliste"
+  | WebhooksEnabled -> "Webhooks aktivieren"
   | Year -> "Jahr"
   | Zip -> "PLZ"
 ;;
@@ -731,6 +736,7 @@ let rec error_to_string =
   | Undefined field -> field_message "" (field_to_string field) "ist undefiniert."
   | Uniqueness field -> field_message "" (field_to_string field) "muss einzigartig sein."
   | Unsupported text -> [%string "'%{text}' ist nicht supportet."]
+  | WebhookError error -> Format.asprintf "Webhook-Fehler: %s" error
   | WriteOnlyModel -> "Model ausschliesslich zum auf die Datenbank schreiben!"
 ;;
 
@@ -757,6 +763,7 @@ let control_to_string =
   | ChangeSession -> format_submit "ändern" (Some Field.Session)
   | Choose field -> format_submit "wählen" field
   | Close field -> format_submit "schliessen" field
+  | Copy -> format_submit "kopieren" None
   | Create field -> format_submit "erstellen" field
   | Decline -> format_submit "ablehnen" None
   | Delete field -> format_submit "löschen" field
@@ -772,7 +779,6 @@ let control_to_string =
   | Hide field -> format_submit "verbergen" field
   | Ignore field -> format_submit "ignorieren" field
   | Login -> format_submit "login" None
-  | Generate -> format_submit "generieren" None
   | LoadDefaultTemplate -> format_submit "Standardtemplate laden" None
   | Manage field -> format_submit "manage" (Some field)
   | MarkAsDeleted -> format_submit "als gelöscht markieren" None
