@@ -86,3 +86,38 @@ let operator_works _ () =
   Alcotest.(check (result unit Test_utils.error)) "Parametric roles work." (Ok ()) actual
   |> Lwt.return
 ;;
+
+(* Regression: a failed [Actor.find] must not be cached, otherwise the actor stays
+   unresolvable after its creation until the cache is cleared. The cache is
+   intentionally not cleared between the calls. *)
+let find_actor_after_failed_lookup _ () =
+  Test_utils.Data.connection
+  @@ fun db_ctx ->
+  let open Utils.Lwt_result.Infix in
+  let ctx = Database.to_ctx db_ctx in
+  let contact =
+    "lookup.before.create@gmail.com"
+    |> Contact_test.contact_info
+    |> Contact_test.create_contact true
+  in
+  let actor_uuid = contact |> Contact.id |> Guard.Uuid.actor_of Contact.Id.value in
+  let%lwt before = Guard.Persistence.Actor.find db_ctx actor_uuid in
+  let () =
+    Alcotest.(check bool)
+      "Lookup of an unknown actor fails"
+      true
+      (CCResult.is_error before)
+  in
+  let%lwt created =
+    Contact.Guard.Actor.to_authorizable ~ctx contact ||> CCResult.get_exn
+  in
+  let%lwt after = Guard.Persistence.Actor.find db_ctx actor_uuid in
+  let uuid =
+    CCResult.map (fun { Guard.Actor.uuid; _ } -> Guard.Uuid.Actor.to_string uuid)
+  in
+  Alcotest.(check (result string string))
+    "Actor is found after its creation"
+    (uuid (Ok created))
+    (uuid after)
+  |> Lwt.return
+;;

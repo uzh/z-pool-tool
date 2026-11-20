@@ -388,18 +388,33 @@ end
 module Actor = struct
   include Actor
 
+  (* Only successful lookups are cached: a cached [Error] would outlive the actor's
+     creation (e.g. via [decorate]) until the cache is cleared or the process restarts. *)
   let find db_ctx id =
-    let cb ~in_cache _ _ =
-      if in_cache
-      then (
-        let tags = tags_of_db_ctx db_ctx in
-        Logs.debug ~src (fun m ->
-          m ~tags "Found in cache: Actor %s" (id |> Core.Uuid.Actor.to_string)))
-      else Cache.log_cache_size Cache.lru_find_actor "lru_find_actor"
+    let key = Database.label_of_ctx db_ctx, id in
+    let cached =
+      (* [with_cache] stores nothing when the compute function raises *)
+      try
+        Some (CCCache.with_cache Cache.lru_find_actor (fun _ -> raise Not_found) key)
+      with
+      | Not_found -> None
     in
-    let find' (label, id) = find ~ctx:(Database.Label.to_ctx label) id in
-    (Database.label_of_ctx db_ctx, id)
-    |> CCCache.(with_cache ~cb Cache.lru_find_actor find')
+    match cached with
+    | Some actor ->
+      let tags = tags_of_db_ctx db_ctx in
+      Logs.debug ~src (fun m ->
+        m ~tags "Found in cache: Actor %s" (id |> Core.Uuid.Actor.to_string));
+      Lwt.return_ok actor
+    | None ->
+      let%lwt result = find ~ctx:(Database.Label.to_ctx (fst key)) id in
+      let () =
+        match result with
+        | Ok actor ->
+          let (_ : bool) = CCCache.add Cache.lru_find_actor key actor in
+          Cache.log_cache_size Cache.lru_find_actor "lru_find_actor"
+        | Error _ -> ()
+      in
+      Lwt.return result
   ;;
 
   let can_assign_roles database_label actor =

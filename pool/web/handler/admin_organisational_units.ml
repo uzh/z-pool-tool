@@ -35,18 +35,20 @@ let index req =
 
 let show action req =
   let result context =
-    let* ou =
-      Pool_context.connection context
-      @@ fun db_ctx -> req |> id |> Organisational_unit.find db_ctx >|- Response.not_found
+    let* html =
+      match action with
+      | `New -> Lwt_result.return (View.create context)
+      | `Edit ->
+        Pool_context.connection context
+        @@ fun db_ctx ->
+        req
+        |> id
+        |> Organisational_unit.find db_ctx
+        >|- Response.not_found
+        >|+ View.detail context
     in
     Response.bad_request_render_error context
-    @@
-    let html =
-      match action with
-      | `New -> View.create context
-      | `Edit -> View.detail context ou
-    in
-    html |> create_layout req context >|+ Sihl.Web.Response.of_html
+    @@ (html |> create_layout req context >|+ Sihl.Web.Response.of_html)
   in
   Response.handle ~src req result
 ;;
