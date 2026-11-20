@@ -225,6 +225,7 @@ let to_string = function
     "You paused all notifications for your user! (Click 'edit' to update this setting)"
   | Validation -> "Validation"
   | VersionsListTitle -> "Release notes"
+  | Webhooks -> "Webhooks"
   | WaitingListIsDisabled -> "The waiting list is disabled."
 ;;
 
@@ -742,9 +743,31 @@ If you trigger the reminders manually now, no more automatic reminders will be s
     Format.asprintf
       "URLs with codes can be sent to track the channels through which contacts register \
        with the pool. The codes can be freely selected, but must be sent as URL \
-       parameters with the key '%s'. You can use the form below to build a URL you can \
-       send to new contacts."
+       parameters with the key '%s'. Create a code to get the URL you can send to new \
+       contacts. Optionally, a webhook can be called when a sign up with a code is \
+       started or completed. The webhook is called with HTTP GET and receives the code \
+       and the payload as the URL parameters '%s' and '%s'."
       Pool_message.Field.(human_url SignUpCode)
+      Pool_message.Field.(human_url SignUpCode)
+      Pool_message.Field.(human_url Payload)
+  | SignUpCodeSignUpCompletedWebhookHint ->
+    "Called with an HTTP GET request as soon as a contact who signed up with this code \
+     verifies the email address, i.e. when the sign up is completed."
+  | SignUpCodeSignUpStartedWebhookHint ->
+    "Called with an HTTP GET request as soon as a new contact submits the sign up form \
+     through a sign up URL containing this code, i.e. before the email address is \
+     verified."
+  | SignUpCodeUrlHint ->
+    Format.asprintf
+      "Send this URL to new contacts. Arbitrary data can be appended with the URL \
+       parameter '%s'. It is sent along with every webhook call."
+      Pool_message.Field.(human_url Payload)
+  | SignUpCodeWebhooksHint ->
+    "Webhooks notify an external service about sign ups with this code. The code and, if \
+     the sign up URL contains one, the payload are appended to the webhook URL as URL \
+     parameters, as shown below each field. Calls are sent in the background and retried \
+     later if the service does not respond with a 2xx status code. Leave a field empty \
+     to disable the webhook."
   | SmtpMissing ->
     "No SMTP configured: Logins are disabled except for users with permission to manage \
      SMTP settings."

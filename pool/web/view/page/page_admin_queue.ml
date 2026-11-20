@@ -42,6 +42,7 @@ let list Pool_context.{ language; _ } queue_table url (queued_jobs, query) =
       match instance |> Instance.name with
       | JobName.SendEmail -> Email.Service.Job.show_recipient instance
       | JobName.SendTextMessage -> Text_message.Service.Job.show_recipient instance
+      | JobName.SendWebhook -> Signup_code.Webhook.Job.show_recipient instance
       | JobName.CheckMatchesFilter -> ""
     in
     let formatted_date_time date =

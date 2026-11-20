@@ -73,6 +73,7 @@ module VerifyEmail : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?signup_code:Signup_code.Code.t
+    -> ?signup_webhook:Signup_code.Webhook.t
     -> user
     -> t
     -> (Pool_event.t list, Pool_message.Error.t) result
@@ -81,12 +82,10 @@ module VerifyEmail : sig
 end = struct
   type t = Email.unverified Email.t
 
-  let handle ?(tags = Logs.Tag.empty) ?signup_code contact command =
+  let handle ?(tags = Logs.Tag.empty) ?signup_code ?signup_webhook contact command =
     Logs.info ~src (fun m -> m "Handle command VerifyEmail" ~tags);
-    let signup_code_event =
-      signup_code
-      |> CCOption.map_or ~default:[] (fun code ->
-        Signup_code.Verified code |> Pool_event.signupcode |> CCList.return)
+    let signup_code_events =
+      Signup_code.verified_events ?signup_code ?signup_webhook ()
     in
     match contact with
     | Contact contact ->
@@ -94,7 +93,7 @@ end = struct
         ([ Contact.EmailVerified contact |> Pool_event.contact
          ; Email.EmailVerified command |> Pool_event.email_verification
          ]
-         @ signup_code_event)
+         @ CCList.map Pool_event.signupcode signup_code_events)
     | Admin admin ->
       Ok
         [ Admin.EmailVerified admin |> Pool_event.admin

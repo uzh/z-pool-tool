@@ -592,6 +592,7 @@ module SignUpVerification : sig
 
   val create
     :  ?signup_code:Signup_code.Code.t
+    -> ?signup_payload:Signup_code.Payload.t
     -> _ Database.ctx
     -> Pool_common.Language.t
     -> Pool_tenant.t

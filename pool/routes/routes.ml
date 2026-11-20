@@ -907,7 +907,16 @@ module Admin = struct
       in
       let signup_codes =
         let open SignupCodes in
-        [ get "" ~middlewares:[ Access.index ] index ]
+        let specific =
+          [ get "" ~middlewares:[ Access.update ] edit
+          ; post "" ~middlewares:[ Access.update ] update
+          ]
+        in
+        [ get "" ~middlewares:[ Access.index ] index
+        ; get "/create" ~middlewares:[ Access.create ] new_form
+        ; post "" ~middlewares:[ Access.create ] create
+        ; choose ~scope:Field.(url_key SignUpCode) specific
+        ]
       in
       let system =
         let specific =

@@ -214,6 +214,7 @@ type t =
   | Password
   | PasswordConfirmation
   | Paused
+  | Payload
   | PendingContactImports
   | Period
   | Permission
@@ -272,7 +273,10 @@ type t =
   | ShowUpCount
   | SignedUpAt
   | SignUpCode
+  | SignUpCompletedWebhookUrl
   | SignUpCount
+  | SignUpStartedWebhookUrl
+  | SignUpUrl
   | SMS
   | SmsText
   | Smtp
@@ -342,6 +346,7 @@ type t =
   | Version
   | Virtual
   | WaitingList
+  | WebhooksEnabled
   | Year
   | Zip
 

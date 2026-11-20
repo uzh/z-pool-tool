@@ -85,7 +85,7 @@ module Utils = struct
     function
     | Admin _ -> []
     | Contact _ -> filter_params Field.[ Redirected; Language ]
-    | Guest -> filter_params Field.[ Redirected; Language; Location; SignUpCode ]
+    | Guest -> filter_params Field.[ Redirected; Language; Location; SignUpCode; Payload ]
   ;;
 
   module Api = struct

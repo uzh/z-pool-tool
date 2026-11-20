@@ -7,6 +7,22 @@ module Response = Http_response
 let src = Logs.Src.create "handler.contact.signup"
 let create_layout = Contact_general.create_layout
 
+let signup_code_of_query db_ctx query_parameters trigger =
+  let open Signup_code in
+  let find key create =
+    CCOption.bind
+      (Pool_context.Utils.find_query_param query_parameters key)
+      CCFun.(create %> CCResult.to_opt)
+  in
+  let code = find url_key Code.create in
+  let payload = find payload_url_key Payload.create in
+  let%lwt webhook =
+    code
+    |> CCOption.map_or ~default:Lwt.return_none (find_webhook db_ctx trigger ?payload)
+  in
+  Lwt.return (code, payload, webhook)
+;;
+
 let sign_up req =
   let result ({ Pool_context.language; _ } as context) =
     let open Utils.Lwt_result.Infix in
@@ -71,11 +87,11 @@ let sign_up_create req =
            Command.SignUp.decode urlencoded |> Lwt_result.lift
          in
          let%lwt token = Email.create_token db_ctx email_address in
-         let signup_code =
-           let open Signup_code in
-           let open CCOption.Infix in
-           Pool_context.Utils.find_query_param query_parameters url_key
-           >>= CCFun.(Code.create %> CCResult.to_opt)
+         let%lwt signup_code, signup_payload, signup_webhook =
+           signup_code_of_query
+             db_ctx
+             query_parameters
+             Signup_code.Webhook.Trigger.SignUpStarted
          in
          let query_language =
            Pool_context.Utils.query_language tenant_languages query_parameters
@@ -83,6 +99,7 @@ let sign_up_create req =
          let%lwt verification_mail =
            Message_template.SignUpVerification.create
              ?signup_code
+             ?signup_payload
              db_ctx
              (CCOption.value ~default:language query_language)
              tenant
@@ -98,6 +115,7 @@ let sign_up_create req =
               ?allowed_email_suffixes
               ~user_id
               ?signup_code
+              ?signup_webhook
               answered_custom_fields
               token
               email_address
@@ -191,21 +209,22 @@ let email_verification req =
     in
     let* events, is_admin_email_verification =
       let open UserCommand in
-      let signup_code =
-        let open Signup_code in
-        let open CCOption.Infix in
-        Pool_context.Utils.find_query_param query_parameters url_key
-        >>= CCFun.(Code.create %> CCResult.to_opt)
+      let%lwt signup_code, (_ : Signup_code.Payload.t option), signup_webhook =
+        signup_code_of_query
+          db_ctx
+          query_parameters
+          Signup_code.Webhook.Trigger.SignUpCompleted
       in
       let%lwt admin = Admin.find db_ctx (email |> Email.user_id |> Admin.Id.of_user) in
       let%lwt contact = Contact.find db_ctx (Email.user_id email |> Contact.Id.of_user) in
-      let verify_email ?signup_code user =
-        VerifyEmail.(handle ~tags ?signup_code user email) |> Lwt_result.lift
+      let verify_email ?signup_code ?signup_webhook user =
+        VerifyEmail.(handle ~tags ?signup_code ?signup_webhook user email)
+        |> Lwt_result.lift
       in
       let update_email user = UpdateEmail.(handle ~tags user email) |> Lwt_result.lift in
       match email |> Email.user_is_confirmed, contact, admin with
       | false, Ok contact, _ ->
-        verify_email ?signup_code (Contact contact) >|+ fun e -> e, false
+        verify_email ?signup_code ?signup_webhook (Contact contact) >|+ fun e -> e, false
       | true, Ok contact, _ -> update_email (Contact contact) >|+ fun e -> e, false
       | false, Error _, Ok admin ->
         let* verify_events = verify_email (Admin admin) in

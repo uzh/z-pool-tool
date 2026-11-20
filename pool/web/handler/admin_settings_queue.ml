@@ -24,7 +24,7 @@ let detail req =
     let%lwt text_message_dlr =
       match Instance.name instance with
       | SendTextMessage -> Text_message.find_report_by_queue_id db_ctx id
-      | SendEmail | CheckMatchesFilter -> Lwt.return_none
+      | SendEmail | CheckMatchesFilter | SendWebhook -> Lwt.return_none
     in
     Page.Admin.Settings.Queue.detail context ?text_message_dlr instance
     |> General.create_tenant_layout req ~active_navigation:base_path context

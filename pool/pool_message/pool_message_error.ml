@@ -154,6 +154,7 @@ type t =
   | Undefined of Field.t
   | Uniqueness of Field.t
   | Unsupported of string
+  | WebhookError of string
   | WriteOnlyModel
 [@@deriving eq, show, yojson, variants, sexp_of]
 

@@ -11,6 +11,7 @@ module SignUp : sig
     -> ?user_id:Contact.Id.t
     -> ?terms_accepted_at:Pool_user.TermsAccepted.t option
     -> ?signup_code:Signup_code.Code.t
+    -> ?signup_webhook:Signup_code.Webhook.t
     -> Custom_field.Public.t list
     -> Pool_token.t
     -> Pool_user.EmailAddress.t
@@ -30,6 +31,7 @@ end = struct
         ?(user_id = Contact.Id.create ())
         ?(terms_accepted_at = Some (Pool_user.TermsAccepted.create_now ()))
         ?signup_code
+        ?signup_webhook
         custom_fields
         token
         unverified_email
@@ -60,10 +62,8 @@ end = struct
         Custom_field.AnsweredOnSignup (field, user_id |> Contact.Id.to_common)
         |> Pool_event.custom_field)
     in
-    let signup_code_event =
-      signup_code
-      |> CCOption.map_or ~default:[] (fun code ->
-        Signup_code.SignedUp code |> Pool_event.signupcode |> CCList.return)
+    let signup_code_events =
+      Signup_code.signed_up_events ?signup_code ?signup_webhook ()
     in
     Ok
       ([ Contact.Created contact |> Pool_event.contact
@@ -72,7 +72,7 @@ end = struct
        ; Email.sent verification_email |> Pool_event.email
        ]
        @ custom_field_events
-       @ signup_code_event)
+       @ CCList.map Pool_event.signupcode signup_code_events)
   ;;
 
   let decode data =

@@ -12,6 +12,7 @@ type t =
   | ChangeSession
   | Choose of Field.t option
   | Close of Field.t option
+  | Copy
   | Create of Field.t option
   | Decline
   | Delete of Field.t option
@@ -24,7 +25,6 @@ type t =
   | Enroll
   | EnterNewCellPhone
   | Filter of Field.t option
-  | Generate
   | Hide of Field.t option
   | Ignore of Field.t option
   | LoadDefaultTemplate

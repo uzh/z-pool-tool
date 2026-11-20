@@ -101,7 +101,7 @@ module NavElements = struct
             TextMessages
             (Set Settings.Guard.Access.update)
         ; single
-            Http_utils.Url.Admin.Settings.signup_codes_path
+            (Http_utils.Url.Admin.Settings.signup_codes_path ())
             SignupCodes
             (Set Signup_code.Access.index)
         ; single

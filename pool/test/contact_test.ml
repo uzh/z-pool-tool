@@ -193,6 +193,64 @@ let sign_up () =
   check_result expected events
 ;;
 
+let signup_code_webhook trigger =
+  let open Signup_code in
+  { Webhook.url = WebhookUrl.of_string "https://example.com/hook"
+  ; trigger
+  ; code = Code.of_string "newsletter"
+  ; payload = Some (Payload.of_string "click=42")
+  }
+;;
+
+let sign_up_with_signup_code_webhook () =
+  let user_id = Contact.Id.create () in
+  let terms_accepted_at = Pool_user.TermsAccepted.create_now () |> CCOption.pure in
+  let ((email_address, password, firstname, lastname, language) as contact_info) =
+    contact_info "john@gmail.com"
+  in
+  let email = email_address |> Pool_user.EmailAddress.of_string in
+  let token = Pool_token.of_string "testtoken" in
+  let verification_email = verification_email contact_info in
+  let webhook = signup_code_webhook Signup_code.Webhook.Trigger.SignUpStarted in
+  let events =
+    contact_info
+    |> sign_up_contact
+    |> Contact_command.SignUp.decode
+    |> Pool_common.Utils.get_or_failwith
+    |> Contact_command.SignUp.handle
+         ~user_id
+         ~terms_accepted_at
+         ~signup_code:webhook.Signup_code.Webhook.code
+         ~signup_webhook:webhook
+         []
+         token
+         email
+         verification_email
+         language
+  in
+  let expected =
+    let contact : Contact.create =
+      { Contact.user_id
+      ; email
+      ; password = password |> Pool_user.Password.Plain.create
+      ; firstname = firstname |> Pool_user.Firstname.of_string
+      ; lastname = lastname |> Pool_user.Lastname.of_string
+      ; terms_accepted_at
+      ; language
+      }
+    in
+    Ok
+      [ Contact.Created contact |> Pool_event.contact
+      ; Email.Created (email, token, user_id |> Contact.Id.to_user)
+        |> Pool_event.email_verification
+      ; Email.sent verification_email |> Pool_event.email
+      ; Signup_code.SignedUp webhook.Signup_code.Webhook.code |> Pool_event.signupcode
+      ; Signup_code.WebhookTriggered webhook |> Pool_event.signupcode
+      ]
+  in
+  check_result expected events
+;;
+
 let delete_unverified () =
   let contact = "john@gmail.com" |> contact_info |> create_contact false in
   let events = Contact_command.DeleteUnverified.handle contact in
@@ -454,6 +512,38 @@ let verify_email () =
     Ok
       [ Contact.EmailVerified contact |> Pool_event.contact
       ; Email.EmailVerified email_unverified |> Pool_event.email_verification
+      ]
+  in
+  check_result expected events
+;;
+
+let verify_email_with_signup_code_webhook () =
+  let email_address = "john@gmail.com" in
+  let contact = email_address |> contact_info |> create_contact true in
+  let email_unverified =
+    Email.Unverified
+      { Email.address = email_address |> Pool_user.EmailAddress.of_string
+      ; user = contact.Contact.user
+      ; token = Pool_token.of_string "testing"
+      ; created_at = Pool_common.CreatedAt.create_now ()
+      ; updated_at = Pool_common.UpdatedAt.create_now ()
+      }
+  in
+  let webhook = signup_code_webhook Signup_code.Webhook.Trigger.SignUpCompleted in
+  let events =
+    let open Cqrs_command.User_command in
+    email_unverified
+    |> VerifyEmail.handle
+         ~signup_code:webhook.Signup_code.Webhook.code
+         ~signup_webhook:webhook
+         (Contact contact)
+  in
+  let expected =
+    Ok
+      [ Contact.EmailVerified contact |> Pool_event.contact
+      ; Email.EmailVerified email_unverified |> Pool_event.email_verification
+      ; Signup_code.Verified webhook.Signup_code.Webhook.code |> Pool_event.signupcode
+      ; Signup_code.WebhookTriggered webhook |> Pool_event.signupcode
       ]
   in
   check_result expected events

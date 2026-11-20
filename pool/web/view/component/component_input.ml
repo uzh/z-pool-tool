@@ -105,6 +105,7 @@ let input_element
       ?(orientation = `Vertical)
       ?(classnames = [])
       ?label_field
+      ?(label_classnames = [])
       ?(hide_label = false)
       ?hints
       ?identifier
@@ -140,7 +141,13 @@ let input_element
     let error = Elements.error language error in
     let input_element = Elements.apply_orientation attributes error orientation in
     let label =
-      if hide_label then txt "" else label ~a:[ a_label_for id ] [ txt input_label ]
+      if hide_label
+      then txt ""
+      else (
+        let classes =
+          if CCList.is_empty label_classnames then [] else [ a_class label_classnames ]
+        in
+        label ~a:(a_label_for id :: classes) [ txt input_label ])
     in
     div ~a:[ a_class group_class ] ([ label; input_element ] @ help @ append_html)
 ;;
@@ -334,6 +341,7 @@ let checkbox_element
       ?(classnames = [])
       ?error
       ?flash_fetcher
+      ?(hide_label = false)
       ?hints
       ?identifier
       ?label_field
@@ -386,15 +394,15 @@ let checkbox_element
           ]
       else base
     in
+    let label =
+      if hide_label then txt "" else label ~a:[ a_label_for id ] [ txt input_label ]
+    in
     match orientation with
     | `Vertical ->
       (match as_switch with
-       | true -> [ label ~a:[ a_label_for id ] [ txt input_label ]; checkbox ]
-       | false -> [ div [ checkbox; label ~a:[ a_label_for id ] [ txt input_label ] ] ])
-    | `Horizontal ->
-      [ label ~a:[ a_label_for id ] [ txt input_label ]
-      ; div ~a:[ a_class [ "input-group" ] ] [ checkbox ]
-      ]
+       | true -> [ label; checkbox ]
+       | false -> [ div [ checkbox; label ] ])
+    | `Horizontal -> [ label; div ~a:[ a_class [ "input-group" ] ] [ checkbox ] ]
   in
   div ~a:[ a_class group_class ] (input_element @ help @ error @ append_html)
 ;;

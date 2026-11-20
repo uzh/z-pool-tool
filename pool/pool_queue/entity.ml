@@ -16,6 +16,7 @@ module JobName = struct
       | SendEmail [@name "send_email"] [@printer Utils.ppx_printer "send_email"]
       | SendTextMessage [@name "send_text_message"]
       [@printer Utils.ppx_printer "send_text_message"]
+      | SendWebhook [@name "send_webhook"] [@printer Utils.ppx_printer "send_webhook"]
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
@@ -123,7 +124,7 @@ module Instance = struct
       name job
       |> function
       | CheckMatchesFilter -> Error Error.JobCannotBeRetriggered
-      | SendEmail | SendTextMessage -> Ok ()
+      | SendEmail | SendTextMessage | SendWebhook -> Ok ()
     in
     Ok job
   ;;

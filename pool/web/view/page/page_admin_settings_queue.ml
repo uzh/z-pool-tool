@@ -45,6 +45,17 @@ let text_message_job_instance_detail instance =
     ])
 ;;
 
+let webhook_job_instance_detail instance =
+  let open Signup_code in
+  Webhook.Job.decode (Pool_queue.Instance.input instance)
+  |> CCResult.map_or ~default:[] (fun { Webhook.url; trigger; code; payload } ->
+    [ Field.Url, txt (WebhookUrl.value url)
+    ; Field.Action, txt (Webhook.Trigger.show trigger)
+    ; Field.SignUpCode, txt (Code.value code)
+    ; Field.Payload, txt (CCOption.map_or ~default:"-" Payload.value payload)
+    ])
+;;
+
 let matcher_job_instance_detail label = [ Field.Label, txt (Database.Label.value label) ]
 
 let text_message_dlr_detail dlr =
@@ -89,6 +100,7 @@ let queue_instance_detail language ?text_message_dlr instance =
       txt "", matcher_job_instance_detail (Pool_queue.Instance.database_label instance)
     | SendEmail -> link, email_job_instance_detail instance
     | SendTextMessage -> link, text_message_job_instance_detail instance
+    | SendWebhook -> link, webhook_job_instance_detail instance
   in
   let queue_instance_detail =
     let open Pool_queue in
