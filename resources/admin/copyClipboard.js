@@ -1,10 +1,8 @@
 export const initCopyClipboard = () => {
-    document.querySelectorAll("[data-clipboard]").forEach((el) => {
-        el.addEventListener("click", (ev) => {
-            const { clipboard } = ev.currentTarget.dataset
-            if (clipboard) {
-                navigator.clipboard.writeText(clipboard)
-            }
-        })
+    document.addEventListener("click", (ev) => {
+        const { clipboard } = ev.target.closest("[data-clipboard]")?.dataset ?? {}
+        if (clipboard) {
+            navigator.clipboard.writeText(clipboard)
+        }
     })
 }
