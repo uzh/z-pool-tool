@@ -789,11 +789,11 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
       Pool_message.Field.(human_url SignUpCode)
       Pool_message.Field.(human_url Payload)
   | SignUpCodeSignUpCompletedWebhookHint ->
-    "Wird mit einer HTTP-GET-Anfrage aufgerufen, sobald ein Kontakt, der sich mit diesem \
+    "Wird mit einer HTTP GET-Anfrage aufgerufen, sobald ein Kontakt, der sich mit diesem \
      Code registriert hat, seine E-Mail-Adresse bestätigt, d.h. wenn die Registrierung \
      abgeschlossen ist."
   | SignUpCodeSignUpStartedWebhookHint ->
-    "Wird mit einer HTTP-GET-Anfrage aufgerufen, sobald ein neuer Kontakt das \
+    "Wird mit einer HTTP GET-Anfrage aufgerufen, sobald ein neuer Kontakt das \
      Registrierungsformular über eine Registrierungs-URL mit diesem Code absendet, d.h. \
      bevor die E-Mail-Adresse bestätigt ist."
   | SignUpCodeUrlHint ->
