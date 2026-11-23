@@ -276,7 +276,11 @@ module Admin = struct
       let files =
         [ get "/create" ~middlewares:[ Access.create_file ] new_file
         ; post "" ~middlewares:[ Access.create_file ] add_file
-        ; choose ~scope:(add_key File) [ get "" ~middlewares:[ Access.read_file ] asset ]
+        ; choose
+            ~scope:(add_key File)
+            [ get "" ~middlewares:[ Access.read_file ] asset
+            ; post "/delete" ~middlewares:[ Access.delete_file ] delete
+            ]
         ]
       in
       let sessions = [ get "" ~middlewares:[ Access.read_session ] session ] in
@@ -287,9 +291,6 @@ module Admin = struct
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; post "" ~middlewares:[ Access.update ] update
         ; choose ~scope:"/files" files
-        ; choose
-            ~scope:(add_key ~prefix:"mapping" FileMapping)
-            [ post "/delete" ~middlewares:[ Access.delete_file ] delete ]
         ; choose ~scope:(add_key ~prefix:"sessions" Session) sessions
         ]
       in
