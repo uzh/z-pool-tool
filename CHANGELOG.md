@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/z-pool-tool/tree/HEAD)
 
+## [0.14.0](https://github.com/uzh/z-pool-tool/tree/0.14.0) - 2026-11-23
+
 ### Added
 
 - Signup codes are created and edited in a form and can call a webhook when a contact
