@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
   with a GET request carrying the `signup_code` and the `payload` (data passed in the
   `payload` URL parameter of the sign up link) as URL parameters
 
+### Fixed
+
+- Deleting documents on locations failed with not found
+
 ## [0.13.13](https://github.com/uzh/z-pool-tool/tree/0.13.13) - 2026-11-02
 
 ### Fixed
