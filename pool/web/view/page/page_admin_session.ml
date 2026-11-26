@@ -1887,7 +1887,6 @@ let close
   in
   [ div
       [ div ~a:[ a_class [ "stack" ] ] [ tags_html; legend_html ]
-      ; Page_admin_assignments.Partials.table_legend ~hide_deleted:true language
       ; p [ Utils.hint_to_string language I18n.SessionCloseHints |> Unsafe.data ]
       ; table
       ; submit_session_close
